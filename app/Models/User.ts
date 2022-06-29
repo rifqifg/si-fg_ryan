@@ -9,6 +9,18 @@ export default class User extends BaseModel {
   public id: string
 
   @column()
+  public name: string
+
+  @column()
+  public role: string
+
+  @column()
+  public rfid: string
+
+  @column()
+  public employeeId: string
+
+  @column()
   public email: string
 
   @column({ serializeAs: null })
@@ -17,11 +29,23 @@ export default class User extends BaseModel {
   @column()
   public rememberMeToken?: string
 
+  @column()
+  public verified: boolean
+
+  @column()
+  public verifyToken: string
+
+  @column.dateTime()
+  public verifyExpiry: DateTime
+
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   public updatedAt: DateTime
+
+  @column.dateTime({ autoCreate: true })
+  public deletedAt: DateTime
 
   @beforeSave()
   public static async hashPassword(user: User) {

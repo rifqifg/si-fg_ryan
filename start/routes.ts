@@ -20,6 +20,20 @@
 
 import Route from '@ioc:Adonis/Core/Route'
 
-Route.get('/', async () => {
-  return { hello: 'world' }
+Route.get('/', async ({ auth }) => {
+  return { hello: 'you are logged in', data: auth.user }
+
+}).middleware("auth")
+
+Route.post('/password-encrypt', 'System/UsersController.password_encrypt').as('passwordEncrypt')
+Route.post('/auth/login', 'System/UsersController.login').as('auth.login')
+Route.post('/auth/logout', 'System/UsersController.logout').as('auth.logout').middleware('auth')
+Route.post('/auth/register', 'System/UsersController.register').as('auth.register')
+Route.post('/auth/reset-password', 'System/UsersController.resetUserPassword').as('auth.resetUserPassword').middleware(['auth', 'checkRole:admin'])
+Route.get('/admin/get-users', 'System/UsersController.getUsers').as('admin.get-user').middleware('auth')
+Route.resource('/division/', 'DivisionsController').as('division').apiOnly().middleware({
+  '*': ['auth', 'checkRole:admin'],
+  // 'update': 'checkRole:admin',
+  // 'destroy': 'checkRole:admin',
+  // 'store': 'checkRole:admin',
 })

@@ -7,8 +7,8 @@ export default class extends BaseSchema {
     this.schema.createTable(this.tableName, (table) => {
       table.uuid('id').notNullable().primary()
       table.string('name').notNullable()
-      table.string('description').notNullable()
-      table.uuid('pic').notNullable().comment('penanggung jawab divisi, berisi employee_id')
+      table.string('description')
+      table.uuid('pic').comment('penanggung jawab divisi, berisi employee_id')
 
       /**
        * Uses timestamptz for PostgreSQL and DATETIME2 for MSSQL

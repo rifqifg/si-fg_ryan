@@ -16,6 +16,18 @@ export default class EmployeesController {
     response.ok({ message: "Data Berhasil Didapatkan", data })
   }
 
+  public async getEmployee({ request, response }: HttpContextContract) {
+    const { keyword = "", orderBy = "name", orderDirection = 'ASC' } = request.qs()
+
+    const data = await Employee.query()
+      .preload("division")
+      .andWhere(query => {
+        query.whereILike('name', `%${keyword}%`)
+      })
+      .orderBy(orderBy, orderDirection)
+    response.ok({ message: "Data Berhasil Didapatkan", data })
+  }
+
   // public async create({ }: HttpContextContract) { }
 
   public async store({ request, response }: HttpContextContract) {

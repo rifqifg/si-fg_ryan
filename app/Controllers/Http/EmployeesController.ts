@@ -1,0 +1,74 @@
+import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import Employee from 'App/Models/Employee'
+import CreateEmployeeValidator from 'App/Validators/CreateEmployeeValidator'
+
+export default class EmployeesController {
+  public async index({ request, response }: HttpContextContract) {
+    const { page = 1, limit = 10, keyword = "", orderBy = "name", orderDirection = 'ASC' } = request.qs()
+    const data = await Employee.query()
+      .preload("division")
+      .andWhere(query => {
+        query.whereILike('name', `%${keyword}%`)
+      })
+      .orderBy(orderBy, orderDirection)
+      .paginate(page, limit)
+
+    response.ok({ message: "Data Berhasil Didapatkan", data })
+  }
+
+  // public async create({ }: HttpContextContract) { }
+
+  public async store({ request, response }: HttpContextContract) {
+    const payload = await request.validate(CreateEmployeeValidator)
+
+    try {
+      const data = await Employee.create(payload)
+      response.ok({ message: "Create data success", data })
+    } catch (error) {
+      console.log(error);
+      return response.internalServerError(error)
+    }
+  }
+
+  public async show({ params, response }: HttpContextContract) {
+    const { id } = params
+    try {
+      const data = await Employee.query().preload("division").where('id', id)
+      response.ok({ message: "Get data success", data })
+    } catch (error) {
+      console.log(error);
+      return response.internalServerError(error)
+    }
+  }
+
+  // public async edit({ }: HttpContextContract) { }
+
+  public async update({ params, request, response }: HttpContextContract) {
+    const { id } = params
+
+    const payload = await request.validate(CreateEmployeeValidator)
+
+    try {
+      const data = await Employee.findOrFail(id)
+      await data.merge(payload).save()
+
+      response.ok({ message: "Update data success", data })
+    } catch (error) {
+      console.log(error);
+      response.internalServerError(error)
+    }
+  }
+
+  public async destroy({ params, response }: HttpContextContract) {
+    const { id } = params
+    try {
+      const data = await Employee.findOrFail(id)
+      await data.delete()
+
+      response.ok({ message: "Delete data success" })
+    } catch (error) {
+      console.log(error);
+      response.internalServerError(error)
+    }
+  }
+}

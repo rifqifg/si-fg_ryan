@@ -31,9 +31,5 @@ Route.post('/auth/logout', 'System/UsersController.logout').as('auth.logout').mi
 Route.post('/auth/register', 'System/UsersController.register').as('auth.register')
 Route.post('/auth/reset-password', 'System/UsersController.resetUserPassword').as('auth.resetUserPassword').middleware(['auth', 'checkRole:admin'])
 Route.get('/admin/get-users', 'System/UsersController.getUsers').as('admin.get-user').middleware('auth')
-Route.resource('/division/', 'DivisionsController').as('division').apiOnly().middleware({
-  '*': ['auth', 'checkRole:admin'],
-  // 'update': 'checkRole:admin',
-  // 'destroy': 'checkRole:admin',
-  // 'store': 'checkRole:admin',
-})
+Route.resource('/division/', 'DivisionsController').as('division').apiOnly().middleware({ '*': ['auth', 'checkRole:admin'] })
+Route.resource('/employee/', 'EmployeesController').as('employee').apiOnly().middleware({ '*': ['auth', 'checkRole:admin'] })

@@ -1,5 +1,5 @@
 import { DateTime } from 'luxon'
-import { afterCreate, BaseModel, beforeCreate, column, HasOne, hasOne } from '@ioc:Adonis/Lucid/Orm'
+import { afterCreate, BaseModel, beforeCreate, BelongsTo, belongsTo, column } from '@ioc:Adonis/Lucid/Orm'
 import { v4 as uuidv4 } from 'uuid'
 import Division from './Division'
 let newId = ""
@@ -17,8 +17,8 @@ export default class Employee extends BaseModel {
   @column()
   public birthCity: string
 
-  @column()
-  public birthDay: Date
+  @column.date()
+  public birthDay: DateTime
 
   @column()
   public gender: string
@@ -29,17 +29,17 @@ export default class Employee extends BaseModel {
   @column()
   public divisionId: string
 
-  @hasOne(() => Division)
-  public division: HasOne<typeof Division>
+  @belongsTo(() => Division)
+  public division: BelongsTo<typeof Division>
 
   @column()
   public status: string
 
-  @column()
-  public dateIn: Date
+  @column.date()
+  public dateIn: DateTime
 
   @column()
-  public dateOut: Date
+  public dateOut: DateTime
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime

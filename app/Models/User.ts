@@ -15,9 +15,6 @@ export default class User extends BaseModel {
   public role: string
 
   @column()
-  public rfid: string
-
-  @column()
   public employeeId: string
 
   @column()

@@ -39,7 +39,8 @@ export default class CreateEmployeeValidator {
     ]),
     status: schema.enum.optional(['FULLTIME', 'PARTTIME', 'RESIGNED']),
     dateIn: schema.date(),
-    dateOut: schema.date.optional()
+    dateOut: schema.date.optional(),
+    rfid: schema.string.optional()
   })
 
   /**

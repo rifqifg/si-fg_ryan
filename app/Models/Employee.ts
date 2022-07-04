@@ -41,6 +41,9 @@ export default class Employee extends BaseModel {
   @column()
   public dateOut: DateTime
 
+  @column()
+  public rfid: string
+
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
 

@@ -1,6 +1,7 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Employee from 'App/Models/Employee'
 import CreateEmployeeValidator from 'App/Validators/CreateEmployeeValidator'
+import UpdateEmployeeValidator from 'App/Validators/UpdateEmployeeValidator'
 
 export default class EmployeesController {
   public async index({ request, response }: HttpContextContract) {
@@ -58,7 +59,7 @@ export default class EmployeesController {
   public async update({ params, request, response }: HttpContextContract) {
     const { id } = params
 
-    const payload = await request.validate(CreateEmployeeValidator)
+    const payload = await request.validate(UpdateEmployeeValidator)
 
     try {
       const data = await Employee.findOrFail(id)

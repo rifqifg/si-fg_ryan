@@ -38,7 +38,7 @@ export default class Employee extends BaseModel {
   @column.date()
   public dateIn: DateTime
 
-  @column()
+  @column.date()
   public dateOut: DateTime
 
   @column()

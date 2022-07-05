@@ -16,7 +16,19 @@ export default class DivisionsController {
     response.ok({ message: "Data Berhasil Didapatkan", data })
   }
 
-  // public async create({ }: HttpContextContract) { }
+  public async getDivision({ request, response}: HttpContextContract) {
+    const {keyword = ""} =  request.qs()
+    try {
+      const data = await Division.query()
+        .whereILike('name', `%${keyword}%`)
+        .orderBy('name')
+
+      response.ok({message: "Get Data Success", data})
+    } catch (error) {
+      console.log(error);
+      response.badRequest(error)
+    }
+   }
 
   public async store({ request, response }: HttpContextContract) {
     const createNewDivisionSchema = schema.create({

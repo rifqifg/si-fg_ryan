@@ -16,19 +16,19 @@ export default class DivisionsController {
     response.ok({ message: "Data Berhasil Didapatkan", data })
   }
 
-  public async getDivision({ request, response}: HttpContextContract) {
-    const {keyword = ""} =  request.qs()
+  public async getDivision({ request, response }: HttpContextContract) {
+    const { keyword = "" } = request.qs()
     try {
       const data = await Division.query()
         .whereILike('name', `%${keyword}%`)
         .orderBy('name')
 
-      response.ok({message: "Get Data Success", data})
+      response.ok({ message: "Get Data Success", data })
     } catch (error) {
       console.log(error);
       response.badRequest(error)
     }
-   }
+  }
 
   public async store({ request, response }: HttpContextContract) {
     const createNewDivisionSchema = schema.create({
@@ -73,7 +73,7 @@ export default class DivisionsController {
       ]),
       description: schema.string.optional({}, [rules.minLength(6)]),
       pic: schema.string.optional({}, [
-        rules.exists({ table: 'users', column: 'id' })
+        rules.exists({ table: 'employee', column: 'id' })
       ])
     })
 

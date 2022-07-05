@@ -2,7 +2,7 @@ import { schema, CustomMessages, rules } from '@ioc:Adonis/Core/Validator'
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 
 export default class UpdateEmployeeValidator {
-  constructor(protected ctx: HttpContextContract) {}
+  constructor(protected ctx: HttpContextContract) { }
 
   /*
    * Define schema to validate the "shape", "type", "formatting" and "integrity" of data.
@@ -34,10 +34,9 @@ export default class UpdateEmployeeValidator {
     address: schema.string.optional({}, [
       rules.minLength(20)
     ]),
-    // divisionId: schema.string.optional({}, [
-    //   rules.optional(),
-    //   rules.exists({ table: 'divisions', column: 'id' })
-    // ]),
+    divisionId: schema.string.optional({}, [
+      rules.exists({ table: 'divisions', column: 'id' })
+    ]),
     status: schema.enum.optional(['FULLTIME', 'PARTTIME', 'RESIGNED']),
     dateIn: schema.date.optional(),
     dateOut: schema.date.optional(),

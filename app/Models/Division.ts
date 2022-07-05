@@ -1,6 +1,7 @@
 import { DateTime } from 'luxon'
-import { afterCreate, BaseModel, beforeCreate, column } from '@ioc:Adonis/Lucid/Orm'
+import { afterCreate, BaseModel, beforeCreate, BelongsTo, belongsTo, column } from '@ioc:Adonis/Lucid/Orm'
 import { v4 as uuidv4 } from 'uuid'
+import Employee from './Employee'
 let newId = ""
 
 export default class Division extends BaseModel {
@@ -15,6 +16,9 @@ export default class Division extends BaseModel {
 
   @column()
   public pic: string
+
+  @belongsTo(() => Employee, { foreignKey: 'pic' })
+  public pic_detail: BelongsTo<typeof Employee>
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime

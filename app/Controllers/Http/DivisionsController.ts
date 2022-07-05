@@ -37,7 +37,7 @@ export default class DivisionsController {
       ]),
       description: schema.string.optional({}, [rules.minLength(6)]),
       pic: schema.string.optional({}, [
-        rules.exists({ table: 'employee', column: 'id' })
+        rules.exists({ table: 'employees', column: 'id' })
       ])
     })
 

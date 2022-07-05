@@ -7,9 +7,8 @@ export default class DivisionsController {
   public async index({ request, response }: HttpContextContract) {
     const { page = 1, limit = 10, keyword = "", orderBy = "name", orderDirection = 'ASC' } = request.qs()
     const data = await Division.query()
-      .andWhere(query => {
-        query.whereILike('name', `%${keyword}%`)
-      })
+      .preload('pic_detail', query => { query.select('id', 'name') })
+      .whereILike('name', `%${keyword}%`)
       .orderBy(orderBy, orderDirection)
       .paginate(page, limit)
 
@@ -20,6 +19,7 @@ export default class DivisionsController {
     const { keyword = "" } = request.qs()
     try {
       const data = await Division.query()
+        .preload('pic_detail', query => { query.select('id', 'name') })
         .whereILike('name', `%${keyword}%`)
         .orderBy('name')
 
@@ -55,7 +55,7 @@ export default class DivisionsController {
   public async show({ params, response }: HttpContextContract) {
     const { id } = params
     try {
-      const data = await Division.findOrFail(id)
+      const data = await Division.query().preload('pic_detail').where('id', id)
       response.ok({ message: "Get data success", data })
     } catch (error) {
       console.log(error);

@@ -70,7 +70,7 @@ export default class ActivitiesController {
       const data = await findData.merge(formattedPayload).save()
 
       response.created({
-        message: "Create data success", data
+        message: "Update data success", data
       })
     } catch (error) {
       console.log(error);

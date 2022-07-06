@@ -9,13 +9,22 @@
 | by AdonisJs service providers for custom code.
 |
 */
-
+import { createServer } from "https";
 import 'reflect-metadata'
 import sourceMapSupport from 'source-map-support'
 import { Ignitor } from '@adonisjs/core/build/standalone'
 
-sourceMapSupport.install({ handleUncaughtExceptions: false })
+import path from 'path';
+import fs from 'fs'
 
-new Ignitor(__dirname)
-  .httpServer()
-  .start()
+sourceMapSupport.install({ handleUncaughtExceptions: false })
+const options = {
+  key: fs.readFileSync(path.join(__dirname, 'certs/server.key')),
+  cert: fs.readFileSync(path.join(__dirname, 'certs/server.crt'))
+}
+new Ignitor(__dirname).httpServer().start((handle) => {
+  return createServer(
+    options,
+    handle
+  );
+});

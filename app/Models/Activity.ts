@@ -1,6 +1,7 @@
 import { DateTime } from 'luxon'
-import { afterCreate, BaseModel, beforeCreate, column } from '@ioc:Adonis/Lucid/Orm'
+import { afterCreate, BaseModel, beforeCreate, column, HasMany, hasMany } from '@ioc:Adonis/Lucid/Orm'
 import { v4 as uuidv4 } from 'uuid'
+import Presence from './Presence'
 let newId = ""
 export default class Activity extends BaseModel {
   @column({ isPrimary: true })
@@ -23,6 +24,9 @@ export default class Activity extends BaseModel {
 
   @column()
   public timeOutEnd: string
+
+  @hasMany(()=>Presence)
+  public presence: HasMany<typeof Presence>
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime

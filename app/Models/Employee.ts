@@ -27,7 +27,7 @@ export default class Employee extends BaseModel {
   public address: string
 
   @column()
-  public divisionId: string
+  public divisionId: string | null
 
   @belongsTo(() => Division)
   public division: BelongsTo<typeof Division>
@@ -42,7 +42,7 @@ export default class Employee extends BaseModel {
   public dateOut: DateTime
 
   @column()
-  public rfid: string
+  public rfid: string | rfid
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime

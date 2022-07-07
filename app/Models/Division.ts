@@ -15,7 +15,7 @@ export default class Division extends BaseModel {
   public description: string
 
   @column()
-  public pic: string
+  public pic: string | null
 
   @belongsTo(() => Employee, { foreignKey: 'pic' })
   public pic_detail: BelongsTo<typeof Employee>

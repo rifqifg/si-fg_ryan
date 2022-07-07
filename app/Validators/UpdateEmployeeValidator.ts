@@ -34,13 +34,13 @@ export default class UpdateEmployeeValidator {
     address: schema.string.optional({}, [
       rules.minLength(20)
     ]),
-    divisionId: schema.string.optional({}, [
+    divisionId: schema.string.nullableAndOptional({}, [
       rules.exists({ table: 'divisions', column: 'id' })
     ]),
     status: schema.enum.optional(['FULLTIME', 'PARTTIME', 'RESIGNED']),
     dateIn: schema.date.optional(),
     dateOut: schema.date.optional(),
-    rfid: schema.string.optional()
+    rfid: schema.string.nullableAndOptional()
   })
 
   /**

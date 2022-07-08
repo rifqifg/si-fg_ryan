@@ -1,4 +1,5 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import Database from '@ioc:Adonis/Lucid/Database'
 import Activity from 'App/Models/Activity'
 import Presence from 'App/Models/Presence'
 import CreatePresenceValidator from 'App/Validators/CreatePresenceValidator'
@@ -39,7 +40,23 @@ export default class PresencesController {
     }
   }
 
-  // public async create({ }: HttpContextContract) { }
+  public async scanRFID({ request, response }: HttpContextContract) {
+    // const { activityId, rfid } = request.body()
+    // TODO: check apakah dia sudah scan_in atau belum
+    // const checkPresence = await Presence.query()
+    //   .preload('employee')
+    //   .whereHas('employee', query => {
+    //     query.where('rfid', rfid)
+    //   })
+    //   .where('activity_id', activityId)
+    //   .andWhere(query => {
+    //     query.whereRaw(`left(time_in,10)=current_date`)
+    //     query.orWhereRaw(`left(time_out,10)=current_date`)
+    //   })
+
+    // response.ok({ message: "Get data success", checkPresence })
+    response.ok({ message: "Lanjut Malem" })
+  }
 
   public async show({ }: HttpContextContract) { }
 

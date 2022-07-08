@@ -3,10 +3,11 @@ import Activity from 'App/Models/Activity'
 import Presence from 'App/Models/Presence'
 import CreatePresenceValidator from 'App/Validators/CreatePresenceValidator'
 import UpdatePresenceValidator from 'App/Validators/UpdatePresenceValidator'
-
+import { DateTime } from 'luxon'
 export default class PresencesController {
   public async index({ request, response }: HttpContextContract) {
-    const { page = 1, limit = 10, keyword = "", activityId = "", orderBy = "", orderDirection = 'ASC' } = request.qs()
+    const hariIni = DateTime.now().toSQLDate().toString()
+    const { page = 1, limit = 10, keyword = "", activityId = "", orderBy = "", orderDirection = 'ASC', fromDate = hariIni, toDate = hariIni } = request.qs()
     //TODO: bikin raw query & select secukupnya biar bisa order by join column
 
     const activity = await Activity.findOrFail(activityId)
@@ -19,8 +20,8 @@ export default class PresencesController {
         query.orWhereHas('employee', query => {
           query.whereILike('name', `%${keyword}%`)
         })
-
       })
+      .whereBetween('time_in', [fromDate, toDate])
       .paginate(page, limit)
 
     response.ok({ message: "Data Berhasil Didapatkan", data: { activity, presence } })

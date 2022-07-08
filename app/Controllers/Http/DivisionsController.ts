@@ -66,26 +66,30 @@ export default class DivisionsController {
   public async edit({ }: HttpContextContract) { }
 
   public async update({ request, response, params }: HttpContextContract) {
+    
     const { id } = params
     const createNewDivisionSchema = schema.create({
       name: schema.string({ trim: true }, [
         rules.minLength(2)
       ]),
       description: schema.string.optional({}, [rules.minLength(6)]),
-      pic: schema.string.optional({}, [
+      pic:schema.string.nullableAndOptional({}, [
         rules.exists({ table: 'employees', column: 'id' })
       ])
     })
-
+    
     const payload = await request.validate({ schema: createNewDivisionSchema })
 
     try {
+
       const data = await Division.findOrFail(id)
       await data.merge(payload).save()
 
       response.ok({ message: "Update data success", data })
     } catch (error) {
-      return response.internalServerError(error)
+      console.log(error);
+      
+      return response.internalServerError({...error})
     }
   }
 

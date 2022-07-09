@@ -1,8 +1,10 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Database from '@ioc:Adonis/Lucid/Database'
 import Activity from 'App/Models/Activity'
+import Employee from 'App/Models/Employee'
 import Presence from 'App/Models/Presence'
 import CreatePresenceValidator from 'App/Validators/CreatePresenceValidator'
+import ScanRfidPresenceValidator from 'App/Validators/ScanRfidPresenceValidator'
 import UpdatePresenceValidator from 'App/Validators/UpdatePresenceValidator'
 import { DateTime } from 'luxon'
 export default class PresencesController {
@@ -41,24 +43,44 @@ export default class PresencesController {
   }
 
   public async scanRFID({ request, response }: HttpContextContract) {
-    // const { activityId, rfid } = request.body()
-    // TODO: check apakah dia sudah scan_in atau belum
-    // const checkPresence = await Presence.query()
-    //   .preload('employee')
-    //   .whereHas('employee', query => {
-    //     query.where('rfid', rfid)
-    //   })
-    //   .where('activity_id', activityId)
-    //   .andWhere(query => {
-    //     query.whereRaw(`left(time_in,10)=current_date`)
-    //     query.orWhereRaw(`left(time_out,10)=current_date`)
-    //   })
+    const { activityId, rfid } = request.body()
+    const employeeId = (await Employee.findByOrFail('rfid', rfid)).id
+    const activity = await Activity.findOrFail(activityId)
+    const prezence = await Presence
+      .query()
+      .select()
+      .preload('employee')
+      .whereRaw(`substring(to_char(time_in::timestamp),0,11)::date - substring(to_char(now()::timestamp),0,11)::date =0`)
+      .andWhereHas('employee', query => {
+        query.where('rfid', rfid)
+      })
+      .andWhere('activityId', activityId)
+    if (prezence.length === 0) { //belum ada data = belum pernah masuk
+      const scanIn = await Presence.create({ activityId, employeeId, timeIn: DateTime.now() })
+      response.ok({ message: "Scan In Success", activity, scanIn })
+    } else if (!prezence[0].timeOut) { //sudah ada data & belum keluar
+      const findPresence = await Presence.findByOrFail('activity_id', activityId)
+      const scanOut = await findPresence.merge({ timeOut: DateTime.now() }).save()
+      response.ok({ message: "Scan Out Success", data: scanOut })
+    } else {
+      response.internalServerError({ message: "Unhandled error" })
+    }
 
-    // response.ok({ message: "Get data success", checkPresence })
-    response.ok({ message: "Lanjut Malem" })
+
+    // TODO: check apakah dia sudah scan_in atau belum
   }
 
-  public async show({ }: HttpContextContract) { }
+  public async show({ params, response }: HttpContextContract) {
+    const { id } = params
+    const activity = await Activity.findOrFail(id)
+    const presence = await Presence.query()
+      .preload('employee', query => {
+        query.select('name', 'id', 'nip')
+      })
+      .whereRaw(`substring(to_char(time_in::timestamp),0,11)::date - substring(to_char(now()::timestamp),0,11)::date =0`)
+      .where('activity_id', id)
+    response.ok({ message: "Get data success", data: { activity, presence } })
+  }
 
   public async edit({ }: HttpContextContract) { }
 

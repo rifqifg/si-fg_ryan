@@ -1,10 +1,8 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import Database from '@ioc:Adonis/Lucid/Database'
 import Activity from 'App/Models/Activity'
 import Employee from 'App/Models/Employee'
 import Presence from 'App/Models/Presence'
 import CreatePresenceValidator from 'App/Validators/CreatePresenceValidator'
-import ScanRfidPresenceValidator from 'App/Validators/ScanRfidPresenceValidator'
 import UpdatePresenceValidator from 'App/Validators/UpdatePresenceValidator'
 import { DateTime } from 'luxon'
 export default class PresencesController {
@@ -58,12 +56,20 @@ export default class PresencesController {
     if (prezence.length === 0) { //belum ada data = belum pernah masuk
       const scanIn = await Presence.create({ activityId, employeeId, timeIn: DateTime.now() })
       response.ok({ message: "Scan In Success", activity, scanIn })
-    } else if (!prezence[0].timeOut) { //sudah ada data & belum keluar
-      const findPresence = await Presence.findByOrFail('activity_id', activityId)
-      const scanOut = await findPresence.merge({ timeOut: DateTime.now() }).save()
+    } else if (prezence[0].timeOut === null) { //sudah ada data & belum keluar
+      console.log(prezence[0]);
+      const scanOut = await Presence
+        .query()
+        .preload('employee')
+        .whereRaw(`substring(to_char(time_in::timestamp),0,11)::date - substring(to_char(now()::timestamp),0,11)::date =0`)
+        .andWhereHas('employee', query => {
+          query.where('rfid', rfid)
+        })
+        .andWhere('activityId', activityId)
+        .update({ timeOut: DateTime.now().toISO() })
       response.ok({ message: "Scan Out Success", data: scanOut })
     } else {
-      response.internalServerError({ message: "Unhandled error" })
+      response.badRequest({ message: "Anda sudah melakukan scan in & scan out!" })
     }
 
 

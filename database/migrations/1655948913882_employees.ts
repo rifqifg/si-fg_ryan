@@ -12,7 +12,7 @@ export default class extends BaseSchema {
       table.date('birth_day').notNullable()
       table.enum('gender', ['L', 'P']).notNullable()
       table.string('address').notNullable()
-      table.uuid('division_id').references('id').inTable('divisions')
+      table.uuid('division_id').references('id').inTable('divisions').onDelete('no action')
       table.string('status').comment('FULLTIME, PARTTIME, RESIGNED')
       table.date('date_in').comment('tanggal masuk')
       table.date('date_out').comment('tanggal keluar').defaultTo(null)

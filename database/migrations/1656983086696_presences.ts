@@ -6,8 +6,8 @@ export default class extends BaseSchema {
   public async up() {
     this.schema.createTable(this.tableName, (table) => {
       table.uuid('id').notNullable().primary()
-      table.uuid('activity_id').references('id').inTable('activities').notNullable()
-      table.uuid('employee_id').references('id').inTable('employees').notNullable()
+      table.uuid('activity_id').references('id').inTable('activities').notNullable().onDelete('no action')
+      table.uuid('employee_id').references('id').inTable('employees').notNullable().onDelete('no action')
       table.datetime('time_in')
       table.datetime('time_out')
       table.string('description')

@@ -85,6 +85,7 @@ export default class PresencesController {
       })
       .whereRaw(`substring(to_char(time_in::timestamp),0,11)::date - substring(to_char(now()::timestamp),0,11)::date =0`)
       .where('activity_id', id)
+      .orderBy('updated_at', 'desc')
     response.ok({ message: "Get data success", data: { activity, presence } })
   }
 

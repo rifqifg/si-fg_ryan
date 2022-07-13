@@ -1,4 +1,5 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import Database from '@ioc:Adonis/Lucid/Database'
 import Activity from 'App/Models/Activity'
 import Employee from 'App/Models/Employee'
 import Presence from 'App/Models/Presence'
@@ -48,7 +49,9 @@ export default class PresencesController {
       .query()
       .select()
       .preload('employee')
-      .whereRaw(`substring(to_char(time_in::timestamp),0,11)::date - substring(to_char(now()::timestamp),0,11)::date =0`)
+      .whereExists(Database.raw(`select id, EXTRACT(DAY FROM MAX(time_in)-MIN(now())) as time 
+          from presences presences
+          group by id`))
       .andWhereHas('employee', query => {
         query.where('rfid', rfid)
       })
@@ -61,7 +64,9 @@ export default class PresencesController {
       const scanOut = await Presence
         .query()
         .preload('employee')
-        .whereRaw(`substring(to_char(time_in::timestamp),0,11)::date - substring(to_char(now()::timestamp),0,11)::date =0`)
+        .whereExists(Database.raw(`select id, EXTRACT(DAY FROM MAX(time_in)-MIN(now())) as time 
+          from presences presences
+          group by id`))
         .andWhereHas('employee', query => {
           query.where('rfid', rfid)
         })
@@ -79,13 +84,19 @@ export default class PresencesController {
   public async show({ params, response }: HttpContextContract) {
     const { id } = params
     const activity = await Activity.findOrFail(id)
+
     const presence = await Presence.query()
       .preload('employee', query => {
         query.select('name', 'id', 'nip')
       })
-      .whereRaw(`substring(to_char(time_in::timestamp),0,11)::date - substring(to_char(now()::timestamp),0,11)::date =0`)
-      .where('activity_id', id)
+      .whereExists(Database.raw(`select id, EXTRACT(DAY FROM MAX(time_in)-MIN(now())) as time 
+      from presences p
+      where activity_id = '${id}'
+      group by id`))
       .orderBy('updated_at', 'desc')
+    // const kehadiran = await Presence.query().preload('employee')
+    //   .whereILike('time_in', '%2022-07-13%')
+
     response.ok({ message: "Get data success", data: { activity, presence } })
   }
 

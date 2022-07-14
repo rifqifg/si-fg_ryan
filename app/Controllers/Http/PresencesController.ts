@@ -93,7 +93,15 @@ export default class PresencesController {
     response.ok({ message: "Get data success", data: { activity, presence } })
   }
 
-  public async edit({ }: HttpContextContract) { }
+  public async edit({ params, response }: HttpContextContract) {
+    const { id } = params
+    try {
+      const data = await Presence.query().preload('employee', query => query.select('name')).where('id', id).firstOrFail()
+      response.ok({ message: "Get data success", data })
+    } catch (error) {
+      response.badRequest(error)
+    }
+  }
 
   public async update({ params, request, response }: HttpContextContract) {
     const { id } = params

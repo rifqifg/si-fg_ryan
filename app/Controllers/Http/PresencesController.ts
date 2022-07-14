@@ -49,24 +49,20 @@ export default class PresencesController {
       .query()
       .select()
       .preload('employee')
-      .whereExists(Database.raw(`select id, EXTRACT(DAY FROM MAX(time_in)-MIN(now())) as time 
-          from presences presences
-          group by id`))
+      .whereRaw(`time_in::timestamp::date - now()::date =0`)
       .andWhereHas('employee', query => {
         query.where('rfid', rfid)
       })
       .andWhere('activityId', activityId)
     if (prezence.length === 0) { //belum ada data = belum pernah masuk
-      const scanIn = await Presence.create({ activityId, employeeId, timeIn: DateTime.now() })
+      const scanIn = await Presence.create({ activityId, employeeId, timeIn: DateTime.now().toUTC() })
       response.ok({ message: "Scan In Success", activity, scanIn })
     } else if (prezence[0].timeOut === null) { //sudah ada data & belum keluar
       console.log(prezence[0]);
       const scanOut = await Presence
         .query()
         .preload('employee')
-        .whereExists(Database.raw(`select id, EXTRACT(DAY FROM MAX(time_in)-MIN(now())) as time 
-          from presences presences
-          group by id`))
+        .whereRaw(`time_in::timestamp::date - now()::date =0`)
         .andWhereHas('employee', query => {
           query.where('rfid', rfid)
         })
@@ -89,10 +85,7 @@ export default class PresencesController {
       .preload('employee', query => {
         query.select('name', 'id', 'nip')
       })
-      .whereExists(Database.raw(`select id, EXTRACT(DAY FROM MAX(time_in)-MIN(now())) as time 
-      from presences p
-      where activity_id = '${id}'
-      group by id`))
+      .whereRaw(`time_in::timestamp::date - now()::date =0`)
       .orderBy('updated_at', 'desc')
     // const kehadiran = await Presence.query().preload('employee')
     //   .whereILike('time_in', '%2022-07-13%')

@@ -38,8 +38,8 @@ export default class UpdateEmployeeValidator {
       rules.exists({ table: 'divisions', column: 'id' })
     ]),
     status: schema.enum.optional(['FULLTIME', 'PARTTIME', 'RESIGNED']),
-    dateIn: schema.date.optional(),
-    dateOut: schema.date.optional(),
+    dateIn: schema.date.nullableAndOptional(),
+    dateOut: schema.date.nullableAndOptional(),
     rfid: schema.string.nullableAndOptional()
   })
 

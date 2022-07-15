@@ -39,7 +39,7 @@ export default class Employee extends BaseModel {
   public dateIn: DateTime
 
   @column.date()
-  public dateOut: DateTime
+  public dateOut: DateTime | null
 
   @column()
   public rfid: string | null

@@ -49,7 +49,7 @@ export default class PresencesController {
       .query()
       .select()
       .preload('employee')
-      .whereRaw(`time_in::timestamp::date - now()::date =0`)
+      .whereRaw(`time_in::date - now()::date =0`)
       .andWhereHas('employee', query => {
         query.where('rfid', rfid)
       })
@@ -62,7 +62,7 @@ export default class PresencesController {
       const scanOut = await Presence
         .query()
         .preload('employee')
-        .whereRaw(`time_in::timestamp::date - now()::date =0`)
+        .whereRaw(`time_in::date - now()::date =0`)
         .andWhereHas('employee', query => {
           query.where('rfid', rfid)
         })
@@ -85,7 +85,8 @@ export default class PresencesController {
       .preload('employee', query => {
         query.select('name', 'id', 'nip')
       })
-      .whereRaw(`time_in::timestamp::date - now()::date =0`)
+      .where('activity_id', id)
+      .andWhereRaw(`time_in::date - now()::date =0`)
       .orderBy('updated_at', 'desc')
     // const kehadiran = await Presence.query().preload('employee')
     //   .whereILike('time_in', '%2022-07-13%')

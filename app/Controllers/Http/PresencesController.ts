@@ -88,7 +88,7 @@ export default class PresencesController {
       .whereRaw(`current_date() - time_in::date =0`)
       .andWhere('activity_id', id)
       .orderBy('updated_at', 'desc')
-    // response.ok({ message: "Get data success", data: { activity, presence } })
+    response.ok({ message: "Get data success", data: { activity, presence } })
 
     //     const kehadiran = await Database.rawQuery(`
     // select id, time_in, cast(time_in as date) dateIn, current_date()

@@ -8,8 +8,8 @@ export default class extends BaseSchema {
       table.uuid('id').notNullable().primary()
       table.uuid('activity_id').references('id').inTable('activities').notNullable().onDelete('no action')
       table.uuid('employee_id').references('id').inTable('employees').notNullable().onDelete('no action')
-      table.datetime('time_in')
-      table.datetime('time_out')
+      table.datetime('time_in', { useTz: false })
+      table.datetime('time_out', { useTz: false })
       table.string('description')
 
       /**

@@ -55,7 +55,7 @@ export default class PresencesController {
       })
       .andWhere('activityId', activityId)
     if (prezence.length === 0) { //belum ada data = belum pernah masuk
-      const scanIn = await Presence.create({ activityId, employeeId, timeIn: DateTime.now() })
+      const scanIn = await Presence.create({ activityId, employeeId, timeIn: DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss') })
       response.ok({ message: "Scan In Success", activity, scanIn })
     } else if (prezence[0].timeOut === null) { //sudah ada data & belum keluar
       console.log(prezence[0]);
@@ -67,7 +67,7 @@ export default class PresencesController {
           query.where('rfid', rfid)
         })
         .andWhere('activityId', activityId)
-        .update({ timeOut: DateTime.now() })
+        .update({ timeOut: DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss') })
       response.ok({ message: "Scan Out Success", data: scanOut })
     } else {
       response.badRequest({ message: "Anda sudah melakukan scan in & scan out!" })
@@ -88,7 +88,7 @@ export default class PresencesController {
       .whereRaw(`current_date() - time_in::date =0`)
       .andWhere('activity_id', id)
       .orderBy('updated_at', 'desc')
-    response.ok({ message: "Get data success", data: { activity, presence } })
+    // response.ok({ message: "Get data success", data: { activity, presence } })
 
     //     const kehadiran = await Database.rawQuery(`
     // select id, time_in, cast(time_in as date) dateIn, current_date()
@@ -96,7 +96,8 @@ export default class PresencesController {
     // from presences
     // where id='fd9ebaa9-be87-482b-9ca2-990430925352'
     // order by created_at desc`)
-    //     response.ok({ message: "Get data success", data: { kehadiran, activity, presence } })
+    // const kehadiran = DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss');
+    // response.ok({ message: "Get data success", data: { kehadiran, activity, presence } })
   }
 
   public async edit({ params, response }: HttpContextContract) {

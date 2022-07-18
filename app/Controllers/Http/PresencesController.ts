@@ -75,25 +75,51 @@ export default class PresencesController {
       .query()
       .select()
       .preload('employee')
-      .whereRaw(`current_date() - time_in::date =0`)
+      .whereRaw(`timezone('Asia/Jakarta', now())::date - time_in::date =0`)
       .andWhereHas('employee', query => {
         query.where('rfid', rfid)
       })
       .andWhere('activityId', activityId)
-    if (prezence.length === 0) { //belum ada data = belum pernah masuk
+      .first()
+    // .orderBy('created_at', 'desc')
+
+    // const prezence = await Presence.query()
+    //   .preload('employee', query => {
+    //     query.select('name', 'id', 'nip', 'rfid')
+    //   })
+    //   .whereRaw(`timezone('Asia/Jakarta', now())::date - time_in::date=0`)
+    //   .andWhereHas('employee', query => { query.where('rfid', rfid) })
+    //   .orderBy('updated_at', 'desc')
+
+    // const prezence = await Database.rawQuery(`select p.id
+    // ,timezone('Asia/Jakarta', now())::date - time_in::date diff2, name
+    // ,time_in::date
+    // ,timezone('Asia/Jakarta', now())::date
+    //   from presences p
+    //   left join employees e 
+    //   on e.id = p.employee_id 
+    //   where rfid = '123'
+    //   order by p.created_at desc`)
+    // console.log(prezence);
+
+    // return response.ok(prezence)
+    if (prezence === null) { //belum ada data = belum pernah masuk
       const scanIn = await Presence.create({ activityId, employeeId, timeIn: DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss') })
       response.ok({ message: "Scan In Success", activity, scanIn })
-    } else if (prezence[0].timeOut === null) { //sudah ada data & belum keluar
-      console.log(prezence[0]);
-      const scanOut = await Presence
-        .query()
-        .preload('employee')
-        .whereRaw(`current_date() - time_in::date =0`)
-        .andWhereHas('employee', query => {
-          query.where('rfid', rfid)
-        })
-        .andWhere('activityId', activityId)
-        .update({ timeOut: DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss') })
+    } else if (prezence!.timeOut === null) { //sudah ada data & belum keluar
+      // console.log(prezence);
+      // const scanOut = await Presence
+      //   .query()
+      //   .preload('employee')
+      //   .whereRaw(`timezone('Asia/Jakarta', now())::date - time_in::date =0`)
+      //   .andWhereHas('employee', query => {
+      //     query.where('rfid', rfid)
+      //   })
+      //   .andWhere('activityId', activityId)
+      //   .update({ timeOut: DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss') })
+      const scanOut = await prezence!
+        .merge({ timeOut: DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss') })
+        .save()
       response.ok({ message: "Scan Out Success", data: scanOut })
     } else {
       response.badRequest({ message: "Anda sudah melakukan scan in & scan out!" })
@@ -111,14 +137,14 @@ export default class PresencesController {
       .preload('employee', query => {
         query.select('name', 'id', 'nip')
       })
-      .whereRaw(`current_date() - time_in::date =0`)
+      .whereRaw(`timezone('Asia/Jakarta', now())::date - time_in::date=0`)
       .andWhere('activity_id', id)
       .orderBy('updated_at', 'desc')
     response.ok({ message: "Get data success", data: { activity, presence } })
 
     //     const kehadiran = await Database.rawQuery(`
     // select id, time_in, cast(time_in as date) dateIn, current_date()
-    // ,current_date() - time_in::date diff 
+    // ,timezone('Asia/Jakarta', now())::date - time_in::date diff 
     // from presences
     // where id='fd9ebaa9-be87-482b-9ca2-990430925352'
     // order by created_at desc`)

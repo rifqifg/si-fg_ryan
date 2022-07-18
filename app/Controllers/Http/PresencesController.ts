@@ -26,7 +26,33 @@ export default class PresencesController {
       .whereBetween('time_in', [fromDate, toDate])
       .paginate(page, limit)
 
-    response.ok({ message: "Data Berhasil Didapatkan", data: { activity, presence } })
+    response.ok({
+      message: "Data Berhasil Didapatkan", data: {
+        activity, presence, recap: {
+          overview: {
+            totalLate: '00:17:52',
+            averagePresentPerDay: '90%',
+            mostPresentEmployee: {
+              totalPresent: 22,
+              fastestPresent: '06:00:01',
+              empmloyee: {
+                id: '1239081723987123',
+                name: 'Fulan bin Fulan'
+              }
+            }
+          },
+          detail: [
+            { id: '2312939301', name: 'Fulan bin Fulan', totalPresent: 22, fastestPresent: '06:00:01', totalLate: '00:00:00' },
+            { id: '2312939301', name: 'Fulan bin Fulan', totalPresent: 22, fastestPresent: '06:00:01', totalLate: '00:00:00' },
+            { id: '2312939301', name: 'Fulan bin Fulan', totalPresent: 22, fastestPresent: '06:00:01', totalLate: '00:00:00' },
+            { id: '2312939301', name: 'Fulan bin Fulan', totalPresent: 22, fastestPresent: '06:00:01', totalLate: '00:00:00' },
+            { id: '2312939301', name: 'Fulan bin Fulan', totalPresent: 22, fastestPresent: '06:00:01', totalLate: '00:00:00' },
+            { id: '2312939301', name: 'Fulan bin Fulan', totalPresent: 22, fastestPresent: '06:00:01', totalLate: '00:00:00' },
+            { id: '2312939301', name: 'Fulan bin Fulan', totalPresent: 22, fastestPresent: '06:00:01', totalLate: '00:00:00' },
+          ]
+        }
+      }
+    })
   }
 
   public async store({ request, response }: HttpContextContract) {

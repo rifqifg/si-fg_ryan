@@ -10,6 +10,7 @@ export default class EmployeesController {
       .preload("division")
       .andWhere(query => {
         query.whereILike('name', `%${keyword}%`)
+        query.orWhereILike('rfid', `%${keyword}%`)
       })
       .orderBy(orderBy, orderDirection)
       .paginate(page, limit)

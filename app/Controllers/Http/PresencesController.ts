@@ -81,42 +81,11 @@ export default class PresencesController {
       })
       .andWhere('activityId', activityId)
       .first()
-    // .orderBy('created_at', 'desc')
 
-    // const prezence = await Presence.query()
-    //   .preload('employee', query => {
-    //     query.select('name', 'id', 'nip', 'rfid')
-    //   })
-    //   .whereRaw(`timezone('Asia/Jakarta', now())::date - time_in::date=0`)
-    //   .andWhereHas('employee', query => { query.where('rfid', rfid) })
-    //   .orderBy('updated_at', 'desc')
-
-    // const prezence = await Database.rawQuery(`select p.id
-    // ,timezone('Asia/Jakarta', now())::date - time_in::date diff2, name
-    // ,time_in::date
-    // ,timezone('Asia/Jakarta', now())::date
-    //   from presences p
-    //   left join employees e 
-    //   on e.id = p.employee_id 
-    //   where rfid = '123'
-    //   order by p.created_at desc`)
-    // console.log(prezence);
-
-    // return response.ok(prezence)
     if (prezence === null) { //belum ada data = belum pernah masuk
       const scanIn = await Presence.create({ activityId, employeeId, timeIn: DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss') })
       response.ok({ message: "Scan In Success", activity, scanIn })
     } else if (prezence!.timeOut === null) { //sudah ada data & belum keluar
-      // console.log(prezence);
-      // const scanOut = await Presence
-      //   .query()
-      //   .preload('employee')
-      //   .whereRaw(`timezone('Asia/Jakarta', now())::date - time_in::date =0`)
-      //   .andWhereHas('employee', query => {
-      //     query.where('rfid', rfid)
-      //   })
-      //   .andWhere('activityId', activityId)
-      //   .update({ timeOut: DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss') })
       const scanOut = await prezence!
         .merge({ timeOut: DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss') })
         .save()
@@ -141,15 +110,6 @@ export default class PresencesController {
       .andWhere('activity_id', id)
       .orderBy('updated_at', 'desc')
     response.ok({ message: "Get data success", data: { activity, presence } })
-
-    //     const kehadiran = await Database.rawQuery(`
-    // select id, time_in, cast(time_in as date) dateIn, current_date()
-    // ,timezone('Asia/Jakarta', now())::date - time_in::date diff 
-    // from presences
-    // where id='fd9ebaa9-be87-482b-9ca2-990430925352'
-    // order by created_at desc`)
-    // const kehadiran = DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss');
-    // response.ok({ message: "Get data success", data: { kehadiran, activity, presence } })
   }
 
   public async edit({ params, response }: HttpContextContract) {
@@ -186,5 +146,67 @@ export default class PresencesController {
       console.log(error);
       response.internalServerError(error)
     }
+  }
+
+
+  public async recap({ params, response, request }: HttpContextContract) {
+    const hariIni = DateTime.now().toSQLDate().toString()
+    const { id } = params
+    const { from = hariIni, to = hariIni } = request.qs()
+
+    const { rows: detail } = await Database.rawQuery(`
+      select name, time_in, time_out, case when (keterlambatan > interval '1 second') then keterlambatan ::string else '0' end late
+      from (
+        select e.name, p.time_in, p.time_out, time_in ::time - '07:30:00'::time keterlambatan
+        from presences p 
+        left join employees e 
+          on e.id = p.employee_id 
+        where activity_id  = '${id}'
+        and time_in::date between '${from}' and '${to}'
+        order by e.name , time_in
+      ) data
+      order by name, time_in
+    `)
+
+    const { rows: recap } = await Database.rawQuery(`
+    select e.name, count(e.name) total
+    , case when sum(time_in ::time - '07:30:00'::time) > interval '0 second' then sum(time_in ::time - '07:30:00'::time) ::string else '0' end late
+    from presences p 
+    left join employees e 
+      on e.id = p.employee_id 
+    where activity_id  = '${id}'
+    and time_in::date between '${from}' and '${to}'
+    group by e.name
+    order by e.name;
+    `)
+
+    const { rows: [overview] } = await Database.rawQuery(`
+      select data.*, (presence_total/presence_expected)*100  presence_precentage, mostPresent.*
+      from
+      (
+        select sum(time_in ::time - '07:30:00'::time) ::string late_total, employee_total, ('${to}'::date - '${from}'::date + 1) day_total
+        ,  ('${to}'::date - '${from}'::date + 1) * employee_total presence_expected
+        , count(*) presence_total
+        from presences p 
+          ,(select count(id) employee_total from employees) e
+        where activity_id  = '${id}'
+        and time_in::date between '${from}' and '${to}'
+        group by employee_total
+      ) data
+      ,
+      (
+        select e.name employee_most_present, count(e.name) employee_presence_total
+        from presences p 
+        left join employees e 
+          on e.id = p.employee_id 
+        where activity_id  = '${id}'
+        and time_in::date between '${from}' and '${to}' 
+        group by e.name
+        order by count(e.name) desc, sum(time_in ::time - '07:30:00'::time)
+        limit 1
+      ) mostPresent
+    `)
+
+    response.ok({ message: "Get data success", overview, detail, recap })
   }
 }

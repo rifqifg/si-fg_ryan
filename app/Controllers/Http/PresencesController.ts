@@ -82,12 +82,13 @@ export default class PresencesController {
       .andWhere('activityId', activityId)
       .first()
 
+    // return response.ok({date :  DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss').toString()})
     if (prezence === null) { //belum ada data = belum pernah masuk
-      const scanIn = await Presence.create({ activityId, employeeId, timeIn: DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss') })
+      const scanIn = await Presence.create({ activityId, employeeId, timeIn: DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss').toString() })
       response.ok({ message: "Scan In Success", activity, scanIn })
     } else if (prezence!.timeOut === null) { //sudah ada data & belum keluar
       const scanOut = await prezence!
-        .merge({ timeOut: DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss') })
+        .merge({ timeOut: DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss').toString() })
         .save()
       response.ok({ message: "Scan Out Success", data: scanOut })
     } else {

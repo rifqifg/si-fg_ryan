@@ -20,7 +20,7 @@ export default class ActivitiesController {
     const data = await Activity.query()
       .whereILike('name', `%${keyword}%`)
       .orderBy(orderBy, orderDirection)
-    response.ok({ message: "Data Berhasil Didapatkan", data })
+    response.ok({ message: "Data Berhasil Didapatkan 2", data })
   }
 
   public async store({ request, response }: HttpContextContract) {
@@ -31,6 +31,7 @@ export default class ActivitiesController {
         name: payload.name,
         description: payload.description,
         timeInStart: payload.timeInStart.toFormat('HH:mm'),
+        timeLateStart: payload.timeLateStart.toFormat('HH:mm'),
         timeInEnd: payload.timeInEnd.toFormat('HH:mm'),
         timeOutStart: payload.timeOutStart.toFormat('HH:mm'),
         timeOutEnd: payload.timeOutEnd.toFormat('HH:mm'),
@@ -62,6 +63,7 @@ export default class ActivitiesController {
       payload.name ? formattedPayload['name'] = payload.name : ''
       payload.description ? formattedPayload['description'] = payload.description : ''
       payload.timeInStart ? formattedPayload['timeInStart'] = payload.timeInStart!.toFormat('HH:mm') : ''
+      payload.timeLateStart ? formattedPayload['timeLateStart'] = payload.timeLateStart!.toFormat('HH:mm') : ''
       payload.timeInEnd ? formattedPayload['timeInEnd'] = payload.timeInEnd!.toFormat('HH:mm') : ''
       payload.timeOutStart ? formattedPayload['timeOutStart'] = payload.timeOutStart!.toFormat('HH:mm') : ''
       payload.timeOutEnd ? formattedPayload['timeOutEnd'] = payload.timeOutEnd!.toFormat('HH:mm') : ''

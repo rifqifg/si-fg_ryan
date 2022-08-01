@@ -31,6 +31,9 @@ export default class CreateActivityValidator {
       rules.beforeField('timeOutStart'),
       rules.beforeField('timeOutEnd'),
     ]),
+    timeLateStart: schema.date({ format: 'HH:mm' }, [
+      rules.afterField('timeInStart'),
+    ]),
     timeInEnd: schema.date({ format: 'HH:mm' }, [
       rules.afterField('timeInStart'),
       rules.beforeField('timeOutStart'),

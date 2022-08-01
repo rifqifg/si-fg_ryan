@@ -17,6 +17,9 @@ export default class Activity extends BaseModel {
   public timeInStart: string
 
   @column()
+  public timeLateStart: string
+
+  @column()
   public timeInEnd: string
 
   @column()
@@ -25,7 +28,7 @@ export default class Activity extends BaseModel {
   @column()
   public timeOutEnd: string
 
-  @hasMany(()=>Presence)
+  @hasMany(() => Presence)
   public presence: HasMany<typeof Presence>
 
   @column.dateTime({ autoCreate: true })

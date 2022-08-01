@@ -27,6 +27,9 @@ export default class UpdateActivityValidator {
     name: schema.string.optional(),
     description: schema.string.optional(),
     timeInStart: schema.date.optional({ format: 'HH:mm' }, []),
+    timeLateStart: schema.date.optional({ format: 'HH:mm' }, [
+      rules.afterField('timeInStart'),
+    ]),
     timeInEnd: schema.date.optional({ format: 'HH:mm' }, []),
     timeOutStart: schema.date.optional({ format: 'HH:mm' }, []),
     timeOutEnd: schema.date.optional({ format: 'HH:mm' }, []),

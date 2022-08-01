@@ -34,10 +34,8 @@ export default class UpdateActivityValidator {
     timeOutStart: schema.date.optional({ format: 'HH:mm' }, []),
     timeOutEnd: schema.date.optional({ format: 'HH:mm' }, []),
     type: schema.enum.optional(['scheduled', 'standalone']),
+    scheduleActive: schema.boolean.optional(),
     days: schema.string.optional(),
-    scheduleActive: schema.boolean.optional([
-      rules.nullable()
-    ])
   })
 
   /**

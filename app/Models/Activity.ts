@@ -32,10 +32,10 @@ export default class Activity extends BaseModel {
   public type: string
 
   @column()
-  public days: string
+  public scheduleActive: boolean
 
   @column()
-  public scheduleActive: boolean
+  public days: string
 
   @hasMany(() => Presence)
   public presence: HasMany<typeof Presence>

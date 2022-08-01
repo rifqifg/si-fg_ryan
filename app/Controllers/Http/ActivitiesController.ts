@@ -1,7 +1,9 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import Database from '@ioc:Adonis/Lucid/Database';
 import Activity from 'App/Models/Activity';
 import CreateActivityValidator from 'App/Validators/CreateActivityValidator'
 import UpdateActivityValidator from 'App/Validators/UpdateActivityValidator';
+import { DateTime, Interval } from 'luxon';
 
 export default class ActivitiesController {
   public async index({ request, response }: HttpContextContract) {
@@ -36,8 +38,8 @@ export default class ActivitiesController {
         timeOutStart: payload.timeOutStart.toFormat('HH:mm'),
         timeOutEnd: payload.timeOutEnd.toFormat('HH:mm'),
         type: payload.type,
-        days: payload.days,
-        scheduleActive: payload.scheduleActive
+        scheduleActive: payload.scheduleActive,
+        days: payload.days
       }
       const data = await Activity.create(formattedPayload)
 
@@ -50,42 +52,76 @@ export default class ActivitiesController {
     }
   }
 
-  // public async create({ }: HttpContextContract) { }
-
-  // public async show({ }: HttpContextContract) { }
-
-  // public async edit({ }: HttpContextContract) { }
-
   public async update({ request, response, params }: HttpContextContract) {
     const { id } = params
     const payload = await request.validate(UpdateActivityValidator)
 
-    // TODO : validasi jadwal yang tabrakan kalau scheduleActive true
-    // if (payload.scheduleActive) {
-    //   const scheduledActivities = await Activity.query().where('scheduleActive', true).andWhereNot('id', id)
-    //   scheduledActivities.map(activity => {
-    //     console.log('\n===> START cek aktivitas ', activity.name);
-    //     let payloadDays: string[] = JSON.parse(payload.days!)
-    //     let dbDays: string[] = JSON.parse(activity.days)
+    const payloadDay = payload.days?.split('')
 
-    //     payloadDays.map(day => {
-    //       const checkDay = dbDays.indexOf(day)
-    //       if (checkDay + 1) {
-    //         console.log('day ', day, 'index ', checkDay, ' val day ', dbDays[checkDay]);
+    let queryGetDataHaveDay = `
+    SELECT *
+    FROM activities a
+    WHERE a.id <> '${id}'
+      AND schedule_active = true
+      AND
+      (`
+    payloadDay?.forEach(day => {
+      queryGetDataHaveDay += `days like '%${day}%'`
+      queryGetDataHaveDay += ' OR '
+    })
+    queryGetDataHaveDay = queryGetDataHaveDay!.slice(0, -3)
+    queryGetDataHaveDay += ')'
 
-    //         console.log('payload time in start ', payload.timeInStart?.toISOTime());
-    //         console.log('db time in end ', activity.timeInStart.toISOTime());
+    const { rows: dataHariSama } = await Database.rawQuery(queryGetDataHaveDay)
+    // response.ok(dataHariSama)
+    dataHariSama.forEach(data => {
+      const dataTimeInEnd = DateTime.fromFormat(data.time_in_end, 'HH:mm:ss')
+      const dataTimeInStart = DateTime.fromFormat(data.time_in_start, 'HH:mm:ss')
+      const dataTimeOutEnd = DateTime.fromFormat(data.time_out_end, 'HH:mm:ss')
+      const dataTimeOutStart = DateTime.fromFormat(data.time_out_start, 'HH:mm:ss')
 
-    //       }
-    //     })
 
-    //     response.ok(payloadDays);
-    //     console.log('===> END cek aktivitas ', activity.name);
-    //   })
+      //is time_in_start   INSIDE  old time_in ???
+      const hitungWaktuMasuk = dataTimeInEnd.diff(payload.timeInStart!, ["minutes"])
+      const hitungWaktuMasuk2 = dataTimeInStart.diff(payload.timeInStart!, ["minutes"])
+      if (hitungWaktuMasuk.minutes >= 0 && hitungWaktuMasuk2.minutes <= 0) {
+        return response.badRequest({
+          message: `Waktu AWAL presensi kegiatan ini bertentangan dengan waktu MASUK kegiatan ${data.name}`
+        })
+      }
 
-    // }
+      // is time_in_end   INSIDE old time_in ???
+      const hitungWaktuMasukAkhir = dataTimeInEnd.diff(payload.timeInEnd!, ["minutes"])
+      const hitungWaktuMasukAkhir2 = dataTimeInStart.diff(payload.timeInEnd!, ["minutes"])
+      if (hitungWaktuMasukAkhir.minutes >= 0 && hitungWaktuMasukAkhir2.minutes <= 0) {
+        return response.badRequest({
+          message: `Waktu AKHIR presensi MASUK kegiatan ini bertentangan dengan waktu MASUK kegiatan ${data.name}`
+        })
+      }
 
-    // return true
+      //is time_out_start  INSIDE old time_out ???
+      const hitungWaktuKeluarAwal = dataTimeOutEnd.diff(payload.timeOutStart!, ["minutes"])
+      const hitungWaktuKeluarAkhir = dataTimeOutStart.diff(payload.timeOutStart!, ["minutes"])
+      if (hitungWaktuKeluarAwal.minutes >= 0 && hitungWaktuKeluarAkhir.minutes <= 0) {
+        return response.badRequest({
+          message: `Waktu AWAL presensi PULANG kegiatan ini bertentangan dengan waktu PULANG kegiatan ${data.name}`
+        })
+      }
+
+      //is time_out_end  INSIDE old time_out ???
+      const hitungWaktuKeluarAwal2 = dataTimeOutEnd.diff(payload.timeOutEnd!, ["minutes"])
+      const hitungWaktuKeluarAkhir2 = dataTimeOutStart.diff(payload.timeOutEnd!, ["minutes"])
+      if (hitungWaktuKeluarAwal2.minutes >= 0 && hitungWaktuKeluarAkhir2.minutes <= 0) {
+        return response.badRequest({
+          message: `Waktu AKHIR presensi PULANG kegiatan ini bertentangan dengan waktu PULANG kegiatan ${data.name}`
+        })
+      }
+
+      // console.log(hitungWaktuKeluarAwal2.toObject(), hitungWaktuKeluarAkhir2.toObject(), dataTimeInStart.toISOTime(), payload.timeOutStart?.toISOTime());
+    });
+
+    response.ok("sip okeh")
+    return false
     try {
       let formattedPayload = {}
 
@@ -97,8 +133,8 @@ export default class ActivitiesController {
       payload.timeOutStart ? formattedPayload['timeOutStart'] = payload.timeOutStart!.toFormat('HH:mm') : ''
       payload.timeOutEnd ? formattedPayload['timeOutEnd'] = payload.timeOutEnd!.toFormat('HH:mm') : ''
       payload.type ? formattedPayload['type'] = payload.type : ''
-      payload.days ? formattedPayload['days'] = payload.days : ''
-      formattedPayload['scheduleActive'] = payload.scheduleActive
+      payload.scheduleActive ? formattedPayload['scheduleActive'] = payload.scheduleActive : ''
+      payload.days ? formattedPayload['days'] = payload.days : ""
 
       const findData = await Activity.findOrFail(id)
       const data = await findData.merge(formattedPayload).save()
@@ -111,6 +147,7 @@ export default class ActivitiesController {
       response.badRequest(error)
     }
   }
+
 
   public async destroy({ params, response }: HttpContextContract) {
     const { id } = params

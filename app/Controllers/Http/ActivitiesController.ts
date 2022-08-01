@@ -120,8 +120,8 @@ export default class ActivitiesController {
       // console.log(hitungWaktuKeluarAwal2.toObject(), hitungWaktuKeluarAkhir2.toObject(), dataTimeInStart.toISOTime(), payload.timeOutStart?.toISOTime());
     });
 
-    response.ok("sip okeh")
-    return false
+    // response.ok("sip okeh")
+    // return false
     try {
       let formattedPayload = {}
 

@@ -60,6 +60,32 @@ export default class ActivitiesController {
     const { id } = params
     const payload = await request.validate(UpdateActivityValidator)
 
+    // TODO : validasi jadwal yang tabrakan kalau scheduleActive true
+    // if (payload.scheduleActive) {
+    //   const scheduledActivities = await Activity.query().where('scheduleActive', true).andWhereNot('id', id)
+    //   scheduledActivities.map(activity => {
+    //     console.log('\n===> START cek aktivitas ', activity.name);
+    //     let payloadDays: string[] = JSON.parse(payload.days!)
+    //     let dbDays: string[] = JSON.parse(activity.days)
+
+    //     payloadDays.map(day => {
+    //       const checkDay = dbDays.indexOf(day)
+    //       if (checkDay + 1) {
+    //         console.log('day ', day, 'index ', checkDay, ' val day ', dbDays[checkDay]);
+
+    //         console.log('payload time in start ', payload.timeInStart?.toISOTime());
+    //         console.log('db time in end ', activity.timeInStart.toISOTime());
+
+    //       }
+    //     })
+
+    //     response.ok(payloadDays);
+    //     console.log('===> END cek aktivitas ', activity.name);
+    //   })
+
+    // }
+
+    // return true
     try {
       let formattedPayload = {}
 
@@ -72,13 +98,13 @@ export default class ActivitiesController {
       payload.timeOutEnd ? formattedPayload['timeOutEnd'] = payload.timeOutEnd!.toFormat('HH:mm') : ''
       payload.type ? formattedPayload['type'] = payload.type : ''
       payload.days ? formattedPayload['days'] = payload.days : ''
-      payload.scheduleActive ? formattedPayload['scheduleActive'] = payload.scheduleActive : ''
+      formattedPayload['scheduleActive'] = payload.scheduleActive
 
       const findData = await Activity.findOrFail(id)
       const data = await findData.merge(formattedPayload).save()
 
       response.created({
-        message: "Create data success", data
+        message: "Update data success", data
       })
     } catch (error) {
       console.log(error);

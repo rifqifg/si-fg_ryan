@@ -50,7 +50,7 @@ export default class CreateActivityValidator {
       rules.afterField('timeOutStart'),
     ]),
     type: schema.enum(['scheduled', 'standalone']),
-    days: schema.string.optional({}, [
+    days: schema.string.optional([
       rules.requiredWhen('type', '=', 'scheduled')
     ]),
     scheduleActive: schema.boolean.optional([

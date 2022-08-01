@@ -28,6 +28,15 @@ export default class Activity extends BaseModel {
   @column()
   public timeOutEnd: string
 
+  @column()
+  public type: string
+
+  @column()
+  public days: string
+
+  @column()
+  public scheduleActive: boolean
+
   @hasMany(() => Presence)
   public presence: HasMany<typeof Presence>
 

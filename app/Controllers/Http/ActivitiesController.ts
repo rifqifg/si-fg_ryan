@@ -35,6 +35,9 @@ export default class ActivitiesController {
         timeInEnd: payload.timeInEnd.toFormat('HH:mm'),
         timeOutStart: payload.timeOutStart.toFormat('HH:mm'),
         timeOutEnd: payload.timeOutEnd.toFormat('HH:mm'),
+        type: payload.type,
+        days: payload.days,
+        scheduleActive: payload.scheduleActive
       }
       const data = await Activity.create(formattedPayload)
 
@@ -67,6 +70,9 @@ export default class ActivitiesController {
       payload.timeInEnd ? formattedPayload['timeInEnd'] = payload.timeInEnd!.toFormat('HH:mm') : ''
       payload.timeOutStart ? formattedPayload['timeOutStart'] = payload.timeOutStart!.toFormat('HH:mm') : ''
       payload.timeOutEnd ? formattedPayload['timeOutEnd'] = payload.timeOutEnd!.toFormat('HH:mm') : ''
+      payload.type ? formattedPayload['type'] = payload.type : ''
+      payload.days ? formattedPayload['days'] = payload.days : ''
+      payload.scheduleActive ? formattedPayload['scheduleActive'] = payload.scheduleActive : ''
 
       const findData = await Activity.findOrFail(id)
       const data = await findData.merge(formattedPayload).save()

@@ -27,9 +27,9 @@ export default class UsersController {
             response.ok({
                 message: 'login succesfull',
                 data: auth.user,
+                token,
                 acl,
                 acl2,
-                token
             })
         } catch (error) {
             console.log(error);
@@ -113,10 +113,10 @@ export default class UsersController {
 
 
     public async password_encrypt({ request, response }: HttpContextContract) {
-        const { password } = request.body()
+        const { password } = request.qs()
         const encrypted_password = await Hash.make(password)
         const new_uuid = await uuidv4()
-        response.ok({ encrypted_password, new_uuid })
+        response.ok({ encrypted_password, new_uuid, password })
     }
 
 

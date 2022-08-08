@@ -6,23 +6,25 @@ import UpdateActivityValidator from 'App/Validators/UpdateActivityValidator';
 import { DateTime } from 'luxon';
 
 export default class ActivitiesController {
-  public async index({ request, response }: HttpContextContract) {
+  public async index({ request, response, auth }: HttpContextContract) {
     const { page = 1, limit = 10, keyword = "", orderBy = "name", orderDirection = 'ASC' } = request.qs()
     const data = await Activity.query()
       .whereILike('name', `%${keyword}%`)
+      .andWhere('owner', auth.user!.id)
       .orderBy(orderBy, orderDirection)
       .paginate(page, limit)
 
     response.ok({ message: "Data Berhasil Didapatkan", data })
   }
 
-  public async getActivity({ request, response }: HttpContextContract) {
+  public async getActivity({ request, response, auth }: HttpContextContract) {
     const { keyword = "", orderBy = "name", orderDirection = 'ASC' } = request.qs()
 
     const data = await Activity.query()
       .whereILike('name', `%${keyword}%`)
+      .andWhere('owner', auth.user!.id)
       .orderBy(orderBy, orderDirection)
-    response.ok({ message: "Data Berhasil Didapatkan 2", data })
+    response.ok({ message: "Data Berhasil Didapatkan", data })
   }
 
   public async store({ request, response }: HttpContextContract) {

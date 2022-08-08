@@ -60,8 +60,8 @@ export default class AuthMiddleware {
   /**
    * Handle request
    */
-  public async handle (
-    { auth }: HttpContextContract,
+  public async handle(
+    { auth, response }: HttpContextContract,
     next: () => Promise<void>,
     customGuards: (keyof GuardsList)[]
   ) {
@@ -71,6 +71,11 @@ export default class AuthMiddleware {
      */
     const guards = customGuards.length ? customGuards : [auth.name]
     await this.authenticate(auth, guards)
+
+    if (!auth.user!.verified) {
+      console.log("user belum verifikasi");
+      return response.unauthorized({ message: "Email belum di verifikasi" })
+    }
     await next()
   }
 }

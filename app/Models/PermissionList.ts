@@ -2,7 +2,7 @@ import { DateTime } from 'luxon'
 import { BaseModel, column } from '@ioc:Adonis/Lucid/Orm'
 
 export default class PermissionList extends BaseModel {
-  @column()
+  @column({ serializeAs: null })
   public roleId: string
 
   @column()

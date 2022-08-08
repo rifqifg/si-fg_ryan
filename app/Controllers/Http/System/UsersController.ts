@@ -5,6 +5,8 @@ import User from 'App/Models/User'
 // import Env from '@ioc:Adonis/Core/Env'
 import { v4 as uuidv4 } from 'uuid'
 import Hash from '@ioc:Adonis/Core/Hash'
+import Permission from 'App/Models/Permission'
+import PermissionList from 'App/Models/PermissionList'
 
 export default class UsersController {
     public async login({ request, response, auth }: HttpContextContract) {
@@ -19,13 +21,20 @@ export default class UsersController {
 
         try {
             const token = await auth.use('api').attempt(payload.email, payload.password)
+            const acl = await Permission.query().select('role_id', 'menu_id', 'type', 'function').where('role_id', auth.user!.role)
+            const acl2 = await PermissionList.query().select('role_id', 'id', 'type').where('role_id', auth.user!.role)
+
             response.ok({
                 message: 'login succesfull',
                 data: auth.user,
+                acl,
+                acl2,
                 token
             })
-        } catch {
-            return response.badRequest('Invalid credentials')
+        } catch (error) {
+            console.log(error);
+
+            return response.badRequest({ "message": 'Invalid credentials', error })
         }
     }
 

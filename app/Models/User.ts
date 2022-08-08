@@ -1,7 +1,8 @@
 import { DateTime } from 'luxon'
 import Hash from '@ioc:Adonis/Core/Hash'
-import { column, beforeSave, BaseModel, beforeCreate, afterCreate } from '@ioc:Adonis/Lucid/Orm'
+import { column, beforeSave, BaseModel, beforeCreate, afterCreate, hasOne, HasOne } from '@ioc:Adonis/Lucid/Orm'
 import { v4 as uuidv4 } from 'uuid'
+import Role from './Role'
 let newId = ""
 
 export default class User extends BaseModel {
@@ -13,6 +14,12 @@ export default class User extends BaseModel {
 
   @column()
   public role: string
+
+  @hasOne(() => Role, {
+    foreignKey: 'name',
+    localKey: 'role'
+  })
+  public roles: HasOne<typeof Role>
 
   @column()
   public employeeId: string

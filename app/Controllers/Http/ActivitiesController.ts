@@ -3,7 +3,7 @@ import Database from '@ioc:Adonis/Lucid/Database';
 import Activity from 'App/Models/Activity';
 import CreateActivityValidator from 'App/Validators/CreateActivityValidator'
 import UpdateActivityValidator from 'App/Validators/UpdateActivityValidator';
-import { DateTime, Interval } from 'luxon';
+import { DateTime } from 'luxon';
 
 export default class ActivitiesController {
   public async index({ request, response }: HttpContextContract) {

@@ -37,6 +37,9 @@ export default class Activity extends BaseModel {
   @column()
   public days: string
 
+  @column({ serializeAs: null })
+  public owner: string
+
   @hasMany(() => Presence)
   public presence: HasMany<typeof Presence>
 

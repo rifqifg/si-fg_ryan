@@ -45,7 +45,7 @@ export default class ActivitiesController {
     response.ok({ message: "Data Berhasil Didapatkan", data })
   }
 
-  public async store({ request, response }: HttpContextContract) {
+  public async store({ request, response, auth }: HttpContextContract) {
     const payload = await request.validate(CreateActivityValidator)
 
     try {
@@ -59,7 +59,8 @@ export default class ActivitiesController {
         timeOutEnd: payload.timeOutEnd.toFormat('HH:mm'),
         type: payload.type,
         scheduleActive: payload.scheduleActive,
-        days: payload.days
+        days: payload.days,
+        owner: auth.user!.id
       }
       const data = await Activity.create(formattedPayload)
 

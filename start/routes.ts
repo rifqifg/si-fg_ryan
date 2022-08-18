@@ -40,3 +40,16 @@ Route.get('/division-list/', 'DivisionsController.getDivision').as('division.lis
 Route.get('/activity-list/', 'ActivitiesController.getActivity').as('activity.list').middleware(['auth', 'checkRole:admin,piket,qa'])
 Route.post('/presence/scan', 'PresencesController.scanRFID').as('presence.scan').middleware(['auth', 'checkRole:admin,piket,qa'])
 Route.get('/presence/:id/recap', 'PresencesController.recap').as('presence.recap').middleware(['auth', 'checkRole:admin,piket,qa'])
+Route.group(() => {
+  Route.resource('modules', 'System/ModulesController').apiOnly().middleware({ '*': ['auth', 'checkRole:admin,superAdmin'] }).as('modules')
+  Route.resource('modules.menus', 'System/MenusController').apiOnly().middleware({ '*': ['auth', 'checkRole:admin,superAdmin'] }).as('menus')
+  Route.resource('modules.menus.functions', 'System/FunctionsController').apiOnly().middleware({ '*': ['auth', 'checkRole:admin,superAdmin'] }).as('functions')
+}).prefix('/system')
+
+
+// be api > https://localhost:3000/module/{{id_module}}/menu/{{id_menu}}/function/
+// GET   > https://localhost:3000/module/
+// GET   > https://localhost:3000/module/{{id_module}}
+// GET   > https://localhost:3000/module/{{id_module}}/menu
+// GET   > https://localhost:3000/module/{{id_module}}/menus/{{id_menu}}
+// GET   > https://localhost:3000/module/{{id_module}}/menus/{{id_menu}}/function/

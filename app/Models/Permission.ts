@@ -3,10 +3,10 @@ import { BaseModel, column } from '@ioc:Adonis/Lucid/Orm'
 
 export default class Permission extends BaseModel {
   @column({ serializeAs: null })
-  public role_id: string
+  public roleId: string
 
   @column()
-  public menu_id: string
+  public menuId: string
 
   @column()
   public type: string
@@ -14,10 +14,10 @@ export default class Permission extends BaseModel {
   @column()
   public function: object
 
-  @column.dateTime({ autoCreate: true, })
+  @column.dateTime({ autoCreate: true, serializeAs: null })
   public createdAt: DateTime
 
-  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  @column.dateTime({ autoCreate: true, autoUpdate: true, serializeAs: null })
   public updatedAt: DateTime
 }
 

@@ -7,6 +7,7 @@ export default class extends BaseSchema {
     this.schema.createTable(this.tableName, (table) => {
       table.string('id').notNullable().primary()
       table.string('menu_id').references('id').inTable('menus').onDelete('NO ACTION')
+      table.string('description')
       /**
        * Uses timestamptz for PostgreSQL and DATETIME2 for MSSQL
        */

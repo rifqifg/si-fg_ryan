@@ -6,6 +6,9 @@ export default class Function extends BaseModel {
   public id: string
 
   @column()
+  public description: string
+
+  @column()
   public menuId: string
 
   @column.dateTime({ autoCreate: true, serializeAs: null })

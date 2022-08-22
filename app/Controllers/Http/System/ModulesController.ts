@@ -20,8 +20,9 @@ export default class ModulesController {
 
   public async store({ request, response }: HttpContextContract) {
     const createModuleSchema = schema.create({
-      id: schema.string({}, [
-        rules.unique({ table: 'modules', column: 'id' })
+      id: schema.string([
+        rules.unique({ table: 'modules', column: 'id' }),
+        rules.alphaNum({ allow: ['underscore', 'dash'] })
       ]),
       description: schema.string.optional()
     })
@@ -39,7 +40,7 @@ export default class ModulesController {
   public async show({ params, response }: HttpContextContract) {
     const { id } = params
     try {
-      const data = await Module.query().preload('menus').where('id', id)
+      const data = await Module.query().preload('menus', query => query.preload('functions')).where('id', id)
       response.ok({ message: "Berhasil mengambil data", data })
     } catch (error) {
       console.log(error);
@@ -53,7 +54,8 @@ export default class ModulesController {
       const { id } = params
       const updateModuleScheme = schema.create({
         id: schema.string.optional({}, [
-          rules.unique({ table: 'modules', column: 'id' })
+          rules.unique({ table: 'modules', column: 'id' }),
+          rules.alphaNum({ allow: ['underscore', 'dash'] })
         ]),
         description: schema.string.nullableAndOptional()
       })

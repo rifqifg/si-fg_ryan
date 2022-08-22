@@ -18,3 +18,8 @@ and t.day::date not in (select time_in::date
 						and time_in between '2022-07-25' and '2022-08-24'
 						) -- tanggal yang sudah ada presensi nya
 and t.day::date not in ('2022-08-19') -- hari libur
+
+select now();
+select *
+from menus
+where id like'%mnuActivity%';

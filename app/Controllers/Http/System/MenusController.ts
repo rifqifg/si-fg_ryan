@@ -27,8 +27,10 @@ export default class MenusController {
 
     const createMenuSchema = schema.create({
       id: schema.string({}, [
-        rules.unique({ table: 'menus', column: 'id' })
-      ])
+        rules.unique({ table: 'menus', column: 'id' }),
+        rules.alphaNum({ allow: ['underscore', 'dash'] })
+      ]),
+      description: schema.string.optional()
     })
 
     const payload = await request.validate({ schema: createMenuSchema })
@@ -37,7 +39,7 @@ export default class MenusController {
       const data = await Menu.create(payload)
       response.created({ message: "Berhasil menyimpan data", data })
     } catch (error) {
-      response.badRequest({ message: "Gagal menyimpan data", error })
+      response.badRequest({ message: "Gagal menyimpan data", error: error.message })
     }
   }
 
@@ -55,10 +57,12 @@ export default class MenusController {
 
   public async update({ params, request, response }: HttpContextContract) {
     const { id } = params
-    const updateMenuSchema = await schema.create({
-      id: schema.string({}, [
-        rules.unique({ table: 'menus', column: 'id' })
-      ])
+    const updateMenuSchema = schema.create({
+      id: schema.string.optional({}, [
+        rules.unique({ table: 'menus', column: 'id' }),
+        rules.alphaNum({ allow: ['underscore', 'dash'] })
+      ]),
+      description: schema.string.optional()
     })
 
     const payload = await request.validate({ schema: updateMenuSchema })

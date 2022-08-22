@@ -7,6 +7,9 @@ export default class Menu extends BaseModel {
   public id: string
 
   @column()
+  public description: string
+
+  @column()
   public moduleId: string
 
   @hasMany(() => Function)

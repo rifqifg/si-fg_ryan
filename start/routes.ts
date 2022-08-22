@@ -43,7 +43,7 @@ Route.get('/presence/:id/recap', 'PresencesController.recap').as('presence.recap
 Route.group(() => {
   Route.shallowResource('modules', 'System/ModulesController').apiOnly().middleware({ '*': ['auth', 'checkRole:admin,superAdmin'] }).as('modules')
   Route.shallowResource('modules.menus', 'System/MenusController').apiOnly().middleware({ '*': ['auth', 'checkRole:admin,superAdmin'] }).as('menus')
-  Route.shallowResource('modules.menus.functions', 'System/FunctionsController').apiOnly().middleware({ '*': ['auth', 'checkRole:admin,superAdmin'] }).as('functions')
+  Route.shallowResource('menus.functions', 'System/FunctionsController').apiOnly().middleware({ '*': ['auth', 'checkRole:admin,superAdmin'] }).as('functions')
 }).prefix('/system')
 
 

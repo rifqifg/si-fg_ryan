@@ -1,6 +1,7 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Module from 'App/Models/Module'
 import { schema, rules } from '@ioc:Adonis/Core/Validator'
+import Database from '@ioc:Adonis/Lucid/Database'
 
 export default class ModulesController {
   public async index({ request, response }: HttpContextContract) {
@@ -41,7 +42,11 @@ export default class ModulesController {
     const { id } = params
     try {
       const data = await Module.query().preload('menus', query => query.preload('functions')).where('id', id)
-      response.ok({ message: "Berhasil mengambil data", data })
+      const data2 = await Database.from('modules').select('*') //select("menus.*", "modules.description")
+        .leftJoin('menus', query => query.on('modules.id', '=', 'menus.module_id'))
+        .where('modules.id', id)
+      // .toSQL()
+      response.ok({ message: "Berhasil mengambil data", data, data2 })
     } catch (error) {
       console.log(error);
 

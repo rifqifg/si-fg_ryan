@@ -68,7 +68,7 @@ export default class MenusController {
     const payload = await request.validate({ schema: updateMenuSchema })
     try {
       await Menu.findOrFail(id)
-      await Menu.query().where('id', id).update({ id: payload.id })
+      await Menu.query().where('id', id).update(payload)
 
       response.ok({ message: "Berhasil mengubah data" })
     } catch (error) {

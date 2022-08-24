@@ -54,6 +54,13 @@ export default class FunctionsController {
     }
   }
 
+  // create ini untuk nanti get all pas mau bikin permissions
+  public async create({ response, params }: HttpContextContract) {
+    const data = await Function.findBy('menu_id', params.menu_id)
+    response.ok({ message: "Berhasil mengambil data", data })
+  }
+
+
   public async update({ params, request, response }: HttpContextContract) {
     const { id } = params
     const updateFunctionSchema = schema.create({

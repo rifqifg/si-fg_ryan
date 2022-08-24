@@ -18,9 +18,9 @@ export default class ModulesController {
     }
   }
 
-  // creat ini untuk nanti get all pas mau bikin permissions
+  // create ini untuk nanti get all pas mau bikin permissions
   public async create({ response }: HttpContextContract) {
-    const data = await Module.query().preload('menus', menus => menus.preload('functions'))
+    const data = await Module.all()
     response.ok({ message: "Berhasil mengambil data", data })
   }
 

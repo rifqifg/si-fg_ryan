@@ -1,7 +1,6 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Module from 'App/Models/Module'
 import { schema, rules } from '@ioc:Adonis/Core/Validator'
-import Database from '@ioc:Adonis/Lucid/Database'
 
 export default class ModulesController {
   public async index({ request, response }: HttpContextContract) {
@@ -19,9 +18,9 @@ export default class ModulesController {
     }
   }
 
+  // creat ini untuk nanti get all pas mau bikin permissions
   public async create({ response }: HttpContextContract) {
     const data = await Module.query().preload('menus', menus => menus.preload('functions'))
-
     response.ok({ message: "Berhasil mengambil data", data })
   }
 
@@ -48,10 +47,7 @@ export default class ModulesController {
     const { id } = params
     try {
       const data = await Module.query().preload('menus', query => query.preload('functions')).where('id', id)
-      const data2 = await Database.from('modules').select('*') //select("menus.*", "modules.description")
-        .leftJoin('menus', query => query.on('modules.id', '=', 'menus.module_id'))
-        .where('modules.id', id)
-      response.ok({ message: "Berhasil mengambil data", data, data2 })
+      response.ok({ message: "Berhasil mengambil data", data })
     } catch (error) {
       console.log(error);
 

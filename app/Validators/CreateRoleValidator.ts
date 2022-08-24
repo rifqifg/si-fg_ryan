@@ -26,10 +26,10 @@ export default class CreateRoleValidator {
 
   public schema = schema.create({
     name: schema.string({}, [
-      rules.alphaNum({ allow: ['dash', 'underscore'] })
+      rules.unique({ table: 'roles', column: 'id' }),
+      rules.alphaNum({ allow: ['underscore', 'dash'] })
     ]),
-    description: schema.string.optional(),
-    permissions: schema.object.optional().anyMembers()
+    description: schema.string.optional()
   })
 
   /**

@@ -19,6 +19,12 @@ export default class ModulesController {
     }
   }
 
+  public async create({ response }: HttpContextContract) {
+    const data = await Module.query().preload('menus', menus => menus.preload('functions'))
+
+    response.ok({ message: "Berhasil mengambil data", data })
+  }
+
   public async store({ request, response }: HttpContextContract) {
     const createModuleSchema = schema.create({
       id: schema.string([
@@ -45,7 +51,6 @@ export default class ModulesController {
       const data2 = await Database.from('modules').select('*') //select("menus.*", "modules.description")
         .leftJoin('menus', query => query.on('modules.id', '=', 'menus.module_id'))
         .where('modules.id', id)
-      // .toSQL()
       response.ok({ message: "Berhasil mengambil data", data, data2 })
     } catch (error) {
       console.log(error);

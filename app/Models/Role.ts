@@ -8,6 +8,9 @@ export default class Role extends BaseModel {
   @column()
   public description: string
 
+  @column()
+  public permissions: object
+
   @column.dateTime()
   public deletedAt: DateTime
 

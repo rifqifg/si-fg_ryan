@@ -57,7 +57,7 @@ export default class MenusController {
 
   // create ini untuk nanti get all pas mau bikin permissions
   public async create({ params, response }: HttpContextContract) {
-    const data = await Menu.findBy('module_id', params.module_id)
+    const data = await Menu.query().select('id', 'description').where('module_id', params.module_id)
     response.ok({ message: "Berhasil mengambil data", data })
   }
 

@@ -4,15 +4,20 @@ import { schema, rules } from '@ioc:Adonis/Core/Validator'
 
 export default class ModulesController {
   public async index({ request, response }: HttpContextContract) {
-    const { page = 1, limit = 10, keyword = "" } = request.qs()
+    const { page = 1, limit = 10, keyword = "", mode = "pagination" } = request.qs()
 
     try {
-      const data = await Module
-        .query()
-        .whereILike('id', `%${keyword}%`)
-        .orderBy('id')
-        .paginate(page, limit)
-      response.ok({ message: "Berhasil mengambil data", data })
+      if (mode === "pagination") {
+        const data = await Module
+          .query()
+          .whereILike('id', `%${keyword}%`)
+          .orderBy('id')
+          .paginate(page, limit)
+        response.ok({ message: "Berhasil mengambil data", data })
+      } else if (mode === "tree") {
+        const data = await Module.query().preload('menus', menus => menus.preload('functions'))
+        response.ok({ message: "Berhasil mengambil data", data })
+      }
     } catch (error) {
       response.badRequest({ message: "Gagal mengambil data", error })
     }

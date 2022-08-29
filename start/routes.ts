@@ -45,7 +45,10 @@ Route.group(() => {
   Route.shallowResource('modules.menus', 'System/MenusController').except(['edit']).middleware({ '*': ['auth', 'checkRole:admin,superAdmin'] }).as('menus')
   Route.shallowResource('menus.functions', 'System/FunctionsController').except(['edit']).middleware({ '*': ['auth', 'checkRole:admin,superAdmin'] }).as('functions')
   Route.resource('/roles', 'System/RolesController').apiOnly().middleware({ '*': ['auth', 'checkRole:admin,superAdmin'] }).as('roles')
-  Route.post('/roles/:id/permissions', 'System/RolesController.updatePermissions').middleware(['auth', 'checkRole:admin,superAdmin']).as('roles.permissions.update')
+  // Route.post('/roles/:id/permissions', 'System/RolesController.updatePermissions').middleware(['auth', 'checkRole:admin,superAdmin']).as('roles.permissions.update')
+  Route.resource('roles.modules', 'System/RolesModulesController').only(['store', 'destroy', 'update']).middleware({ '*': ['auth', 'checkRole:admin,superAdmin'] }).as('roles.modules')
+  Route.resource('roles.menus', 'System/RolesMenusController').only(['store', 'destroy', 'update']).middleware({ '*': ['auth', 'checkRole:admin,superAdmin'] }).as('roles.menus')
+  Route.resource('roles.functions', 'System/RolesFunctionsController').only(['store', 'destroy', 'update']).middleware({ '*': ['auth', 'checkRole:admin,superAdmin'] }).as('roles.functions')
 }).prefix('/system')
 
 

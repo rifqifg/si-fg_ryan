@@ -22,6 +22,7 @@ export default class RolesController {
 
   public async store({ request, response }: HttpContextContract) {
     const payload = await request.validate(CreateRoleValidator)
+    payload['permissions'] = { modules: [] }  //predefined untuk bikin permissions
     try {
       const data = await Role.create(payload)
       response.created({ message: "Berhasil menyimpan data", data })
@@ -29,40 +30,6 @@ export default class RolesController {
       response.badRequest({ message: "Gagal menyimpan data", error })
     }
     response.ok(payload)
-  }
-  public async updatePermissions({ params, request, response }: HttpContextContract) {
-    const { id } = params
-    const updatePermissionsScheme = schema.create({
-      permissions: schema.array().members(
-        schema.object().members({
-          id: schema.string({}, [rules.exists({ table: "modules", column: "id" })]),
-          type: schema.enum(['show', 'disabled']),
-          menus: schema.array.nullableAndOptional().members(
-            schema.object().members({
-              id: schema.string({}, [rules.exists({ table: 'menus', column: 'id' })]),
-              type: schema.enum(['show', 'disabled']),
-              functions: schema.array.nullableAndOptional().members(
-                schema.object().members({
-                  id: schema.string({}, [rules.exists({ table: 'functions', column: 'id' })]),
-                  type: schema.enum(['show', 'disabled']),
-                }))
-            }))
-        }))
-    })
-
-    const payload = await request.validate({ schema: updatePermissionsScheme })
-    const jsonPayload = JSON.stringify(payload)
-    const data = await Role.findOrFail(id)
-
-    try {
-      await data.merge({ permissions: jsonPayload }).save()
-      response.ok({ message: "Permissions berhasil di simpan", data })
-    } catch (error) {
-      console.log(error);
-      response.badRequest({ message: "Gagal menyimpan data permissions", error: error.message })
-    }
-
-    response.ok({ message: "Berhasil mengubah data", id })
   }
 
   public async show({ params, response }: HttpContextContract) {
@@ -114,4 +81,40 @@ export default class RolesController {
       response.badRequest({ message: "Gagal menghapus data", error: error.message })
     }
   }
+
+
+  // public async updatePermissions({ params, request, response }: HttpContextContract) {
+  //   const { id } = params
+  //   const updatePermissionsScheme = schema.create({
+  //     permissions: schema.array().members(
+  //       schema.object().members({
+  //         id: schema.string({}, [rules.exists({ table: "modules", column: "id" })]),
+  //         type: schema.enum(['show', 'disabled']),
+  //         menus: schema.array.nullableAndOptional().members(
+  //           schema.object().members({
+  //             id: schema.string({}, [rules.exists({ table: 'menus', column: 'id' })]),
+  //             type: schema.enum(['show', 'disabled']),
+  //             functions: schema.array.nullableAndOptional().members(
+  //               schema.object().members({
+  //                 id: schema.string({}, [rules.exists({ table: 'functions', column: 'id' })]),
+  //                 type: schema.enum(['show', 'disabled']),
+  //               }))
+  //           }))
+  //       }))
+  //   })
+
+  //   const payload = await request.validate({ schema: updatePermissionsScheme })
+  //   const jsonPayload = JSON.stringify(payload)
+  //   const data = await Role.findOrFail(id)
+
+  //   try {
+  //     await data.merge({ permissions: jsonPayload }).save()
+  //     response.ok({ message: "Permissions berhasil di simpan", data })
+  //   } catch (error) {
+  //     console.log(error);
+  //     response.badRequest({ message: "Gagal menyimpan data permissions", error: error.message })
+  //   }
+
+  //   response.ok({ message: "Berhasil mengubah data", id })
+  // }
 }

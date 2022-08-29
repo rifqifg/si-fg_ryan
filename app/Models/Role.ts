@@ -9,7 +9,7 @@ export default class Role extends BaseModel {
   public description: string
 
   @column()
-  public permissions: string
+  public permissions: object
 
   @column.dateTime({ serializeAs: null })
   public deletedAt: DateTime

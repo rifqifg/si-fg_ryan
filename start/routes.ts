@@ -19,10 +19,11 @@
 */
 
 import Route from '@ioc:Adonis/Core/Route'
+import User from 'App/Models/User'
 
 Route.get('/', async ({ auth }) => {
-  return { hello: 'you are logged in', data: auth.user }
-
+  const data = await User.query().preload('roles').where('id', auth.user!.id)
+  return { message: 'you are logged in', data }
 }).middleware("auth")
 
 Route.post('/password-encrypt', 'System/UsersController.password_encrypt').as('passwordEncrypt')

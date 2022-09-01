@@ -23,10 +23,11 @@ export default class UsersController {
             const token = await auth.use('api').attempt(payload.email, payload.password)
             const acl = await Permission.query().select('role_id', 'menu_id', 'type', 'function').where('role_id', auth.user!.role)
             const acl2 = await PermissionList.query().select('role_id', 'id', 'type').where('role_id', auth.user!.role)
+            const user = await User.query().where('id', auth.user!.id).preload('roles', query => query.select('name', 'permissions'))
 
             response.ok({
                 message: 'login succesfull',
-                data: auth.user,
+                data: user,
                 token,
                 acl,
                 acl2,

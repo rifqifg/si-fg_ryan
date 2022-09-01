@@ -12,12 +12,13 @@ export default class User extends BaseModel {
   @column()
   public name: string
 
-  @column()
+  @column({ serializeAs: null })
   public role: string
 
   @hasOne(() => Role, {
     foreignKey: 'name',
-    localKey: 'role'
+    localKey: 'role',
+    serializeAs: 'role'
   })
   public roles: HasOne<typeof Role>
 

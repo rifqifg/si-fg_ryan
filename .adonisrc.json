@@ -1,5 +1,58 @@
 {
   "typescript": true,
+  "directories": {
+    "config": "config",
+    "public": "public",
+    "contracts": "contracts",
+    "providers": "providers",
+    "database": "database",
+    "migrations": "database/migrations",
+    "seeds": "database/seeders",
+    "resources": "resources",
+    "views": "resources/views",
+    "start": "start",
+    "tmp": "tmp",
+    "tests": "tests"
+  },
+  "exceptionHandlerNamespace": "App/Exceptions/Handler",
+  "preloads": [
+    {
+      "file": "./start/routes",
+      "optional": false,
+      "environment": ["web", "console", "test", "repl"]
+    },
+    {
+      "file": "./start/kernel",
+      "optional": false,
+      "environment": ["web", "console", "test", "repl"]
+    }
+  ],
+  "namespaces": {
+    "models": "App/Models",
+    "middleware": "App/Middleware",
+    "exceptions": "App/Exceptions",
+    "validators": "App/Validators",
+    "httpControllers": "App/Controllers/Http",
+    "eventListeners": "App/Listeners",
+    "redisListeners": "App/Listeners"
+  },
+  "aliases": {
+    "App": "app",
+    "Config": "config",
+    "Database": "database",
+    "Contracts": "contracts",
+    "Modules": "app/Modules",
+    "Routes": "start/routes",
+    "Inventory": "app/Modules/Inventory",
+    "InventoryControllers": "app/Modules/Inventory/Controllers/Http",
+    "InventoryModels": "app/Modules/Inventory/Models/"
+  },
+  "metaFiles": [
+    {
+      "pattern": "resources/views/**/*.edge",
+      "reloadServer": false
+    }
+  ],
   "commands": [
     "./commands",
     "@adonisjs/core/build/commands/index.js",
@@ -7,17 +60,7 @@
     "@adonisjs/lucid/build/commands",
     "@adonisjs/mail/build/commands"
   ],
-  "exceptionHandlerNamespace": "App/Exceptions/Handler",
-  "aliases": {
-    "App": "app",
-    "Config": "config",
-    "Database": "database",
-    "Contracts": "contracts"
-  },
-  "preloads": [
-    "./start/routes",
-    "./start/kernel"
-  ],
+  "commandsAliases": {},
   "providers": [
     "./providers/AppProvider",
     "@adonisjs/core",
@@ -26,27 +69,65 @@
     "@adonisjs/mail",
     "@adonisjs/view"
   ],
-  "aceProviders": [
-    "@adonisjs/repl"
-  ],
+  "aceProviders": ["@adonisjs/repl"],
+  "testProviders": ["@japa/preset-adonis/TestsProvider"],
   "tests": {
     "suites": [
       {
         "name": "functional",
-        "files": [
-          "tests/functional/**/*.spec(.ts|.js)"
-        ],
+        "files": ["tests/functional/**/*.spec(.ts|.js)"],
         "timeout": 60000
       }
-    ]
+    ],
+    "timeout": 2000,
+    "forceExit": true
   },
-  "testProviders": [
-    "@japa/preset-adonis/TestsProvider"
-  ],
-  "metaFiles": [
-    {
-      "pattern": "resources/views/**/*.edge",
-      "reloadServer": false
-    }
-  ]
+  "raw": {
+    "typescript": true,
+    "commands": [
+      "./commands",
+      "@adonisjs/core/build/commands/index.js",
+      "@adonisjs/repl/build/commands",
+      "@adonisjs/lucid/build/commands",
+      "@adonisjs/mail/build/commands"
+    ],
+    "exceptionHandlerNamespace": "App/Exceptions/Handler",
+    "aliases": {
+      "App": "app",
+      "Config": "config",
+      "Database": "database",
+      "Contracts": "contracts",
+      "Modules": "app/Modules",
+      "Routes": "start/routes",
+      "Inventory": "app/Modules/Inventory",
+      "InventoryControllers": "app/Modules/Inventory/Controllers/Http",
+      "InventoryModels": "app/Modules/Inventory/Models/"
+    },
+    "preloads": ["./start/routes", "./start/kernel"],
+    "providers": [
+      "./providers/AppProvider",
+      "@adonisjs/core",
+      "@adonisjs/lucid",
+      "@adonisjs/auth",
+      "@adonisjs/mail",
+      "@adonisjs/view"
+    ],
+    "aceProviders": ["@adonisjs/repl"],
+    "tests": {
+      "suites": [
+        {
+          "name": "functional",
+          "files": ["tests/functional/**/*.spec(.ts|.js)"],
+          "timeout": 60000
+        }
+      ]
+    },
+    "testProviders": ["@japa/preset-adonis/TestsProvider"],
+    "metaFiles": [
+      {
+        "pattern": "resources/views/**/*.edge",
+        "reloadServer": false
+      }
+    ]
+  }
 }

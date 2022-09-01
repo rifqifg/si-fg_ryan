@@ -45,11 +45,11 @@ const databaseConfig: DatabaseConfig = {
       },
       migrations: {
         naturalSort: true,
+        paths: ['./database/migrations', './app/modules/inventory/migrations']
       },
       healthCheck: false,
       debug: false,
     },
-
   }
 }
 

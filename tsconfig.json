@@ -23,7 +23,10 @@
       ],
       "Database/*": [
         "./database/*"
-      ]
+      ],
+      "Inventory/*": [
+        "./app/modules/inventory/*"
+      ],
     },
     "types": [
       "@adonisjs/core",

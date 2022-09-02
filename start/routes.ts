@@ -52,11 +52,3 @@ Route.group(() => {
   Route.resource('roles.menus', 'System/RolesMenusController').only(['store', 'destroy', 'update']).middleware({ '*': ['auth', 'checkRole:admin,superAdmin'] }).as('roles.menus')
   Route.resource('roles.functions', 'System/RolesFunctionsController').only(['store', 'destroy', 'update']).middleware({ '*': ['auth', 'checkRole:admin,superAdmin'] }).as('roles.functions')
 }).prefix('/system')
-
-
-// be api > https://localhost:3000/module/{{id_module}}/menu/{{id_menu}}/function/
-// GET   > https://localhost:3000/module/
-// GET   > https://localhost:3000/module/{{id_module}}
-// GET   > https://localhost:3000/module/{{id_module}}/menu
-// GET   > https://localhost:3000/module/{{id_module}}/menus/{{id_menu}}
-// GET   > https://localhost:3000/module/{{id_module}}/menus/{{id_menu}}/function/

@@ -7,6 +7,7 @@ import { v4 as uuidv4 } from 'uuid'
 import Hash from '@ioc:Adonis/Core/Hash'
 import Permission from 'App/Models/Permission'
 import PermissionList from 'App/Models/PermissionList'
+import Database from '@ioc:Adonis/Lucid/Database'
 
 export default class UsersController {
     public async login({ request, response, auth }: HttpContextContract) {
@@ -41,6 +42,7 @@ export default class UsersController {
 
     public async logout({ auth, response }: HttpContextContract) {
         await auth.use('api').logout()
+        await Database.manager.close('pg')
         response.ok({ message: "logged out" })
     }
 

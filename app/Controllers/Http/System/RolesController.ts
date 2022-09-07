@@ -29,7 +29,6 @@ export default class RolesController {
     } catch (error) {
       response.badRequest({ message: "Gagal menyimpan data", error })
     }
-    response.ok(payload)
   }
 
   public async show({ params, response }: HttpContextContract) {

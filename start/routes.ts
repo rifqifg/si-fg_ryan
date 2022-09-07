@@ -31,7 +31,7 @@ Route.post('/password-encrypt', 'System/UsersController.password_encrypt').as('p
 Route.post('/auth/login', 'System/UsersController.login').as('auth.login')
 Route.post('/auth/logout', 'System/UsersController.logout').as('auth.logout').middleware('auth')
 Route.post('/auth/register', 'System/UsersController.register').as('auth.register')
-Route.post('/auth/reset-password', 'System/UsersController.resetUserPassword').as('auth.resetUserPassword').middleware(['auth', 'checkRole:admin'])
+// Route.post('/auth/reset-password', 'System/UsersController.resetUserPassword').as('auth.resetUserPassword').middleware(['auth', 'checkRole:admin'])
 Route.get('/admin/get-users', 'System/UsersController.getUsers').as('admin.get-user').middleware('auth')
 Route.resource('/division/', 'DivisionsController').as('division').apiOnly().middleware({ '*': ['auth', 'checkRole:admin'] })
 Route.resource('/employee/', 'EmployeesController').as('employee').apiOnly().middleware({ '*': ['auth', 'checkRole:admin'] })

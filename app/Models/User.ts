@@ -13,15 +13,15 @@ export default class User extends BaseModel {
   @column()
   public name: string
 
-  @column({ serializeAs: null })
+  @column({ serializeAs: 'role_name' })
   public role: string
 
-  @hasOne(() => Role, {
-    foreignKey: 'name',
-    localKey: 'role',
-    serializeAs: 'role'
+  @belongsTo(() => Role, {
+    foreignKey: 'role',
+    localKey: 'name',
+    serializeAs: 'role',
   })
-  public roles: HasOne<typeof Role>
+  public roles: BelongsTo<typeof Role>
 
   @column()
   public employeeId: string

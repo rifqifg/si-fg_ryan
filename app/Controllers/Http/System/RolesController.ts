@@ -6,16 +6,25 @@ import { schema, rules } from '@ioc:Adonis/Core/Validator'
 
 export default class RolesController {
   public async index({ request, response }: HttpContextContract) {
-    const { page = 1, limit = 10, keyword = "" } = request.qs()
+    const { page = 1, limit = 10, keyword = "", mode = "tree" } = request.qs()
 
     try {
-      const data = await Role
-        .query()
-        .whereILike('name', `%${keyword}%`)
-        .orderBy('name')
-        .paginate(page, limit)
+      let data
+      if (mode === "tree") {
+        data = await Role
+          .query()
+          .whereILike('name', `%${keyword}%`)
+          .orderBy('name')
+          .paginate(page, limit)
+
+      } else {
+        data = await Role.query().select('name')
+
+      }
       response.ok({ message: "Berhasil mengambil data", data })
     } catch (error) {
+      console.log(error);
+
       response.badRequest({ message: "Gagal mengambil data", error })
     }
   }

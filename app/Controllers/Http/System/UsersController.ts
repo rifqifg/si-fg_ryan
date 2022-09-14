@@ -28,8 +28,8 @@ export default class UsersController {
 
             response.ok({
                 message: 'login succesfull',
-                data: user,
                 token,
+                data: user,
                 acl,
                 acl2,
             })
@@ -123,19 +123,29 @@ export default class UsersController {
     }
 
 
-    public async resetUserPassword({ request, response }: HttpContextContract) {
+    public async resetUserPassword({ request, response, auth }: HttpContextContract) {
+        // TODO: old password, new password, confirm password
+
         const resetUserSchema = schema.create({
-            employeeId: schema.string({ trim: true }, [
-                rules.exists({ table: 'users', column: 'id' })
-            ]),
-            newPassword: schema.string({}, [rules.minLength(6)])
+            old_password: schema.string({}, [rules.minLength(6)]),
+            password: schema.string({}, [rules.minLength(6), rules.confirmed()])
         })
 
         const payload = await request.validate({ schema: resetUserSchema })
 
         try {
-            const user = await User.findOrFail(payload.employeeId)
-            await user.merge({ password: payload.newPassword }).save()
+            const verifyPassword = await auth.use('api').verifyCredentials(auth.user!.email, payload.old_password)
+            console.log('password verified', verifyPassword);
+
+        } catch (error) {
+            response.unprocessableEntity({ message: 'Password lama salah', error: error.message })
+            console.log(error)
+            return false
+        }
+
+        try {
+            const user = await User.findOrFail(auth.user!.id)
+            await user.merge({ password: payload.password }).save()
 
             response.ok({ message: "Password reset success" })
         } catch (error) {

@@ -11,6 +11,7 @@ export default class CrudUsersController {
       const data = await User
         .query()
         .preload('roles', role => role.select("name"))
+        .preload('employee', employee => employee.preload('division'))
         .whereILike('name', `%${keyword}%`)
         .orderBy('name')
         .paginate(page, limit)
@@ -50,10 +51,11 @@ export default class CrudUsersController {
     try {
       const perngguna = await User.findOrFail(id)
       const data = await perngguna.merge(payload).save()
-      response.ok({ message: "Berhasil mengambil data", data })
+      console.log(payload);
+      response.ok({ message: "Berhasil mengubah data", data })
     } catch (error) {
       console.log(error);
-      response.badRequest({ message: "Gagal mengambil data", error: error.message })
+      response.badRequest({ message: "Gagal mengubah data", error: error.message })
     }
   }
 

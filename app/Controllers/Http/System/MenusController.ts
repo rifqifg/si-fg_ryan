@@ -72,6 +72,11 @@ export default class MenusController {
     })
 
     const payload = await request.validate({ schema: updateMenuSchema })
+
+    if (JSON.stringify(payload) === '{}') {
+      console.log("data update menu kosong");
+      return response.badRequest({ message: "Data tidak boleh kosong" })
+    }
     try {
       await Menu.findOrFail(id)
       await Menu.query().where('id', id).update(payload)

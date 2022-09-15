@@ -63,6 +63,10 @@ export default class RolesController {
       })
 
       const payload = await request.validate({ schema: updateRolesScheme })
+      if (JSON.stringify(payload) === '{}') {
+        console.log("data update role kosong");
+        return response.badRequest({ message: "Data tidak boleh kosong" })
+      }
       await Role.findOrFail(id)
 
       let newData = {}

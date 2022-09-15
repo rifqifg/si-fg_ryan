@@ -75,6 +75,11 @@ export default class ModulesController {
 
       await Module.findOrFail(id)
 
+      if (JSON.stringify(payload) === '{}') {
+        console.log("data update module kosong");
+        return response.badRequest({ message: "Data tidak boleh kosong" })
+      }
+
       let newData = {}
       if (payload.id) { Object.assign(newData, { id: payload.id }) }
       if (payload.description) { Object.assign(newData, { description: payload.description }) }

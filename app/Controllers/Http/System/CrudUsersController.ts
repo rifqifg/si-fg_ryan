@@ -51,7 +51,11 @@ export default class CrudUsersController {
     try {
       const perngguna = await User.findOrFail(id)
       const data = await perngguna.merge(payload).save()
-      console.log(payload);
+      if (JSON.stringify(payload) === '{}') {
+        console.log("data update function kosong");
+        return response.badRequest({ message: "Data tidak boleh kosong" })
+      }
+
       response.ok({ message: "Berhasil mengubah data", data })
     } catch (error) {
       console.log(error);

@@ -72,6 +72,11 @@ export default class FunctionsController {
     })
 
     const payload = await request.validate({ schema: updateFunctionSchema })
+    if (JSON.stringify(payload) === '{}') {
+      console.log("data update function kosong");
+      return response.badRequest({ message: "Data tidak boleh kosong" })
+    }
+
     try {
       await Function.findOrFail(id)
       await Function.query().where('id', id).update(payload)

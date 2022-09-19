@@ -109,6 +109,7 @@ export default class PresencesController {
       })
       .whereRaw(`timezone('Asia/Jakarta', now())::date - time_in::date=0`)
       .andWhere('activity_id', id)
+      .andWhereNot('employee_id', '12e6c4b9-2942-4870-b48c-4b4a93eee52b')
       .orderBy('updated_at', 'desc')
     response.ok({ message: "Get data success", data: { activity, presence } })
   }

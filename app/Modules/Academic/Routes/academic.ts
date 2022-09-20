@@ -4,4 +4,5 @@ Route.group(() => {
         return "You got here at academic"
     })
     Route.resource('classes', 'ClassesController').apiOnly().middleware({ '*': ['auth'] })
+    Route.resource('students', 'StudentsController').apiOnly().middleware({ '*': ['auth'] })
 }).prefix('academics').namespace('AcademicControllers')

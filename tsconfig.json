@@ -27,6 +27,9 @@
       "Inventory/*": [
         "./app/modules/inventory/*"
       ],
+      "Academic/*": [
+        "./app/modules/academic/*"
+      ],
     },
     "types": [
       "@adonisjs/core",

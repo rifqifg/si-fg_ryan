@@ -12,7 +12,8 @@
     "views": "resources/views",
     "start": "start",
     "tmp": "tmp",
-    "tests": "tests"
+    "tests": "tests",
+    "modules": "app/Modules"
   },
   "exceptionHandlerNamespace": "App/Exceptions/Handler",
   "preloads": [
@@ -45,7 +46,9 @@
     "Routes": "start/routes",
     "Inventory": "app/Modules/Inventory",
     "InventoryControllers": "app/Modules/Inventory/Controllers/Http",
-    "InventoryModels": "app/Modules/Inventory/Models/"
+    "InventoryModels": "app/Modules/Inventory/Models/",
+    "Academic": "app/Modules/Academic",
+    "AcademicControllers": "app/Modules/Academic/Controllers/Http"
   },
   "metaFiles": [
     {

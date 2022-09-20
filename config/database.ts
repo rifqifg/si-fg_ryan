@@ -45,7 +45,7 @@ const databaseConfig: DatabaseConfig = {
       },
       migrations: {
         naturalSort: true,
-        paths: ['./database/migrations', './app/modules/inventory/migrations']
+        paths: ['./database/migrations', './app/modules/inventory/migrations', './app/modules/academic/migrations']
       },
       healthCheck: false,
       debug: false,

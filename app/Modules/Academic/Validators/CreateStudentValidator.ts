@@ -30,7 +30,7 @@ export default class CreateStudentValidator {
     classId: schema.string.optional({}, [
       rules.exists({ table: 'academic.classes', column: 'id' })
     ]),
-    nik: schema.string.optional([
+    nik: schema.string([
       rules.regex(/^[0-9]+$/),
       rules.unique({ table: 'academic.students', column: 'nik' })
     ]),

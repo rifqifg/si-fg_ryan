@@ -44,8 +44,31 @@ const databaseConfig: DatabaseConfig = {
         database: Env.get('PG_DB_NAME'),
       },
       migrations: {
+        naturalSort: false,
+        paths: ['./database/migrations', './app/modules/academic/migrations', './app/modules/inventory/migrations']
+      },
+      seeders: {
+        paths: ['./database/seeders/MainSeeder']
+      },
+      healthCheck: false,
+      debug: false,
+    },
+    pg_dev: {
+      client: 'pg',
+      connection: {
+        ssl: Env.get('PG_DEV_SSL'),
+        host: Env.get('PG_DEV_HOST'),
+        port: Env.get('PG_DEV_PORT'),
+        user: Env.get('PG_DEV_USER'),
+        password: Env.get('PG_DEV_PASSWORD', ''),
+        database: Env.get('PG_DEV_DB_NAME'),
+      },
+      migrations: {
         naturalSort: true,
-        paths: ['./database/migrations', './app/modules/inventory/migrations', './app/modules/academic/migrations']
+        paths: ['./database/migrations', './app/modules/academic/migrations', './app/modules/inventory/migrations']
+      },
+      seeders: {
+        paths: ['./database/seeders/MainSeeder']
       },
       healthCheck: false,
       debug: false,

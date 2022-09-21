@@ -3,10 +3,14 @@ import Role from 'App/Models/Role'
 
 export default class extends BaseSeeder {
   public async run() {
+    console.log('>>> seeding role');
+
     await Role.createMany([
       { name: 'admin' },
-      { name: 'hr' },
-      { name: 'employee' }
+      { name: 'employee' },
+      { name: 'piket' },
+      { name: 'qa' },
+      { name: 'super_admin' },
     ])
   }
 }

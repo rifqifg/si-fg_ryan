@@ -15,10 +15,13 @@ export default class IndexSeeder extends BaseSeeder {
   }
 
   public async run() {
-    console.log('>>> seeding role');
     await this.runSeeder(await import('../Role'))
-    // console.log('>>> seeding user');
-    // await this.runSeeder(await import('../User'))    
-    // TODO : seeder user harus dibenerin
+    await this.runSeeder(await import('../Admin'))
+    await this.runSeeder(await import('../Module'))
+    await this.runSeeder(await import('../Menu'))
+    await this.runSeeder(await import('../Function'))
+    await this.runSeeder(await import('../Permission'))
   }
 }
+
+

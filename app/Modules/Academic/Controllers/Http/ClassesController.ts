@@ -20,7 +20,7 @@ export default class ClassesController {
       } else if (mode === "list") {
         data = await Class
           .query()
-          .select('id', 'name', 'employeeId')
+          .select('id', 'name', 'description', 'employeeId')
           .preload('homeroomTeacher', query => query.select('name', 'nip'))
           .whereILike('name', `%${keyword}%`)
           .orderBy('id')

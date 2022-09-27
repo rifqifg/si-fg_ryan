@@ -9,13 +9,14 @@ import { DateTime } from 'luxon'
 export default class PresencesController {
   public async index({ request, response }: HttpContextContract) {
     const hariIni = DateTime.now().toSQLDate().toString()
-    const { page = 1, limit = 10, keyword = "", activityId = "", orderBy = "", orderDirection = 'ASC', fromDate = hariIni, toDate = hariIni } = request.qs()
+    const { page = 1, limit = 10, keyword = "", activityId = "", orderBy = "time_in", orderDirection = 'ASC', fromDate = hariIni, toDate = hariIni } = request.qs()
     //TODO: bikin raw query & select secukupnya biar bisa order by join column
 
     const activity = await Activity.findOrFail(activityId)
     const presence = await Presence.query()
       .preload('employee', query => {
         query.select('name', 'id', 'nip')
+        query.orderBy('name')
       })
       .where('activity_id', activityId)
       .andWhere(query => {
@@ -24,6 +25,7 @@ export default class PresencesController {
         })
       })
       .whereBetween('time_in', [fromDate, toDate])
+      .orderBy(orderBy)
       .paginate(page, limit)
 
     response.ok({

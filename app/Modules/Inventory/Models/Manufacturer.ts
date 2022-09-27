@@ -1,5 +1,5 @@
 import { DateTime } from 'luxon'
-import { afterCreate, afterFetch, afterFind, afterSave, BaseModel, beforeCreate, column } from '@ioc:Adonis/Lucid/Orm'
+import { afterCreate, afterFetch, afterFind, afterSave, BaseModel, beforeCreate, column, computed } from '@ioc:Adonis/Lucid/Orm'
 import { v4 as uuidv4 } from 'uuid'
 let newId = ""
 
@@ -23,7 +23,7 @@ export default class Manufacturer extends BaseModel {
   public supportEmail: string
 
   @column()
-  public image: string
+  public image: any
 
   @column.dateTime({ autoCreate: true, serializeAs: null })
   public createdAt: DateTime
@@ -48,15 +48,14 @@ export default class Manufacturer extends BaseModel {
   public static afterFetchHook(manufacturers: Manufacturer[]) {
     manufacturers.forEach(async manuf => {
       const signedUrl = await Drive.use('inventory').getSignedUrl('manufacturers/' + manuf.image, { expiresIn: '30mins' })
-      manuf.image = signedUrl
+      manuf.image = [manuf.image, signedUrl] //ini array karena signedUrl dipake untuk client, fileName nya dipake untuk hapus file
     })
   }
-
 
   @afterFind() @afterSave()
   public static async getSignedUrl(manufacturers: Manufacturer) {
     const inventoryDrive = Drive.use('inventory')
     const signedUrl = await inventoryDrive.getSignedUrl('manufacturers/' + manufacturers.image, { expiresIn: '30mins' })
-    manufacturers.image = signedUrl
+    manufacturers.image = [manufacturers.image, signedUrl]
   }
 }

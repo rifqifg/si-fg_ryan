@@ -5,6 +5,8 @@ import { DateTime } from 'luxon'
 import Application from '@ioc:Adonis/Core/Application'
 import { validate as uuidValidation } from "uuid";
 import UpdateManufacturerValidator from 'Inventory/Validators/UpdateManufacturerValidator'
+import Drive from '@ioc:Adonis/Core/Drive'
+
 
 export default class ManufacturersController {
   public async index({ response, request }: HttpContextContract) {
@@ -95,6 +97,7 @@ export default class ManufacturersController {
     }
     try {
       const manufacturer = await Manufacturer.findOrFail(id)
+      await Drive.use('inventory').delete('manufacturers/' + manufacturer.image[0])
       const data = await manufacturer.merge(newData).save()
       response.created({ message: "Berhasil menyimpan data", data })
 
@@ -111,6 +114,7 @@ export default class ManufacturersController {
     try {
       const data = await Manufacturer.findOrFail(id)
       await data.delete()
+      await Drive.use('inventory').delete('manufacturers/' + data.image[0])
       response.ok({ message: "Berhasil menghapus data" })
     } catch (error) {
       console.log(error);

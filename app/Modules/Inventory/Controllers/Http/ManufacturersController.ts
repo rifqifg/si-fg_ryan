@@ -7,6 +7,11 @@ import { validate as uuidValidation } from "uuid";
 import UpdateManufacturerValidator from 'Inventory/Validators/UpdateManufacturerValidator'
 import Drive from '@ioc:Adonis/Core/Drive'
 
+const getSignedUrl = async (filename: string) => {
+  const inventoryDrive = Drive.use('inventory')
+  const signedUrl = await inventoryDrive.getSignedUrl('manufacturers/' + filename, { expiresIn: '30mins' })
+  return [filename, signedUrl]
+}
 
 export default class ManufacturersController {
   public async index({ response, request }: HttpContextContract) {
@@ -46,12 +51,13 @@ export default class ManufacturersController {
       await parsedPayload.image?.move(inventoryPath, {
         name: DateTime.now().toUnixInteger().toString() + "." + parsedPayload.image!.extname
       }) //move ini pindahin uploaded file ke fullpath tadi, dan file nya di rename menjadi timestamp
-      newData = { ...parsedPayload, image: parsedPayload.image!.fileName } // trus generate data buat dimasukin ke database, INGAT, field image ini hanya file name, kalau dan private, kalau mau diakses public harus bikin signedUrl, cek di model nya
+      newData = { ...parsedPayload, image: parsedPayload.image!.fileName } // trus generate data buat dimasukin ke database, INGAT, field image ini hanya file name, kalau dan private, kalau mau diakses public harus bikin signedUrl
     } else { // nah kalo ngga ada image, ngga perlu ada yang di proses, jadi langsung aja
       newData = { ...parsedPayload }
     }
     try {
       const data = await Manufacturer.create(newData)
+      data.image = await getSignedUrl(data.image) //return array of signedUrl
       response.created({ message: "Berhasil menyimpan data", data })
 
     } catch (error) {
@@ -66,6 +72,8 @@ export default class ManufacturersController {
 
     try {
       const data = await Manufacturer.query().where('id', id).firstOrFail()
+      data.image = await getSignedUrl(data.image) //return array of signedUrl
+
       response.ok({ message: "Berhasil mengambil data", data })
     } catch (error) {
       console.log(error);
@@ -75,6 +83,7 @@ export default class ManufacturersController {
 
   public async update({ params, request, response }: HttpContextContract) {
     const { id } = params
+
     if (!uuidValidation(id)) { return response.badRequest({ message: "Class ID tidak valid" }) }
     const payload = await request.validate(UpdateManufacturerValidator)
 
@@ -83,24 +92,24 @@ export default class ManufacturersController {
       return response.badRequest({ message: "Data tidak boleh kosong" })
     }
 
-    const parsedPayload = { ...payload }
     let newData: any
+    const manufacturer = await Manufacturer.findOrFail(id)
 
-    if (parsedPayload.image) {
+    if (payload.image) {
       const inventoryPath = Application.makePath('app/Modules/Inventory/uploads/manufacturers/')
-      await parsedPayload.image?.move(inventoryPath, {
-        name: DateTime.now().toUnixInteger().toString() + "." + parsedPayload.image!.extname
+      await payload.image?.move(inventoryPath, {
+        name: DateTime.now().toUnixInteger().toString() + "." + payload.image!.extname
       })
-      newData = { ...parsedPayload, image: parsedPayload.image!.fileName }
+      await Drive.use('inventory').delete('manufacturers/' + manufacturer.image)
+      newData = { ...payload, image: payload.image!.fileName }
     } else {
-      newData = { ...parsedPayload }
+      newData = payload
     }
-    try {
-      const manufacturer = await Manufacturer.findOrFail(id)
-      await Drive.use('inventory').delete('manufacturers/' + manufacturer.image[0])
-      const data = await manufacturer.merge(newData).save()
-      response.created({ message: "Berhasil menyimpan data", data })
 
+    try {
+      await manufacturer.merge(newData).save()
+      manufacturer.image = await getSignedUrl(manufacturer.image) //return array of signedUrl
+      response.created({ message: "Berhasil menyimpan data", data: manufacturer })
     } catch (error) {
       console.log(error);
       response.badRequest({ message: "Gagal menyimpan data", error: error.message })
@@ -114,7 +123,7 @@ export default class ManufacturersController {
     try {
       const data = await Manufacturer.findOrFail(id)
       await data.delete()
-      await Drive.use('inventory').delete('manufacturers/' + data.image[0])
+      await Drive.use('inventory').delete('manufacturers/' + data.image)
       response.ok({ message: "Berhasil menghapus data" })
     } catch (error) {
       console.log(error);

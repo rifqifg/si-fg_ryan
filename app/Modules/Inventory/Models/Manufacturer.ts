@@ -39,7 +39,6 @@ export default class Manufacturer extends BaseModel {
 
   @afterCreate()
   public static setNewId(manufacturer: Manufacturer) {
-    newId = uuidv4()
     manufacturer.id = newId
   }
 
@@ -48,15 +47,10 @@ export default class Manufacturer extends BaseModel {
   @afterFetch()
   public static afterFetchHook(manufacturers: Manufacturer[]) {
     manufacturers.forEach(async manuf => {
-      const signedUrl = await Drive.use('inventory').getSignedUrl('manufacturers/' + manuf.image, { expiresIn: '30mins' })
-      manuf.image = [manuf.image, signedUrl] //ini array karena signedUrl dipake untuk client, fileName nya dipake untuk hapus file
+      if (manuf.image) {
+        const signedUrl = await Drive.use('inventory').getSignedUrl('manufacturers/' + manuf.image, { expiresIn: '30mins' })
+        manuf.image = [manuf.image, signedUrl] //ini array karena signedUrl dipake untuk client, fileName nya dipake untuk hapus file
+      }
     })
-  }
-
-  @afterFind() @afterSave()
-  public static async getSignedUrl(manufacturers: Manufacturer) {
-    const inventoryDrive = Drive.use('inventory')
-    const signedUrl = await inventoryDrive.getSignedUrl('manufacturers/' + manufacturers.image, { expiresIn: '30mins' })
-    manufacturers.image = [manufacturers.image, signedUrl]
   }
 }

@@ -5,10 +5,7 @@ export default class AssetStatus extends BaseModel {
   public static table = 'inventory.asset_statuses';
 
   @column({ isPrimary: true })
-  public id: number
-
-  @column()
-  public name: string
+  public id: string
 
   @column()
   public type: string

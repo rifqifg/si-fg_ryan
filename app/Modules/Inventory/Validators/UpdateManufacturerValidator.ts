@@ -25,17 +25,17 @@ export default class UpdateManufacturerValidator {
    */
   public schema = schema.create({
     name: schema.string.optional(),
-    url: schema.string.optional([
+    url: schema.string.nullableAndOptional([
       rules.url(),
       rules.normalizeUrl()
     ]),
-    supportPhone: schema.string.optional([
+    supportPhone: schema.string.nullableAndOptional([
       rules.regex(/^[0-9]+$/),
     ]),
-    supportEmail: schema.string.optional([
+    supportEmail: schema.string.nullableAndOptional([
       rules.email()
     ]),
-    image: schema.file.optional({
+    image: schema.file.nullableAndOptional({
       size: '2mb',
       extnames: ['png', 'jpg', 'jpeg'],
     })

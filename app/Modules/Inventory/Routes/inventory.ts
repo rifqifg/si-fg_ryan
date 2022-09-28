@@ -4,4 +4,6 @@ Route.group(() => {
         return "You got here at inventories"
     })
     Route.resource('manufacturers', 'ManufacturersController').apiOnly()
-}).prefix('inventories').namespace('InventoryControllers')
+    Route.resource('assets', 'AssetsController').apiOnly()
+    Route.resource('asset-statuses', 'AssetStatusesController').apiOnly()
+}).prefix('inventories').namespace('InventoryControllers').middleware(['auth'])

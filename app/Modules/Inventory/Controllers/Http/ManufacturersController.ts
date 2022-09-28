@@ -84,7 +84,7 @@ export default class ManufacturersController {
   public async update({ params, request, response }: HttpContextContract) {
     const { id } = params
 
-    if (!uuidValidation(id)) { return response.badRequest({ message: "Class ID tidak valid" }) }
+    if (!uuidValidation(id)) { return response.badRequest({ message: "Manufacturer ID tidak valid" }) }
     const payload = await request.validate(UpdateManufacturerValidator)
 
     if (JSON.stringify(payload) === '{}') {

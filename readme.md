@@ -5,7 +5,10 @@
 - Modules
 -  ```Module Name```
 - Controllers
-- Migrations
+- Database
+  - Factory
+  - Seeder
+  - Migrations
 - Models
 - Routes
 - Validators

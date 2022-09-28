@@ -1,5 +1,5 @@
 import { DateTime } from 'luxon'
-import { afterCreate, afterFetch, afterFind, afterSave, BaseModel, beforeCreate, column, computed } from '@ioc:Adonis/Lucid/Orm'
+import { afterCreate, afterFetch, afterFind, afterSave, BaseModel, beforeCreate, column } from '@ioc:Adonis/Lucid/Orm'
 import { v4 as uuidv4 } from 'uuid'
 let newId = ""
 

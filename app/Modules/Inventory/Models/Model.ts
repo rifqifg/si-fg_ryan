@@ -51,6 +51,7 @@ export default class Model extends BaseModel {
 
   @afterCreate()
   public static setNewId(model: Model) {
+    newId = uuidv4()
     model.id = newId
   }
 

@@ -39,6 +39,7 @@ export default class Manufacturer extends BaseModel {
 
   @afterCreate()
   public static setNewId(manufacturer: Manufacturer) {
+    newId = uuidv4()
     manufacturer.id = newId
   }
 

@@ -50,6 +50,7 @@ export default class AssetLocation extends BaseModel {
 
   @afterCreate()
   public static setNewId(assetLocation: AssetLocation) {
+    newId = uuidv4()
     assetLocation.id = newId
   }
 }

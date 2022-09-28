@@ -74,6 +74,7 @@ export default class Asset extends BaseModel {
 
   @afterCreate()
   public static setNewId(asset: Asset) {
+    newId = uuidv4()
     asset.id = newId
   }
 } 

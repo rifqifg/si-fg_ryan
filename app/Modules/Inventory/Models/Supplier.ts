@@ -62,7 +62,6 @@ export default class Supplier extends BaseModel {
 
   @afterCreate()
   public static setNewId(supplier: Supplier) {
-    newId = uuidv4()
     supplier.id = newId
   }
 }

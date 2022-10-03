@@ -1,5 +1,6 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import AssetStatus from 'Inventory/Models/AssetStatus'
+import Database from '@ioc:Adonis/Lucid/Database'
 
 export default class AssetStatusesController {
   public async index({ request, response }: HttpContextContract) {
@@ -16,13 +17,15 @@ export default class AssetStatusesController {
       } else if (mode === "list") {
         data = await AssetStatus
           .query()
+          .withCount('assets')
           .whereILike('id', `%${keyword}%`)
           .orderBy('id')
       } else {
         return response.badRequest({ message: "Mode tidak dikenali, (pilih: page / list)" })
       }
 
-      response.ok({ message: "Berhasil mengambil data", data })
+      const allAssetsCount = await Database.from('inventory.assets').count('id as total').first()
+      response.ok({ message: "Berhasil mengambil data", total_asset: allAssetsCount.total, data })
     } catch (error) {
       response.badRequest({ message: "Gagal mengambil data", error: error.message })
     }

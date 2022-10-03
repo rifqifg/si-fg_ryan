@@ -1,8 +1,14 @@
 import { DateTime } from 'luxon'
-import { BaseModel, column } from '@ioc:Adonis/Lucid/Orm'
+import { BaseModel, column, HasMany, hasMany } from '@ioc:Adonis/Lucid/Orm'
+import Asset from './Asset';
 
 export default class AssetStatus extends BaseModel {
   public static table = 'inventory.asset_statuses';
+  public serializeExtras() {
+    return {
+      asset_count: this.$extras.assets_count,
+    }
+  }
 
   @column({ isPrimary: true })
   public id: string
@@ -16,9 +22,12 @@ export default class AssetStatus extends BaseModel {
   @column()
   public notes: string
 
-  @column.dateTime({ autoCreate: true })
+  @hasMany(() => Asset)
+  public assets: HasMany<typeof Asset>
+
+  @column.dateTime({ autoCreate: true, serializeAs: null })
   public createdAt: DateTime
 
-  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  @column.dateTime({ autoCreate: true, autoUpdate: true, serializeAs: null })
   public updatedAt: DateTime
 }

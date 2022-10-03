@@ -15,21 +15,25 @@ const getSignedUrl = async (filename: string) => {
 
 export default class AssetsController {
   public async index({ response, request }: HttpContextContract) {
-    const { page = 1, limit = 10, keyword = "", mode = "page" } = request.qs()
+    const { page = 1, limit = 10, keyword = "", mode = "page", status = "" } = request.qs()
 
     try {
       let data = {}
       if (mode === "page") {
         data = await Asset
           .query()
+          .preload('assetStatus', query => query.orderBy('id'))
           .whereILike('serial', `%${keyword}%`)
+          .if(status, query => query.andWhere('asset_status_id', status))
           .orderBy('serial')
           .paginate(page, limit)
       } else if (mode === "list") {
         data = await Asset
           .query()
+          .preload('assetStatus')
           .whereILike('serial', `%${keyword}%`)
-          .orderBy('id')
+          .if(status, query => query.andWhere('asset_status_id', status))
+          .orderBy('serial')
       } else {
         return response.badRequest({ message: "Mode tidak dikenali, (pilih: page / list)" })
       }

@@ -43,8 +43,15 @@ export default class CreateAssetLoanBatchValidator {
             where: { asset_status_id: 'AVAILABLE' }
           })
         ]),
-        studentId: schema.string.optional([rules.exists({ table: 'academic.students', column: 'id' })]),
-        emplyeeId: schema.string.optional([rules.exists({ table: 'emplyees', column: 'id' })]),
+        studentId: schema.string.optional([
+          rules.exists({ table: 'academic.students', column: 'id' }),
+          rules.requiredIfNotExists('employeeId'),
+        ]),
+        emplyeeId: schema.string.optional([
+          rules.exists({ table: 'emplyees', column: 'id' }),
+          rules.requiredIfNotExists('studentId'),
+        ]),
+
         notes: schema.string.optional()
       })
     )
@@ -62,6 +69,8 @@ export default class CreateAssetLoanBatchValidator {
    *
    */
   public messages: CustomMessages = {
-    "assets.*.assetId.exists": "Asset Unavailable"
+    "assets.*.assetId.exists": "Asset Unavailable",
+    "assets.*.studentId.requiredIfNotExists": "Student Id is required if Employee ID is null",
+    "assets.*.emplyeeId.requiredIfNotExists": "Employee Id is required if Student ID is null"
   }
 }

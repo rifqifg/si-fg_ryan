@@ -71,7 +71,17 @@ export default class AssetLoanBatchesController {
     if (!uuidValidation(id)) { return response.badRequest({ message: "Batch ID tidak valid" }) }
 
     try {
-      const data = await AssetLoanBatch.query().preload('assetLoan').where('id', id).firstOrFail()
+      const data = await AssetLoanBatch.query()
+        .preload('employee', query => query.select('name', 'nip'))
+        .preload('assetLoan', query => {
+          query.preload('asset', asset => asset.select('serial'))
+          query.preload('employee', employee => employee.select('name', 'nip'))
+          query.preload('student', student => {
+            student.select("name", "nis", "nisn", "classId")
+            student.preload('class')
+          })
+        })
+        .where('id', id).firstOrFail()
       response.ok({ message: "Berhasil mengambil data", data })
     } catch (error) {
       console.log(error);

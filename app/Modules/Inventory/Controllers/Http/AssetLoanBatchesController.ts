@@ -37,34 +37,34 @@ export default class AssetLoanBatchesController {
 
   public async store({ request, response }: HttpContextContract) {
     const payload = await request.validate(CreateAssetLoanBatchValidator)
-    const { employeeId, type, description, startDate, endDate, assets } = payload
+    // const { employeeId, type, description, startDate, endDate } = payload
 
     try {
       // siapin data untuk update status assets
-      const loanedAssets = assets.map(asset => {
-        return asset.assetId
-      })
+      // const loanedAssets = assets.map(asset => {
+      //   return asset.assetId
+      // })
 
       // update status assets jadi borrowed apabila batch ini tidak memiliki end date
-      if (!endDate) {
-        await Asset.query()
-          .whereIn('id', loanedAssets)
-          .update('assetStatusId', 'BORROWED')
-          .returning('*')
-      }
+      // if (!endDate) {
+      //   await Asset.query()
+      //     .whereIn('id', loanedAssets)
+      //     .update('assetStatusId', 'BORROWED')
+      //     .returning('*')
+      // }
 
       // bikin batch nya 
-      const batch = await AssetLoanBatch.create({ employeeId, type, description, startDate, endDate })
+      const data = await AssetLoanBatch.create(payload)
 
       // siapin data untuk pinjem assets
-      const { id: assetLoanBatchId } = batch
-      assets.forEach(asset => {
-        Object.assign(asset, { startDate, endDate, assetLoanBatchId })
-      });
+      // const { id: assetLoanBatchId } = batch
+      // assets.forEach(asset => {
+      //   Object.assign(asset, { startDate, endDate, assetLoanBatchId })
+      // });
 
       // bikin peminjaman
-      const data = await AssetLoan.createMany(assets)
-      response.created({ message: "Berhasil menyimpan data", data: { batch, assets: data } })
+      // const data = await AssetLoan.createMany(assets)
+      response.created({ message: "Berhasil menyimpan data", data })
 
     } catch (error) {
       console.log(error);

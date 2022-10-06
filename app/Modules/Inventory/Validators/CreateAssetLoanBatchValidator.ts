@@ -33,28 +33,28 @@ export default class CreateAssetLoanBatchValidator {
     ]),
     startDate: schema.date({ format: 'sql' }),
     endDate: schema.date.optional(),
-    assets: schema.array().members(
-      schema.object().members({
-        assetId: schema.string([
-          rules.uuid(),
-          rules.exists({
-            table: 'inventory.assets',
-            column: 'id',
-            where: { asset_status_id: 'AVAILABLE' }
-          })
-        ]),
-        studentId: schema.string.optional([
-          rules.exists({ table: 'academic.students', column: 'id' }),
-          rules.requiredIfNotExists('employeeId'),
-        ]),
-        employeeId: schema.string.optional([
-          rules.exists({ table: 'employees', column: 'id' }),
-          rules.requiredIfNotExists('studentId'),
-        ]),
+    // assets: schema.array().members(
+    //   schema.object().members({
+    //     assetId: schema.string([
+    //       rules.uuid(),
+    //       rules.exists({
+    //         table: 'inventory.assets',
+    //         column: 'id',
+    //         where: { asset_status_id: 'AVAILABLE' }
+    //       })
+    //     ]),
+    //     studentId: schema.string.optional([
+    //       rules.exists({ table: 'academic.students', column: 'id' }),
+    //       rules.requiredIfNotExists('employeeId'),
+    //     ]),
+    //     employeeId: schema.string.optional([
+    //       rules.exists({ table: 'employees', column: 'id' }),
+    //       rules.requiredIfNotExists('studentId'),
+    //     ]),
 
-        notes: schema.string.optional()
-      })
-    )
+    //     notes: schema.string.optional()
+    //   })
+    // )
   })
 
   /**
@@ -69,8 +69,8 @@ export default class CreateAssetLoanBatchValidator {
    *
    */
   public messages: CustomMessages = {
-    "assets.*.assetId.exists": "Asset Unavailable",
-    "assets.*.studentId.requiredIfNotExists": "Student Id is required if Employee ID is null",
-    "assets.*.emplyeeId.requiredIfNotExists": "Employee Id is required if Student ID is null"
+    // "assets.*.assetId.exists": "Asset Unavailable",
+    // "assets.*.studentId.requiredIfNotExists": "Student Id is required if Employee ID is null",
+    // "assets.*.emplyeeId.requiredIfNotExists": "Employee Id is required if Student ID is null"
   }
 }

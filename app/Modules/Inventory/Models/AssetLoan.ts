@@ -20,31 +20,31 @@ export default class AssetLoan extends BaseModel {
   public asset: BelongsTo<typeof Asset>
 
   @column()
-  public assetLoanBatchId: string
+  public assetLoanBatchId: string | null
 
   @belongsTo(() => AssetLoanBatch)
   public loanBatch: BelongsTo<typeof AssetLoanBatch>
 
   @column()
-  public studentId: string
+  public studentId: string | null
 
   @belongsTo(() => Student)
   public student: BelongsTo<typeof Student>
 
   @column()
-  public employeeId: string
+  public employeeId: string | null
 
   @belongsTo(() => Employee)
   public employee: BelongsTo<typeof Employee>
 
   @column.dateTime()
-  public startDate: DateTime
+  public startDate: DateTime | null
 
   @column.dateTime()
-  public endDate: DateTime
+  public endDate: DateTime | null
 
   @column()
-  public notes: string
+  public notes: string | null
 
   @column.dateTime({ autoCreate: true, serializeAs: null })
   public createdAt: DateTime

@@ -7,5 +7,5 @@ Route.group(() => {
     Route.resource('assets', 'AssetsController').apiOnly()
     Route.resource('asset-statuses', 'AssetStatusesController').apiOnly()
     Route.resource('asset-loan-batches', 'AssetLoanBatchesController').apiOnly()
-    Route.resource('asset-loans', 'AssetLoansConroller').apiOnly()
+    Route.resource('asset-loans', 'AssetLoansController').apiOnly()
 }).prefix('inventories').namespace('InventoryControllers').middleware(['auth'])

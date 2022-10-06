@@ -24,7 +24,7 @@ export default class AssetsController {
           .query()
           .preload('assetStatus', query => query.orderBy('id'))
           .whereILike('serial', `%${keyword}%`)
-          .if(status, query => query.andWhere('asset_status_id', status))
+          .if(status, query => query.andWhere('asset_status_id', status.toUpperCase()))
           .orderBy('serial')
           .paginate(page, limit)
       } else if (mode === "list") {
@@ -32,7 +32,7 @@ export default class AssetsController {
           .query()
           .preload('assetStatus')
           .whereILike('serial', `%${keyword}%`)
-          .if(status, query => query.andWhere('asset_status_id', status))
+          .if(status, query => query.andWhere('asset_status_id', status.toUpperCase()))
           .orderBy('serial')
       } else {
         return response.badRequest({ message: "Mode tidak dikenali, (pilih: page / list)" })

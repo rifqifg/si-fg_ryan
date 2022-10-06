@@ -10,6 +10,7 @@ export default class AssetLoanBatch extends BaseModel {
   public serializeExtras() {
     return {
       asset_loan: this.$extras.assetLoan_count,
+      not_returned: this.$extras.notReturned
     }
   }
 
@@ -35,7 +36,7 @@ export default class AssetLoanBatch extends BaseModel {
   public startDate: DateTime
 
   @column.dateTime()
-  public endDate: DateTime
+  public endDate: DateTime | null
 
   @column.dateTime({ autoCreate: true, serializeAs: null })
   public createdAt: DateTime

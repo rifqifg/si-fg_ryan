@@ -19,6 +19,10 @@ export default class AssetLoanBatchesController {
           query.orderBy('name')
         })
         .withCount('assetLoan')
+        .withCount('assetLoan', query => {
+          query.whereNull('endDate'),
+            query.as('notReturned')
+        })
         .whereHas('employee', query => {
           query.whereILike('name', `%${keyword}%`)
         })
@@ -105,7 +109,7 @@ export default class AssetLoanBatchesController {
 
     try {
       const getBatch = await AssetLoanBatch.findOrFail(id)
-      const batch = await getBatch.merge({ employeeId, type, description }).save()
+      const batch = await getBatch.merge({ employeeId, type, description, startDate, endDate }).save()
 
       // update property of loaned asset
       let assetLoans: any

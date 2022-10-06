@@ -31,6 +31,12 @@ export default class AssetLoanBatch extends BaseModel {
   @hasMany(() => AssetLoan)
   public assetLoan: HasMany<typeof AssetLoan>
 
+  @column.dateTime()
+  public startDate: DateTime
+
+  @column.dateTime()
+  public endDate: DateTime
+
   @column.dateTime({ autoCreate: true, serializeAs: null })
   public createdAt: DateTime
 

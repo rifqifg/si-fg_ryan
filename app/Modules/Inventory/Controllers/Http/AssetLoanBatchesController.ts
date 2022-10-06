@@ -4,7 +4,7 @@ import CreateAssetLoanBatchValidator from 'Inventory/Validators/CreateAssetLoanB
 import Asset from 'Inventory/Models/Asset'
 import AssetLoan from 'Inventory/Models/AssetLoan'
 import { validate as uuidValidation } from "uuid";
-import UpdateAssetLoanBatchValidator from '../../Validators/UpdateAssetLoanBatchValidator'
+import UpdateAssetLoanBatchValidator from 'Inventory/Validators/UpdateAssetLoanBatchValidator'
 
 export default class AssetLoanBatchesController {
   public async index({ request, response }: HttpContextContract) {
@@ -41,14 +41,16 @@ export default class AssetLoanBatchesController {
         return asset.assetId
       })
 
-      // update status assets jadi borrowed
-      await Asset.query()
-        .whereIn('id', loanedAssets)
-        .update('assetStatusId', 'BORROWED')
-        .returning('*')
+      // update status assets jadi borrowed apabila batch ini tidak memiliki end date
+      if (!endDate) {
+        await Asset.query()
+          .whereIn('id', loanedAssets)
+          .update('assetStatusId', 'BORROWED')
+          .returning('*')
+      }
 
       // bikin batch nya 
-      const batch = await AssetLoanBatch.create({ employeeId, type, description })
+      const batch = await AssetLoanBatch.create({ employeeId, type, description, startDate, endDate })
 
       // siapin data untuk pinjem assets
       const { id: assetLoanBatchId } = batch

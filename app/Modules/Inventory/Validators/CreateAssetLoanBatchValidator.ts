@@ -47,8 +47,8 @@ export default class CreateAssetLoanBatchValidator {
           rules.exists({ table: 'academic.students', column: 'id' }),
           rules.requiredIfNotExists('employeeId'),
         ]),
-        emplyeeId: schema.string.optional([
-          rules.exists({ table: 'emplyees', column: 'id' }),
+        employeeId: schema.string.optional([
+          rules.exists({ table: 'employees', column: 'id' }),
           rules.requiredIfNotExists('studentId'),
         ]),
 

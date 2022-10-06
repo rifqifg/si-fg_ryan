@@ -25,10 +25,10 @@
         "./database/*"
       ],
       "Inventory/*": [
-        "./app/modules/inventory/*"
+        "./app/Modules/Inventory/*"
       ],
       "Academic/*": [
-        "./app/modules/academic/*"
+        "./app/Modules/Academic/*"
       ],
     },
     "types": [

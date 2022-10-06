@@ -3,7 +3,7 @@ import { afterCreate, BaseModel, beforeCreate, BelongsTo, belongsTo, column } fr
 import { v4 as uuidv4 } from 'uuid'
 import Asset from './Asset';
 import AssetLoanBatch from './AssetLoanBatch';
-import Student from 'App/modules/academic/Models/Student';
+import Student from 'Academic/Models/Student';
 import Employee from 'App/Models/Employee';
 let newId = ""
 

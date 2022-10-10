@@ -23,16 +23,26 @@ export default class AssetsController {
         data = await Asset
           .query()
           .preload('assetStatus', query => query.orderBy('id'))
-          .whereILike('serial', `%${keyword}%`)
-          .if(status, query => query.andWhere('asset_status_id', status.toUpperCase()))
+          .if(status, query => query.where('asset_status_id', status.toUpperCase()))
+          .andWhere(query => {
+            query.if(keyword, query => {
+              query.whereILike('serial', `%${keyword}%`)
+              query.orWhereILike('tag', `%${keyword}%`)
+            })
+          })
           .orderBy('serial')
           .paginate(page, limit)
       } else if (mode === "list") {
         data = await Asset
           .query()
           .preload('assetStatus')
-          .whereILike('serial', `%${keyword}%`)
-          .if(status, query => query.andWhere('asset_status_id', status.toUpperCase()))
+          .if(status, query => query.where('asset_status_id', status.toUpperCase()))
+          .andWhere(query => {
+            query.if(keyword, query => {
+              query.whereILike('serial', `%${keyword}%`)
+              query.orWhereILike('tag', `%${keyword}%`)
+            })
+          })
           .orderBy('serial')
       } else {
         return response.badRequest({ message: "Mode tidak dikenali, (pilih: page / list)" })
@@ -75,7 +85,7 @@ export default class AssetsController {
 
     try {
       const data = await Asset.query().where('id', id).firstOrFail()
-      data.image = await getSignedUrl(data.image)
+      data.image = data.image && await getSignedUrl(data.image)
 
       response.ok({ message: "Berhasil mengambil data", data })
     } catch (error) {

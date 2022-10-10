@@ -111,27 +111,30 @@ export default class AssetLoanBatchesController {
       const getBatch = await AssetLoanBatch.findOrFail(id)
       const batch = await getBatch.merge({ employeeId, type, description, startDate, endDate }).save()
 
-      // update property of loaned asset
       let assetLoans: any
-      if (startDate) {
+      if (returnAll) {
+        // ASSET RETURNED 
+        const assetLoanCount = await AssetLoan.query()
+          .where('assetLoanBatchId', id)
+          .andWhereNull('endDate')
+        if (assetLoanCount.length) {
+          assetLoans = await AssetLoan.query()
+            .where('assetLoanBatchId', id)
+            .andWhereNull('endDate')
+            .update({ endDate: endDate!.toISO() })
+            .returning('*')
+          const idAssets = assetLoans.map(asset => asset.asset_id)
+          await Asset.query()
+            .whereIn('id', idAssets)
+            .update('assetStatusId', 'AVAILABLE')
+        }
+      } else if (startDate) {
+        // update property of loaned asset
         assetLoans = await AssetLoan.query()
           .where('assetLoanBatchId', id)
           .update({ startDate: startDate.toISO() })
           .returning('*')
-      } else if (returnAll) {
-        // ASSET RETURNED 
-        assetLoans = await AssetLoan.query()
-          .where('assetLoanBatchId', id)
-          .update({ endDate: endDate!.toISO() })
-          .returning('*')
-
-
-        const idAssets = assetLoans.map(asset => asset.id)
-        await Asset.query()
-          .whereIn('id', idAssets)
-          .update('assetStatusId', 'AVAILABLE')
       }
-
 
       response.ok({ message: "Berhasil mengubah data", data: { batch, assets: assetLoans } })
     } catch (error) {

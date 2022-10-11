@@ -1,11 +1,12 @@
 import { DateTime } from 'luxon'
-import { afterCreate, afterFetch, BaseModel, beforeCreate, BelongsTo, belongsTo, column } from '@ioc:Adonis/Lucid/Orm'
+import { afterCreate, afterFetch, BaseModel, beforeCreate, BelongsTo, belongsTo, column, HasMany, hasMany } from '@ioc:Adonis/Lucid/Orm'
 import { v4 as uuidv4 } from 'uuid'
 import Model from './Model'
 import AssetLocation from './AssetLocation'
 import Supplier from './Supplier'
 import AssetStatus from './AssetStatus'
 import Drive from '@ioc:Adonis/Core/Drive'
+import AssetLoan from './AssetLoan'
 
 let newId = ""
 export default class Asset extends BaseModel {
@@ -37,6 +38,9 @@ export default class Asset extends BaseModel {
 
   @belongsTo(() => AssetStatus)
   public assetStatus: BelongsTo<typeof AssetStatus>
+
+  @hasMany(() => AssetLoan)
+  public assetLoan: HasMany<typeof AssetLoan>
 
   @column()
   public serial: string

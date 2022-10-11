@@ -38,6 +38,7 @@ export default class AssetsController {
           .query()
           .preload('assetStatus')
           .if(status, query => query.where('asset_status_id', status.toUpperCase()))
+          .if(status.toUpperCase() === "BORROWED", query => query.preload('assetLoan', loan => loan.whereNull('endDate')))
           .andWhere(query => {
             query.if(keyword, query => {
               query.whereILike('serial', `%${keyword}%`)

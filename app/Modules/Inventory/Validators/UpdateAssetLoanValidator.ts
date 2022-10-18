@@ -45,10 +45,12 @@ export default class UpdateAssetLoanValidator {
     studentId: schema.string.nullableAndOptional([
       rules.exists({ table: 'academic.students', column: 'id' }),
       rules.requiredWhen('employeeId', '=', null),
+      rules.requiredIfNotExists('employeeId')
     ]),
     employeeId: schema.string.nullableAndOptional([
       rules.exists({ table: 'employees', column: 'id' }),
       rules.requiredWhen('studentId', '=', null),
+      rules.requiredIfNotExists('studentId')
     ]),
 
     notes: schema.string.nullableAndOptional()

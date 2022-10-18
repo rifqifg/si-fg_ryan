@@ -104,10 +104,17 @@ export default class AssetLoansController {
       const data = await AssetLoan.findOrFail(id)
       await data.merge(payload).save()
 
+      const asset = await Asset.findOrFail(data.assetId)
       if (payload.endDate) {
         try {
-          const asset = await Asset.findOrFail(data.assetId)
           await asset.merge({ assetStatusId: 'AVAILABLE' }).save()
+        } catch (error) {
+          console.log(error);
+          response.badRequest({ message: "Gagal mengubah status asset", error: error.message })
+        }
+      } else if (payload.endDate === null) {
+        try {
+          await asset.merge({ assetStatusId: 'BORROWED' }).save()
         } catch (error) {
           console.log(error);
           response.badRequest({ message: "Gagal mengubah status asset", error: error.message })

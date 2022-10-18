@@ -97,6 +97,8 @@ export default class AssetLoansController {
 
     const payload = await request.validate(UpdateAssetLoanValidator)
 
+    payload.employeeId = payload.employeeId ? payload.employeeId : null
+    payload.studentId = payload.studentId ? payload.studentId : null
 
     try {
       const data = await AssetLoan.findOrFail(id)

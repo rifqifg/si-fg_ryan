@@ -45,7 +45,10 @@ export default class Asset extends BaseModel {
   @column()
   public serial: string
 
-  @column()
+  @column({
+    prepare: (value: Array<object>) => JSON.stringify(value),
+    consume: (value: string) => JSON.parse(value),
+  })
   public tag: string
 
   @column.date()

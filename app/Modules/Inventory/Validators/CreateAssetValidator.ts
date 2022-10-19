@@ -37,7 +37,9 @@ export default class CreateAssetValidator {
       rules.exists({ table: 'inventory.asset_statuses', column: 'id' })
     ]),
     serial: schema.string([rules.unique({ table: 'inventory.assets', column: 'serial' })]),
-    tag: schema.string.optional([rules.alphaNum({ allow: ['dash'] })]),
+    tag: schema.array.optional().members(
+      schema.string([rules.alphaNum({ allow: ['dash'] })])
+    ),
     purchaseDate: schema.date.optional(),
     orderNumber: schema.string.optional(),
     price: schema.string.optional(),

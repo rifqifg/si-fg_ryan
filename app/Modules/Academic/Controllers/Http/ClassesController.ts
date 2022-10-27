@@ -51,7 +51,10 @@ export default class ClassesController {
     if (!uuidValidation(id)) { return response.badRequest({ message: "Class ID tidak valid" }) }
 
     try {
-      const data = await Class.query().preload('homeroomTeacher', query => query.select('name', 'nip')).where('id', id).firstOrFail()
+      const data = await Class.query()
+        .preload('homeroomTeacher', query => query.select('name', 'nip'))
+        .preload('students', student => student.select('name', 'nis', 'nisn'))
+        .where('id', id).firstOrFail()
       response.ok({ message: "Berhasil mengambil data", data })
     } catch (error) {
       console.log(error);

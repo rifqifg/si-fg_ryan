@@ -1,7 +1,8 @@
 import { DateTime } from 'luxon'
-import { afterCreate, BaseModel, beforeCreate, BelongsTo, belongsTo, column } from '@ioc:Adonis/Lucid/Orm'
+import { afterCreate, BaseModel, beforeCreate, BelongsTo, belongsTo, column, hasMany } from '@ioc:Adonis/Lucid/Orm'
 import Employee from 'App/Models/Employee';
 import { v4 as uuidv4 } from 'uuid'
+import Student from './Student';
 let newId = ""
 
 export default class Class extends BaseModel {
@@ -21,6 +22,9 @@ export default class Class extends BaseModel {
 
   @belongsTo(() => Employee)
   public homeroomTeacher: BelongsTo<typeof Employee>
+
+  @hasMany(()=> Student)
+  public students: HasMany<typeof Student>
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime

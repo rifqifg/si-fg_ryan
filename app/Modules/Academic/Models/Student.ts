@@ -29,10 +29,10 @@ export default class Student extends BaseModel {
   public nisn: string | null
 
   @column()
-  public birth_city: string | null
+  public birthCity: string | null
 
   @column.date()
-  public birth_day: DateTime | null
+  public birthDay: DateTime | null
 
   @column()
   public religion: string | null

@@ -53,7 +53,7 @@ export default class ClassesController {
     try {
       const data = await Class.query()
         .preload('homeroomTeacher', query => query.select('name', 'nip'))
-        .preload('students', student => student.select('name', 'nis', 'nisn'))
+        .preload('students', student => student.select('id', 'name', 'nis', 'nisn'))
         .where('id', id).firstOrFail()
       response.ok({ message: "Berhasil mengambil data", data })
     } catch (error) {

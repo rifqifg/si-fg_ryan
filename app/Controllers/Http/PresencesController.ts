@@ -24,7 +24,10 @@ export default class PresencesController {
           query.whereILike('name', `%${keyword}%`)
         })
       })
-      .whereBetween('time_in', [fromDate, toDate])
+      // .whereBetween('time_in', [fromDate, toDate])
+      .andWhereRaw(`time_in::date between '${fromDate}' and '${toDate}'`)
+      // .andWhereRaw(`time_in::date - '${toDate}'::date<=0`)
+      // .andWhereRaw(`time_in::date - '${fromDate}'::date>=0`)
       .orderBy(orderBy)
       .paginate(page, limit)
 

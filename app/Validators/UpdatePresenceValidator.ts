@@ -27,12 +27,8 @@ export default class UpdatePresenceValidator {
     activityId: schema.string.optional({}, [
       rules.exists({ table: "activities", column: "id" })
     ]),
-    timeIn: schema.date.optional({ format: 'yyyy-MM-dd HH:mm:ss' }, [
-      rules.beforeField('timeOut')
-    ]),
-    timeOut: schema.date.optional({ format: 'yyyy-MM-dd HH:mm:ss' }, [
-      rules.afterField('timeIn')
-    ]),
+    timeIn: schema.date.optional({ format: 'yyyy-MM-dd HH:mm:ss' }, []),
+    timeOut: schema.date.nullableAndOptional({ format: 'yyyy-MM-dd HH:mm:ss' }, []),
     description: schema.string.optional()
   })
 

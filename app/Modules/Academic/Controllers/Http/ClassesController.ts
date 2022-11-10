@@ -14,6 +14,7 @@ export default class ClassesController {
         data = await Class
           .query()
           .preload('homeroomTeacher', query => query.select('name', 'nip'))
+          .withCount('students')
           .whereILike('name', `%${keyword}%`)
           .orderBy('name')
           .paginate(page, limit)
@@ -22,6 +23,7 @@ export default class ClassesController {
           .query()
           .select('id', 'name', 'description', 'employeeId')
           .preload('homeroomTeacher', query => query.select('name', 'nip'))
+          .withCount('students')
           .whereILike('name', `%${keyword}%`)
           .orderBy('id')
       } else {

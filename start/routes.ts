@@ -43,6 +43,7 @@ Route.get('/division-list/', 'DivisionsController.getDivision').as('division.lis
 Route.get('/activity-list/', 'ActivitiesController.getActivity').as('activity.list').middleware(['auth', 'checkRole:admin,piket,qa'])
 Route.post('/presence/scan', 'PresencesController.scanRFID').as('presence.scan').middleware(['auth', 'checkRole:admin,piket,qa'])
 Route.get('/presence/:id/recap', 'PresencesController.recap').as('presence.recap').middleware(['auth', 'checkRole:admin,piket,qa'])
+Route.get('/presence/:id/hours', 'PresencesController.hours').as('presence.hours').middleware(['auth', 'checkRole:admin,piket,qa'])
 Route.group(() => {
   Route.shallowResource('modules', 'System/ModulesController').except(['edit']).middleware({ '*': ['auth', 'checkRole:admin,superAdmin'] }).as('modules')
   Route.shallowResource('modules.menus', 'System/MenusController').except(['edit']).middleware({ '*': ['auth', 'checkRole:admin,superAdmin'] }).as('menus')

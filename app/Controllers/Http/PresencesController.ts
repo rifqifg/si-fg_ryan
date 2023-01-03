@@ -217,4 +217,19 @@ export default class PresencesController {
 
     response.ok({ message: "Get data success", overview, detail, recap })
   }
+
+  public async hours({ params, response, request }: HttpContextContract) {
+    const hariIni = DateTime.now().toSQLDate().toString()
+    const { id } = params
+    let { from = hariIni, to = hariIni } = request.qs()
+    from = DateTime.fromISO(from)
+    to = DateTime.fromISO(to)
+    let weeks = {}
+
+    for (from; from <= to; from = from.plus({ days: 1 })) {
+      console.log(from.toISODate());
+      //TODO: check weeks number dari luxon trus jadiin object per week number di array weeks https://moment.github.io/luxon/api-docs/index.html#datetimeweeknumber 
+    }
+    return 'x'
+  }
 }

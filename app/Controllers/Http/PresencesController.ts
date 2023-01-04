@@ -221,7 +221,35 @@ export default class PresencesController {
   public async hours({ params, response, request }: HttpContextContract) {
     const hariIni = DateTime.now().toSQLDate().toString()
     const { id } = params
-    let { from = hariIni, to = hariIni } = request.qs()
+    let { from = hariIni, to = hariIni, employeeId } = request.qs()
+
+
+    const recapHourlyQuery = `
+      select name
+        ,count(name) working_days
+        ,sum(time_out :: time - time_in::time)::string working_hours 
+      from (
+        select e.name
+        ,time_in
+        ,case when time_out is not null then time_out else time_in :: date + '12:30:00':: time end time_out
+        from presences p 
+        left join employees e 
+          on e.id = p.employee_id 
+        where activity_id  = '${id}'
+        and time_in::date between '${from}' and '${to}'
+        order by e.name
+      )a
+      group by name
+      order by name
+    `
+
+    if (!employeeId) {
+      const { rows: recapHourly } = await Database.rawQuery(recapHourlyQuery)
+      console.log(recapHourly);
+      return response.ok({ message: "Berhasil mengambil data", data: recapHourly })
+    }
+
+    // TODO: next bikin ketika ada employeeId, tampilkan data recap detail per week
 
     // from = DateTime.fromISO(from)
     // to = DateTime.fromISO(to)
@@ -240,28 +268,5 @@ export default class PresencesController {
     // }
     // console.log(recapDate);
     // return recapDate;
-
-    const { rows: recapHourly } = await Database.rawQuery(`
-      select name
-        ,count(name) working_days
-        ,sum(time_out :: time - time_in::time)::string working_hours 
-      from (
-        select e.name
-        ,time_in
-        ,case when time_out is not null then time_out else time_in :: date + '12:30:00':: time end time_out
-        from presences p 
-        left join employees e 
-          on e.id = p.employee_id 
-        where activity_id  = '${id}'
-        and time_in::date between '${from}' and '${to}'
-        order by e.name
-      )a
-      group by name
-      order by name
-    `)
-    console.log(recapHourly);
-
-
-    response.ok({ message: "Berhasil mengambil data", data: recapHourly })
   }
 }

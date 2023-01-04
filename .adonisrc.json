@@ -20,12 +20,22 @@
     {
       "file": "./start/routes",
       "optional": false,
-      "environment": ["web", "console", "test", "repl"]
+      "environment": [
+        "web",
+        "console",
+        "test",
+        "repl"
+      ]
     },
     {
       "file": "./start/kernel",
       "optional": false,
-      "environment": ["web", "console", "test", "repl"]
+      "environment": [
+        "web",
+        "console",
+        "test",
+        "repl"
+      ]
     }
   ],
   "namespaces": {
@@ -72,13 +82,19 @@
     "@adonisjs/mail",
     "@adonisjs/view"
   ],
-  "aceProviders": ["@adonisjs/repl"],
-  "testProviders": ["@japa/preset-adonis/TestsProvider"],
+  "aceProviders": [
+    "@adonisjs/repl"
+  ],
+  "testProviders": [
+    "@japa/preset-adonis/TestsProvider"
+  ],
   "tests": {
     "suites": [
       {
         "name": "functional",
-        "files": ["tests/functional/**/*.spec(.ts|.js)"],
+        "files": [
+          "tests/functional/**/*.spec(.ts|.js)"
+        ],
         "timeout": 60000
       }
     ],
@@ -106,7 +122,10 @@
       "InventoryControllers": "app/Modules/Inventory/Controllers/Http",
       "InventoryModels": "app/Modules/Inventory/Models/"
     },
-    "preloads": ["./start/routes", "./start/kernel"],
+    "preloads": [
+      "./start/routes",
+      "./start/kernel"
+    ],
     "providers": [
       "./providers/AppProvider",
       "@adonisjs/core",
@@ -115,17 +134,23 @@
       "@adonisjs/mail",
       "@adonisjs/view"
     ],
-    "aceProviders": ["@adonisjs/repl"],
+    "aceProviders": [
+      "@adonisjs/repl"
+    ],
     "tests": {
       "suites": [
         {
           "name": "functional",
-          "files": ["tests/functional/**/*.spec(.ts|.js)"],
+          "files": [
+            "tests/functional/**/*.spec(.ts|.js)"
+          ],
           "timeout": 60000
         }
       ]
     },
-    "testProviders": ["@japa/preset-adonis/TestsProvider"],
+    "testProviders": [
+      "@japa/preset-adonis/TestsProvider"
+    ],
     "metaFiles": [
       {
         "pattern": "resources/views/**/*.edge",

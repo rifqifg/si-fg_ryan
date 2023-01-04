@@ -23,7 +23,7 @@
     "@adonisjs/lucid": "^18.1.0",
     "@adonisjs/mail": "^8.1.2",
     "@adonisjs/repl": "^3.1.11",
-    "@adonisjs/view": "^6.1.6",
+    "@adonisjs/view": "^6.2.0",
     "aws-sdk": "^2.1199.0",
     "bcrypt": "^5.1.0",
     "luxon": "^3.0.1",

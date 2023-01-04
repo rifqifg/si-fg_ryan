@@ -243,10 +243,34 @@ export default class PresencesController {
       order by name
     `
 
+    const recapHourlyEmployeeQuery = `
+      select e.id employee_id
+        ,e.name
+        ,time_in
+        ,case when time_out is not null then time_out else time_in :: date + '12:30:00':: time end time_out
+        from presences p 
+      left join employees e 
+        on e.id = p.employee_id 
+      where activity_id  = '${id}'
+        and time_in::date between '${from}' and '${to}'
+        and e.id = '${employeeId}'
+      order by e.name
+    `
+
     if (!employeeId) {
       const { rows: recapHourly } = await Database.rawQuery(recapHourlyQuery)
       console.log(recapHourly);
       return response.ok({ message: "Berhasil mengambil data", data: recapHourly })
+    } else {
+      const { rows: recapHourlyEmployee } = await Database.rawQuery(recapHourlyEmployeeQuery)
+      const recap = {}
+      recapHourlyEmployee.forEach(data => {
+        const timeIn = DateTime.fromObject(data.time_in)
+
+        console.log(data.name, data.time_in, timeIn.weekNumber, timeIn.toISODate())
+      });
+      // console.log(recapHourlyEmployee);
+      return response.ok({ message: "Berhasil mengambil data", data: recapHourlyEmployee })
     }
 
     // TODO: next bikin ketika ada employeeId, tampilkan data recap detail per week

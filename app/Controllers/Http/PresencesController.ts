@@ -266,9 +266,12 @@ export default class PresencesController {
       const name = year + "-" + weekNumber
       const totalHours = Duration.fromISOTime(data.total_hours)
       const dates = { timeIn, timeOut, totalHours: totalHours.toFormat("hh:mm:ss") }
-      const isi = { totalHoursInWeek: totalHours.toFormat("hh:mm:ss"), dates: [dates] }
+      const isi = { weekNumber, totalHoursInWeek: totalHours.toFormat("hh:mm:ss"), dates: [dates] }
 
+      // TODO: grandTotalHours bug if more than 100 hours, alternative : use total_hours from /recap
+      // console.log(grandTotalHours, totalHours.toISOTime());
       grandTotalHours = Duration.fromISOTime(grandTotalHours).plus(totalHours).toFormat("hh:mm:ss")
+      // console.log(grandTotalHours);
 
       if (name in recapDate) {
         const newTotalHoursInWeek = Duration.fromISOTime(recapDate[name].totalHoursInWeek).plus(totalHours).toFormat("hh:mm:ss")
@@ -278,27 +281,11 @@ export default class PresencesController {
         recapDate[name] = isi
       }
     })
-    // console.log(recapDate);
-    return response.ok({ message: "Berhasil mengambil data", grandTotalHours, data: recapDate })
 
-    // TODO: next bikin ketika ada employeeId, tampilkan data recap detail per week
+    const sortedRecaps = Object.entries(recapDate).sort().reduce((o, [k, v]) => (o[k] = v, o), {})
 
-    // from = DateTime.fromISO(from)
-    // to = DateTime.fromISO(to)
-    // let recapDate = {}
-    // for (from; from <= to; from = from.plus({ days: 1 })) {
-    //   const tanggal = from.toISODate()
-    //   const weekNumber = from.weekNumber
-    //   const year = from.year
-    //   const name = year + "-" + weekNumber
-    //   if (name in recapDate) {
-    //     recapDate[name].push(tanggal)
-    //   } else {
-    //     recapDate[name] = [tanggal]
-    //   }
-    //   // console.log(name, tanggal);
-    // }
-    // console.log(recapDate);
-    // return recapDate;
+    // remarked due to bug
+    // return response.ok({ message: "Berhasil mengambil data", grandTotalHours, data: sortedRecaps })
+    return response.ok({ message: "Berhasil mengambil data", data: sortedRecaps })
   }
 }

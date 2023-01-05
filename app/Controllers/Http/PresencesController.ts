@@ -5,7 +5,7 @@ import Employee from 'App/Models/Employee'
 import Presence from 'App/Models/Presence'
 import CreatePresenceValidator from 'App/Validators/CreatePresenceValidator'
 import UpdatePresenceValidator from 'App/Validators/UpdatePresenceValidator'
-import { DateTime } from 'luxon'
+import { DateTime, Duration } from 'luxon'
 export default class PresencesController {
   public async index({ request, response }: HttpContextContract) {
     const hariIni = DateTime.now().toSQLDate().toString()
@@ -176,17 +176,28 @@ export default class PresencesController {
       order by name, time_in
     `)
 
-    const { rows: recap } = await Database.rawQuery(`
-    select e.name, count(e.name) total
-    , case when sum(time_in ::time - '07:30:00'::time) > interval '0 second' then sum(time_in ::time - '07:30:00'::time) ::string else '0' end late
-    from presences p 
-    left join employees e 
-      on e.id = p.employee_id 
-    where activity_id  = '${id}'
-    and time_in::date between '${from}' and '${to}'
-    group by e.name
-    order by e.name;
-    `)
+    const recapHourlyQuery = `
+      select id, name
+        ,count(name) total
+        ,sum(time_out :: time - time_in::time)::string total_hours
+        ,case when sum(time_in ::time - '07:30:00'::time) > interval '0 second' then sum(time_in ::time - '07:30:00'::time) ::string else '0' end late
+      from (
+        select e.id, e.name
+        ,time_in
+        ,case when time_out is not null then time_out else time_in :: date + '12:30:00':: time end time_out
+        from presences p 
+        left join employees e 
+          on e.id = p.employee_id 
+        where activity_id  = '${id}'
+        and time_in::date between '${from}' and '${to}'
+        order by e.name
+      )a
+      group by name, id
+      order by name
+    `
+
+
+    const { rows: recap } = await Database.rawQuery(recapHourlyQuery)
 
     const { rows: [overview] } = await Database.rawQuery(`
       select data.*, (presence_total/presence_expected)*100  presence_precentage, mostPresent.*
@@ -215,7 +226,7 @@ export default class PresencesController {
       ) mostPresent
     `)
 
-    response.ok({ message: "Get data success", overview, detail, recap })
+    response.ok({ message: "Get data success", overview, recap, detail })
   }
 
   public async hours({ params, response, request }: HttpContextContract) {
@@ -223,55 +234,52 @@ export default class PresencesController {
     const { id } = params
     let { from = hariIni, to = hariIni, employeeId } = request.qs()
 
-
-    const recapHourlyQuery = `
-      select name
-        ,count(name) working_days
-        ,sum(time_out :: time - time_in::time)::string working_hours 
-      from (
-        select e.name
-        ,time_in
-        ,case when time_out is not null then time_out else time_in :: date + '12:30:00':: time end time_out
-        from presences p 
+    const recapHourlyEmployeeQuery = `
+    select *
+      ,sum(time_out :: time - time_in::time)::string total_hours
+    from (
+        select e.id employee_id
+          ,e.name
+          ,time_in
+          ,case when time_out is not null then time_out else time_in :: date + '12:30:00':: time end time_out
+          from presences p 
         left join employees e 
           on e.id = p.employee_id 
         where activity_id  = '${id}'
-        and time_in::date between '${from}' and '${to}'
-        order by e.name
-      )a
-      group by name
-      order by name
+          and time_in::date between '${from}' and '${to}'
+          and e.id = '${employeeId}'
+          order by e.name
+    ) x
+    group by employee_id, name, time_in, time_out
     `
 
-    const recapHourlyEmployeeQuery = `
-      select e.id employee_id
-        ,e.name
-        ,time_in
-        ,case when time_out is not null then time_out else time_in :: date + '12:30:00':: time end time_out
-        from presences p 
-      left join employees e 
-        on e.id = p.employee_id 
-      where activity_id  = '${id}'
-        and time_in::date between '${from}' and '${to}'
-        and e.id = '${employeeId}'
-      order by e.name
-    `
+    const { rows: recapHourlyEmployee } = await Database.rawQuery(recapHourlyEmployeeQuery)
+    // return recapHourlyEmployee
+    const recapDate = {}
+    let grandTotalHours = "00:00:00.000"
 
-    if (!employeeId) {
-      const { rows: recapHourly } = await Database.rawQuery(recapHourlyQuery)
-      console.log(recapHourly);
-      return response.ok({ message: "Berhasil mengambil data", data: recapHourly })
-    } else {
-      const { rows: recapHourlyEmployee } = await Database.rawQuery(recapHourlyEmployeeQuery)
-      const recap = {}
-      recapHourlyEmployee.forEach(data => {
-        const timeIn = DateTime.fromObject(data.time_in)
+    recapHourlyEmployee?.forEach(data => {
+      const timeIn = DateTime.fromISO(data.time_in.toISOString())
+      const timeOut = DateTime.fromISO(data.time_out.toISOString())
+      const weekNumber = timeIn.weekNumber
+      const year = timeIn.year
+      const name = year + "-" + weekNumber
+      const totalHours = Duration.fromISOTime(data.total_hours)
+      const dates = { timeIn, timeOut, totalHours: totalHours.toFormat("hh:mm:ss") }
+      const isi = { totalHoursInWeek: totalHours.toFormat("hh:mm:ss"), dates: [dates] }
 
-        console.log(data.name, data.time_in, timeIn.weekNumber, timeIn.toISODate())
-      });
-      // console.log(recapHourlyEmployee);
-      return response.ok({ message: "Berhasil mengambil data", data: recapHourlyEmployee })
-    }
+      grandTotalHours = Duration.fromISOTime(grandTotalHours).plus(totalHours).toFormat("hh:mm:ss")
+
+      if (name in recapDate) {
+        const newTotalHoursInWeek = Duration.fromISOTime(recapDate[name].totalHoursInWeek).plus(totalHours).toFormat("hh:mm:ss")
+        recapDate[name].totalHoursInWeek = newTotalHoursInWeek
+        recapDate[name].dates.push(dates)
+      } else {
+        recapDate[name] = isi
+      }
+    })
+    // console.log(recapDate);
+    return response.ok({ message: "Berhasil mengambil data", grandTotalHours, data: recapDate })
 
     // TODO: next bikin ketika ada employeeId, tampilkan data recap detail per week
 

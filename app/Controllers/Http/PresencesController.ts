@@ -14,6 +14,7 @@ export default class PresencesController {
 
     const activity = await Activity.findOrFail(activityId)
     const presence = await Presence.query()
+      .select("*")
       .preload('employee', query => {
         query.select('name', 'id', 'nip')
         query.orderBy('name')
@@ -30,6 +31,9 @@ export default class PresencesController {
       // .andWhereRaw(`time_in::date - '${fromDate}'::date>=0`)
       .orderBy(orderBy)
       .paginate(page, limit)
+
+    // console.log(presence);
+
 
     response.ok({
       message: "Data Berhasil Didapatkan", data: {
@@ -236,41 +240,53 @@ export default class PresencesController {
 
     const recapHourlyEmployeeQuery = `
     select *
-      ,sum(time_out :: time - time_in::time)::string total_hours
+    ,(total_hours::time - max_working_duration::time)::string working_time_diff
     from (
-        select e.id employee_id
-          ,e.name
-          ,time_in
-          ,case when time_out is not null then time_out else time_in :: date + '12:30:00':: time end time_out
-          from presences p 
-        left join employees e 
-          on e.id = p.employee_id 
-        where activity_id  = '${id}'
-          and time_in::date between '${from}' and '${to}'
-          and e.id = '${employeeId}'
-          order by e.name
-    ) x
-    group by employee_id, name, time_in, time_out
+      select employee_id, name, time_in, time_out, max_working_duration ,total_hours as original_total_hours
+        ,case when (total_hours::time - max_working_duration::time)::int <=0 then total_hours else max_working_duration::string end total_hours
+      from (
+        select *
+            ,sum(time_out :: time - time_in::time)::string total_hours
+          from (
+              select e.id employee_id
+                ,e.name
+                ,time_in
+                ,case when time_out is not null then time_out else time_in :: date + '12:30:00':: time end time_out
+                ,a.max_working_duration 
+                from presences p 
+              left join employees e 
+                on e.id = p.employee_id 
+              left join activities a 
+                on a.id = activity_id
+              where activity_id  = '${id}'
+                and time_in::date between '${from}' and '${to}'
+                and e.id = '${employeeId}'
+                order by e.name
+          ) x
+          group by employee_id, name, time_in, time_out, max_working_duration
+      ) y
+    )z
     `
 
     const { rows: recapHourlyEmployee } = await Database.rawQuery(recapHourlyEmployeeQuery)
     // return recapHourlyEmployee
     const recapDate = {}
-    let grandTotalHours = "00:00:00.000"
+    // let grandTotalHours = "00:00:00.000"
 
     recapHourlyEmployee?.forEach(data => {
       const timeIn = DateTime.fromISO(data.time_in.toISOString())
       const timeOut = DateTime.fromISO(data.time_out.toISOString())
+      const workingTimeDiff = data.working_time_diff
       const weekNumber = timeIn.weekNumber
       const year = timeIn.year
       const name = year + "-" + weekNumber
       const totalHours = Duration.fromISOTime(data.total_hours)
-      const dates = { timeIn, timeOut, totalHours: totalHours.toFormat("hh:mm:ss") }
+      const dates = { timeIn, timeOut, totalHours: totalHours.toFormat("hh:mm:ss"), workingTimeDiff }
       const isi = { weekNumber, totalHoursInWeek: totalHours.toFormat("hh:mm:ss"), dates: [dates] }
 
-      // TODO: grandTotalHours bug if more than 100 hours, alternative : use total_hours from /recap
+      // BUG: grandTotalHours bug if more than 100 hours, alternative : use total_hours from /recap
       // console.log(grandTotalHours, totalHours.toISOTime());
-      grandTotalHours = Duration.fromISOTime(grandTotalHours).plus(totalHours).toFormat("hh:mm:ss")
+      // grandTotalHours = Duration.fromISOTime(grandTotalHours).plus(totalHours).toFormat("hh:mm:ss")
       // console.log(grandTotalHours);
 
       if (name in recapDate) {
@@ -284,7 +300,7 @@ export default class PresencesController {
 
     const sortedRecaps = Object.entries(recapDate).sort().reduce((o, [k, v]) => (o[k] = v, o), {})
 
-    // remarked due to bug
+    // remarked due to BUG
     // return response.ok({ message: "Berhasil mengambil data", grandTotalHours, data: sortedRecaps })
     return response.ok({ message: "Berhasil mengambil data", data: sortedRecaps })
   }

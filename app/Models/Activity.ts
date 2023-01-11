@@ -29,6 +29,9 @@ export default class Activity extends BaseModel {
   public timeOutEnd: string
 
   @column()
+  public maxWorkingDuration: string
+
+  @column()
   public type: string
 
   @column()

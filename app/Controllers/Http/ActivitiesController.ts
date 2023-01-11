@@ -57,6 +57,7 @@ export default class ActivitiesController {
         timeInEnd: payload.timeInEnd.toFormat('HH:mm'),
         timeOutStart: payload.timeOutStart.toFormat('HH:mm'),
         timeOutEnd: payload.timeOutEnd.toFormat('HH:mm'),
+        maxWorkingDuration: payload.maxWorkingDuration?.toFormat('HH:mm'),
         type: payload.type,
         scheduleActive: payload.scheduleActive,
         days: payload.days,
@@ -157,6 +158,7 @@ export default class ActivitiesController {
       payload.timeInEnd ? formattedPayload['timeInEnd'] = payload.timeInEnd!.toFormat('HH:mm') : ''
       payload.timeOutStart ? formattedPayload['timeOutStart'] = payload.timeOutStart!.toFormat('HH:mm') : ''
       payload.timeOutEnd ? formattedPayload['timeOutEnd'] = payload.timeOutEnd!.toFormat('HH:mm') : ''
+      payload.maxWorkingDuration ? formattedPayload['maxWorkingDuration'] = payload.maxWorkingDuration?.toFormat('HH:mm:00') : ''
       payload.type ? formattedPayload['type'] = payload.type : ''
       payload.scheduleActive ? formattedPayload['scheduleActive'] = payload.scheduleActive : ''
       payload.days ? formattedPayload['days'] = payload.days : ""

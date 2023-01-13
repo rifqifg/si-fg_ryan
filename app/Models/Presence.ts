@@ -67,8 +67,8 @@ export default class Presence extends BaseModel {
 }
 
 const calculateWorkingTime = async presence => {
-
   const isYesterday = presence.timeIn.diffNow(['day', 'hour', 'minute', 'second']).toMillis() < 0
+
   if (presence.timeOut) {
     const workingDuration = presence.timeOut.diff(presence.timeIn, ['hours', 'minutes', 'seconds'])
     const activity = await Activity.find(presence.activityId)
@@ -77,7 +77,7 @@ const calculateWorkingTime = async presence => {
       const max = Duration.fromISOTime(maxWorkingDuration)
       let workingTimeDiff = workingDuration.minus(max).toFormat("hh:mm:ss")
 
-      if (workingTimeDiff[0] == "-") {
+      if (workingTimeDiff.indexOf("-") > 0) {
         workingTimeDiff = "-" + workingTimeDiff.split('-').join("")
       }
       return workingTimeDiff

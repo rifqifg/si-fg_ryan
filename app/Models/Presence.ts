@@ -86,9 +86,7 @@ const calculateWorkingTime = async presence => {
     const forcedTimeOut = presence.timeIn.set({ hour: 12, minute: 30, second: 0, millisecond: 0 }) //set timeOut ke jam 12:30 siang
     let workingTimeDiff = forcedTimeOut.diff(presence.timeIn, ['hours', 'minutes', 'seconds']).toFormat("hh:mm:ss")
 
-    if (workingTimeDiff[0] == "-") {
-      workingTimeDiff = "-" + workingTimeDiff.split('-').join("")
-    }
+    workingTimeDiff = "-" + workingTimeDiff.split('-').join("") //selalu minus karena tidak absen out
     return workingTimeDiff
   }
 }

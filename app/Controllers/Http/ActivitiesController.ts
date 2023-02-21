@@ -12,12 +12,14 @@ export default class ActivitiesController {
     let data: object
     if (auth.user!.role == 'super_admin') {
       data = await Activity.query()
+        .preload('division', division=>division.select('id','name'))
         .whereILike('name', `%${keyword}%`)
         .orderBy(orderBy, orderDirection)
         .paginate(page, limit)
 
     } else {
       data = await Activity.query()
+        .preload('division', division=>division.select('id','name'))
         .whereILike('name', `%${keyword}%`)
         .andWhere('division_id', auth.user!.divisionId)
         .orderBy(orderBy, orderDirection)
@@ -33,10 +35,12 @@ export default class ActivitiesController {
 
     if (auth.user!.role == 'super_admin') {
       data = await Activity.query()
+        .preload('division', division=>division.select('id','name'))
         .whereILike('name', `%${keyword}%`)
         .orderBy(orderBy, orderDirection)
     } else {
       data = await Activity.query()
+        .preload('division', division=>division.select('id','name'))
         .whereILike('name', `%${keyword}%`)
         .andWhere('owner', auth.user!.id)
         .orderBy(orderBy, orderDirection)

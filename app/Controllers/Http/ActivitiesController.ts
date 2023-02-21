@@ -10,7 +10,7 @@ export default class ActivitiesController {
     const { page = 1, limit = 10, keyword = "", orderBy = "name", orderDirection = 'ASC' } = request.qs()
 
     let data: object
-    if (auth.user!.role == 'superAdmin') {
+    if (auth.user!.role == 'super_admin') {
       data = await Activity.query()
         .whereILike('name', `%${keyword}%`)
         .orderBy(orderBy, orderDirection)
@@ -31,7 +31,7 @@ export default class ActivitiesController {
     const { keyword = "", orderBy = "name", orderDirection = 'ASC' } = request.qs()
     let data: object
 
-    if (auth.user!.role == 'superAdmin') {
+    if (auth.user!.role == 'super_admin') {
       data = await Activity.query()
         .whereILike('name', `%${keyword}%`)
         .orderBy(orderBy, orderDirection)
@@ -185,7 +185,7 @@ export default class ActivitiesController {
       response.ok({ message: "Delete data success" })
     } catch (error) {
       console.log(error);
-      response.internalServerError(error)
+      response.badRequest({ message: "Tidak dapat menghapus aktivitas yang sudah memiliki presensi", error: error.message || error })
     }
   }
 }

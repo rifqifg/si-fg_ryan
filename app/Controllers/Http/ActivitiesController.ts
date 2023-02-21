@@ -19,7 +19,7 @@ export default class ActivitiesController {
     } else {
       data = await Activity.query()
         .whereILike('name', `%${keyword}%`)
-        .andWhere('owner', auth.user!.id)
+        .andWhere('division_id', auth.user!.divisionId)
         .orderBy(orderBy, orderDirection)
         .paginate(page, limit)
     }
@@ -61,7 +61,8 @@ export default class ActivitiesController {
         type: payload.type,
         scheduleActive: payload.scheduleActive,
         days: payload.days,
-        owner: auth.user!.id
+        owner: auth.user!.id,
+        division_id: payload.division_id || auth.user!.divisionId
       }
       const data = await Activity.create(formattedPayload)
 
@@ -162,6 +163,7 @@ export default class ActivitiesController {
       payload.type ? formattedPayload['type'] = payload.type : ''
       payload.scheduleActive ? formattedPayload['scheduleActive'] = payload.scheduleActive : ''
       payload.days ? formattedPayload['days'] = payload.days : ""
+      formattedPayload['division_id'] = payload.division_id
 
       const findData = await Activity.findOrFail(id)
       const data = await findData.merge(formattedPayload).save()

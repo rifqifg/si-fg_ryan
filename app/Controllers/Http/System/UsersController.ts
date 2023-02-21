@@ -5,8 +5,8 @@ import User from 'App/Models/User'
 // import Env from '@ioc:Adonis/Core/Env'
 import { v4 as uuidv4 } from 'uuid'
 import Hash from '@ioc:Adonis/Core/Hash'
-import Permission from 'App/Models/Permission'
-import PermissionList from 'App/Models/PermissionList'
+// import Permission from 'App/Models/Permission'
+// import PermissionList from 'App/Models/PermissionList'
 import Database from '@ioc:Adonis/Lucid/Database'
 
 export default class UsersController {
@@ -22,16 +22,14 @@ export default class UsersController {
 
         try {
             const token = await auth.use('api').attempt(payload.email, payload.password)
-            const acl = await Permission.query().select('role_id', 'menu_id', 'type', 'function').where('role_id', auth.user!.role)
-            const acl2 = await PermissionList.query().select('role_id', 'id', 'type').where('role_id', auth.user!.role)
+            // const acl = await Permission.query().select('role_id', 'menu_id', 'type', 'function').where('role_id', auth.user!.role)
+            // const acl2 = await PermissionList.query().select('role_id', 'id', 'type').where('role_id', auth.user!.role)
             const user = await User.query().where('id', auth.user!.id).preload('roles', query => query.select('name', 'permissions'))
 
             response.ok({
                 message: 'login succesfull',
                 token,
                 data: user,
-                acl,
-                acl2,
             })
         } catch (error) {
             console.log(error);

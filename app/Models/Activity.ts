@@ -1,7 +1,8 @@
 import { DateTime } from 'luxon'
-import { afterCreate, BaseModel, beforeCreate, column, HasMany, hasMany } from '@ioc:Adonis/Lucid/Orm'
+import { afterCreate, BaseModel, beforeCreate, BelongsTo, belongsTo, column, HasMany, hasMany } from '@ioc:Adonis/Lucid/Orm'
 import { v4 as uuidv4 } from 'uuid'
 import Presence from './Presence'
+import Division from './Division'
 let newId = ""
 export default class Activity extends BaseModel {
   @column({ isPrimary: true })
@@ -42,6 +43,12 @@ export default class Activity extends BaseModel {
 
   @column({ serializeAs: null })
   public owner: string
+
+  @column()
+  public divisionId: string
+
+  @belongsTo(() => Division)
+  public division: BelongsTo<typeof Division>
 
   @hasMany(() => Presence)
   public presence: HasMany<typeof Presence>

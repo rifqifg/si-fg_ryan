@@ -12,6 +12,7 @@ export default class CrudUsersController {
         .query()
         .preload('roles', role => role.select("name"))
         .preload('employee', employee => employee.preload('division'))
+        .preload('division', division => division.select('id', 'name'))
         .whereILike('name', `%${keyword}%`)
         .orderBy('name')
         .paginate(page, limit)
@@ -27,6 +28,7 @@ export default class CrudUsersController {
       const data = await User.query()
         .preload('employee')
         .preload('roles', roles => roles.select('name'))
+        .preload('division', division => division.select('id', 'name'))
         .where('id', id).firstOrFail()
       response.ok({ message: "Berhasil mengambil data", data })
     } catch (error) {

@@ -4,6 +4,7 @@ import { column, beforeSave, BaseModel, beforeCreate, afterCreate, belongsTo, Be
 import { v4 as uuidv4 } from 'uuid'
 import Role from './Role'
 import Employee from './Employee'
+import Division from './Division'
 let newId = ""
 
 export default class User extends BaseModel {
@@ -46,6 +47,12 @@ export default class User extends BaseModel {
 
   @column.dateTime({ serializeAs: null })
   public verifyExpiry: DateTime
+
+  @column()
+  public divisionId: string
+
+  @belongsTo(() => Division)
+  public division: BelongsTo<typeof Division>
 
   @column.dateTime({ autoCreate: true, serializeAs: null })
   public createdAt: DateTime

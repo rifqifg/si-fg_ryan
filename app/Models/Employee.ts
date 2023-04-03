@@ -41,6 +41,18 @@ export default class Employee extends BaseModel {
   @column.date()
   public dateOut: DateTime | null
 
+  @column()
+  kodeProvinsi: string
+
+  @column()
+  kodeKota: string
+
+  @column()
+  kodeKecamatan: string
+
+  @column()
+  kodeKelurahan: string
+
   @column({ serializeAs: null })
   public rfid: string | null
 

@@ -40,7 +40,13 @@ export default class CreateEmployeeValidator {
     status: schema.enum.optional(['FULLTIME', 'PARTTIME', 'RESIGNED']),
     dateIn: schema.date(),
     dateOut: schema.date.optional(),
-    rfid: schema.string.optional()
+    rfid: schema.string.optional(),
+    //TODO: lanjut wilayah disini
+
+    kodeProvinsi: schema.string([rules.minLength(2), rules.maxLength(2), rules.exists({ table: 'wilayah', column: 'kode' })]),
+    kodeKota: schema.string([rules.minLength(5), rules.maxLength(5), rules.exists({ table: 'wilayah', column: 'kode' })]),
+    kodeKecamatan: schema.string([rules.minLength(8), rules.maxLength(8), rules.exists({ table: 'wilayah', column: 'kode' })]),
+    kodeKelurahan: schema.string([rules.minLength(13), rules.maxLength(13), rules.exists({ table: 'wilayah', column: 'kode' })]),
   })
 
   /**

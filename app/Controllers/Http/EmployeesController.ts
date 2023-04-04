@@ -8,6 +8,10 @@ export default class EmployeesController {
     const { page = 1, limit = 10, keyword = "", orderBy = "name", orderDirection = 'ASC' } = request.qs()
     const data = await Employee.query()
       .preload("division")
+      .preload('provinsi')
+      .preload('kota')
+      .preload('kecamatan')
+      .preload('kelurahan')
       .andWhere(query => {
         query.whereILike('name', `%${keyword}%`)
         query.orWhereILike('rfid', `%${keyword}%`)
@@ -47,7 +51,13 @@ export default class EmployeesController {
   public async show({ params, response }: HttpContextContract) {
     const { id } = params
     try {
-      const data = await Employee.query().preload("division").where('id', id)
+      const data = await Employee.query()
+        .preload("division")
+        .preload('provinsi')
+        .preload('kota')
+        .preload('kecamatan')
+        .preload('kelurahan')
+        .where('id', id)
       response.ok({ message: "Get data success", data })
     } catch (error) {
       console.log(error);

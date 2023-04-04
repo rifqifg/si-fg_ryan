@@ -2,6 +2,7 @@ import { DateTime } from 'luxon'
 import { afterCreate, BaseModel, beforeCreate, BelongsTo, belongsTo, column } from '@ioc:Adonis/Lucid/Orm'
 import { v4 as uuidv4 } from 'uuid'
 import Division from './Division'
+import Wilayah from './Wilayah'
 let newId = ""
 
 export default class Employee extends BaseModel {
@@ -44,14 +45,38 @@ export default class Employee extends BaseModel {
   @column()
   kodeProvinsi: string
 
+  @belongsTo(() => Wilayah, {
+    localKey: 'kode',
+    foreignKey: 'kodeProvinsi'
+  })
+  provinsi: BelongsTo<typeof Wilayah>
+
   @column()
   kodeKota: string
+
+  @belongsTo(() => Wilayah, {
+    localKey: 'kode',
+    foreignKey: 'kodeKota'
+  })
+  kota: BelongsTo<typeof Wilayah>
 
   @column()
   kodeKecamatan: string
 
+  @belongsTo(() => Wilayah, {
+    localKey: 'kode',
+    foreignKey: 'kodeKecamatan'
+  })
+  kecamatan: BelongsTo<typeof Wilayah>
+
   @column()
   kodeKelurahan: string
+
+  @belongsTo(() => Wilayah, {
+    localKey: 'kode',
+    foreignKey: 'kodeKelurahan'
+  })
+  kelurahan: BelongsTo<typeof Wilayah>
 
   @column({ serializeAs: null })
   public rfid: string | null

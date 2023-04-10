@@ -30,4 +30,11 @@ export default class WilayahsController {
             response.badRequest({ message: "Error getting data", errors: { message: errMsg, errors } });
         }
     }
+
+    public async getSelect({ params, response }: HttpContextContract) {
+        const { keyword } = params
+        const data = await Wilayah.query().whereILike('nama', `&${keyword}&`)
+
+        return data
+    }
 }

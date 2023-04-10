@@ -29,6 +29,7 @@ Route.get('/', async ({ auth, response }) => {
 }).middleware("auth")
 
 Route.get('/wilayah', 'System/WilayahsController.index')
+Route.get('/wilayah/:keyword', 'System/WilayahsController.getSelect')
 
 Route.post('/password-encrypt', 'System/UsersController.password_encrypt').as('passwordEncrypt')
 Route.post('/auth/login', 'System/UsersController.login').as('auth.login')

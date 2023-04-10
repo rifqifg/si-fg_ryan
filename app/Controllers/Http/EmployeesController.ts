@@ -71,6 +71,11 @@ export default class EmployeesController {
     const { id } = params
 
     const payload = await request.validate(UpdateEmployeeValidator)
+    if (payload.kodeProvinsi == null) {
+      payload['kodeKota'] = null
+      payload['kodeKecamatan'] = null
+      payload['kodeKelurahan'] = null
+    }
 
     try {
       const data = await Employee.findOrFail(id)

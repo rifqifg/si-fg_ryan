@@ -43,7 +43,7 @@ export default class Employee extends BaseModel {
   public dateOut: DateTime | null
 
   @column()
-  kodeProvinsi: string
+  kodeProvinsi: string | null
 
   @belongsTo(() => Wilayah, {
     localKey: 'kode',
@@ -52,7 +52,7 @@ export default class Employee extends BaseModel {
   provinsi: BelongsTo<typeof Wilayah>
 
   @column()
-  kodeKota: string
+  kodeKota: string | null
 
   @belongsTo(() => Wilayah, {
     localKey: 'kode',
@@ -61,7 +61,7 @@ export default class Employee extends BaseModel {
   kota: BelongsTo<typeof Wilayah>
 
   @column()
-  kodeKecamatan: string
+  kodeKecamatan: string | null
 
   @belongsTo(() => Wilayah, {
     localKey: 'kode',
@@ -70,7 +70,7 @@ export default class Employee extends BaseModel {
   kecamatan: BelongsTo<typeof Wilayah>
 
   @column()
-  kodeKelurahan: string
+  kodeKelurahan: string | null
 
   @belongsTo(() => Wilayah, {
     localKey: 'kode',

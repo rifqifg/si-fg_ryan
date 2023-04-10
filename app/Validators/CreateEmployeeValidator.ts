@@ -41,10 +41,29 @@ export default class CreateEmployeeValidator {
     dateIn: schema.date(),
     dateOut: schema.date.optional(),
     rfid: schema.string.optional(),
-    kodeProvinsi: schema.string.optional([rules.minLength(2), rules.maxLength(2), rules.exists({ table: 'wilayah', column: 'kode' })]),
-    kodeKota: schema.string.optional([rules.minLength(5), rules.maxLength(5), rules.exists({ table: 'wilayah', column: 'kode' })]),
-    kodeKecamatan: schema.string.optional([rules.minLength(8), rules.maxLength(8), rules.exists({ table: 'wilayah', column: 'kode' })]),
-    kodeKelurahan: schema.string.optional([rules.minLength(13), rules.maxLength(13), rules.exists({ table: 'wilayah', column: 'kode' })]),
+    kodeProvinsi: schema.string.optional([
+      rules.minLength(2),
+      rules.maxLength(2),
+      rules.exists({ table: 'wilayah', column: 'kode' })
+    ]),
+    kodeKota: schema.string.optional([
+      rules.minLength(5),
+      rules.maxLength(5),
+      rules.exists({ table: 'wilayah', column: 'kode' }),
+      rules.requiredIfExists('kodeProvinsi')
+    ]),
+    kodeKecamatan: schema.string.optional([
+      rules.minLength(8),
+      rules.maxLength(8),
+      rules.exists({ table: 'wilayah', column: 'kode' }),
+      rules.requiredIfExists('kodeKota')
+    ]),
+    kodeKelurahan: schema.string.optional([
+      rules.minLength(13),
+      rules.maxLength(13),
+      rules.exists({ table: 'wilayah', column: 'kode' }),
+      rules.requiredIfExists('kodeKelurahan')
+    ]),
   })
 
   /**

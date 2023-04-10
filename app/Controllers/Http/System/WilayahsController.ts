@@ -33,8 +33,25 @@ export default class WilayahsController {
 
     public async getSelect({ params, response }: HttpContextContract) {
         const { keyword } = params
-        const data = await Wilayah.query().whereILike('nama', `&${keyword}&`)
+        const data = await Wilayah.query()
+            .whereILike('nama', `%${keyword}%`)
+            .andWhereRaw('length(kode)=13')
+            .limit(10)
+        return data
+    }
 
+    public async getAllByKel({ params, response }: HttpContextContract) {
+        const { keyword } = params
+        const pro = keyword.substr(0,2)
+        const kot = keyword.substr(0,5)
+        const kec = keyword.substr(0,8)
+
+        const provinsi = await Wilayah.find(pro)
+        const kota = await Wilayah.find(kot)
+        const kecamatan = await Wilayah.find(kec)
+
+        const data = provinsi!.nama +"-"+ kota!.nama +"-"+ kecamatan!.nama 
+        console.log(data)
         return data
     }
 }

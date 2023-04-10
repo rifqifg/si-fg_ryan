@@ -30,6 +30,7 @@ Route.get('/', async ({ auth, response }) => {
 
 Route.get('/wilayah', 'System/WilayahsController.index')
 Route.get('/wilayah/:keyword', 'System/WilayahsController.getSelect')
+Route.get('/wilayah-all/:keyword', 'System/WilayahsController.getAllByKel')
 
 Route.post('/password-encrypt', 'System/UsersController.password_encrypt').as('passwordEncrypt')
 Route.post('/auth/login', 'System/UsersController.login').as('auth.login')

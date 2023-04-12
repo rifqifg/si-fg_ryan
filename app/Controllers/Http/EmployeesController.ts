@@ -7,7 +7,7 @@ export default class EmployeesController {
   public async index({ request, response }: HttpContextContract) {
     const { page = 1, limit = 10, keyword = "", orderBy = "name", orderDirection = 'ASC' } = request.qs()
     const data = await Employee.query()
-      .preload("division")
+      .preload("divisions")
       .preload('provinsi')
       .preload('kota')
       .preload('kecamatan')
@@ -26,7 +26,7 @@ export default class EmployeesController {
     const { keyword = "", orderBy = "name", orderDirection = 'ASC' } = request.qs()
 
     const data = await Employee.query()
-      .preload("division")
+      .preload("divisions")
       .andWhere(query => {
         query.whereILike('name', `%${keyword}%`)
       })
@@ -52,7 +52,7 @@ export default class EmployeesController {
     const { id } = params
     try {
       const data = await Employee.query()
-        .preload("division")
+        .preload("divisions")
         .preload('provinsi')
         .preload('kota')
         .preload('kecamatan')

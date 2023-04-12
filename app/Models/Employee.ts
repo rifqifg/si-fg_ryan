@@ -1,8 +1,10 @@
 import { DateTime } from 'luxon'
-import { afterCreate, BaseModel, beforeCreate, BelongsTo, belongsTo, column } from '@ioc:Adonis/Lucid/Orm'
+import { afterCreate, BaseModel, beforeCreate, BelongsTo, belongsTo, column, hasMany, HasMany, HasManyThrough, hasManyThrough } from '@ioc:Adonis/Lucid/Orm'
 import { v4 as uuidv4 } from 'uuid'
 import Division from './Division'
 import Wilayah from './Wilayah'
+import EmployeeDivision from './EmployeeDivision'
+import EmployeeType from './EmployeeType'
 let newId = ""
 
 export default class Employee extends BaseModel {
@@ -27,14 +29,14 @@ export default class Employee extends BaseModel {
   @column()
   public address: string
 
-  @column()
-  public divisionId: string | null
-
-  @belongsTo(() => Division)
-  public division: BelongsTo<typeof Division>
+  @hasMany(() => EmployeeDivision)
+  public divisions: HasMany<typeof EmployeeDivision>
 
   @column()
-  public status: string
+  public employeeTypeId: string
+
+  @belongsTo(() => EmployeeType)
+  public employeeType: BelongsTo<typeof EmployeeType>
 
   @column.date()
   public dateIn: DateTime

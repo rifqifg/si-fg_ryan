@@ -34,9 +34,6 @@ export default class DivisionsController {
         rules.minLength(2)
       ]),
       description: schema.string.optional({}, [rules.minLength(6)]),
-      pic: schema.string.optional({}, [
-        rules.exists({ table: 'employees', column: 'id' })
-      ])
     })
 
     const payload = await request.validate({ schema: createNewDivisionSchema })
@@ -70,9 +67,6 @@ export default class DivisionsController {
         rules.minLength(2)
       ]),
       description: schema.string.optional({}, [rules.minLength(6)]),
-      pic: schema.string.nullableAndOptional({}, [
-        rules.exists({ table: 'employees', column: 'id' })
-      ])
     })
 
     const payload = await request.validate({ schema: createNewDivisionSchema })

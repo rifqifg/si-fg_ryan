@@ -7,7 +7,6 @@ export default class DivisionsController {
   public async index({ request, response }: HttpContextContract) {
     const { page = 1, limit = 10, keyword = "", orderBy = "name", orderDirection = 'ASC' } = request.qs()
     const data = await Division.query()
-      .preload('pic_detail', query => { query.select('id', 'name') })
       .whereILike('name', `%${keyword}%`)
       .orderBy(orderBy, orderDirection)
       .paginate(page, limit)
@@ -19,7 +18,6 @@ export default class DivisionsController {
     const { keyword = "" } = request.qs()
     try {
       const data = await Division.query()
-        .preload('pic_detail', query => { query.select('id', 'name') })
         .whereILike('name', `%${keyword}%`)
         .orderBy('name')
 
@@ -55,7 +53,6 @@ export default class DivisionsController {
   public async show({ params, response }: HttpContextContract) {
     const { id } = params
     try {
-      const data = await Division.query().preload('pic_detail').where('id', id)
       response.ok({ message: "Get data success", data })
     } catch (error) {
       console.log(error);
@@ -66,18 +63,18 @@ export default class DivisionsController {
   public async edit({ }: HttpContextContract) { }
 
   public async update({ request, response, params }: HttpContextContract) {
-    
+
     const { id } = params
     const createNewDivisionSchema = schema.create({
       name: schema.string({ trim: true }, [
         rules.minLength(2)
       ]),
       description: schema.string.optional({}, [rules.minLength(6)]),
-      pic:schema.string.nullableAndOptional({}, [
+      pic: schema.string.nullableAndOptional({}, [
         rules.exists({ table: 'employees', column: 'id' })
       ])
     })
-    
+
     const payload = await request.validate({ schema: createNewDivisionSchema })
 
     try {
@@ -88,8 +85,8 @@ export default class DivisionsController {
       response.ok({ message: "Update data success", data })
     } catch (error) {
       console.log(error);
-      
-      return response.internalServerError({...error})
+
+      return response.internalServerError({ ...error })
     }
   }
 

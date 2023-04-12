@@ -14,12 +14,6 @@ export default class Division extends BaseModel {
   @column()
   public description: string
 
-  @column()
-  public pic: string | null
-
-  @belongsTo(() => Employee, { foreignKey: 'pic' })
-  public pic_detail: BelongsTo<typeof Employee>
-
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
 

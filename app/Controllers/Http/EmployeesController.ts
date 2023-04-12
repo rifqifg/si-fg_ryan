@@ -7,7 +7,7 @@ export default class EmployeesController {
   public async index({ request, response }: HttpContextContract) {
     const { page = 1, limit = 10, keyword = "", orderBy = "name", orderDirection = 'ASC' } = request.qs()
     const data = await Employee.query()
-      .preload("divisions")
+      .preload('divisions', d => d.preload('division', x => x.select('name')))
       .preload('provinsi')
       .preload('kota')
       .preload('kecamatan')
@@ -26,7 +26,7 @@ export default class EmployeesController {
     const { keyword = "", orderBy = "name", orderDirection = 'ASC' } = request.qs()
 
     const data = await Employee.query()
-      .preload("divisions")
+      .preload('divisions', d => d.preload('division', x => x.select('name')))
       .andWhere(query => {
         query.whereILike('name', `%${keyword}%`)
       })
@@ -34,13 +34,12 @@ export default class EmployeesController {
     response.ok({ message: "Data Berhasil Didapatkan", data })
   }
 
-  // public async create({ }: HttpContextContract) { }
-
   public async store({ request, response }: HttpContextContract) {
     const payload = await request.validate(CreateEmployeeValidator)
 
     try {
       const data = await Employee.create(payload)
+
       response.ok({ message: "Create data success", data })
     } catch (error) {
       console.log(error);
@@ -52,7 +51,7 @@ export default class EmployeesController {
     const { id } = params
     try {
       const data = await Employee.query()
-        .preload("divisions")
+        .preload('divisions', d => d.preload('division', x => x.select('name')))
         .preload('provinsi')
         .preload('kota')
         .preload('kecamatan')
@@ -64,8 +63,6 @@ export default class EmployeesController {
       return response.internalServerError(error)
     }
   }
-
-  // public async edit({ }: HttpContextContract) { }
 
   public async update({ params, request, response }: HttpContextContract) {
     const { id } = params

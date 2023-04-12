@@ -34,9 +34,6 @@ export default class CreateEmployeeValidator {
     address: schema.string({}, [
       rules.minLength(20)
     ]),
-    divisionId: schema.string({}, [
-      rules.exists({ table: 'divisions', column: 'id' })
-    ]),
     status: schema.enum.optional(['FULLTIME', 'PARTTIME', 'RESIGNED']),
     dateIn: schema.date(),
     dateOut: schema.date.optional(),

@@ -10,7 +10,7 @@ export default class DivisionsController {
       .preload('employees', e => {
         e.select('title', 'employee_id')
         e.preload('employee', m => m.select('name'))
-        e.where('title', '=', 'vice')
+        e.where('title', '=', 'lead')
       })
       .whereILike('name', `%${keyword}%`)
       .orderBy(orderBy, orderDirection)

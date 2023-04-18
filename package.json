@@ -26,6 +26,7 @@
     "@adonisjs/view": "^6.2.0",
     "aws-sdk": "^2.1199.0",
     "bcrypt": "^5.1.0",
+    "google-spreadsheet": "^3.3.0",
     "luxon": "^3.0.1",
     "pg": "^8.7.3",
     "phc-bcrypt": "^1.0.7",

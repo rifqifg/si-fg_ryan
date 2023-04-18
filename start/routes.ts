@@ -28,6 +28,10 @@ Route.get('/', async ({ auth, response }) => {
   response.ok({ message: 'you are logged in', data })
 }).middleware("auth")
 
+Route.group(() => {
+  Route.get('pendaftar-baru', 'ChartsController.pendaftarBaru')
+}).prefix('charts')
+
 Route.get('/wilayah', 'System/WilayahsController.index')
 Route.get('/wilayah/:keyword', 'System/WilayahsController.getSelect')
 Route.get('/wilayah-all/:keyword', 'System/WilayahsController.getAllByKel')
@@ -40,7 +44,7 @@ Route.post('/auth/reset-password', 'System/UsersController.resetUserPassword').a
 Route.get('/admin/get-users', 'System/UsersController.getUsers').as('admin.get-user').middleware('auth')
 Route.resource('/division/', 'DivisionsController').as('division').apiOnly().middleware({ '*': ['auth', 'checkRole:admin'] })
 Route.resource('/employee/', 'EmployeesController').as('employee').apiOnly().middleware({ '*': ['auth', 'checkRole:admin'] })
-Route.resource('employee.divisions', 'EmployeeDivisionsController').as('employee.divisions').only(['store','update','destroy']).middleware({ '*': ['auth', 'checkRole:admin'] })
+Route.resource('employee.divisions', 'EmployeeDivisionsController').as('employee.divisions').only(['store', 'update', 'destroy']).middleware({ '*': ['auth', 'checkRole:admin'] })
 Route.resource('/employee-types/', 'EmployeeTypesController').as('employee-type').apiOnly().middleware({ '*': ['auth', 'checkRole:admin'] })
 Route.resource('/activity/', 'ActivitiesController').as('activity').apiOnly().middleware({ '*': ['auth', 'checkRole:admin,piket,qa'] })
 Route.resource('/presence/', 'PresencesController').as('presence').middleware({ '*': ['auth', 'checkRole:admin,piket,qa'] })

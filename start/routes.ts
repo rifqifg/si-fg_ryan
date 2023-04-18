@@ -30,6 +30,7 @@ Route.get('/', async ({ auth, response }) => {
 
 Route.group(() => {
   Route.get('pendaftar-baru', 'ChartsController.pendaftarBaru')
+  Route.get('pendaftar-diterima', 'ChartsController.pendaftarDiterima')
 }).prefix('charts').middleware("auth")
 
 Route.get('/wilayah', 'System/WilayahsController.index')

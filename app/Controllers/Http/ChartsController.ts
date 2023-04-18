@@ -167,10 +167,10 @@ export default class ChartsController {
 
       response.ok({
         message: "Berhasil menghitung data ppdb yang diterima dan telah daftar ulang",
-        table_debug: tableTempPPDBDiterima,
         totalDiterima: totalDiterima[0].total,
         diterimaPerJurusan,
         diterimaPerProgram,
+        table_debug: tableTempPPDBDiterima,
       })
     } catch (error) {
       return response.internalServerError({

@@ -9,6 +9,7 @@ export default class extends BaseSchema {
       table.datetime('tanggal')
       table.string('kelas')
       table.string('nama')
+      table.string('nisn')
       table.string('status')
 
       /**

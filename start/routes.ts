@@ -29,8 +29,9 @@ Route.get('/', async ({ auth, response }) => {
 }).middleware("auth")
 
 Route.group(() => {
-  Route.get('pendaftar-baru', 'ChartsController.pendaftarBaru')
-  Route.get('pendaftar-diterima', 'ChartsController.pendaftarDiterima')
+  Route.get('pendaftar-baru', 'PPDBChartsController.pendaftarBaru')
+  Route.get('pendaftar-diterima', 'PPDBChartsController.pendaftarDiterima')
+  Route.get('siswa-tingkat', 'StudentChartsController.siswaTingkat').namespace('AcademicControllers')
 }).prefix('charts').middleware("auth")
 
 Route.get('/wilayah', 'System/WilayahsController.index')

@@ -5,7 +5,7 @@ import { DateTime } from 'luxon';
 
 const getAlphabet = num => ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'x', 'y', 'z', 'aa', 'ab', 'ac', 'ad', 'ae'][num]
 
-export default class ChartsController {
+export default class PPDBChartsController {
   public async pendaftarBaru({ request, response }: HttpContextContract) {
 
     const doc = new GoogleSpreadsheet(process.env.GOOGLE_API_SHEET_PPDB_PENDAFTAR);

@@ -1,5 +1,7 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Database from '@ioc:Adonis/Lucid/Database'
+import { GoogleSpreadsheet } from 'google-spreadsheet'
+import { DateTime } from 'luxon';
 
 export default class StudentChartsController {
   public async siswaTingkat({ response }: HttpContextContract) {
@@ -54,7 +56,63 @@ export default class StudentChartsController {
     })
   }
 
-  public async create({ }: HttpContextContract) { }
+  public async siswaKehadiran({ request, response }: HttpContextContract) {
+    // const { startDate = '2023-01-01', endDate = '2023-01-31', startMonth = '2023-01-31', endMonth = '2023-01-31', forceSync = false } = request.qs()
+
+    const doc = new GoogleSpreadsheet(process.env.GOOGLE_API_SHEET_KEHADIRAN_SISWA);
+
+    await doc.useServiceAccountAuth({
+      client_email: process.env.GOOGLE_API_EMAIL,
+      private_key: process.env.GOOGLE_API_PRIVATE_KEY,
+    });
+    await doc.loadInfo(); // loads document properties and worksheets
+
+    const sheet = doc.sheetsByTitle['RAW MASTER'] //sheetsByTitle['Form Responses 1'];
+    const rows = await sheet.getRows(); // can pass in { limit, offset }
+
+
+    const cleanRowSiswa = rows.map(row => {
+      const [sheet, rowNumber, rawData, ...keys] = Object.keys(row)
+      const clean = {}
+      keys.forEach((key, index) => {
+        clean[key.toLowerCase()] = row[key]
+      })
+
+      return clean
+    })
+
+    const tableSyncPresences = 'academic.sync_student_presences'
+
+    const selectSyncedData = `
+      select (now()::timestamp - created_at::timestamp)::integer last_sync, total_data
+      from academic.sync_student_presences, 
+      (select count(*)  total_data from ${tableSyncPresences}) x
+      limit 1
+    `
+    const { rows: syncedData } = await Database.rawQuery(selectSyncedData)
+
+    if (syncedData.length < 1 || +syncedData[0].last_sync > 15) {
+      //TODO: kalau date created data nya udah lewat 15 menit, truncate table nya, isi ulang
+      console.log("syncronizing data kehadiran siswa");
+    }
+
+    return false
+
+    try {
+      await Database.table('tableSyncPresences').multiInsert(cleanRowSiswa)
+      await Database.rawQuery('drop table ' + tableSyncPresences)
+
+      response.ok({
+        message: "Berhasil menghitung data pendaftar",
+        table_debug: tableSyncPresences,
+      })
+    } catch (error) {
+      return response.internalServerError({
+        message: 'CHTC52: Gagal Pada Proses Database Temp ' + tableSyncPresences,
+        error: error.message || error
+      })
+    }
+  }
 
   public async store({ }: HttpContextContract) { }
 

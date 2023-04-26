@@ -33,6 +33,7 @@ Route.group(() => {
   Route.get('pendaftar-diterima', 'PPDBChartsController.pendaftarDiterima')
   Route.get('siswa-tingkat', 'StudentChartsController.siswaTingkat').namespace('AcademicControllers')
   Route.get('siswa-kehadiran', 'StudentChartsController.siswaKehadiran').namespace('AcademicControllers')
+  Route.get('karyawan-kehadiran', 'EmployeeChartsController.karyawanKehadiran')
 }).prefix('charts').middleware("auth")
 
 Route.get('/wilayah', 'System/WilayahsController.index')

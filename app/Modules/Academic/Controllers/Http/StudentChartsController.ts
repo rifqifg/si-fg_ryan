@@ -44,8 +44,21 @@ export default class StudentChartsController {
     const { rows: totalSiswa } = await Database.rawQuery(`select count(*) total from academic.students where student_status = 'AKTIF'`)
     const { rows: perTingkat } = await Database.rawQuery(selectTingkat)
     const { rows: perJurusan } = await Database.rawQuery(selectJurusan)
-    const { rows: perTingkatJurusan } = await Database.rawQuery(selectTingkatJurusan)
+    let { rows: perTingkatJurusan } = await Database.rawQuery(selectTingkatJurusan)
     //TODO: yang boarding fullday belum ada
+
+    perTingkatJurusan = perTingkatJurusan.reduce((a, x) => {
+      const index = a.findIndex(v => {
+        return v.tingkat == x.tingkat
+      })
+
+      const initObj = {}
+      initObj['tingkat'] = x.tingkat
+      initObj[x.jurusan] = x.total
+
+      index < 0 ? a.push(initObj) : a[index][x.jurusan] = x.total
+      return a
+    }, [])
 
     response.ok({
       message: 'Berhasil mengambil data statistik siswa',

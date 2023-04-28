@@ -123,14 +123,13 @@ export default class StudentChartsController {
       return res;
     }
 
-
     try {
       if (syncedData.length < 1 || +syncedData[0].last_sync > 15 || forceSync) {
         console.log("syncronizing data kehadiran siswa");
         await Database.rawQuery('truncate table ' + tableSyncPresences)
-        sliceIntoChunks(cleanRowSiswa, 1000).forEach(async x => {
+        for (const x of sliceIntoChunks(cleanRowSiswa, 1000)) {
           await Database.table(tableSyncPresences).multiInsert(x)
-        })
+        }
       }
     } catch (error) {
       return response.internalServerError({
@@ -143,12 +142,13 @@ export default class StudentChartsController {
       select distinct tanggal::date::string tanggal
       from ${tableSyncPresences} 
       where tanggal is not null 
-      order by tanggal limit 7 
+      order by tanggal desc 
+      limit 7 
     `
 
     const { rows: lastDates } = await Database.rawQuery(getLastDates)
-    startDate = lastDates[0].tanggal
-    endDate = lastDates[lastDates.length - 1].tanggal
+    startDate = lastDates[lastDates.length - 1].tanggal
+    endDate = lastDates[0].tanggal
 
     const getLastMonths = `
     select distinct substring(tanggal::date::string,0,8)::string tanggal
@@ -174,6 +174,7 @@ export default class StudentChartsController {
       left join ${tableSyncPresences} ssp
         on rekap.tanggal = ssp.tanggal::date
       group by rekap.*
+      order by rekap.tanggal
     `
 
     const selectBulanan = `
@@ -187,17 +188,35 @@ export default class StudentChartsController {
       left join ${tableSyncPresences} ssp
         on rekap.tanggal = substring(ssp.tanggal::date::string,0,8)
       group by rekap.*
+      order by rekap.tanggal
     `
 
     try {
       const { rows: dataHarian } = await Database.rawQuery(selectHarian)
       const { rows: dataBulanan } = await Database.rawQuery(selectBulanan)
 
+      const pivot = objKehadiran => {
+        return objKehadiran.reduce((a, x) => {
+          const index = a.findIndex(v => {
+            return v.tanggal == x.tanggal
+          })
+
+          const initObj = {}
+          initObj['tanggal'] = x.tanggal
+          initObj[x.status] = x.total
+          initObj['presentase-' + x.status] = x.presentase
+
+          if (index < 0) { a.push(initObj) } else { a[index][x.status] = x.total; a[index]['presentase-' + x.status] = x.presentase }
+          return a
+        }, [])
+      }
+
 
       response.ok({
         message: "Berhasil menghitung data kehadiran siswa",
-        dataHarian,
-        dataBulanan,
+        dataHarian2: dataHarian,
+        dataHarian: pivot(dataHarian),
+        dataBulanan: pivot(dataBulanan),
         table_debug: tableSyncPresences,
       })
     } catch (error) {

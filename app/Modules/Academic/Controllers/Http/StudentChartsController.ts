@@ -70,18 +70,7 @@ export default class StudentChartsController {
   }
 
   public async siswaKehadiran({ request, response }: HttpContextContract) {
-    let { startDate, endDate, startMonth, endMonth, forceSync = false } = request.qs()
-
-    const doc = new GoogleSpreadsheet(process.env.GOOGLE_API_SHEET_KEHADIRAN_SISWA);
-
-    await doc.useServiceAccountAuth({
-      client_email: process.env.GOOGLE_API_EMAIL,
-      private_key: process.env.GOOGLE_API_PRIVATE_KEY,
-    });
-    await doc.loadInfo(); // loads document properties and worksheets
-
-    const sheet = doc.sheetsByTitle['RAW MASTER'] //sheetsByTitle['Form Responses 1'];
-
+    let { startDate, endDate, startMonth, endMonth, forceSync = 'false' } = request.qs()
     const tableSyncPresences = 'academic.sync_student_presences'
 
     const selectSyncedData = `
@@ -92,50 +81,70 @@ export default class StudentChartsController {
     `
     const { rows: syncedData } = await Database.rawQuery(selectSyncedData)
 
+    // return {
+    //   l: syncedData.length < 1,
+    //   la: +syncedData[0].last_sync > 15,
+    //   forceSync,
+    //   x: syncedData.length < 1 || +syncedData[0].last_sync > 15 || forceSync
+    // }
     let rows = []
-    if (syncedData.length < 1 || +syncedData[0].last_sync > 15 || forceSync) {
+    if (syncedData.length < 1 || (+syncedData[0].last_sync > 15) || (forceSync === 'true')) {
+      // console.log(syncedData.length < 1 || +syncedData[0].last_sync > 15 || forceSync)
+      // return syncedData.length < 1 || +syncedData[0].last_sync > 15 || forceSync
       console.log("sync")
+      const doc = new GoogleSpreadsheet(process.env.GOOGLE_API_SHEET_KEHADIRAN_SISWA);
+
+      await doc.useServiceAccountAuth({
+        client_email: process.env.GOOGLE_API_EMAIL,
+        private_key: process.env.GOOGLE_API_PRIVATE_KEY,
+      });
+      await doc.loadInfo(); // loads document properties and worksheets
+
+      const sheet = doc.sheetsByTitle['RAW MASTER'] //sheetsByTitle['Form Responses 1'];
+
+
       rows = await sheet.getRows(); // can pass in { limit, offset }
+
+
+      const cleanRowSiswa = rows.map(row => {
+        const [sheet, rowNumber, rawData, ...keys] = Object.keys(row)
+        const clean = {}
+
+        if (row['Tanggal'] !== '#REF!') {
+          keys.forEach((key, index) => {
+            clean[key.toLowerCase()] = row[key]
+          })
+          clean['created_at'] = DateTime.now().toSQL().toString()
+        }
+
+        return clean
+      })
+
+      function sliceIntoChunks(arr, chunkSize) {
+        const res: any[] = [];
+        for (let i = 0; i < arr.length; i += chunkSize) {
+          const chunk = arr.slice(i, i + chunkSize);
+          res.push(chunk);
+        }
+        return res;
+      }
+
+      try {
+        if (syncedData.length < 1 || +syncedData[0].last_sync > 15 || forceSync) {
+          console.log("syncronizing data kehadiran siswa");
+          await Database.rawQuery('truncate table ' + tableSyncPresences)
+          for (const x of sliceIntoChunks(cleanRowSiswa, 1000)) {
+            await Database.table(tableSyncPresences).multiInsert(x)
+          }
+        }
+      } catch (error) {
+        return response.internalServerError({
+          message: 'SCHR112: Gagal Pada Proses Database' + tableSyncPresences,
+          error: error.message || error
+        })
+      }
     } else {
       console.log("not sync")
-    }
-
-    const cleanRowSiswa = rows.map(row => {
-      const [sheet, rowNumber, rawData, ...keys] = Object.keys(row)
-      const clean = {}
-
-      if (row['Tanggal'] !== '#REF!') {
-        keys.forEach((key, index) => {
-          clean[key.toLowerCase()] = row[key]
-        })
-        clean['created_at'] = DateTime.now().toSQL().toString()
-      }
-
-      return clean
-    })
-
-    function sliceIntoChunks(arr, chunkSize) {
-      const res: any[] = [];
-      for (let i = 0; i < arr.length; i += chunkSize) {
-        const chunk = arr.slice(i, i + chunkSize);
-        res.push(chunk);
-      }
-      return res;
-    }
-
-    try {
-      if (syncedData.length < 1 || +syncedData[0].last_sync > 15 || forceSync) {
-        console.log("syncronizing data kehadiran siswa");
-        await Database.rawQuery('truncate table ' + tableSyncPresences)
-        for (const x of sliceIntoChunks(cleanRowSiswa, 1000)) {
-          await Database.table(tableSyncPresences).multiInsert(x)
-        }
-      }
-    } catch (error) {
-      return response.internalServerError({
-        message: 'SCHR112: Gagal Pada Proses Database' + tableSyncPresences,
-        error: error.message || error
-      })
     }
 
     const getLastDates = `
@@ -164,7 +173,7 @@ export default class StudentChartsController {
     // return { startDate, endDate, startMonth, endMonth }
 
     const selectHarian = `
-      select rekap.tanggal::string, rekap."status", rekap.total, ((rekap.total / count(ssp.id)) * 100)::integer presentase  
+      select rekap.tanggal::string, rekap."status", rekap.total, concat(((rekap.total / count(ssp.id)) * 100)::integer::string, '%') presentase  
       from 
         (select tanggal::date, "status", count(*) total
         from ${tableSyncPresences}
@@ -178,7 +187,7 @@ export default class StudentChartsController {
     `
 
     const selectBulanan = `
-      select rekap.tanggal::string, rekap."status", rekap.total, ((rekap.total / count(ssp.id)) * 100)::integer presentase  
+      select rekap.tanggal::string, rekap."status", rekap.total, concat(((rekap.total / count(ssp.id)) * 100)::integer::string, '%') presentase  
       from 
         (select substring(tanggal::date::string,0,8) tanggal, "status", count(*) total
         from ${tableSyncPresences}
@@ -195,26 +204,34 @@ export default class StudentChartsController {
       const { rows: dataHarian } = await Database.rawQuery(selectHarian)
       const { rows: dataBulanan } = await Database.rawQuery(selectBulanan)
 
-      const pivot = objKehadiran => {
-        return objKehadiran.reduce((a, x) => {
-          const index = a.findIndex(v => {
-            return v.tanggal == x.tanggal
-          })
+      const pivot = data => {
+        const statuses = data.reduce((a, v) => {
+          a.push(v.status)
+          return a
+        }, []).filter((value, index, array) => array.indexOf(value) === index)
 
-          const initObj = {}
-          initObj['tanggal'] = x.tanggal
-          initObj[x.status] = x.total
-          initObj['presentase-' + x.status] = x.presentase
-
-          if (index < 0) { a.push(initObj) } else { a[index][x.status] = x.total; a[index]['presentase-' + x.status] = x.presentase }
+        const result = data.reduce((a, v) => {
+          const index = a.findIndex(x => x['tanggal'] == v.tanggal)
+          if (index >= 0) {
+            a[index][v.status] = v.presentase
+            a[index]['total' + v.status] = v.total
+          } else {
+            const newObj = {}
+            newObj['tanggal'] = v.tanggal
+            for (let stat of statuses) {
+              newObj[stat] = v.status == stat ? v.presentase : ''
+              newObj['total' + stat] = v.status == stat ? v.total : ''
+            }
+            a.push(newObj)
+          }
           return a
         }, [])
+        return result
       }
-
 
       response.ok({
         message: "Berhasil menghitung data kehadiran siswa",
-        dataHarian2: dataHarian,
+        // dataHarian2: dataHarian,
         dataHarian: pivot(dataHarian),
         dataBulanan: pivot(dataBulanan),
         table_debug: tableSyncPresences,

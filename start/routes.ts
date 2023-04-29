@@ -34,7 +34,7 @@ Route.group(() => {
   Route.get('siswa-tingkat', 'StudentChartsController.siswaTingkat').namespace('AcademicControllers')
   Route.get('siswa-kehadiran', 'StudentChartsController.siswaKehadiran').namespace('AcademicControllers')
   Route.get('karyawan-kehadiran', 'EmployeeChartsController.karyawanKehadiran')
-}).prefix('charts').middleware("auth")
+}).prefix('charts')
 
 Route.get('/wilayah', 'System/WilayahsController.index')
 Route.get('/wilayah/:keyword', 'System/WilayahsController.getSelect')

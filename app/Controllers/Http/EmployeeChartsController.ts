@@ -35,7 +35,7 @@ export default class EmployeeChartsController {
     const selectDaily = `
       select tanggal::string
           , total
-          ,((total / total_employees)*100)::integer precentage
+          ,concat(((total / total_employees)*100)::integer::string,'%') precentage
             ,total_employees
       from (
             select time_in::date tanggal
@@ -53,11 +53,13 @@ export default class EmployeeChartsController {
           where e.scan_presence_required is true 
             and e.date_out is null
       ) e
+
+      order by tanggal
     `
 
     const selectMonthly = `
       select bulan, total
-      ,((total / (total_days * total_employees))*100)::integer precentage
+      ,concat(((total / (total_days * total_employees))*100)::integer::string,'%') precentage
       , total_days, total_employees
       from (
       select substring(time_in::date::string,0,8) bulan
@@ -75,6 +77,7 @@ export default class EmployeeChartsController {
       where e.scan_presence_required is true 
         and e.date_out is null
       ) e
+      order by bulan
     `
 
     try {

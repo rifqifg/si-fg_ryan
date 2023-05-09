@@ -1,0 +1,9 @@
+{
+  "apps": [
+    {
+      "name": "fg-hr-be",
+      "script": "npm",
+      "args": "run dev"
+    }
+  ]
+}

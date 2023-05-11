@@ -18,9 +18,9 @@ export default class UsersController {
             password: schema.string({}, [rules.minLength(6)])
         })
 
+        const payload = await request.validate({ schema: loginSchema })
 
         try {
-            const payload = await request.validate({ schema: loginSchema })
             const token = await auth.use('api').attempt(payload.email, payload.password)
             // const acl = await Permission.query().select('role_id', 'menu_id', 'type', 'function').where('role_id', auth.user!.role)
             // const acl2 = await PermissionList.query().select('role_id', 'id', 'type').where('role_id', auth.user!.role)

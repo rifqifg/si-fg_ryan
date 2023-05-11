@@ -6,6 +6,7 @@ export default class CheckRole {
 
     if (role !== 'super_admin' && !allowedRole?.find(v => v == role)) {
       return response.unauthorized({
+        code: "ROLE",
         message: "Anda tidak berhak mengakses halaman ini"
       })
     }

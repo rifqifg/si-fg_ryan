@@ -4,8 +4,13 @@ import { v4 as uuidv4 } from 'uuid'
 let newId = ""
 
 export default class Subject extends BaseModel {
+  public static table = 'academic.subjects';
+
   @column({ isPrimary: true })
   public id: string
+
+  @column()
+  public name: string | null
 
   @column()
   public description: string | null

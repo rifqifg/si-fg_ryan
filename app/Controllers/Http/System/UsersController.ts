@@ -10,6 +10,8 @@ import Hash from '@ioc:Adonis/Core/Hash'
 // import Permission from 'App/Models/Permission'
 // import PermissionList from 'App/Models/PermissionList'
 import Database from '@ioc:Adonis/Lucid/Database'
+import Employee from 'App/Models/Employee'
+import Student from 'App/Modules/Academic/Models/Student'
 
 export default class UsersController {
     public async login({ request, response, auth }: HttpContextContract) {
@@ -98,26 +100,64 @@ export default class UsersController {
                 rules.exists({ table: 'roles', column: 'name' }),
                 rules.trim()
             ]),
+            nik: schema.string.optional([rules.trim(), rules.maxLength(16), rules.minLength(16)]),
+            nisn: schema.string.optional([rules.trim()]),
             password: schema.string( [
                 rules.minLength(6),
                 rules.confirmed()
             ]),
         })})
 
+        let employee
+        let student
+        let user
+
         const verifyToken = string.generateRandom(64)
-    
+
+        if (payload.nik) {
+            employee = await Employee.findByOrFail('nik', payload.nik)
+
+            if (payload.role === 'employee' && employee) {
+                try {
+                    
+                    user = await User.create({...payload, verifyToken, employeeId: employee.id})
+                } catch (error) {
+                    response.send({message: 'NIK anda belum terdaftar'})
+                    
+                }
+            }
+        } else {
+            student = await Student.findByOrFail('nisn', payload.nisn)
+
+                    if (student && payload.role === 'student') {
+                        user = await User.create({name: payload.name, password: payload.password, email: payload.email, verifyToken, role: 'student'});
+                    } else if(student && payload.role === 'parent') {
+                        user = await User.create({name: payload.name, password: payload.password, email: payload.email, verifyToken, role: 'parent'});
+                    } else {
+                        user = await User.create({name: payload.name, password: payload.password, email: payload.email, verifyToken, role: 'alumni'})
+                    }
+                
+            
+        }
+        
+       
         try {
-            const data = await User.create({...payload, verifyToken})
             
             const FE_URL = Env.get('FE_URL') + verifyToken 
+            
+            try {
+                await Mail.send((message) => {
+                    message
+                        .from(Env.get('SMTP_USERNAME'))
+                        .to(user.email)
+                        .subject('Welcome Onboard!')
+                        .htmlView('emails/registered', { FE_URL })
+                })
+                
+            } catch (error) {
+                response.send({message: error})
+            }
 
-            await Mail.send((message) => {
-                message
-                    .from(Env.get('SMTP_USERNAME'))
-                    .to(data.email)
-                    .subject('Welcome Onboard!')
-                    .htmlView('emails/registered', { FE_URL })
-            })
 
             response.ok({message: 'Berhasil melakukan register/nSilahkan verifikasi email anda'})
         } catch (error) {

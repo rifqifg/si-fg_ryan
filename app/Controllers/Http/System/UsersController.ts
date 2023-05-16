@@ -1,8 +1,10 @@
 // import Mail from '@ioc:Adonis/Addons/Mail'
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import { schema, rules } from '@ioc:Adonis/Core/Validator'
+import Mail from '@ioc:Adonis/Addons/Mail'
+import { string } from '@ioc:Adonis/Core/Helpers'
 import User from 'App/Models/User'
-// import Env from '@ioc:Adonis/Core/Env'
+import Env from '@ioc:Adonis/Core/Env'
 import { v4 as uuidv4 } from 'uuid'
 import Hash from '@ioc:Adonis/Core/Hash'
 // import Permission from 'App/Models/Permission'
@@ -22,8 +24,6 @@ export default class UsersController {
 
         try {
             const token = await auth.use('api').attempt(payload.email, payload.password)
-            // const acl = await Permission.query().select('role_id', 'menu_id', 'type', 'function').where('role_id', auth.user!.role)
-            // const acl2 = await PermissionList.query().select('role_id', 'id', 'type').where('role_id', auth.user!.role)
             const user = await User.query().where('id', auth.user!.id).preload('roles', query => query.select('name', 'permissions'))
 
             response.ok({
@@ -38,6 +38,42 @@ export default class UsersController {
         }
     }
 
+    public async googleSignIn({ally}:HttpContextContract) {
+        await ally.use('google').redirect()
+    }
+
+    public async googleCallback({ally, auth, response}:HttpContextContract) {
+        const provider = ally.use('google').stateless()
+
+        if (provider.accessDenied()) return 'Access Denied'
+
+        if (provider.hasError()) return provider.getError()
+
+        const {token} = await provider.accessToken()
+
+        const userGoogle = await provider.userFromToken(token) 
+
+        const userDetails = {
+            email: userGoogle.email,
+            name: userGoogle.name,
+            socialId: userGoogle.id,
+            token: userGoogle.token,
+            verified: userGoogle.emailVerificationState,
+            provider: 'google',
+        }
+        try {
+
+
+            const user = await User.query().where('email', '=', userGoogle.email ? userGoogle.email : '').preload('roles', r => r.select('name', 'permissions')).firstOrFail()
+            const tokenAuth = await auth.use('api').login(user)
+            
+            response.ok({message: 'login berhasil', token: tokenAuth, data: user})
+            
+        } catch (error) {
+            return response.send({message: 'Anda belum memiliki akun', email: userDetails.email})
+        }
+    }
+
     public async logout({ auth, response }: HttpContextContract) {
         await auth.use('api').logout()
         await Database.manager.close('pg')
@@ -46,67 +82,61 @@ export default class UsersController {
 
 
 
-    // public async register({ request, response }: HttpContextContract) {
-    //     let payload = await request.validate(RegisterAlumnusValidator)
-    //     const verifyToken = (Math.floor(Math.random() * 3000)).toString()
-    //     let user
-    //     payload['role'] = 'alumni'
-    //     payload['verifyToken'] = verifyToken
-    //     console.log({ payload });
+    public async register({ request, response }: HttpContextContract) {
+        let payload = await request.validate({schema: schema.create({
+            name: schema.string( [
+                rules.minLength(5),
+                rules.escape(),
+                rules.trim()
+            ]),
+            email: schema.string( [
+                rules.email(),
+                rules.unique({ table: 'users', column: 'email' }),
+                rules.trim()
+            ]),
+            role: schema.string( [
+                rules.exists({ table: 'roles', column: 'name' }),
+                rules.trim()
+            ]),
+            password: schema.string( [
+                rules.minLength(6),
+                rules.confirmed()
+            ]),
+        })})
 
-    //     const extraInfos = request.body().extraInfos
+        const verifyToken = string.generateRandom(64)
+    
+        try {
+            const data = await User.create({...payload, verifyToken})
+            
+            const FE_URL = Env.get('FE_URL') + verifyToken 
 
-    //     try {
-    //         user = await User.create(payload)
-    //     } catch (error) {
-    //         response.unprocessableEntity(error)
-    //         console.log(error.messages);
-    //     }
-    //     let errMsg
-    //     await extraInfos.forEach(async element => {
-    //         try {
-    //             await ExtraInfoAnswer.create({
-    //                 ...element,
-    //                 userId: user.id
-    //             })
-    //         } catch (error) {
-    //             response.badRequest(error)
-    //             errMsg = { ...error }
-    //         }
-    //     });
+            await Mail.send((message) => {
+                message
+                    .from(Env.get('SMTP_USERNAME'))
+                    .to(data.email)
+                    .subject('Welcome Onboard!')
+                    .htmlView('emails/registered', { FE_URL })
+            })
 
-    //     if (errMsg) {
-    //         console.log("masuk sini nih");
-    //         console.log(errMsg);
-
-    //         return response.unprocessableEntity({ message: errMsg })
-    //     } else {
-    //         await Mail.send((message) => {
-    //             message
-    //                 .from(Env.get('SMTP_USERNAME'))
-    //                 .to(payload.email)
-    //                 .subject('Welcome Onboard!')
-    //                 .htmlView('emails/registered', { email: payload.email, verifyToken })
-    //         })
-    //         response.created({
-    //             message: 'user created, check email for verification'
-    //         })
-    //     }
-    // }
+            response.ok({message: 'Berhasil melakukan register/nSilahkan verifikasi email anda'})
+        } catch (error) {
+            response.badRequest({message: error.message})
+        }
+    }
 
     public async verify({ request, response }: HttpContextContract) {
-        const { email, token } = request.body()
-        console.log(email, token);
-
+        const token = request.input('token')
+        // return token
         try {
-            const user = await User.query().where('email', email).where('verifyToken', token).firstOrFail()
+            const user = await User.query().where('verifyToken', token).firstOrFail()
 
             await user.merge({
                 verifyToken: "",
                 verified: true
             }).save()
 
-            response.ok({ message: 'account verified' })
+            response.ok({ message: 'Akun sudah terverifikasi' })
         } catch (error) {
             response.badRequest({ message: "email tidak ditemukan / token tidak cocok", error })
         }

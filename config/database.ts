@@ -36,7 +36,7 @@ const databaseConfig: DatabaseConfig = {
     pg: {
       client: 'pg',
       connection: {
-        ssl: Env.get('PG_SSL'),
+        // ssl: Env.get('PG_SSL'),
         host: Env.get('PG_HOST'),
         port: Env.get('PG_PORT'),
         user: Env.get('PG_USER'),
@@ -45,7 +45,7 @@ const databaseConfig: DatabaseConfig = {
       },
       migrations: {
         naturalSort: false,
-        paths: ['./database/migrations', './app/modules/academic/database/migrations', './app/modules/inventory/database/migrations']
+        paths: ['./database/migrations', './app/Modules/Academic/Database/Migrations', './app/Modules/Inventory/Database/Migrations']
       },
       seeders: {
         paths: ['./database/seeders/MainSeeder']
@@ -65,7 +65,7 @@ const databaseConfig: DatabaseConfig = {
       },
       migrations: {
         naturalSort: true,
-        paths: ['./database/migrations', './app/modules/academic/database/migrations', './app/modules/inventory/database/migrations']
+        paths: ['./database/migrations', './app/Modules/Academic/Database/Migrations', './app/Modules/Inventory/Database/Migrations']
       },
       seeders: {
         paths: ['./database/seeders/MainSeeder']

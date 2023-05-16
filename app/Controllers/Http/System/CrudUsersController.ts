@@ -10,7 +10,7 @@ export default class CrudUsersController {
     try {
       const data = await User
         .query()
-        .preload('roles', role => role.select("name"))
+        .preload('roles', role => role.select("name"))// @ts-ignore
         .preload('employee', employee => employee.preload('division'))
         .preload('division', division => division.select('id', 'name'))
         .whereILike('name', `%${keyword}%`)

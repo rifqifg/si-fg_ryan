@@ -1,5 +1,5 @@
 import { DateTime } from 'luxon'
-import { afterCreate, BaseModel, beforeCreate, BelongsTo, belongsTo, column, hasMany, HasMany, HasManyThrough, hasManyThrough, ManyToMany, manyToMany } from '@ioc:Adonis/Lucid/Orm'
+import { afterCreate, BaseModel, beforeCreate, BelongsTo, belongsTo, column, hasMany, HasMany, ManyToMany, manyToMany } from '@ioc:Adonis/Lucid/Orm'
 import { v4 as uuidv4 } from 'uuid'
 import Division from './Division'
 import Wilayah from './Wilayah'

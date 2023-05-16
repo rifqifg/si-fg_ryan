@@ -2,6 +2,7 @@ import { DateTime } from 'luxon'
 import { afterCreate, BaseModel, beforeCreate, BelongsTo, belongsTo, column } from '@ioc:Adonis/Lucid/Orm'
 import Class from './Class';
 import { v4 as uuidv4 } from 'uuid'
+import { StudentProgram, StudentReligion, StudentResidence, StudentUnit } from '../lib/enums';
 let newId = ""
 
 export default class Student extends BaseModel {
@@ -35,7 +36,7 @@ export default class Student extends BaseModel {
   public birthDay: DateTime | null
 
   @column()
-  public religion: string | null
+  public religion: StudentReligion | null
 
   @column()
   public address: string | null
@@ -45,9 +46,6 @@ export default class Student extends BaseModel {
 
   @column()
   public rw: string | null
-
-  @column()
-  public desa: string | null
 
   @column()
   public kel: string | null
@@ -72,6 +70,96 @@ export default class Student extends BaseModel {
 
   @column()
   public email: string | null
+
+  @column()
+  public residence: StudentResidence | null
+
+  @column()
+  public transportation: string | null
+
+  @column()
+  public hasKps: boolean
+
+  @column()
+  public kpsNumber: string | null
+
+  @column()
+  public juniorHsCertNo: string | null
+
+  @column()
+  public hasKip: boolean
+
+  @column()
+  public kipNumber: string | null
+
+  @column()
+  public nameOnKip: boolean
+
+  @column()
+  public hasKks: boolean
+
+  @column()
+  public kksNumber: string | null
+
+  @column()
+  public birthCertNo: string | null
+
+  @column()
+  public pipEligible: boolean
+
+  @column()
+  public pipDesc: string | null
+
+  @column()
+  public specialNeeds: string | null
+
+  @column()
+  public junior_hs_name: string | null
+
+  @column()
+  public child_no: string | null
+
+  @column()
+  public address_lat: number | null
+
+  @column()
+  public address_long: number | null
+
+  @column()
+  public family_card_no: string | null
+
+  @column()
+  public weight: number | null
+
+  @column()
+  public height: number | null
+
+  @column()
+  public head_circumference: number | null
+
+  @column()
+  public siblings: string | null
+
+  @column()
+  public distance_to_school_in_km: number | null
+
+  @column()
+  public program: StudentProgram | null
+
+  @column()
+  public unit: StudentUnit | null
+
+  @column()
+  public bank_name: string | null
+
+  @column()
+  public bank_account_owner: string | null
+
+  @column()
+  public bank_account_number: string | null
+
+  @column()
+  public nat_exam_no: string | null
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime | null

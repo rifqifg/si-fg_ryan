@@ -27,7 +27,7 @@ export default class TeachersController {
 
       response.ok({ message: "Berhasil mengambil data", data })
     } catch (error) {
-      const message = "ACSU28: " + error.message || error
+      const message = "ACSU30: " + error.message || error
       console.log(error);
       response.badRequest({
         message: "Gagal mengambil data",
@@ -44,7 +44,7 @@ export default class TeachersController {
       const data = await Teacher.create(payload)
       response.created({ message: "Berhasil menyimpan data", data })
     } catch (error) {
-      const message = "ACTE45: " + error.message || error
+      const message = "ACTE47: " + error.message || error
       // console.log(error);
       response.badRequest({
         message: "Gagal menyimpan data",
@@ -68,7 +68,7 @@ export default class TeachersController {
         .where('id', id).firstOrFail()
       response.ok({ message: "Berhasil mengambil data", data })
     } catch (error) {
-      const message = "ACTE69: " + error.message || error
+      const message = "ACTE71: " + error.message || error
       console.log(error);
       response.badRequest({
         message: "Gagal mengambil data",
@@ -87,7 +87,7 @@ export default class TeachersController {
       await data.delete()
       response.ok({ message: "Berhasil menghapus data" })
     } catch (error) {
-      const message = "ACTE88: " + error.message || error
+      const message = "ACTE90: " + error.message || error
       console.log(error);
       response.badRequest({
         message: "Gagal menghapus data",

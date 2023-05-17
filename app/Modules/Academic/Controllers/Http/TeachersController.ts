@@ -78,7 +78,7 @@ export default class TeachersController {
 
   public async destroy({ params, response }: HttpContextContract) {
     const { id } = params
-    if (!uuidValidation(id)) { return response.badRequest({ message: "Subject ID tidak valid" }) }
+    if (!uuidValidation(id)) { return response.badRequest({ message: "Teacher ID tidak valid" }) }
 
     try {
       const data = await Teacher.findOrFail(id)

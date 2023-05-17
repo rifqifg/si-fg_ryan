@@ -13,12 +13,14 @@ export default class TeachersController {
       if (mode === "page") {
         data = await Teacher
           .query()
-          .preload('employee', query => { query.select('id', 'name', 'nip').whereILike('name', `%${keyword}%`)})
+          .whereHas('employee', query => query.whereILike('name', `%${keyword}%`))
+          .preload('employee', query => query.select('id', 'name', 'nip'))
           .paginate(page, limit)
       } else if (mode === "list") {
         data = await Teacher
           .query()
-          .preload('employee', query => { query.select('id', 'name', 'nip') })
+          .whereHas('employee', query => query.whereILike('name', `%${keyword}%`))
+          .preload('employee', query => query.select('id', 'name', 'nip'))
       } else {
         return response.badRequest({ message: "Mode tidak dikenali, (pilih: page / list)" })
       }

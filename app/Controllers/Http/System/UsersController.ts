@@ -139,14 +139,14 @@ export default class UsersController {
           .htmlView("emails/registered", { FE_URL });
       });
     } catch (error) {
-      response.send({ message: "email tidak valid" });
+      return response.send({ message: "email tidak valid" });
     }
 
     if (payload.role === ROLE.EMPLOYEE) {
       try {
         employee = await Employee.findByOrFail("nik", payload.nik);
       } catch (error) {
-        response.badRequest({ message: "NIK anda belum terdaftar" });
+        return response.badRequest({ message: "NIK anda belum terdaftar" });
       }
       user = await User.create({
         name: payload.name,
@@ -160,7 +160,7 @@ export default class UsersController {
       try {
         student = await Student.findByOrFail("nisn", payload.nisn);
       } catch (error) {
-        response.send({ message: "NISN tidak terdaftar" });
+        return response.send({ message: "NISN tidak terdaftar" });
       }
       if (student && payload.role === ROLE.STUDENT) {
         user = await User.create({
@@ -210,7 +210,7 @@ export default class UsersController {
 
       response.ok({ message: "Akun sudah terverifikasi" });
     } catch (error) {
-      response.badRequest({
+      return response.badRequest({
         message: "email tidak ditemukan / token tidak cocok",
         error,
       });

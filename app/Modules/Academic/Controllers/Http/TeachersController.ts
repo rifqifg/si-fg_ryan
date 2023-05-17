@@ -5,7 +5,7 @@ import { validate as uuidValidation } from "uuid";
 
 //TODO: CRUD Teacher
 export default class TeachersController {
-  public async index({ request, response }: HttpContextContract) { // @ts-ignore
+  public async index({ request, response }: HttpContextContract) {
     const { page = 1, limit = 10, keyword = "", mode = "page" } = request.qs()
 
     try {
@@ -13,7 +13,7 @@ export default class TeachersController {
       if (mode === "page") {
         data = await Teacher
           .query()
-          .preload('employee', query => { query.select('id', 'name') })
+          .preload('employee', query => { query.select('id', 'name', 'nip').whereILike('name', `%${keyword}%`)})
           .paginate(page, limit)
       } else if (mode === "list") {
         data = await Teacher

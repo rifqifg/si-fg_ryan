@@ -6,6 +6,9 @@ export default class Teacher extends BaseModel {
   @column({ isPrimary: true })
   public id: string
 
+  @column()
+  public employeeId: string
+
   @hasOne(() => Employee)
   public employee: HasOne<typeof Employee>
 

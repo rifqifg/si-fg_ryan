@@ -2,7 +2,7 @@ import { DateTime } from 'luxon'
 import { afterCreate, BaseModel, beforeCreate, BelongsTo, belongsTo, column } from '@ioc:Adonis/Lucid/Orm'
 import Class from './Class';
 import { v4 as uuidv4 } from 'uuid'
-import { StudentProgram, StudentReligion, StudentResidence, StudentUnit } from '../lib/enums';
+import { StudentGender, StudentProgram, StudentReligion, StudentResidence, StudentUnit } from '../lib/enums';
 let newId = ""
 
 export default class Student extends BaseModel {
@@ -40,6 +40,9 @@ export default class Student extends BaseModel {
 
   @column()
   public address: string | null
+
+  @column()
+  public gender: StudentGender
 
   @column()
   public rt: string | null

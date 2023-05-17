@@ -1,11 +1,12 @@
 import BaseSchema from '@ioc:Adonis/Lucid/Schema'
-import { StudentProgram, StudentResidence, StudentUnit } from '../../lib/enums'
+import { StudentGender, StudentProgram, StudentResidence, StudentUnit } from '../../lib/enums'
 
 export default class extends BaseSchema {
   protected tableName = 'academic.students'
 
   public async up() {
     this.schema.alterTable(this.tableName, (table) => {
+      table.enum('gender', Object.values(StudentGender))
       table.enum('residence', Object.values(StudentResidence))
       table.string('transportation', 40)
       table.boolean('has_kps').defaultTo(false)
@@ -42,6 +43,7 @@ export default class extends BaseSchema {
   public async down() {
     this.schema.alterTable(this.tableName, (table) => {
       table.dropColumns(
+        'gender',
         'residence',
         'transportation',
         'has_kps',

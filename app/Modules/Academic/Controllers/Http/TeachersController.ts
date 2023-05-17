@@ -1,10 +1,11 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import CreateTeacherValidator from '../../Validators/CreateTeacherValidator';
 import Teacher from 'Academic/Models/Teacher';
+import { validate as uuidValidation } from "uuid";
 
 //TODO: CRUD Teacher
 export default class TeachersController {
-  public async index({request, response}: HttpContextContract) { // @ts-ignore
+  public async index({ request, response }: HttpContextContract) { // @ts-ignore
     const { page = 1, limit = 10, keyword = "", mode = "page" } = request.qs()
 
     try {
@@ -12,12 +13,12 @@ export default class TeachersController {
       if (mode === "page") {
         data = await Teacher
           .query()
-          .preload('employee', query => {query.select('id', 'name')})
+          .preload('employee', query => { query.select('id', 'name') })
           .paginate(page, limit)
       } else if (mode === "list") {
         data = await Teacher
           .query()
-          .preload('employee', query => {query.select('id', 'name', 'nip')})
+          .preload('employee', query => { query.select('id', 'name', 'nip') })
       } else {
         return response.badRequest({ message: "Mode tidak dikenali, (pilih: page / list)" })
       }
@@ -41,7 +42,7 @@ export default class TeachersController {
       const data = await Teacher.create(payload)
       response.created({ message: "Berhasil menyimpan data", data })
     } catch (error) {
-      const message = "ACTE44: " + error.message || error
+      const message = "ACTE45: " + error.message || error
       // console.log(error);
       response.badRequest({
         message: "Gagal menyimpan data",
@@ -51,7 +52,46 @@ export default class TeachersController {
     }
   }
 
-  public async show({ }: HttpContextContract) { }
+  public async show({ params, response }: HttpContextContract) {
+    const { id } = params
+    if (!uuidValidation(id)) { return response.badRequest({ message: "Teacher ID tidak valid" }) }
 
-  public async destroy({ }: HttpContextContract) { }
+    try {
+      const data = await Teacher
+        .query()
+        .preload('employee',
+          query => query
+            .preload('divisions', d => d.preload('division', x => x.select('name')))
+        )
+        .where('id', id).firstOrFail()
+      response.ok({ message: "Berhasil mengambil data", data })
+    } catch (error) {
+      const message = "ACTE69: " + error.message || error
+      console.log(error);
+      response.badRequest({
+        message: "Gagal mengambil data",
+        error: message,
+        error_data: error
+      })
+    }
+  }
+
+  public async destroy({ params, response }: HttpContextContract) {
+    const { id } = params
+    if (!uuidValidation(id)) { return response.badRequest({ message: "Subject ID tidak valid" }) }
+
+    try {
+      const data = await Teacher.findOrFail(id)
+      await data.delete()
+      response.ok({ message: "Berhasil menghapus data" })
+    } catch (error) {
+      const message = "ACTE88: " + error.message || error
+      console.log(error);
+      response.badRequest({
+        message: "Gagal menghapus data",
+        error: message,
+        error_data: error
+      })
+    }
+  }
 }

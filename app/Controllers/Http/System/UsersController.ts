@@ -116,15 +116,9 @@ export default class UsersController {
 
         if (payload.nik) {
             employee = await Employee.findByOrFail('nik', payload.nik)
-
-            if (payload.role === 'employee' && employee) {
-                try {
-                    
-                    user = await User.create({...payload, verifyToken, employeeId: employee.id})
-                } catch (error) {
-                    response.send({message: 'NIK anda belum terdaftar'})
-                    
-                }
+            if (employee && payload.role ==='employee') {
+                user = await User.create({name: payload.name, email: payload.email, verifyToken, employeeId: employee.id, role: 'employee', password: payload.password});
+                
             }
         } else {
             student = await Student.findByOrFail('nisn', payload.nisn)

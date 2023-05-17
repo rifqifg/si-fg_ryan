@@ -117,7 +117,7 @@ export default class UsersController {
         ]),
         nisn: schema.string.optional([
           rules.trim(),
-          rules.exists({ table: "students", column: "nisn" }),
+          rules.exists({ table: "academic.students", column: "nisn" }),
         ]),
         password: schema.string([rules.minLength(6), rules.confirmed()]),
       }),

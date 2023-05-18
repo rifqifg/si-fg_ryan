@@ -7,8 +7,8 @@ import CreatePresenceValidator from 'App/Validators/CreatePresenceValidator'
 import UpdatePresenceValidator from 'App/Validators/UpdatePresenceValidator'
 import { DateTime, Duration } from 'luxon'
 export default class PresencesController {
-  public async index({ request, response }: HttpContextContract) {
-    const hariIni = DateTime.now().toSQLDate().toString()
+  public async index({ request, response }: HttpContextContract) { // @ts-ignore
+    const hariIni = DateTime.now().toSQLDate().toString() // @ts-ignore
     const { page = 1, limit = 10, keyword = "", activityId = "", orderBy = "time_in", orderDirection = 'ASC', fromDate = hariIni, toDate = hariIni } = request.qs()
     //TODO: bikin raw query & select secukupnya biar bisa order by join column
 
@@ -94,10 +94,11 @@ export default class PresencesController {
 
     // return response.ok({date :  DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss').toString()})
     if (prezence === null) { //belum ada data = belum pernah masuk
+      // @ts-ignore 
       const scanIn = await Presence.create({ activityId, employeeId, timeIn: DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss').toString() })
       response.ok({ message: "Scan In Success", activity, scanIn })
     } else if (prezence!.timeOut === null) { //sudah ada data & belum keluar
-      const scanOut = await prezence!
+      const scanOut = await prezence! // @ts-ignore
         .merge({ timeOut: DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss').toString() })
         .save()
       response.ok({ message: "Scan Out Success", data: scanOut })
@@ -138,7 +139,7 @@ export default class PresencesController {
     const { id } = params
     const payload = await request.validate(UpdatePresenceValidator)
     try {
-      const findData = await Presence.findOrFail(id)
+      const findData = await Presence.findOrFail(id) // @ts-ignore
       const data = await findData.merge(payload).save()
       response.ok({ message: "Update data success", data })
     } catch (error) {
@@ -161,7 +162,7 @@ export default class PresencesController {
   }
 
 
-  public async recap({ params, response, request }: HttpContextContract) {
+  public async recap({ params, response, request }: HttpContextContract) {// @ts-ignore
     const hariIni = DateTime.now().toSQLDate().toString()
     const { id } = params
     const { from = hariIni, to = hariIni } = request.qs()
@@ -233,7 +234,7 @@ export default class PresencesController {
     response.ok({ message: "Get data success", overview, recap, detail })
   }
 
-  public async hours({ params, response, request }: HttpContextContract) {
+  public async hours({ params, response, request }: HttpContextContract) { // @ts-ignore
     const hariIni = DateTime.now().toSQLDate().toString()
     const { id } = params
     let { from = hariIni, to = hariIni, employeeId } = request.qs()

@@ -31,7 +31,7 @@ export default class WilayahsController {
         }
     }
 
-    public async getSelect({ params, response }: HttpContextContract) {
+    public async getSelect({ params }: HttpContextContract) {
         const { keyword } = params
         const data = await Wilayah.query()
             .whereILike('nama', `%${keyword}%`)
@@ -40,7 +40,7 @@ export default class WilayahsController {
         return data
     }
 
-    public async getAllByKel({ params, response }: HttpContextContract) {
+    public async getAllByKel({ params }: HttpContextContract) {
         const { keyword } = params
         const pro = keyword.substr(0,2)
         const kot = keyword.substr(0,5)

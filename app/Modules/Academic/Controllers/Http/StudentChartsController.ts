@@ -106,14 +106,14 @@ export default class StudentChartsController {
       rows = await sheet.getRows(); // can pass in { limit, offset }
 
 
-      const cleanRowSiswa = rows.map(row => {
+      const cleanRowSiswa = rows.map(row => {// @ts-ignore
         const [sheet, rowNumber, rawData, ...keys] = Object.keys(row)
         const clean = {}
 
-        if (row['Tanggal'] !== '#REF!') {
+        if (row['Tanggal'] !== '#REF!') {// @ts-ignore
           keys.forEach((key, index) => {
             clean[key.toLowerCase()] = row[key]
-          })
+          })// @ts-ignore
           clean['created_at'] = DateTime.now().toSQL().toString()
         }
 

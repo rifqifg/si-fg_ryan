@@ -13,21 +13,37 @@ export default class TeachersController {
       if (mode === "page") {
         data = await Teacher
           .query()
-          .whereHas('employee', query => query.whereILike('name', `%${keyword}%`))
-          .preload('employee', query => query.select('id', 'name', 'nip'))
+          .whereHas('employee', e => e.whereILike('name', `%${keyword}%`))
+          .orWhereHas('teaching', t => t
+            .whereHas('class', c => c.whereILike('name', `%${keyword}%`)))
+          .orWhereHas('teaching', t => t
+            .whereHas('subject', s => s.whereILike('name', `%${keyword}%`)))
+          .preload('employee', e => e.select('id', 'name', 'nip'))
+          .preload('teaching', t => t.select('id', 'class_id', 'subject_id')
+            .preload('class', c => c.select('id', 'name'))
+            .preload('subject', s => s.select('id', 'name'))
+          )
           .paginate(page, limit)
       } else if (mode === "list") {
         data = await Teacher
           .query()
-          .whereHas('employee', query => query.whereILike('name', `%${keyword}%`))
-          .preload('employee', query => query.select('id', 'name', 'nip'))
+          .whereHas('employee', e => e.whereILike('name', `%${keyword}%`))
+          .orWhereHas('teaching', t => t
+            .whereHas('class', c => c.whereILike('name', `%${keyword}%`)))
+          .orWhereHas('teaching', t => t
+            .whereHas('subject', s => s.whereILike('name', `%${keyword}%`)))
+          .preload('employee', e => e.select('id', 'name', 'nip'))
+          .preload('teaching', t => t.select('id', 'class_id', 'subject_id')
+            .preload('class', c => c.select('id', 'name'))
+            .preload('subject', s => s.select('id', 'name'))
+          )
       } else {
         return response.badRequest({ message: "Mode tidak dikenali, (pilih: page / list)" })
       }
 
       response.ok({ message: "Berhasil mengambil data", data })
     } catch (error) {
-      const message = "ACSU30: " + error.message || error
+      const message = "ACSU46: " + error.message || error
       console.log(error);
       response.badRequest({
         message: "Gagal mengambil data",
@@ -44,7 +60,7 @@ export default class TeachersController {
       const data = await Teacher.create(payload)
       response.created({ message: "Berhasil menyimpan data", data })
     } catch (error) {
-      const message = "ACTE47: " + error.message || error
+      const message = "ACTE63: " + error.message || error
       // console.log(error);
       response.badRequest({
         message: "Gagal menyimpan data",
@@ -61,6 +77,11 @@ export default class TeachersController {
     try {
       const data = await Teacher
         .query()
+        .preload('employee', e => e.select('id', 'name', 'nip'))
+        .preload('teaching', t => t.select('id', 'class_id', 'subject_id')
+          .preload('class', c => c.select('id', 'name'))
+          .preload('subject', s => s.select('id', 'name'))
+        )
         .preload('employee',
           query => query
             .preload('divisions', d => d.preload('division', x => x.select('name')))
@@ -68,7 +89,7 @@ export default class TeachersController {
         .where('id', id).firstOrFail()
       response.ok({ message: "Berhasil mengambil data", data })
     } catch (error) {
-      const message = "ACTE71: " + error.message || error
+      const message = "ACTE92: " + error.message || error
       console.log(error);
       response.badRequest({
         message: "Gagal mengambil data",
@@ -87,7 +108,7 @@ export default class TeachersController {
       await data.delete()
       response.ok({ message: "Berhasil menghapus data" })
     } catch (error) {
-      const message = "ACTE90: " + error.message || error
+      const message = "ACTE111: " + error.message || error
       console.log(error);
       response.badRequest({
         message: "Gagal menghapus data",

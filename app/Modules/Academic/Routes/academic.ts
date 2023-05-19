@@ -7,4 +7,5 @@ Route.group(() => {
     Route.resource('students', 'StudentsController').apiOnly().middleware({ '*': ['auth'] })
     Route.resource('subjects', 'SubjectsController').apiOnly().middleware({ '*': ['auth'] })
     Route.resource('teachers', 'TeachersController').apiOnly().middleware({ '*': ['auth'] })
+    Route.resource('teachers.teachings', 'TeachingsController').apiOnly().middleware({ '*': ['auth'] })
 }).prefix('academics').namespace('AcademicControllers')

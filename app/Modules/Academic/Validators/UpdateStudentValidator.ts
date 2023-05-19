@@ -47,18 +47,22 @@ export default class UpdateStudentValidator {
     kel: schema.string.nullableAndOptional([
       rules.minLength(13),
       rules.maxLength(13),
+      rules.exists({ table: 'public.wilayah', column: 'kode' })
     ]),
     kec: schema.string.nullableAndOptional([
       rules.minLength(8),
       rules.maxLength(8),
+      rules.exists({ table: 'public.wilayah', column: 'kode' })
     ]),
     kot: schema.string.nullableAndOptional([
       rules.minLength(5),
       rules.maxLength(5),
+      rules.exists({ table: 'public.wilayah', column: 'kode' })
     ]),
     prov: schema.string.nullableAndOptional([
       rules.minLength(2),
       rules.maxLength(2),
+      rules.exists({ table: 'public.wilayah', column: 'kode' })
     ]),
     zip: schema.string.nullableAndOptional([
       rules.regex(/^[0-9]+$/),

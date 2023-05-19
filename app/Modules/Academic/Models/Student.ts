@@ -3,6 +3,7 @@ import { afterCreate, BaseModel, beforeCreate, BelongsTo, belongsTo, column } fr
 import Class from './Class';
 import { v4 as uuidv4 } from 'uuid'
 import { StudentGender, StudentProgram, StudentReligion, StudentResidence, StudentUnit } from '../lib/enums';
+import Wilayah from 'App/Models/Wilayah';
 let newId = ""
 
 export default class Student extends BaseModel {
@@ -53,14 +54,38 @@ export default class Student extends BaseModel {
   @column()
   public kel: string | null
 
+  @belongsTo(() => Wilayah, {
+    localKey: 'kode',
+    foreignKey: 'kel'
+  })
+  kelurahan: BelongsTo<typeof Wilayah>
+
   @column()
   public kec: string | null
+
+  @belongsTo(() => Wilayah, {
+    localKey: 'kode',
+    foreignKey: 'kec'
+  })
+  kecamatan: BelongsTo<typeof Wilayah>
 
   @column()
   public kot: string | null
 
+  @belongsTo(() => Wilayah, {
+    localKey: 'kode',
+    foreignKey: 'kot'
+  })
+  kota: BelongsTo<typeof Wilayah>
+
   @column()
   public prov: string | null
+
+  @belongsTo(() => Wilayah, {
+    localKey: 'kode',
+    foreignKey: 'prov'
+  })
+  provinsi: BelongsTo<typeof Wilayah>
 
   @column()
   public zip: string | null

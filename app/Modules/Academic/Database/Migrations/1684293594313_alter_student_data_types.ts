@@ -14,12 +14,14 @@ export default class extends BaseSchema {
       table.text('address').alter()
       table.string('rt', 3).alter()
       table.string('rw', 3).alter()
-      table.string('kel', 13).alter()
-      table.string('kec', 8).alter()
-      table.string('kot', 5).alter()
-      table.string('prov', 2).alter()
+      table.string('kel', 13).alter().references('kode').inTable('public.wilayah').onDelete('no action').onUpdate('cascade')
+      table.string('kec', 8).alter().references('kode').inTable('public.wilayah').onDelete('no action').onUpdate('cascade')
+      table.string('kot', 5).alter().references('kode').inTable('public.wilayah').onDelete('no action').onUpdate('cascade')
+      table.string('prov', 2).alter().references('kode').inTable('public.wilayah').onDelete('no action').onUpdate('cascade')
       table.string('zip', 5).alter()
 
+      // FIXME: cari alternatif untuk ubah tipe data religion menjadi enum
+      // note: table.enum('religion', ....).alter() akan menghasilkan syntax error postgres
       table.enum('religion', Object.values(StudentReligion))
     })
   }
@@ -39,6 +41,10 @@ export default class extends BaseSchema {
       table.string('kec').alter()
       table.string('kot').alter()
       table.string('prov').alter()
+      table.dropForeign('kel')
+      table.dropForeign('kec')
+      table.dropForeign('kot')
+      table.dropForeign('prov')
       table.string('zip').alter()
       table.string('religion')
     })

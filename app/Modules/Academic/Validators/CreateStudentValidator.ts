@@ -49,18 +49,22 @@ export default class CreateStudentValidator {
     kel: schema.string.optional([
       rules.minLength(13),
       rules.maxLength(13),
+      rules.exists({ table: 'public.wilayah', column: 'kode' })
     ]),
     kec: schema.string.optional([
       rules.minLength(8),
       rules.maxLength(8),
+      rules.exists({ table: 'public.wilayah', column: 'kode' })
     ]),
     kot: schema.string.optional([
       rules.minLength(5),
       rules.maxLength(5),
+      rules.exists({ table: 'public.wilayah', column: 'kode' })
     ]),
     prov: schema.string.optional([
       rules.minLength(2),
       rules.maxLength(2),
+      rules.exists({ table: 'public.wilayah', column: 'kode' })
     ]),
     zip: schema.string.optional([
       rules.regex(/^[0-9]+$/),

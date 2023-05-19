@@ -68,10 +68,10 @@ export default class UpdateStudentValidator {
     phone: schema.string.nullableAndOptional([
       rules.regex(/^[0-9]+$/),
     ]),
-    mobilePhone: schema.string.nullableAndOptional([
+    mobile_phone: schema.string.nullableAndOptional([
       rules.regex(/^[0-9]+$/),
     ]),
-    residence: schema.enum(Object.values(StudentResidence)),
+    residence: schema.enum.nullableAndOptional(Object.values(StudentResidence)),
     transportation: schema.string.nullableAndOptional([
       rules.maxLength(40),
     ]),
@@ -101,8 +101,8 @@ export default class UpdateStudentValidator {
       rules.maxLength(2)
     ]),
     distance_to_school_in_km: schema.number.nullableAndOptional(),
-    program: schema.enum(Object.values(StudentProgram)),
-    unit: schema.enum(Object.values(StudentUnit)),
+    program: schema.enum.nullableAndOptional(Object.values(StudentProgram)),
+    unit: schema.enum.nullableAndOptional(Object.values(StudentUnit)),
     bank_name: schema.string.nullableAndOptional({ trim: true }, [
       rules.maxLength(30)
     ]),

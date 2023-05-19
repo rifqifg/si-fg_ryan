@@ -33,9 +33,9 @@ export default class CreateStudentValidator {
     ]),
     birth_city: schema.string.optional(),
     birth_day: schema.date.optional({ format: "yyyy-MM-dd" }),
-    religion: schema.enum(Object.values(StudentReligion)),
+    religion: schema.enum.optional(Object.values(StudentReligion)),
     address: schema.string.optional({ trim: true }),
-    gender: schema.enum(Object.values(StudentGender)),
+    gender: schema.enum.optional(Object.values(StudentGender)),
     rt: schema.string.optional([
       rules.regex(/^[0-9]+$/),
       rules.minLength(3),
@@ -73,7 +73,7 @@ export default class CreateStudentValidator {
     mobile_phone: schema.string.optional([
       rules.regex(/^[0-9]+$/),
     ]),
-    residence: schema.enum(Object.values(StudentResidence)),
+    residence: schema.enum.optional(Object.values(StudentResidence)),
     transportation: schema.string.optional([
       rules.maxLength(40),
     ]),
@@ -103,8 +103,8 @@ export default class CreateStudentValidator {
       rules.maxLength(2)
     ]),
     distance_to_school_in_km: schema.number.optional(),
-    program: schema.enum(Object.values(StudentProgram)),
-    unit: schema.enum(Object.values(StudentUnit)),
+    program: schema.enum.optional(Object.values(StudentProgram)),
+    unit: schema.enum.optional(Object.values(StudentUnit)),
     bank_name: schema.string.optional({ trim: true }, [
       rules.maxLength(30)
     ]),

@@ -80,8 +80,7 @@
     "@adonisjs/lucid",
     "@adonisjs/auth",
     "@adonisjs/mail",
-    "@adonisjs/view",
-    "@adonisjs/ally"
+    "@adonisjs/view"
   ],
   "aceProviders": [
     "@adonisjs/repl"

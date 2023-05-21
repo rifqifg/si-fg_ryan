@@ -6,9 +6,8 @@ import { string } from "@ioc:Adonis/Core/Helpers";
 import User from "App/Models/User";
 import Env from "@ioc:Adonis/Core/Env";
 import { v4 as uuidv4 } from "uuid";
+import jwt_decode from "jwt-decode";
 import Hash from "@ioc:Adonis/Core/Hash";
-// import Permission from 'App/Models/Permission'
-// import PermissionList from 'App/Models/PermissionList'
 import Database from "@ioc:Adonis/Lucid/Database";
 import Employee from "App/Models/Employee";
 import Student from "App/Modules/Academic/Models/Student";
@@ -20,6 +19,11 @@ enum ROLE {
   ALUMNI = "alumni",
 }
 
+interface UserGoogle {
+  email: string;
+  name: string;
+  email_verified: boolean;
+}
 export default class UsersController {
   public async login({ request, response, auth }: HttpContextContract) {
     const loginSchema = schema.create({
@@ -55,28 +59,45 @@ export default class UsersController {
     await ally.use("google").redirect();
   }
 
-  public async googleCallback({ ally, auth, response }: HttpContextContract) {
-    const provider = ally.use("google").stateless();
+  public async googleCallback({
+    request,
+    response,
+    ally,
+    auth,
+  }: HttpContextContract) {
+    const { cred } = await request.validate({
+      schema: schema.create({
+        cred: schema.string([rules.trim()]),
+      }),
+    });
 
-    if (provider.accessDenied()) return "Access Denied";
+    const userGoogle: UserGoogle = jwt_decode(cred);
 
-    if (provider.hasError()) return provider.getError();
+    // console.log(user)id
+    //  return { id}
+    // const provider = ally.use("google").stateless();
+    // const provider = await ally.use("google")
+    // const { token } = await provider.accessToken()
+    //  const user = provider.userFromToken(id)
+    // if (provider.accessDenied()) return "Access Denied";
 
-    const { token } = await provider.accessToken();
+    // if (provider.hasError()) return provider.getError();
 
-    const userGoogle = await provider.userFromToken(token);
+    // const userGoogle = await provider.userFromToken(token);
 
+    // if (userGoogle.id === id) {
+    //   return {message: 'ok'}
+    // }
     const userDetails = {
       email: userGoogle.email,
       name: userGoogle.name,
-      socialId: userGoogle.id,
-      token: userGoogle.token,
-      verified: userGoogle.emailVerificationState,
+      verified: userGoogle.email_verified,
       provider: "google",
     };
+    
     try {
       const user = await User.query()
-        .where("email", "=", userGoogle.email ? userGoogle.email : "")
+        .where("email", "=", userGoogle.email)
         .preload("roles", (r) => r.select("name", "permissions"))
         .firstOrFail();
       const tokenAuth = await auth.use("api").login(user);
@@ -197,7 +218,7 @@ export default class UsersController {
 
   public async verify({ request, response }: HttpContextContract) {
     const token = request.input("token");
-    
+
     try {
       const user = await User.query().where("verifyToken", token).firstOrFail();
 

@@ -55,14 +55,9 @@ export default class UsersController {
     }
   }
 
-  public async googleSignIn({ ally }: HttpContextContract) {
-    await ally.use("google").redirect();
-  }
-
   public async googleCallback({
     request,
     response,
-    ally,
     auth,
   }: HttpContextContract) {
     const { cred } = await request.validate({

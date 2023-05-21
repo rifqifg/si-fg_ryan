@@ -5,14 +5,39 @@ import { validate as uuidValidation } from "uuid";
 import UpdateTeachingValidator from '../../Validators/UpdateTeachingValidator';
 
 export default class TeachingsController {
+    public async index({ response, params }: HttpContextContract) {
+        const { teacher_id } = params
+        if (!uuidValidation(teacher_id)) { return response.badRequest({ message: "Teacher ID tidak valid" }) }
+
+        try {
+            let data = {}
+
+            data = await Teaching
+                .query()
+                .preload('class', c => c.select('id', 'name'))
+                .preload('subject', s => s.select('id', 'name'))
+                .where('teacher_id', '=', teacher_id)
+                .firstOrFail()
+            response.ok({ message: "Berhasil mengambil data", data })
+        } catch (error) {
+            const message = "ACTH23: " + error.message || error
+            console.log(error);
+            response.badRequest({
+                message: "Gagal mengambil data",
+                error: message,
+                error_data: error
+            })
+        }
+    }
+
     public async store({ request, response }: HttpContextContract) {
-        
+
         const payload = await request.validate(CreateTeachingValidator)
         try {
             const data = await Teaching.create(payload)
             response.created({ message: "Berhasil menyimpan data", data })
         } catch (error) {
-            const message = "ACTH13: " + error.message || error
+            const message = "ACTH40: " + error.message || error
             // console.log(error);
             response.badRequest({
                 message: "Gagal menyimpan data",
@@ -36,7 +61,7 @@ export default class TeachingsController {
             const data = await teaching.merge(payload).save()
             response.ok({ message: "Berhasil mengubah data", data })
         } catch (error) {
-            const message = "ACTH13: " + error.message || error
+            const message = "ACTH64: " + error.message || error
             console.log(error);
             response.badRequest({
                 message: "Gagal mengubah data",
@@ -55,7 +80,7 @@ export default class TeachingsController {
             await data.delete()
             response.ok({ message: "Berhasil menghapus data" })
         } catch (error) {
-            const message = "ACSU109: " + error.message || error
+            const message = "ACSU83: " + error.message || error
             console.log(error);
             response.badRequest({
                 message: "Gagal menghapus data",

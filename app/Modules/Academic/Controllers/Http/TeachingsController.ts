@@ -17,7 +17,7 @@ export default class TeachingsController {
                 .preload('class', c => c.select('id', 'name'))
                 .preload('subject', s => s.select('id', 'name'))
                 .where('teacher_id', '=', teacher_id)
-                
+
             response.ok({ message: "Berhasil mengambil data", data })
         } catch (error) {
             const message = "ACTH23: " + error.message || error
@@ -38,9 +38,31 @@ export default class TeachingsController {
             response.created({ message: "Berhasil menyimpan data", data })
         } catch (error) {
             const message = "ACTH40: " + error.message || error
-            // console.log(error);
+            console.log(error);
             response.badRequest({
                 message: "Gagal menyimpan data",
+                error: message,
+                error_data: error
+            })
+        }
+    }
+
+    public async show({ params, response }: HttpContextContract) {
+        const { id } = params
+        if (!uuidValidation(id)) { return response.badRequest({ message: "Teaching ID tidak valid" }) }
+
+        try {
+            const data = await Teaching
+                .query()
+                .preload('class', c => c.select('*'))
+                .preload('subject', s => s.select('*'))
+                .where('id', '=', id).firstOrFail()
+            response.ok({ message: "Berhasil mengambil data", data: data })
+        } catch (error) {
+            const message = "ACTH62: " + error.message || error
+            console.log(error);
+            response.badRequest({
+                message: "Gagal mengambil data",
                 error: message,
                 error_data: error
             })
@@ -61,7 +83,7 @@ export default class TeachingsController {
             const data = await teaching.merge(payload).save()
             response.ok({ message: "Berhasil mengubah data", data })
         } catch (error) {
-            const message = "ACTH64: " + error.message || error
+            const message = "ACTH86: " + error.message || error
             console.log(error);
             response.badRequest({
                 message: "Gagal mengubah data",
@@ -80,7 +102,7 @@ export default class TeachingsController {
             await data.delete()
             response.ok({ message: "Berhasil menghapus data" })
         } catch (error) {
-            const message = "ACSU83: " + error.message || error
+            const message = "ACSU105: " + error.message || error
             console.log(error);
             response.badRequest({
                 message: "Gagal menghapus data",

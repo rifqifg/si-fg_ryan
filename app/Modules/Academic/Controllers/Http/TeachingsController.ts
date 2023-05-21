@@ -17,7 +17,7 @@ export default class TeachingsController {
                 .preload('class', c => c.select('id', 'name'))
                 .preload('subject', s => s.select('id', 'name'))
                 .where('teacher_id', '=', teacher_id)
-                .firstOrFail()
+                
             response.ok({ message: "Berhasil mengambil data", data })
         } catch (error) {
             const message = "ACTH23: " + error.message || error

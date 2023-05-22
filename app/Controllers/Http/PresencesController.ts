@@ -7,8 +7,8 @@ import CreatePresenceValidator from 'App/Validators/CreatePresenceValidator'
 import UpdatePresenceValidator from 'App/Validators/UpdatePresenceValidator'
 import { DateTime, Duration } from 'luxon'
 export default class PresencesController {
-  public async index({ request, response }: HttpContextContract) {
-    const hariIni = DateTime.now().toSQLDate().toString()
+  public async index({ request, response }: HttpContextContract) { // @ts-ignore
+    const hariIni = DateTime.now().toSQLDate().toString() // @ts-ignore
     const { page = 1, limit = 10, keyword = "", activityId = "", orderBy = "time_in", orderDirection = 'ASC', fromDate = hariIni, toDate = hariIni } = request.qs()
     //TODO: bikin raw query & select secukupnya biar bisa order by join column
 
@@ -94,10 +94,11 @@ export default class PresencesController {
 
     // return response.ok({date :  DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss').toString()})
     if (prezence === null) { //belum ada data = belum pernah masuk
+      // @ts-ignore 
       const scanIn = await Presence.create({ activityId, employeeId, timeIn: DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss').toString() })
       response.ok({ message: "Scan In Success", activity, scanIn })
     } else if (prezence!.timeOut === null) { //sudah ada data & belum keluar
-      const scanOut = await prezence!
+      const scanOut = await prezence! // @ts-ignore
         .merge({ timeOut: DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss').toString() })
         .save()
       response.ok({ message: "Scan Out Success", data: scanOut })
@@ -138,7 +139,7 @@ export default class PresencesController {
     const { id } = params
     const payload = await request.validate(UpdatePresenceValidator)
     try {
-      const findData = await Presence.findOrFail(id)
+      const findData = await Presence.findOrFail(id) // @ts-ignore
       const data = await findData.merge(payload).save()
       response.ok({ message: "Update data success", data })
     } catch (error) {
@@ -161,13 +162,13 @@ export default class PresencesController {
   }
 
 
-  public async recap({ params, response, request }: HttpContextContract) {
+  public async recap({ params, response, request }: HttpContextContract) {// @ts-ignore
     const hariIni = DateTime.now().toSQLDate().toString()
     const { id } = params
     const { from = hariIni, to = hariIni } = request.qs()
 
     const { rows: detail } = await Database.rawQuery(`
-      select name, time_in, time_out, case when (keterlambatan > interval '1 second') then keterlambatan ::string else '0' end late
+      select name, time_in, time_out, case when (keterlambatan > interval '1 second') then cast(keterlambatan as varchar) else '0' end late
       from (
         select e.name, p.time_in, p.time_out, time_in ::time - '07:30:00'::time keterlambatan
         from presences p 
@@ -183,8 +184,8 @@ export default class PresencesController {
     const recapHourlyQuery = `
       select id, name
         ,count(name) total
-        ,sum(time_out :: time - time_in::time)::string total_hours
-        ,case when sum(time_in ::time - '07:30:00'::time) > interval '0 second' then sum(time_in ::time - '07:30:00'::time) ::string else '0' end late
+        ,cast(sum(time_out :: time - time_in::time) as varchar) total_hours
+        ,case when sum(time_in ::time - '07:30:00'::time) > interval '0 second' then cast(sum(time_in ::time - '07:30:00'::time) as varchar)  else '0' end late
       from (
         select e.id, e.name
         ,time_in
@@ -207,7 +208,7 @@ export default class PresencesController {
       select data.*, (presence_total/presence_expected)*100  presence_precentage, mostPresent.*
       from
       (
-        select sum(time_in ::time - '07:30:00'::time) ::string late_total, employee_total, ('${to}'::date - '${from}'::date + 1) day_total
+        select cast(sum(time_in ::time - '07:30:00'::time) as varchar)  late_total, employee_total, ('${to}'::date - '${from}'::date + 1) day_total
         ,  ('${to}'::date - '${from}'::date + 1) * employee_total presence_expected
         , count(*) presence_total
         from presences p 
@@ -233,7 +234,7 @@ export default class PresencesController {
     response.ok({ message: "Get data success", overview, recap, detail })
   }
 
-  public async hours({ params, response, request }: HttpContextContract) {
+  public async hours({ params, response, request }: HttpContextContract) { // @ts-ignore
     const hariIni = DateTime.now().toSQLDate().toString()
     const { id } = params
     let { from = hariIni, to = hariIni, employeeId } = request.qs()
@@ -242,15 +243,15 @@ export default class PresencesController {
       select *
       from (
         select employee_id, name, time_in, time_out, max_working_duration ,total_hours as original_total_hours
-        ,case when (total_hours::time - max_working_duration::time)::int <=0 then total_hours else max_working_duration::string end total_hours
-        ,(total_hours::time - max_working_duration::time)::string working_time_diff
+        ,case when EXTRACT(epoch FROM (total_hours::time - max_working_duration::time)) /60  <=0 then total_hours else cast(max_working_duration as varchar) end total_hours
+        ,cast((total_hours::time - max_working_duration::time) as varchar) working_time_diff
         from (
           select *
             -- ini untuk cek apakah dia tap in setelah jam 12:30 siang
             ,case when left(total_hours_check, 1) <> '-' then total_hours_check else '00:00:00' end total_hours 
           from (
             select *
-                ,sum(time_out :: time - time_in::time)::string total_hours_check
+                ,cast((sum(time_out :: time - time_in::time)) as varchar) total_hours_check
               from (
                   select e.id employee_id
                     ,e.name
@@ -272,8 +273,8 @@ export default class PresencesController {
         ) y
       )z
       `
-                
-                
+
+
     const { rows: recapHourlyEmployee } = await Database.rawQuery(recapHourlyEmployeeQuery)
     // return recapHourlyEmployee
     const recapDate = {}

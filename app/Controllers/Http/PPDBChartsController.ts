@@ -5,7 +5,7 @@ import { DateTime } from 'luxon';
 import { getAlphabet } from 'App/Helpers/StringHelper';
 
 export default class PPDBChartsController {
-  public async pendaftarBaru({ request, response }: HttpContextContract) {
+  public async pendaftarBaru({ response }: HttpContextContract) {
 
     const doc = new GoogleSpreadsheet(process.env.GOOGLE_API_SHEET_PPDB_PENDAFTAR);
 
@@ -18,7 +18,7 @@ export default class PPDBChartsController {
     const sheet = doc.sheetsByIndex[0] //sheetsByTitle['Form Responses 1'];
     const rows = await sheet.getRows(); // can pass in { limit, offset }
 
-    const cleanRowPPDB = rows.map(row => {
+    const cleanRowPPDB = rows.map(row => { // @ts-ignore
       const [sheet, rowNumber, rawData, ...keys] = Object.keys(row)
       const clean = {}
       keys.forEach((key, index) => {
@@ -38,9 +38,9 @@ export default class PPDBChartsController {
     `
 
     const selectPendaftarPerBulan = `
-      select substr(a::date::string,0,8) bulan, count(*) total
+      select substr(cast(a::date as varchar),0,8) bulan, count(*) total
       from ${tableTempPPDBPendaftar}
-      group by substr(a::date::string,0,8)
+      group by substr(cast(a::date as varchar),0,8)
     `
 
     const selectTotalPendaftar = `
@@ -107,7 +107,7 @@ export default class PPDBChartsController {
     const sheet = doc.sheetsByIndex[0] //sheetsByTitle['Form Responses 1'];
     const rows = await sheet.getRows(); // can pass in { limit, offset }
 
-    const cleanRowPPDB = rows.map(row => {
+    const cleanRowPPDB = rows.map(row => { // @ts-ignore
       const [sheet, rowNumber, rawData, ...keys] = Object.keys(row)
       const clean = {}
 

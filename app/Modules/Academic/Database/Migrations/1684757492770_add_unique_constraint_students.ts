@@ -7,7 +7,8 @@ export default class extends BaseSchema {
     this.schema
       .withSchema('academic')
       .alterTable(this.tableName, (table) => {
-        table.string('nik', 16).alter().unique()
+        table.uuid('class_id').alter().notNullable()
+        table.string('nik', 16).alter().unique().notNullable()
       })
   }
 
@@ -15,7 +16,8 @@ export default class extends BaseSchema {
     this.schema
       .withSchema('academic')
       .alterTable(this.tableName, (table) => {
-        table.string('nik', 16).notNullable()
+        // table.string('nik', 16).notNullable()
+        table.dropUnique(['nik'])
       })
   }
 }

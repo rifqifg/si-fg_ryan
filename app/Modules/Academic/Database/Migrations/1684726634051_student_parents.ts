@@ -8,8 +8,6 @@ export default class extends BaseSchema {
     this.schema
       .withSchema('academic')
       .createTable(this.tableName, (table) => {
-        // TODO: test cascade when parent data removed
-        // TODO: test cascade when student data removed
         table.uuid('id').primary().notNullable().unique()
         table.uuid('student_id').references('id').inTable('academic.students').onDelete('cascade').onUpdate('cascade')
         table.enum('relationship_w_student', Object.values(ParentRelationship))
@@ -23,6 +21,7 @@ export default class extends BaseSchema {
         table.string('phone_number', 16)
         table.string('email', 50)
         table.text('address')
+        table.unique(['student_id', 'nik'])
 
         /**
          * Uses timestamptz for PostgreSQL and DATETIME2 for MSSQL

@@ -70,11 +70,17 @@ export default class AuthMiddleware {
      * the config file
      */
     const guards = customGuards.length ? customGuards : [auth.name]
-    await this.authenticate(auth, guards)
+
+    try {
+      await this.authenticate(auth, guards)
+    } catch (error) {
+      console.log(error)
+      return response.unauthorized({ code: 'TOKEN', message: error.message || error })
+    }
 
     if (!auth.user!.verified) {
       console.log("user belum verifikasi");
-      return response.unauthorized({ message: "Email belum di verifikasi" })
+      return response.unauthorized({ code: "UNVERIFIED", message: "Email belum di verifikasi" })
     }
     await next()
   }

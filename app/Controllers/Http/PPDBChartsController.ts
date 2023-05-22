@@ -38,9 +38,9 @@ export default class PPDBChartsController {
     `
 
     const selectPendaftarPerBulan = `
-      select substr(a::date::string,0,8) bulan, count(*) total
+      select substr(cast(a::date as varchar),0,8) bulan, count(*) total
       from ${tableTempPPDBPendaftar}
-      group by substr(a::date::string,0,8)
+      group by substr(cast(a::date as varchar),0,8)
     `
 
     const selectTotalPendaftar = `

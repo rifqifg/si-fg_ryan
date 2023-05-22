@@ -7,11 +7,11 @@ export default class EmployeeChartsController {
     const activityId = '02d5b9cc-1a1c-43a2-9bbb-2e291e7a6e90'
 
     const getLastDates = `
-      select distinct time_in::date::string tanggal
+      select distinct cast(time_in::date as varchar) tanggal
       from ${tableSyncPresences} 
       where time_in is not null 
           and EXTRACT(ISODOW FROM time_in::date) < 6
-      order by time_in::date::string desc
+      order by cast(time_in::date as varchar) desc
       limit 7 
     `
 
@@ -21,10 +21,10 @@ export default class EmployeeChartsController {
 
 
     const getLastMonths = `
-      select distinct substring(time_in::date::string,0,8)::string tanggal
+      select distinct substring(cast(time_in::date as varchar),0,8) tanggal
       from ${tableSyncPresences}  
       where time_in is not null 
-      order by substring(time_in::date::string,0,8) desc
+      order by substring(cast(time_in::date as varchar),0,8) desc
       limit 3 
     `
 
@@ -33,9 +33,9 @@ export default class EmployeeChartsController {
     const endMonth = lastMonths[0].tanggal
 
     const selectDaily = `
-      select tanggal::string
+      select tanggal
           , total
-          ,concat(((total / total_employees)*100)::integer::string,'%') precentage
+          ,concat((100 * total / total_employees)::integer,'%') precentage
             ,total_employees
       from (
             select time_in::date tanggal
@@ -59,17 +59,17 @@ export default class EmployeeChartsController {
 
     const selectMonthly = `
       select bulan, total
-      ,concat(((total / (total_days * total_employees))*100)::integer::string,'%') precentage
+      ,concat((100 * total / (total_days * total_employees))::integer,'%') precentage
       , total_days, total_employees
       from (
-      select substring(time_in::date::string,0,8) bulan
+      select substring(cast(time_in::date as varchar),0,8) bulan
       , count(p.id) total
       , count(distinct p.time_in::date) total_days
       from presences p
       where p.activity_id = '${activityId}'
-        and substring(time_in::date::string,0,8) between '${startMonth}' and '${endMonth}'
+        and substring(cast(time_in::date as varchar),0,8) between '${startMonth}' and '${endMonth}'
         and EXTRACT(ISODOW FROM time_in::date) < 6
-      group by substring(time_in::date::string,0,8)
+      group by substring(cast(time_in::date as varchar),0,8)
       )p
       ,( 
       select count(id) total_employees

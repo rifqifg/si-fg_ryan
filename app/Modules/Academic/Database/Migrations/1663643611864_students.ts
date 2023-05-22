@@ -39,7 +39,7 @@ export default class extends BaseSchema {
 
   public async down() {
     this.schema
-    .withSchema('academic')
-    .dropTable(this.tableName)
+      .withSchema('academic')
+      .dropTable(this.tableName)
   }
 }

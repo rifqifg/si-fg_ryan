@@ -9,7 +9,7 @@ export default class extends BaseSchema {
       .withSchema('academic')
       .createTable(this.tableName, (table) => {
         table.uuid('id').primary().notNullable().unique()
-        table.uuid('student_id').references('id').inTable('academic.students').onDelete('cascade').onUpdate('cascade')
+        table.uuid('student_id').notNullable().references('id').inTable('academic.students').onDelete('cascade').onUpdate('cascade')
         table.enum('relationship_w_student', Object.values(ParentRelationship))
         table.string('nik', 16).notNullable()
         table.string('name').notNullable()

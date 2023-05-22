@@ -6,7 +6,7 @@ import UpdateSubjectValidator from '../../Validators/UpdateSubjectValidator';
 
 export default class SubjectsController {
   public async index({ request, response }: HttpContextContract) {
-    const { page = 1, limit = 10, keyword = "", mode = "page", classId, teacherId } = request.qs()
+    const { page = 1, limit = 10, keyword = "", mode = "page", classId = "", teacherId = "" } = request.qs()
 
     try {
       let data = {}
@@ -17,7 +17,7 @@ export default class SubjectsController {
           .orderBy('name')
           .paginate(page, limit)
       } else if (mode === "list") {
-        if (classId && teacherId) {
+        if (classId !== "" && teacherId !== "") {
           data = await Subject
             .query()
             .whereDoesntHave('teaching', th => {

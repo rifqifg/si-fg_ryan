@@ -64,5 +64,9 @@ export default class UpdateTeachingValidator {
    * }
    *
    */
-  public messages: CustomMessages = {}
+  public messages: CustomMessages = {
+    'teacherId.unique': 'Mohon maaf, data yang Anda coba masukkan telah tercatat sebelumnya.',
+    'classId.unique': 'Mohon maaf, data yang Anda coba masukkan telah tercatat sebelumnya.',
+    'subjectId.unique': 'Mohon maaf, data yang Anda coba masukkan telah tercatat sebelumnya.',
+  }
 }

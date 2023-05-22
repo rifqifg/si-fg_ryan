@@ -1,6 +1,7 @@
 import { DateTime } from 'luxon'
-import { BaseModel, afterCreate, beforeCreate, column } from '@ioc:Adonis/Lucid/Orm'
+import { BaseModel, HasMany, afterCreate, beforeCreate, column, hasMany } from '@ioc:Adonis/Lucid/Orm'
 import { v4 as uuidv4 } from 'uuid'
+import Teaching from './Teaching';
 let newId = ""
 
 export default class Subject extends BaseModel {
@@ -14,6 +15,12 @@ export default class Subject extends BaseModel {
 
   @column()
   public description: string | null
+
+  @column()
+  public teachingId: string | null
+
+  @hasMany(() => Teaching)
+  public teaching: HasMany<typeof Teaching>
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime

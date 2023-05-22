@@ -2,7 +2,7 @@ import { schema, CustomMessages, rules } from '@ioc:Adonis/Core/Validator'
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 
 export default class CreateTeachingValidator {
-  constructor(protected ctx: HttpContextContract) {}
+  constructor(protected ctx: HttpContextContract) { }
 
   /*
    * Define schema to validate the "shape", "type", "formatting" and "integrity" of data.
@@ -26,24 +26,30 @@ export default class CreateTeachingValidator {
   public schema = schema.create({
     teacherId: schema.string({}, [
       rules.exists({ table: 'academic.teachers', column: 'id' }),
-      rules.unique({ table: 'academic.teachings', column: 'teacher_id', where: {
-        'class_id': this.ctx.request.body().classId,
-        'subject_id': this.ctx.request.body().subjectId,
-      }})
+      rules.unique({
+        table: 'academic.teachings', column: 'teacher_id', where: {
+          'class_id': this.ctx.request.body().classId,
+          'subject_id': this.ctx.request.body().subjectId,
+        }
+      })
     ]),
     classId: schema.string({}, [
       rules.exists({ table: 'academic.classes', column: 'id' }),
-      rules.unique({ table: 'academic.teachings', column: 'class_id', where: {
-        'teacher_id': this.ctx.params.teacher_id,
-        'subject_id': this.ctx.request.body().subjectId
-      }})
+      rules.unique({
+        table: 'academic.teachings', column: 'class_id', where: {
+          'teacher_id': this.ctx.params.teacher_id,
+          'subject_id': this.ctx.request.body().subjectId
+        }
+      })
     ]),
     subjectId: schema.string({}, [
       rules.exists({ table: 'academic.subjects', column: 'id' }),
-      rules.unique({ table: 'academic.teachings', column: 'subject_id', where: {
-        'teacher_id': this.ctx.params.teacher_id,
-        'class_id': this.ctx.request.body().classId
-      }})
+      rules.unique({
+        table: 'academic.teachings', column: 'subject_id', where: {
+          'teacher_id': this.ctx.params.teacher_id,
+          'class_id': this.ctx.request.body().classId
+        }
+      })
     ])
   })
 
@@ -58,5 +64,9 @@ export default class CreateTeachingValidator {
    * }
    *
    */
-  public messages: CustomMessages = {}
+  public messages: CustomMessages = {
+    'teacherId.unique': 'Mohon maaf, data yang Anda coba masukkan telah tercatat sebelumnya.',
+    'classId.unique': 'Mohon maaf, data yang Anda coba masukkan telah tercatat sebelumnya.',
+    'subjectId.unique': 'Mohon maaf, data yang Anda coba masukkan telah tercatat sebelumnya.',
+  }
 }

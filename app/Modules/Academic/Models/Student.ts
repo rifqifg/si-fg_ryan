@@ -1,9 +1,11 @@
 import { DateTime } from 'luxon'
-import { afterCreate, BaseModel, beforeCreate, BelongsTo, belongsTo, column } from '@ioc:Adonis/Lucid/Orm'
+import { afterCreate, BaseModel, beforeCreate, BelongsTo, belongsTo, column, HasMany } from '@ioc:Adonis/Lucid/Orm'
 import Class from './Class';
 import { v4 as uuidv4 } from 'uuid'
 import { StudentGender, StudentProgram, StudentReligion, StudentResidence, StudentUnit } from '../lib/enums';
 import Wilayah from 'App/Models/Wilayah';
+import { hasMany } from '@ioc:Adonis/Lucid/Orm';
+import StudentParent from './StudentParent';
 let newId = ""
 
 export default class Student extends BaseModel {
@@ -189,6 +191,9 @@ export default class Student extends BaseModel {
   @column()
   public nat_exam_no: string | null
 
+  @hasMany(() => StudentParent)
+  public parents: HasMany<typeof StudentParent>
+
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime | null
 
@@ -197,8 +202,10 @@ export default class Student extends BaseModel {
 
   @beforeCreate()
   public static assignUuid(student: Student) {
-    newId = uuidv4()
-    student.id = newId
+    if (!(student.id)) {
+      newId = uuidv4()
+      student.id = newId
+    }
   }
 
   @afterCreate()

@@ -6,7 +6,7 @@ const data = {
     key5: 'value',
     key6: 'value',
     key7: 'value',
-    objKey : {
+    objKey: {
         key1: 'value',
         key2: 'value',
         key3: 'value',
@@ -17,7 +17,7 @@ const data = {
     }
 }
 
-const data = {
+const data_1 = {
     key1: 'value',
     key2: 'value',
     key3: 'value',

@@ -10,8 +10,8 @@ export default class CrudUsersController {
     try {
       const data = await User
         .query()
-        .preload('roles', role => role.select("name"))// @ts-ignore
-        .preload('employee', employee => employee.preload('division'))
+        .preload('roles', role => role.select("name"))
+        .preload('employee', employee => employee.preload('divisions'))
         .preload('division', division => division.select('id', 'name'))
         .whereILike('name', `%${keyword}%`)
         .orderBy('name')

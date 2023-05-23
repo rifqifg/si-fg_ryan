@@ -14,6 +14,10 @@ export default class StudentsController {
         data = await Student
           .query()
           .preload('class', query => query.select('name'))
+          .preload('kelurahan')
+          .preload('kecamatan')
+          .preload('kota')
+          .preload('provinsi')
           .whereILike('name', `%${keyword}%`)
           .orderBy('name')
           .paginate(page, limit)
@@ -22,6 +26,10 @@ export default class StudentsController {
           .query()
           .select('id', 'name', 'nis', 'nisn')
           .preload('class', query => query.select('name'))
+          .preload('kelurahan')
+          .preload('kecamatan')
+          .preload('kota')
+          .preload('provinsi')
           .whereILike('name', `%${keyword}%`)
           .orderBy('name')
       } else {
@@ -51,7 +59,13 @@ export default class StudentsController {
     if (!uuidValidation(id)) { return response.badRequest({ message: "Student ID tidak valid" }) }
 
     try {
-      const data = await Student.query().preload('class', query => query.select('name')).where('id', id).firstOrFail()
+      const data = await Student.query()
+        .preload('class', query => query.select('name'))
+        .preload('kelurahan')
+        .preload('kecamatan')
+        .preload('kota')
+        .preload('provinsi')
+        .where('id', id).firstOrFail()
       response.ok({ message: "Berhasil mengambil data", data })
     } catch (error) {
       console.log(error);

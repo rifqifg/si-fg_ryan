@@ -148,7 +148,7 @@ export default class StudentChartsController {
     }
 
     const getLastDates = `
-      select distinct tanggal::date::string tanggal
+      select distinct tanggal::date tanggal
       from ${tableSyncPresences} 
       where tanggal is not null 
       order by tanggal desc 
@@ -160,10 +160,10 @@ export default class StudentChartsController {
     endDate = lastDates[0].tanggal
 
     const getLastMonths = `
-    select distinct substring(tanggal::date::string,0,8)::string tanggal
+    select distinct substring(tanggal::date,0,8) tanggal
     from academic.sync_student_presences 
     where tanggal is not null 
-    order by substring(tanggal::date::string,0,8) limit 3 
+    order by substring(tanggal::date,0,8) limit 3 
     `
 
     const { rows: lastMonths } = await Database.rawQuery(getLastMonths)
@@ -173,7 +173,7 @@ export default class StudentChartsController {
     // return { startDate, endDate, startMonth, endMonth }
 
     const selectHarian = `
-      select rekap.tanggal::string, rekap."status", rekap.total, concat(((rekap.total / count(ssp.id)) * 100)::integer::string, '%') presentase  
+      select rekap.tanggal, rekap."status", rekap.total, concat(((rekap.total / count(ssp.id)) * 100)::integer, '%') presentase  
       from 
         (select tanggal::date, "status", count(*) total
         from ${tableSyncPresences}
@@ -187,15 +187,15 @@ export default class StudentChartsController {
     `
 
     const selectBulanan = `
-      select rekap.tanggal::string, rekap."status", rekap.total, concat(((rekap.total / count(ssp.id)) * 100)::integer::string, '%') presentase  
+      select rekap.tanggal, rekap."status", rekap.total, concat(((rekap.total / count(ssp.id)) * 100)::integer, '%') presentase  
       from 
-        (select substring(tanggal::date::string,0,8) tanggal, "status", count(*) total
+        (select substring(tanggal::date,0,8) tanggal, "status", count(*) total
         from ${tableSyncPresences}
-        where substring(tanggal::date::string,0,8) between substring('${startMonth}',0,8) and substring('${endMonth}',0,8)
-        group by substring(tanggal::date::string,0,8), "status"
-        order by substring(tanggal::date::string,0,8)) rekap
+        where substring(tanggal::date,0,8) between substring('${startMonth}',0,8) and substring('${endMonth}',0,8)
+        group by substring(tanggal::date,0,8), "status"
+        order by substring(tanggal::date,0,8)) rekap
       left join ${tableSyncPresences} ssp
-        on rekap.tanggal = substring(ssp.tanggal::date::string,0,8)
+        on rekap.tanggal = substring(ssp.tanggal::date,0,8)
       group by rekap.*
       order by rekap.tanggal
     `

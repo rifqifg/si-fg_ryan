@@ -1,28 +1,10 @@
 import { schema, CustomMessages, rules } from '@ioc:Adonis/Core/Validator'
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import { StudentProgram, StudentReligion, StudentResidence, StudentUnit } from '../lib/enums'
 
 export default class UpdateStudentValidator {
   constructor(protected ctx: HttpContextContract) { }
 
-  /*
-   * Define schema to validate the "shape", "type", "formatting" and "integrity" of data.
-   *
-   * For example:
-   * 1. The username must be of data type string. But then also, it should
-   *    not contain special characters or numbers.
-   *    ```
-   *     schema.string({}, [ rules.alpha() ])
-   *    ```
-   *
-   * 2. The email must be of data type string, formatted as a valid
-   *    email. But also, not used by any other user.
-   *    ```
-   *     schema.string({}, [
-   *       rules.email(),
-   *       rules.unique({ table: 'users', column: 'email' }),
-   *     ])
-   *    ```
-   */
   public schema = schema.create({
     name: schema.string.nullableAndOptional({}, [
       rules.alpha({ allow: ['space'] }),
@@ -32,6 +14,8 @@ export default class UpdateStudentValidator {
     ]),
     nik: schema.string.nullableAndOptional([
       rules.regex(/^[0-9]+$/),
+      rules.minLength(16),
+      rules.maxLength(16),
       rules.unique({ table: 'academic.students', column: 'nik' })
     ]),
     email: schema.string.nullableAndOptional([
@@ -47,42 +31,96 @@ export default class UpdateStudentValidator {
       rules.unique({ table: 'academic.students', column: 'nisn' })
     ]),
     birth_city: schema.string.nullableAndOptional(),
-    birth_day: schema.date.nullableAndOptional(),
-    religion: schema.string.nullableAndOptional(),
-    address: schema.string.nullableAndOptional(),
+    birth_day: schema.date.nullableAndOptional({ format: "yyyy-MM-dd" }),
+    religion: schema.enum.nullableAndOptional(Object.values(StudentReligion)),
+    address: schema.string.nullableAndOptional({ trim: true }),
     rt: schema.string.nullableAndOptional([
       rules.regex(/^[0-9]+$/),
+      rules.minLength(3),
+      rules.maxLength(3),
     ]),
     rw: schema.string.nullableAndOptional([
       rules.regex(/^[0-9]+$/),
+      rules.minLength(3),
+      rules.maxLength(3),
     ]),
-    desa: schema.string.nullableAndOptional(),
-    kel: schema.string.nullableAndOptional(),
-    kec: schema.string.nullableAndOptional(),
-    kot: schema.string.nullableAndOptional(),
-    prov: schema.string.nullableAndOptional(),
+    kel: schema.string.nullableAndOptional([
+      rules.minLength(13),
+      rules.maxLength(13),
+      rules.exists({ table: 'public.wilayah', column: 'kode' })
+    ]),
+    kec: schema.string.nullableAndOptional([
+      rules.minLength(8),
+      rules.maxLength(8),
+      rules.exists({ table: 'public.wilayah', column: 'kode' })
+    ]),
+    kot: schema.string.nullableAndOptional([
+      rules.minLength(5),
+      rules.maxLength(5),
+      rules.exists({ table: 'public.wilayah', column: 'kode' })
+    ]),
+    prov: schema.string.nullableAndOptional([
+      rules.minLength(2),
+      rules.maxLength(2),
+      rules.exists({ table: 'public.wilayah', column: 'kode' })
+    ]),
     zip: schema.string.nullableAndOptional([
       rules.regex(/^[0-9]+$/),
+      rules.minLength(5),
+      rules.maxLength(5),
     ]),
     phone: schema.string.nullableAndOptional([
       rules.regex(/^[0-9]+$/),
     ]),
-    mobilePhone: schema.string.nullableAndOptional([
+    mobile_phone: schema.string.nullableAndOptional([
       rules.regex(/^[0-9]+$/),
+    ]),
+    residence: schema.enum.nullableAndOptional(Object.values(StudentResidence)),
+    transportation: schema.string.nullableAndOptional([
+      rules.maxLength(40),
+    ]),
+    has_kps: schema.boolean.nullableAndOptional(),
+    kps_number: schema.string.nullableAndOptional({ trim: true }),
+    junior_hs_cert_no: schema.string.nullableAndOptional({ trim: true }),
+    has_kip: schema.boolean.nullableAndOptional(),
+    kip_number: schema.string.nullableAndOptional({ trim: true }),
+    name_on_kip: schema.boolean.nullableAndOptional(),
+    has_kks: schema.boolean.nullableAndOptional(),
+    kks_number: schema.string.nullableAndOptional({ trim: true }),
+    birth_cert_no: schema.string.nullableAndOptional({ trim: true }),
+    pip_eligible: schema.boolean.nullableAndOptional(),
+    pip_desc: schema.string.nullableAndOptional({ trim: true }),
+    special_needs: schema.string.nullableAndOptional({ trim: true }),
+    junior_hs_name: schema.string.nullableAndOptional({ trim: true }),
+    child_no: schema.string.nullableAndOptional({ trim: true }, [
+      rules.regex(/^[0-9]+$/),
+    ]),
+    address_lat: schema.number.nullableAndOptional(),
+    address_long: schema.number.nullableAndOptional(),
+    family_card_no: schema.string.nullableAndOptional(),
+    weight: schema.number.nullableAndOptional(),
+    height: schema.number.nullableAndOptional(),
+    head_circumference: schema.number.nullableAndOptional(),
+    siblings: schema.string.nullableAndOptional({ trim: true }, [
+      rules.maxLength(2)
+    ]),
+    distance_to_school_in_km: schema.number.nullableAndOptional(),
+    program: schema.enum.nullableAndOptional(Object.values(StudentProgram)),
+    unit: schema.enum.nullableAndOptional(Object.values(StudentUnit)),
+    bank_name: schema.string.nullableAndOptional({ trim: true }, [
+      rules.maxLength(30)
+    ]),
+    bank_account_owner: schema.string.nullableAndOptional({ trim: true }, [
+      rules.maxLength(50)
+    ]),
+    bank_account_number: schema.string.nullableAndOptional({ trim: true }, [
+      rules.maxLength(30)
+    ]),
+    nat_exam_no: schema.string.nullableAndOptional({ trim: true }, [
+      rules.maxLength(30)
     ]),
   })
 
-  /**
-   * Custom messages for validation failures. You can make use of dot notation `(.)`
-   * for targeting nested fields and array expressions `(*)` for targeting all
-   * children of an array. For example:
-   *
-   * {
-   *   'profile.username.required': 'Username is required',
-   *   'scores.*.number': 'Define scores as valid numbers'
-   * }
-   *
-   */
   public messages: CustomMessages = {
     'regex': 'Only accept numbers'
   }

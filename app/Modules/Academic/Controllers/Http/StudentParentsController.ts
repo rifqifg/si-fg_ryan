@@ -25,9 +25,9 @@ export default class StudentParentsController {
         const { student_id } = params
         if (!uuidValidation(student_id)) { return response.badRequest({ message: "CO-STP-ST_01: Student ID tidak valid" }) }
 
-        // TODO: return custom error message jika student_id tidak ditemukan di students
         const payload = await request.validate(CreateStudentParentValidator)
         try {
+            await Student.findOrFail(student_id)
             const data = await StudentParent.create({ studentId: student_id, ...payload })
             response.created({ message: "Berhasil menyimpan data orang tua siswa", data })
         } catch (error) {

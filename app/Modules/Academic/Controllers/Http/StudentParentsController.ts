@@ -3,6 +3,7 @@ import { validate as uuidValidation } from 'uuid'
 import Student from '../../Models/Student'
 import CreateStudentParentValidator from '../../Validators/CreateStudentParentValidator'
 import StudentParent from '../../Models/StudentParent'
+import UpdateStudentParentValidator from '../../Validators/UpdateStudentParentValidator'
 
 export default class StudentParentsController {
     public async index({ response, params }: HttpContextContract) {
@@ -46,6 +47,38 @@ export default class StudentParentsController {
         } catch (error) {
             console.log(error)
             response.badRequest({ message: "CO-STP-SH_01: Gagal mengambil data", error: error.message })
+        }
+    }
+
+    public async update({ params, request, response }: HttpContextContract) {
+        const { id } = params
+        if (!uuidValidation(id)) { return response.badRequest({ message: "CO-STP-UP_01: Student ID tidak valid" }) }
+
+        const payload = await request.validate(UpdateStudentParentValidator)
+        if (JSON.stringify(payload) === '{}') {
+            return response.badRequest({ message: "CO-STP-UP_02: Data tidak boleh kosong" })
+        }
+        try {
+            const studentParent = await StudentParent.findOrFail(id)
+            const data = await studentParent.merge(payload).save()
+            response.ok({ message: "Berhasil mengubah data", data })
+        } catch (error) {
+            console.log(error)
+            response.badRequest({ message: "CO-STP-UP_03: Gagal mengubah data", error: error.message })
+        }
+    }
+
+    public async destroy({ params, response }: HttpContextContract) {
+        const { id } = params
+        if (!uuidValidation(id)) { return response.badRequest({ message: "ID orang tua siswa tidak valid" }) }
+
+        try {
+            const data = await StudentParent.findOrFail(id)
+            await data.delete()
+            response.ok({ message: "Berhasil menghapus data" })
+        } catch (error) {
+            console.log(error)
+            response.badRequest({ message: "Gagal menghapus data", error: error.message })
         }
     }
 }

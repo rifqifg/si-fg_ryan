@@ -35,4 +35,17 @@ export default class StudentParentsController {
             response.badRequest({ message: "CO-STP-ST_02: Gagal menyimpan data", error: error.message })
         }
     }
+
+    public async show({ params, response }: HttpContextContract) {
+        const { id } = params
+        if (!uuidValidation(id)) { return response.badRequest({ message: "CO-STP-SH_01: Parent ID tidak valid" }) }
+
+        try {
+            const data = await StudentParent.findOrFail(id)
+            response.ok({ message: "Berhasil mengambil data detail orang tua siswa", data })
+        } catch (error) {
+            console.log(error)
+            response.badRequest({ message: "CO-STP-SH_01: Gagal mengambil data", error: error.message })
+        }
+    }
 }

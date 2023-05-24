@@ -7,12 +7,12 @@ export default class UpdateStudentParentValidator {
 
   public schema = schema.create({
     relationship_w_student: schema.enum.nullableAndOptional(Object.values(ParentRelationship)),
-    nik: schema.string([
+    nik: schema.string.nullableAndOptional([
       rules.regex(new RegExp("^[0-9]+$")),
       rules.minLength(16),
       rules.maxLength(16),
     ]),
-    name: schema.string({}, [
+    name: schema.string.nullableAndOptional({}, [
       rules.alphaNum({ allow: ['space'] }),
       rules.minLength(5)]),
     birth_date: schema.date.nullableAndOptional({ format: "yyyy-MM-dd" }),

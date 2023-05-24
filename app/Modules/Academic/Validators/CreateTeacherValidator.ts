@@ -25,7 +25,8 @@ export default class CreateTeacherValidator {
    */
   public schema = schema.create({
     employeeId: schema.string({}, [
-      rules.exists({ table: 'public.employees', column: 'id' })
+      rules.exists({ table: 'public.employees', column: 'id' }),
+      rules.unique({table: 'academic.teachers', column: 'employee_id'})
     ])
   })
 

@@ -1,6 +1,6 @@
 import { schema, CustomMessages, rules } from '@ioc:Adonis/Core/Validator'
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import { StudentProgram, StudentReligion, StudentResidence, StudentUnit } from '../lib/enums'
+import { StudentGender, StudentProgram, StudentReligion, StudentResidence, StudentUnit } from '../lib/enums'
 
 export default class UpdateStudentValidator {
   constructor(protected ctx: HttpContextContract) { }
@@ -9,7 +9,7 @@ export default class UpdateStudentValidator {
     name: schema.string.nullableAndOptional({}, [
       rules.alpha({ allow: ['space'] }),
       rules.minLength(5)]),
-    classId: schema.string.nullableAndOptional({}, [
+    class_id: schema.string.nullableAndOptional({}, [
       rules.exists({ table: 'academic.classes', column: 'id' })
     ]),
     nik: schema.string.nullableAndOptional([
@@ -34,6 +34,7 @@ export default class UpdateStudentValidator {
     birth_day: schema.date.nullableAndOptional({ format: "yyyy-MM-dd" }),
     religion: schema.enum.nullableAndOptional(Object.values(StudentReligion)),
     address: schema.string.nullableAndOptional({ trim: true }),
+    gender: schema.enum.nullableAndOptional(Object.values(StudentGender)),
     rt: schema.string.nullableAndOptional([
       rules.regex(/^[0-9]+$/),
       rules.minLength(3),

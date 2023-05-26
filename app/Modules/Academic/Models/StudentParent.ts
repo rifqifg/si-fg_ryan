@@ -21,10 +21,10 @@ export default class StudentParent extends BaseModel {
   public relationshipWStudent: ParentRelationship | null
 
   @column()
-  public nik: string
+  public nik: string | null
 
   @column()
-  public name: string
+  public name: string | null
 
   @column.date()
   public birthDate: DateTime | null

@@ -9,7 +9,7 @@ export default class CreateStudentValidator {
     name: schema.string({}, [
       rules.alpha({ allow: ['space'] }),
       rules.minLength(5)]),
-    classId: schema.string.optional({}, [
+    class_id: schema.string({}, [
       rules.uuid({ version: 4 }),
       rules.exists({ table: 'academic.classes', column: 'id' })
     ]),

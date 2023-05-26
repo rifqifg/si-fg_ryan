@@ -45,7 +45,7 @@ export default class Student extends BaseModel {
   public address: string | null
 
   @column()
-  public gender: StudentGender
+  public gender: StudentGender | null
 
   @column()
   public rt: string | null

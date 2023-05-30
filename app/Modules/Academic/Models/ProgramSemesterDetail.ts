@@ -5,6 +5,8 @@ import ProgramSemester from './ProgramSemester'
 import KompetensiInti from './KompetensiInti'
 
 export default class ProgramSemesterDetail extends BaseModel {
+  public static table = 'academic.program_semester_details';
+
   @column({ isPrimary: true })
   public id: string
 

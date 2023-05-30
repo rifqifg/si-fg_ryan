@@ -6,6 +6,8 @@ import Subject from './Subject'
 import ProgramSemesterDetail from './ProgramSemesterDetail'
 
 export default class ProgramSemester extends BaseModel {
+  public static table = 'academic.program_semesters';
+  
   @column({ isPrimary: true })
   public id: string
 
@@ -18,10 +20,14 @@ export default class ProgramSemester extends BaseModel {
   @column()
   public totalPertemuan: number
 
-  @belongsTo(() => Teacher)
+  @belongsTo(() => Teacher, {
+    foreignKey: 'guruId'
+  })
   public teachers: BelongsTo<typeof Teacher>
 
-  @belongsTo(() => Subject)
+  @belongsTo(() => Subject, {
+    foreignKey: 'mapelId'
+  })
   public mapel: BelongsTo<typeof Subject>
 
   @hasMany(() => ProgramSemesterDetail)

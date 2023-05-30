@@ -3,5 +3,5 @@ Route.group(() => {
     Route.get('/', () => {
         return "You got here at ppdb"
     })
-    Route.resource('user-student-candidates', 'UserStudentCandidatesController').apiOnly()
+    Route.post('/register', 'UserStudentCandidatesController.register')//.as('ppdb.register')
 }).prefix('ppdbs').namespace('PPDBControllers')

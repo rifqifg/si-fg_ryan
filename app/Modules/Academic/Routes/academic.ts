@@ -9,4 +9,6 @@ Route.group(() => {
     Route.resource('teachers', 'TeachersController').apiOnly().middleware({ '*': ['auth'] })
     Route.resource('teachers.teachings', 'TeachingsController').apiOnly().middleware({ '*': ['auth'] })
     Route.shallowResource('students.parents', 'StudentParentsController').apiOnly().middleware({ '*': ['auth'] })
+    Route.get('sessions', 'SessionsController.index').middleware('auth')
+    Route.get('sessions/:id', 'SessionsController.show').middleware('auth')
 }).prefix('academics').namespace('AcademicControllers')

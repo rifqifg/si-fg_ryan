@@ -45,7 +45,7 @@ const databaseConfig: DatabaseConfig = {
       },
       migrations: {
         naturalSort: false,
-        paths: ['./database/migrations', './app/Modules/Academic/Database/Migrations', './app/Modules/Inventory/Database/Migrations']
+        paths: ['./database/migrations', './app/modules/academic/database/migrations', './app/modules/inventory/database/migrations']
       },
       seeders: {
         paths: ['./database/seeders/MainSeeder']
@@ -65,7 +65,7 @@ const databaseConfig: DatabaseConfig = {
       },
       migrations: {
         naturalSort: true,
-        paths: ['./database/migrations', './app/Modules/Academic/Database/Migrations', './app/Modules/Inventory/Database/Migrations']
+        paths: ['./database/migrations', './app/modules/academic/Database/migrations', './app/modules/inventory/database/migrations']
       },
       seeders: {
         paths: ['./database/seeders/MainSeeder']

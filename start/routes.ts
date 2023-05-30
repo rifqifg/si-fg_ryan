@@ -22,6 +22,7 @@ import Route from '@ioc:Adonis/Core/Route'
 import User from 'App/Models/User'
 import 'Inventory/Routes/inventory'
 import 'Academic/Routes/academic'
+import 'PPDB/Routes/ppdb'
 
 Route.get('/', async ({ auth, response }) => {
   const data = await User.query().preload('roles').where('id', auth.user!.id)

@@ -5,6 +5,8 @@ import ProgramSemesterDetail from './ProgramSemesterDetail'
 import MetodePengambilanNilai from './MetodePengambilanNilai'
 
 export default class RencanaPengambilanNilai extends BaseModel {
+  public static table = 'academic.rencana_pengambilan_nilais';
+
   @column({ isPrimary: true })
   public id: string
 

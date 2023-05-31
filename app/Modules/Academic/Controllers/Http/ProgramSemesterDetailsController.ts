@@ -4,29 +4,16 @@ import ProgramSemesterDetail from "../../Models/ProgramSemesterDetail";
 import { validate as uuidValidation } from "uuid";
 
 export default class ProgramSemesterDetailsController {
-  public async index({ request, response, params }: HttpContextContract) {
-    const { programSemesterId } = params;
+  public async index({ response, params }: HttpContextContract) {
+    const { program_semester_id: programSemesterId } = params;
+
     if (!uuidValidation(programSemesterId))
       return response.badRequest({ message: "Program Semeter ID tidak valid" });
-    const { page = 1, limit = 10, mode = "page" } = request.qs();
-
     try {
-      let data = {};
-      if (mode === "page") {
-        data = await ProgramSemesterDetail.query()
-          .select("*")
-          .where("programSemesterId", "=", programSemesterId)
-          .preload("programSemester", (prosem) => prosem.select("*"))
-          .paginate(page, limit);
-      } else if (mode === "list") {
-        data = await ProgramSemesterDetail.query()
-          .select("*")
-          .preload("programSemester", (prosem) => prosem.select("*"));
-      } else {
-        return response.badRequest({
-          message: "Mode tidak dikenali, (pilih: page / list)",
-        });
-      }
+      const data = await ProgramSemesterDetail.query()
+        .select("*")
+        .where("programSemesterId", programSemesterId)
+        .preload("programSemester", (prosem) => prosem.select("*"));
 
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
@@ -64,7 +51,10 @@ export default class ProgramSemesterDetailsController {
     });
 
     try {
-      const data = await ProgramSemesterDetail.create(payload);
+      const data = await ProgramSemesterDetail.create(
+        payload,
+        programSemesterId
+      );
 
       response.ok({ message: "Berhasil menyimpan data", data });
     } catch (error) {
@@ -87,9 +77,10 @@ export default class ProgramSemesterDetailsController {
       const data = await ProgramSemesterDetail.query()
         .where("id", id)
         .preload("programSemester", (prosem) => prosem.select("*"))
-        .preload("kompetensiInti", (ki) => ki.select("*")).firstOrFail()
+        .preload("kompetensiInti", (ki) => ki.select("*"))
+        .firstOrFail();
 
-        response.ok({message: 'Berhasil mengambil data', data})
+      response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
       response.badRequest({
         message: "Gagal mengambil data",
@@ -98,7 +89,7 @@ export default class ProgramSemesterDetailsController {
     }
   }
 
-  public async update({request, response, params}: HttpContextContract) {
+  public async update({ request, response, params }: HttpContextContract) {
     const { id } = params;
 
     if (!uuidValidation(id))
@@ -106,7 +97,8 @@ export default class ProgramSemesterDetailsController {
         message: "Program Semeter Detail ID tidak valid",
       });
 
-      const payload = await request.validate({schema: schema.create({
+    const payload = await request.validate({
+      schema: schema.create({
         programSemesterId: schema.string.optional([
           rules.uuid({ version: 4 }),
           rules.trim(),
@@ -123,25 +115,28 @@ export default class ProgramSemesterDetailsController {
         kategori1: schema.boolean.optional(),
         kategori2: schema.boolean.optional(),
         kategori3: schema.boolean.optional(),
-      })})
+      }),
+    });
 
-      if (JSON.stringify(payload) === "{}") {
-        console.log("data update kosong");
-        return response.badRequest({ message: "Data tidak boleh kosong" });
-      }
+    if (JSON.stringify(payload) === "{}") {
+      console.log("data update kosong");
+      return response.badRequest({ message: "Data tidak boleh kosong" });
+    }
 
-      try {
-        const prosemDetail = await ProgramSemesterDetail.firstOrFail(id)
-        const data = await prosemDetail.merge(payload).save()
+    try {
+      const prosemDetail = await ProgramSemesterDetail.firstOrFail(id);
+      const data = await prosemDetail.merge(payload).save();
 
-        response.ok({message: 'Berhasil memperbarui data', data})
-      } catch (error) {
-        response.badRequest({message: 'Gagal memperbarui data', error: error.message})
-      }
-
+      response.ok({ message: "Berhasil memperbarui data", data });
+    } catch (error) {
+      response.badRequest({
+        message: "Gagal memperbarui data",
+        error: error.message,
+      });
+    }
   }
 
-  public async destroy({response, params}: HttpContextContract) {
+  public async destroy({ response, params }: HttpContextContract) {
     const { id } = params;
 
     if (!uuidValidation(id))
@@ -149,13 +144,16 @@ export default class ProgramSemesterDetailsController {
         message: "Program Semeter Detail ID tidak valid",
       });
 
-      try {
-        const data = await ProgramSemesterDetail.firstOrFail(id)
-        await data.delete()
+    try {
+      const data = await ProgramSemesterDetail.firstOrFail(id);
+      await data.delete();
 
-        response.ok({message: 'Berhasil menghapus data'})
-      } catch(error) {
-        response.badRequest({message: 'Gagal menghapus data', error: error.message})
-      }
+      response.ok({ message: "Berhasil menghapus data" });
+    } catch (error) {
+      response.badRequest({
+        message: "Gagal menghapus data",
+        error: error.message,
+      });
+    }
   }
 }

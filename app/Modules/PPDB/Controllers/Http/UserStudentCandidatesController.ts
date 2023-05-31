@@ -8,6 +8,7 @@ import jwt_decode from "jwt-decode";
 import UserStudentCandidate from '../../Models/UserStudentCandidate';
 import USCLoginValidator from '../../Validators/USCLoginValidator';
 import GoogleLoginValidator from '../../Validators/GoogleLoginValidator';
+import ChangePasswordUSCValidator from '../../Validators/ChangePasswordUSCValidator';
 
 export default class UserStudentCandidatesController {
     public async register({ request, response }: HttpContextContract) {
@@ -125,7 +126,75 @@ export default class UserStudentCandidatesController {
         }
     }
 
-    // public async changePassword({ request, response, auth }: HttpContextContract) {
+    public async changePassword({ request, response, auth }: HttpContextContract) {
+        const payload = await request.validate(ChangePasswordUSCValidator)
 
+        try {
+            await auth.use('ppdb_api')
+                .verifyCredentials(auth.use('ppdb_api').user!.email, payload.current_password)
+        } catch (error) {
+            return response.unprocessableEntity({
+                message: "Password lama salah",
+                error: error.message,
+            })
+        }
+
+        try {
+            const usc = await UserStudentCandidate.findOrFail(auth.use('ppdb_api').user!.id)
+            await usc.merge({ password: payload.new_password }).save()
+
+            response.ok({ message: "Berhasil mengubah password" })
+        } catch (error) {
+            return response.badRequest({
+                message: "Gagal mengubah password",
+                error: error.message
+            })
+        }
+    }
+
+    // TODO: lanjut fitur ini jika endpoint sudah bisa diakses tanpa verifikasi
+    // public async askNewVerification({ response, auth }: HttpContextContract) {
+    //     let user_sc
+    //     try {
+    //         user_sc = await UserStudentCandidate.query()
+    //             .where('id', auth.use('ppdb_api').user!.id)
+    //             .andWhere('verified', 'false')
+    //             .firstOrFail()
+    //     } catch (error) {
+    //         return response.badRequest({
+    //             message: "Error: Anda sudah verifikasi akun",
+    //             error: error.message
+    //         })
+    //     }
+
+    //     const token = string.generateRandom(64)
+    //     const actionUrl = `${Env.get('BE_URL')}/ppdb/auth/verify-email?token=${token}`
+
+    //     try {
+    //         user_sc.merge({ verifyToken: token })
+    //     } catch (error) {
+    //         return response.internalServerError({
+    //             message: "Gagal update data token verifikasi",
+    //             error: error.message
+    //         })
+    //     }
+
+    //     try {
+    //         await Mail.send((message) => {
+    //             message
+    //                 .from(Env.get("SMTP_USERNAME"))
+    //                 .to(auth.use('ppdb_api').user!.email)
+    //                 .subject("Permintaan verifikasi akun | SMA FG")
+    //                 .htmlView("emails/", { actionUrl })
+    //         })
+    //     } catch (error) {
+    //         return response.badRequest({ message: "email tidak valid" })
+    //     }
+
+    //     response.ok({
+    //         message: "Permintaan verifikasi berhasil diterima, silahkan verifikasi email anda",
+    //         user_sc,
+    //         actionUrl // TODO: remove after development
+    //     })
     // }
 }

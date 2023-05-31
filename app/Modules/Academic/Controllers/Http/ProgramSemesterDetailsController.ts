@@ -25,20 +25,12 @@ export default class ProgramSemesterDetailsController {
   }
 
   public async store({ request, response, params }: HttpContextContract) {
-    const { programSemesterId } = params;
+    const { program_semester_id: programSemesterId } = params;
     if (!uuidValidation(programSemesterId))
       return response.badRequest({ message: "Program Semeter ID tidak valid" });
 
     const payload = await request.validate({
       schema: schema.create({
-        programSemesterId: schema.string([
-          rules.uuid({ version: 4 }),
-          rules.trim(),
-        ]),
-        kompetensiIntiId: schema.string([
-          rules.uuid({ version: 4 }),
-          rules.trim(),
-        ]),
         kompetensiDasar: schema.string([rules.trim()]),
         kompetensiDasarIndex: schema.number(),
         pertemuan: schema.number(),
@@ -51,10 +43,10 @@ export default class ProgramSemesterDetailsController {
     });
 
     try {
-      const data = await ProgramSemesterDetail.create(
-        payload,
-        programSemesterId
-      );
+      const data = await ProgramSemesterDetail.create({
+        ...payload,
+        programSemesterId,
+      });
 
       response.ok({ message: "Berhasil menyimpan data", data });
     } catch (error) {

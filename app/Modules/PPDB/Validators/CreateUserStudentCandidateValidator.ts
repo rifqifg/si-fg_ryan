@@ -11,7 +11,7 @@ export default class CreateUserStudentCandidateValidator {
     ]),
     email: schema.string({ trim: true }, [
       rules.email(),
-      rules.unique({ table: 'ppdb.user_student_candidates', column: 'email' })
+      // rules.unique({ table: 'ppdb.user_student_candidates', column: 'email' })
     ]),
     password: schema.string([
       rules.alphaNum({ allow: ['underscore'] }),

@@ -9,7 +9,7 @@ export default class extends BaseSchema {
       .createTable(this.tableName, (table) => {
         table.uuid('id').primary().notNullable()
         table.string('nisn', 15).unique().notNullable()
-        table.string('email').unique().notNullable()
+        table.string('email').notNullable()
         table.string('password', 180).notNullable()
         table.string('verify_token').defaultTo(null)
         table.datetime('verify_expiry')

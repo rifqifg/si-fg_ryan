@@ -12,14 +12,13 @@ export default class UserStudentCandidatesController {
         let payload = await request.validate(CreateUserStudentCandidateValidator)
 
         const token = string.generateRandom(64)
-        // TODO: change to cyclic
-        const actionUrl = `localhost:3334/ppdb/auth/verify-email?token=${token}`
+        const actionUrl = `${Env.get('BE_URL')}/ppdb/auth/verify-email?token=${token}`
 
         let user_sc
         try {
             user_sc = await UserStudentCandidate.create({
                 ...payload,
-                verifyToken: token
+                verifyToken: token,
             })
         } catch (error) {
             return response.internalServerError({

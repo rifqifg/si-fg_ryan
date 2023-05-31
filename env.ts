@@ -34,5 +34,6 @@ export default Env.rules({
 	SMTP_PASSWORD: Env.schema.string(),
 
 	FE_URL: Env.schema.string(),
+	BE_URL: Env.schema.string(),
 
 })

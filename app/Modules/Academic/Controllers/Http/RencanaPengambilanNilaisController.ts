@@ -5,7 +5,7 @@ import RencanaPengambilanNilai from "../../Models/RencanaPengambilanNilai";
 
 export default class RencanaPengambilanNilaisController {
   public async index({ request, response }: HttpContextContract) {
-    const { page = 1, limit = 10, mode = "page" } = request.qs();
+    const { page = 1, limit = 10, keyword = "", mode = "page" } = request.qs();
 
     try {
       let data = {};

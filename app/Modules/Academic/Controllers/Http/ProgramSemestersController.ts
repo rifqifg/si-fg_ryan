@@ -4,19 +4,13 @@ import ProgramSemester from "../../Models/ProgramSemester";
 import { validate as uuidValidation } from "uuid";
 
 export default class ProgramSemestersController {
-  public async index({ request, response }: HttpContextContract) {
+  public async index({ request, response, params }: HttpContextContract) {
     const { page = 1, limit = 10, mode = "page" } = request.qs();
 
-    const { mapelId } = await request.validate({
-      schema: schema.create({
-        mapelId: schema.string([rules.uuid({ version: 4 })]),
-      }),
-    });
+    const { mapel_id: mapelId } = params;
 
-    // const {mapelId} = request.body()
-    return mapelId
     if (!uuidValidation(mapelId)) {
-      return response.badRequest({ message: "Program Semeter ID tidak valid" });
+      return response.badRequest({ message: "mapel ID tidak valid" });
     }
 
     try {
@@ -28,7 +22,7 @@ export default class ProgramSemestersController {
             t.preload("employee", (e) => e.select("name"))
           )
           .preload("mapel", (m) => m.select("name"))
-          .where('mapelId', mapelId)
+          .where("mapelId", mapelId)
           .paginate(page, limit);
       } else if (mode === "list") {
         data = await ProgramSemester.query()
@@ -52,17 +46,22 @@ export default class ProgramSemestersController {
     }
   }
 
-  public async store({ request, response }: HttpContextContract) {
+  public async store({ request, response, params }: HttpContextContract) {
     const payload = await request.validate({
       schema: schema.create({
         guruId: schema.string([rules.uuid({ version: 4 }), rules.trim()]),
-        mapelId: schema.string([rules.uuid({ version: 4 }), rules.trim()]),
         totalPertemuan: schema.number(),
       }),
     });
 
+    const {  mapel_id: mapelId } = params;
+
+    if (!uuidValidation(mapelId)) {
+      return response.badRequest({ message: "mapel ID tidak valid" });
+    }
+
     try {
-      const data = await ProgramSemester.create(payload);
+      const data = await ProgramSemester.create({ ...payload, mapelId });
 
       response.ok({ message: "Berhasil menyimpan data", data });
     } catch (error) {

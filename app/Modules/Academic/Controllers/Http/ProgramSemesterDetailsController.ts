@@ -31,6 +31,7 @@ export default class ProgramSemesterDetailsController {
 
     const payload = await request.validate({
       schema: schema.create({
+        kompetensiIntiId: schema.string([rules.uuid({version: 4}), rules.trim()]),
         kompetensiDasar: schema.string([rules.trim()]),
         kompetensiDasarIndex: schema.number(),
         pertemuan: schema.number(),

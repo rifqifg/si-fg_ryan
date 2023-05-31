@@ -7,6 +7,18 @@ export default class ProgramSemestersController {
   public async index({ request, response }: HttpContextContract) {
     const { page = 1, limit = 10, mode = "page" } = request.qs();
 
+    const { mapelId } = await request.validate({
+      schema: schema.create({
+        mapelId: schema.string([rules.uuid({ version: 4 })]),
+      }),
+    });
+
+    // const {mapelId} = request.body()
+    return mapelId
+    if (!uuidValidation(mapelId)) {
+      return response.badRequest({ message: "Program Semeter ID tidak valid" });
+    }
+
     try {
       let data = {};
       if (mode === "page") {
@@ -16,6 +28,7 @@ export default class ProgramSemestersController {
             t.preload("employee", (e) => e.select("name"))
           )
           .preload("mapel", (m) => m.select("name"))
+          .where('mapelId', mapelId)
           .paginate(page, limit);
       } else if (mode === "list") {
         data = await ProgramSemester.query()
@@ -69,7 +82,7 @@ export default class ProgramSemestersController {
 
     try {
       const data = await ProgramSemester.query()
-        .where("id",  id)
+        .where("id", id)
         .preload("mapel", (m) => m.select("name"))
         .preload("teachers", (t) =>
           t.preload("employee", (e) => e.select("name"))

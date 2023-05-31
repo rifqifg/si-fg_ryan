@@ -8,4 +8,6 @@ Route.group(() => {
     Route.post('/auth/login', 'UserStudentCandidatesController.login')
     Route.post('/auth/logout', 'UserStudentCandidatesController.logout').middleware('auth:ppdb_api')
     Route.get('/auth/verify-email', 'UserStudentCandidatesController.verify')
+    Route.post('/auth/google', 'UserStudentCandidatesController.loginGoogle')
+
 }).prefix('ppdb').namespace('PPDBControllers')

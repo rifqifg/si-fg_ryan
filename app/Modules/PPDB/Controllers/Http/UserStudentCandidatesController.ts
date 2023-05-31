@@ -4,8 +4,10 @@ import Env from "@ioc:Adonis/Core/Env";
 import Database from "@ioc:Adonis/Lucid/Database";
 import CreateUserStudentCandidateValidator from "../../Validators/CreateUserStudentCandidateValidator";
 import Mail from '@ioc:Adonis/Addons/Mail';
+import jwt_decode from "jwt-decode";
 import UserStudentCandidate from '../../Models/UserStudentCandidate';
 import USCLoginValidator from '../../Validators/USCLoginValidator';
+import GoogleLoginValidator from '../../Validators/GoogleLoginValidator';
 
 export default class UserStudentCandidatesController {
     public async register({ request, response }: HttpContextContract) {
@@ -42,6 +44,7 @@ export default class UserStudentCandidatesController {
         response.ok({
             message: "Berhasil melakukan register, silahkan verifikasi email anda",
             user_sc,
+            actionUrl // TODO: remove after development
         })
     }
 
@@ -92,4 +95,37 @@ export default class UserStudentCandidatesController {
             })
         }
     }
+
+    public async loginGoogle({ request, response, auth }: HttpContextContract) {
+        interface UserGoogle {
+            email: string;
+            name: string;
+            email_verified: boolean;
+        }
+
+        const { cred } = await request.validate(GoogleLoginValidator)
+        const userGoogle: UserGoogle = jwt_decode(cred)
+
+        const userDetails = {
+            email: userGoogle.email,
+            verified: userGoogle.email_verified,
+            provider: "google"
+        }
+
+        try {
+            const user = await UserStudentCandidate.findByOrFail('email', userGoogle.email)
+            const tokenAuth = await auth.use('ppdb_api').login(user)
+
+            response.ok({ message: "Login berhasil", token: tokenAuth, data: user })
+        } catch (error) {
+            return response.badRequest({
+                message: "Anda belum memiliki akun",
+                email: userDetails.email,
+            });
+        }
+    }
+
+    // public async changePassword({ request, response, auth }: HttpContextContract) {
+
+    // }
 }

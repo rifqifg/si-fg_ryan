@@ -3,6 +3,8 @@ import CreateDailyAttendanceValidator from '../../Validators/CreateDailyAttendan
 import DailyAttendance from '../../Models/DailyAttendance'
 const luxon_1 = require("luxon");
 const hariIni = luxon_1.DateTime.now().toSQLDate().toString();
+import { validate as uuidValidation } from "uuid";
+import UpdateDailyAttendanceValidator from '../../Validators/UpdateDailyAttendanceValidator';
 
 export default class DailyAttendancesController {
   public async index({ request, response }: HttpContextContract) {
@@ -16,21 +18,30 @@ export default class DailyAttendancesController {
       if (mode === "page") {
         data = await DailyAttendance
           .query()
+          .select('id', 'student_id', 'status', 'class_id')
           .where('class_id', classId)
           .whereBetween('date_in', [formattedStartDate, formattedEndDate])
+          .whereHas('student', s => s.whereILike('name', `%${keyword}%`))
+          .preload('student', s => s.select('name'))
+          .preload('class', s => s.select('name'))
           .paginate(page, limit)
       } else if (mode === "list") {
         data = await DailyAttendance
           .query()
-          .whereILike('name', `%${keyword}%`)
-          .orderBy('name')
+          .select('id', 'student_id', 'status', 'class_id')
+          .where('class_id', classId)
+          .whereBetween('date_in', [formattedStartDate, formattedEndDate])
+          .whereHas('student', s => s.whereILike('name', `%${keyword}%`))
+          .preload('student', s => s.select('name'))
+          .preload('class', s => s.select('name'))
+          .orderBy('date_in')
       } else {
         return response.badRequest({ message: "Mode tidak dikenali, (pilih: page / list)" })
       }
 
       response.ok({ message: "Berhasil mengambil data", data })
     } catch (error) {
-      const message = "ACSU41: " + error.message || error
+      const message = "ACDA-index: " + error.message || error
       console.log(error);
       response.badRequest({
         message: "Gagal mengambil data",
@@ -57,9 +68,68 @@ export default class DailyAttendancesController {
     }
   }
 
-  public async show({ }: HttpContextContract) { }
+  public async show({ params, response }: HttpContextContract) {
+    const { id } = params
+    if (!uuidValidation(id)) { return response.badRequest({ message: "DailyAttendance ID tidak valid" }) }
 
-  public async update({ }: HttpContextContract) { }
+    try {
+      const data = await DailyAttendance
+        .query()
+        .preload('student', s => s.select('name'))
+        .preload('class', s => s.select('name'))
+        .where('id', id).firstOrFail()
+      response.ok({ message: "Berhasil mengambil data", data })
+    } catch (error) {
+      const message = "ACSU77: " + error.message || error
+      console.log(error);
+      response.badRequest({
+        message: "Gagal mengambil data",
+        error: message,
+        error_data: error
+      })
+    }
+  }
 
-  public async destroy({ }: HttpContextContract) { }
+  public async update({ params, request, response }: HttpContextContract) {
+    const { id } = params
+    if (!uuidValidation(id)) { return response.badRequest({ message: "Daily Attendance ID tidak valid" }) }
+
+    const payload = await request.validate(UpdateDailyAttendanceValidator)
+    if (JSON.stringify(payload) === '{}') {
+      console.log("data update kosong");
+      return response.badRequest({ message: "Data tidak boleh kosong" })
+    }
+    try {
+      const daily = await DailyAttendance.findOrFail(id)
+      const data = await daily.merge(payload).save()
+      response.ok({ message: "Berhasil mengubah data", data })
+    } catch (error) {
+      const message = "ACSU101: " + error.message || error
+      console.log(error);
+      response.badRequest({
+        message: "Gagal mengubah data",
+        error: message,
+        error_data: error
+      })
+    }
+  }
+
+  public async destroy({ params, response }: HttpContextContract) {
+    const { id } = params
+    if (!uuidValidation(id)) { return response.badRequest({ message: "DailyAttendance ID tidak valid" }) }
+
+    try {
+      const data = await DailyAttendance.findOrFail(id)
+      await data.delete()
+      response.ok({ message: "Berhasil menghapus data" })
+    } catch (error) {
+      const message = "ACSU120: " + error.message || error
+      console.log(error);
+      response.badRequest({
+        message: "Gagal menghapus data",
+        error: message,
+        error_data: error
+      })
+    }
+  }
 }

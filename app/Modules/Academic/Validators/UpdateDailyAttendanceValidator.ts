@@ -25,24 +25,20 @@ export default class UpdateDailyAttendanceValidator {
    *    ```
    */
   public schema = schema.create({
-    dailyAttendance: schema.array().members(
-      schema.object().members({
-        date_in: schema.date.optional({
-          format: 'yyyy-MM-dd HH:mm:ss'
-        }),
-        date_out: schema.date.optional({
-          format: 'yyyy-MM-dd HH:mm:ss'
-        }),
-        status: schema.enum.optional(Object.values(AttendanceStatus)),
-        description: schema.string.optional({}, [rules.alphaNum({ allow: ['space'] })]),
-        class_id: schema.string.optional({}, [
-          rules.exists({ table: 'public.classes', column: 'id' })
-        ]),
-        student_id: schema.string.optional({}, [
-          rules.exists({ table: 'public.students', column: 'id' })
-        ]),
-      })
-    ),
+    date_in: schema.date.optional({
+      format: 'yyyy-MM-dd HH:mm:ss'
+    }),
+    date_out: schema.date.optional({
+      format: 'yyyy-MM-dd HH:mm:ss'
+    }),
+    status: schema.enum.optional(Object.values(AttendanceStatus)),
+    description: schema.string.optional({}, [rules.alphaNum({ allow: ['space'] })]),
+    class_id: schema.string.optional({}, [
+      rules.exists({ table: 'public.classes', column: 'id' })
+    ]),
+    student_id: schema.string.optional({}, [
+      rules.exists({ table: 'public.students', column: 'id' })
+    ]),
   })
 
   /**

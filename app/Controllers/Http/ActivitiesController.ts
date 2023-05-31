@@ -10,18 +10,18 @@ export default class ActivitiesController {
     const { page = 1, limit = 10, keyword = "", orderBy = "name", orderDirection = 'ASC' } = request.qs()
 
     let data: object
-    if (auth.user!.role == 'super_admin') {
+    if (auth.use('api').user!.role == 'super_admin') {
       data = await Activity.query()
-        .preload('division', division=>division.select('id','name'))
+        .preload('division', division => division.select('id', 'name'))
         .whereILike('name', `%${keyword}%`)
         .orderBy(orderBy, orderDirection)
         .paginate(page, limit)
 
     } else {
       data = await Activity.query()
-        .preload('division', division=>division.select('id','name'))
+        .preload('division', division => division.select('id', 'name'))
         .whereILike('name', `%${keyword}%`)
-        .andWhere('division_id', auth.user!.divisionId)
+        .andWhere('division_id', auth.use('api').user!.divisionId)
         .orderBy(orderBy, orderDirection)
         .paginate(page, limit)
     }
@@ -33,14 +33,14 @@ export default class ActivitiesController {
     const { keyword = "", orderBy = "name", orderDirection = 'ASC' } = request.qs()
     let data: object
 
-    if (auth.user!.role == 'super_admin') {
+    if (auth.use('api').user!.role == 'super_admin') {
       data = await Activity.query()
-        .preload('division', division=>division.select('id','name'))
+        .preload('division', division => division.select('id', 'name'))
         .whereILike('name', `%${keyword}%`)
         .orderBy(orderBy, orderDirection)
     } else {
       data = await Activity.query()
-        .preload('division', division=>division.select('id','name'))
+        .preload('division', division => division.select('id', 'name'))
         .whereILike('name', `%${keyword}%`)
         .andWhere('owner', auth.user!.id)
         .orderBy(orderBy, orderDirection)
@@ -66,7 +66,7 @@ export default class ActivitiesController {
         scheduleActive: payload.scheduleActive,
         days: payload.days,
         owner: auth.user!.id,
-        division_id: payload.division_id || auth.user!.divisionId
+        division_id: payload.division_id || auth.use('api').user!.divisionId
       }
       const data = await Activity.create(formattedPayload)
 

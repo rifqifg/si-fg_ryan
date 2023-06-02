@@ -9,6 +9,15 @@ let newId = ""
 export default class DailyAttendance extends BaseModel {
   public static table = 'academic.daily_attendances';
 
+  public serializeExtras() {
+    return {
+      present: this.$extras.present,
+      permission: this.$extras.permission,
+      sick: this.$extras.sick,
+      absent: this.$extras.absent
+    }
+  }
+
   @column({ isPrimary: true })
   public id: string
 

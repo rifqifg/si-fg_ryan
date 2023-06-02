@@ -5,6 +5,7 @@ const luxon_1 = require("luxon");
 const hariIni = luxon_1.DateTime.now().toSQLDate().toString();
 import { validate as uuidValidation } from "uuid";
 import UpdateDailyAttendanceValidator from '../../Validators/UpdateDailyAttendanceValidator';
+import Database from '@ioc:Adonis/Lucid/Database';
 
 export default class DailyAttendancesController {
   public async index({ request, response }: HttpContextContract) {
@@ -18,23 +19,38 @@ export default class DailyAttendancesController {
       if (mode === "page") {
         data = await DailyAttendance
           .query()
-          .select('id', 'student_id', 'status', 'class_id')
+          .select('student_id', 'class_id')
+          .select(
+            Database.raw(`sum(case when status = 'present' then 1 else 0 end) as present`),
+            Database.raw(`sum(case when status = 'permission' then 1 else 0 end) as permission`),
+            Database.raw(`sum(case when status = 'sick' then 1 else 0 end) as sick`),
+            Database.raw(`sum(case when status = 'absent' then 1 else 0 end) as absent`),
+          )
           .where('class_id', classId)
           .whereBetween('date_in', [formattedStartDate, formattedEndDate])
           .whereHas('student', s => s.whereILike('name', `%${keyword}%`))
           .preload('student', s => s.select('name'))
           .preload('class', s => s.select('name'))
+          .groupBy('student_id', 'class_id')
+          .orderBy('present', 'desc') 
           .paginate(page, limit)
       } else if (mode === "list") {
         data = await DailyAttendance
           .query()
-          .select('id', 'student_id', 'status', 'class_id')
+          .select('student_id', 'class_id')
+          .select(
+            Database.raw(`sum(case when status = 'present' then 1 else 0 end) as present`),
+            Database.raw(`sum(case when status = 'permission' then 1 else 0 end) as permission`),
+            Database.raw(`sum(case when status = 'sick' then 1 else 0 end) as sick`),
+            Database.raw(`sum(case when status = 'absent' then 1 else 0 end) as absent`),
+          )
           .where('class_id', classId)
           .whereBetween('date_in', [formattedStartDate, formattedEndDate])
           .whereHas('student', s => s.whereILike('name', `%${keyword}%`))
           .preload('student', s => s.select('name'))
           .preload('class', s => s.select('name'))
-          .orderBy('date_in')
+          .groupBy('student_id', 'class_id')
+          .orderBy('present', 'desc') 
       } else {
         return response.badRequest({ message: "Mode tidak dikenali, (pilih: page / list)" })
       }

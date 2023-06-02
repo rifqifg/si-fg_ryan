@@ -9,7 +9,7 @@ export default class extends BaseSchema {
     .createTable(this.tableName, (table) => {
       table.uuid('id').primary().notNullable().unique()
       table.dateTime('date_in', { useTz: false }).notNullable()
-      table.dateTime('date_out', { useTz: false }).notNullable()
+      table.dateTime('date_out', { useTz: false })
       table.enum('status', ['present', 'permission', 'sick', 'absent']).notNullable()
       table.string('description')
 

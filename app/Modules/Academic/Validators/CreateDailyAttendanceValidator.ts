@@ -30,7 +30,7 @@ export default class CreateDailyAttendanceValidator {
         date_in: schema.date({
           format: 'yyyy-MM-dd HH:mm:ss'
         }),
-        date_out: schema.date({
+        date_out: schema.date.optional({
           format: 'yyyy-MM-dd HH:mm:ss'
         }),
         status: schema.enum(Object.values(AttendanceStatus)),

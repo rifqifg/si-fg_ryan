@@ -14,4 +14,9 @@ Route.group(() => {
     // FIXME: route ini harus bisa dijalankan menggunakan auth, dengan akun yg belum verifikasi
     // Route.get('/auth/ask-new-verification', 'UserStudentCandidatesController.askNewVerification').middleware('auth:ppdb_api')
 
+    // TODO: route untuk ppdb_guide
+    Route.get('/settings/guide', 'PpdbSettingsController.showGuide').middleware('auth:api')
+    Route.put('/settings/guide', 'PpdbSettingsController.updateGuide').middleware('auth:api')
+    // update
+
 }).prefix('ppdb').namespace('PPDBControllers')

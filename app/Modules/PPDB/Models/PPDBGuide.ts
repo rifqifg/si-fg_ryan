@@ -11,7 +11,7 @@ export default class PPDBGuide extends BaseModel {
   public id: string
 
   @column()
-  public content: string
+  public content: object
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime

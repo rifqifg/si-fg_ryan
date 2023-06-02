@@ -8,7 +8,7 @@ export default class extends BaseSeeder {
     const ppdbGuideToCreate = [
       {
         id: "7e8a06bf-82b9-4f4a-9e4d-605d3dc6b7d1",
-        content: `{"title": "Panduan masa depan", "description": "Gunakan panduan ini sebagai pegangan"}`
+        content: { "title": "Panduan masa depan", "description": "Gunakan panduan ini sebagai pegangan" }
       },
     ]
 

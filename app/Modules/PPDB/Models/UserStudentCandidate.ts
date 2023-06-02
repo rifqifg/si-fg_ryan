@@ -1,8 +1,9 @@
 import { DateTime } from 'luxon'
 import Hash from '@ioc:Adonis/Core/Hash'
-import { BaseModel, afterCreate, beforeCreate, column } from '@ioc:Adonis/Lucid/Orm'
+import { BaseModel, BelongsTo, afterCreate, beforeCreate, belongsTo, column } from '@ioc:Adonis/Lucid/Orm'
 import { beforeSave } from '@ioc:Adonis/Lucid/Orm'
 import { v4 as uuidv4 } from 'uuid'
+import Role from 'App/Models/Role'
 
 let newId = ""
 
@@ -17,6 +18,16 @@ export default class UserStudentCandidate extends BaseModel {
 
   @column()
   public email: string
+
+  @column({ serializeAs: 'role_name' })
+  public role: string | null | undefined
+
+  @belongsTo(() => Role, {
+    foreignKey: 'role',
+    localKey: 'name',
+    serializeAs: 'role',
+  })
+  public roles: BelongsTo<typeof Role>
 
   @column({ serializeAs: null })
   public password: string

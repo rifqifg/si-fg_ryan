@@ -58,6 +58,7 @@ export default class UserStudentCandidatesController {
             })
             const user = await UserStudentCandidate.query()
                 .where("id", auth.use('ppdb_api').user!.id)
+                .preload('roles', q => q.select("name", "permissions"))
 
             response.ok({
                 message: "login successful",
@@ -114,7 +115,11 @@ export default class UserStudentCandidatesController {
         }
 
         try {
-            const user = await UserStudentCandidate.findByOrFail('email', userGoogle.email)
+            const user = await UserStudentCandidate.query()
+                .where('email', userGoogle.email)
+                .preload("roles", (r) => r.select("name", "permissions"))
+                .firstOrFail()
+
             const tokenAuth = await auth.use('ppdb_api').login(user)
 
             response.ok({ message: "Login berhasil", token: tokenAuth, data: user })

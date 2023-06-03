@@ -121,4 +121,24 @@ export default class PpdbSettingsController {
             response.badRequest({ message: "Gagal mengambil data gelombang pendaftaran", error: error.message })
         }
     }
+
+    public async deleteBatch({ params, response }: HttpContextContract) {
+        const { id } = params
+        if (!uuidValidation(id)) { return response.badRequest({ message: "ID gelombang tidak valid" }) }
+
+        try {
+            const data = await PPDBBatch.find(id)
+
+            if (data === null) throw new Error("Data gelombang dengan ID ini tidak ditemukan")
+            if (data.active === true) throw new Error("Gelombang ini masih aktif, tidak dapat dihapus")
+
+            await data.delete()
+            response.ok({ message: "Berhasil menghapus data gelombang pendaftaran" })
+        } catch (error) {
+            response.badRequest({
+                message: "Gagal menghapus data gelombang pendaftaran",
+                error: error.message
+            })
+        }
+    }
 }

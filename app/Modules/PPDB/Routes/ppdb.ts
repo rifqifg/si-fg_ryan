@@ -22,6 +22,7 @@ Route.group(() => {
 
     Route.post('/settings/batches', 'PpdbSettingsController.createBatch').middleware('auth:api')
     Route.put('/settings/batches/:id', 'PpdbSettingsController.updateBatch').middleware('auth:api')
+    Route.delete('/settings/batches/:id', 'PpdbSettingsController.deleteBatch').middleware('auth:api')
     Route.get('/settings/batches/:id', 'PpdbSettingsController.showBatch').middleware('auth:api,ppdb_api')
     Route.get('/settings/batches/', 'PpdbSettingsController.indexBatches').middleware('auth:api')
 

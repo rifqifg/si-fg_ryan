@@ -9,7 +9,7 @@ import Database from '@ioc:Adonis/Lucid/Database';
 
 export default class DailyAttendancesController {
   public async index({ request, response }: HttpContextContract) {
-    const { page = 1, limit = 10, keyword = "", mode = "page", classId = "", fromDate = hariIni, toDate = hariIni } = request.qs()
+    const { page = 1, limit = 10, keyword = "", mode = "page", classId = "", fromDate = hariIni, toDate = hariIni, studentId = "" } = request.qs()
 
     const formattedStartDate = `${fromDate ? fromDate : hariIni} 00:00:00.000 +0700`;
     const formattedEndDate = `${toDate ? toDate : hariIni} 23:59:59.000 +0700`;
@@ -17,23 +17,38 @@ export default class DailyAttendancesController {
     try {
       let data = {}
       if (mode === "page") {
-        data = await DailyAttendance
-          .query()
-          .select('student_id', 'class_id')
-          .select(
-            Database.raw(`sum(case when status = 'present' then 1 else 0 end) as present`),
-            Database.raw(`sum(case when status = 'permission' then 1 else 0 end) as permission`),
-            Database.raw(`sum(case when status = 'sick' then 1 else 0 end) as sick`),
-            Database.raw(`sum(case when status = 'absent' then 1 else 0 end) as absent`),
-          )
-          .where('class_id', classId)
-          .whereBetween('date_in', [formattedStartDate, formattedEndDate])
-          .whereHas('student', s => s.whereILike('name', `%${keyword}%`))
-          .preload('student', s => s.select('name'))
-          .preload('class', s => s.select('name'))
-          .groupBy('student_id', 'class_id')
-          .orderBy('present', 'desc') 
-          .paginate(page, limit)
+        if (!studentId) {
+          //TODO: mengambil data absen harian bedasarkan kelas
+          data = await DailyAttendance
+            .query()
+            .select('student_id', 'class_id')
+            .select(
+              Database.raw(`sum(case when status = 'present' then 1 else 0 end) as present`),
+              Database.raw(`sum(case when status = 'permission' then 1 else 0 end) as permission`),
+              Database.raw(`sum(case when status = 'sick' then 1 else 0 end) as sick`),
+              Database.raw(`sum(case when status = 'absent' then 1 else 0 end) as absent`),
+            )
+            .where('class_id', classId)
+            .whereBetween('date_in', [formattedStartDate, formattedEndDate])
+            .whereHas('student', s => s.whereILike('name', `%${keyword}%`))
+            .preload('student', s => s.select('name'))
+            .preload('class', s => s.select('name'))
+            .groupBy('student_id', 'class_id')
+            .orderBy('present', 'desc')
+            .paginate(page, limit)
+        } else {
+          //TODO: mengambil data absen harian tiap siswanya
+          data = await DailyAttendance
+            .query()
+            .select('*')
+            .where('student_id', studentId)
+            .whereBetween('date_in', [formattedStartDate, formattedEndDate])
+            .preload('student', s => s.select('name'))
+            .preload('class', s => s.select('name'))
+            .orderBy('date_in')
+            .paginate(page, limit)
+        }
+
       } else if (mode === "list") {
         data = await DailyAttendance
           .query()
@@ -50,7 +65,7 @@ export default class DailyAttendancesController {
           .preload('student', s => s.select('name'))
           .preload('class', s => s.select('name'))
           .groupBy('student_id', 'class_id')
-          .orderBy('present', 'desc') 
+          .orderBy('present', 'desc')
       } else {
         return response.badRequest({ message: "Mode tidak dikenali, (pilih: page / list)" })
       }

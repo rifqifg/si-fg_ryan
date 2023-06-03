@@ -12,6 +12,7 @@ export default class extends BaseSchema {
         table.string('academic_year', 25).references('year').inTable('ppdb.academic_years').onDelete('no action').onUpdate('cascade').notNullable()
         table.string('description')
         table.boolean('active').defaultTo(false).notNullable()
+        table.unique(['name', 'academic_year'])
 
         /**
          * Uses timestamptz for PostgreSQL and DATETIME2 for MSSQL

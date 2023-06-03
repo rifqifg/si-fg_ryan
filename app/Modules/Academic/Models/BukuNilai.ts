@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid'
 import ProgramSemesterDetail from './ProgramSemesterDetail'
 import Student from './Student'
 import Teacher from './Teacher'
+import Subject from './Subject'
 
 export default class BukuNilai extends BaseModel {
   @column({ isPrimary: true })
@@ -35,6 +36,9 @@ export default class BukuNilai extends BaseModel {
 
   @belongsTo(() => Teacher)
   public teachers: BelongsTo<typeof Teacher>
+
+  @belongsTo(() => Subject)
+  public mapels: BelongsTo<typeof Subject>
 
   @beforeCreate()
   public static assignUuid(bn: BukuNilai) {

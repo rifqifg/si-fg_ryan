@@ -17,6 +17,9 @@ Route.group(() => {
     Route.get('/settings/guide', 'PpdbSettingsController.showGuide').middleware('auth:api')
     Route.put('/settings/guide', 'PpdbSettingsController.updateGuide').middleware('auth:api')
 
+    Route.get('/settings/is-active', 'PpdbSettingsController.showActiveStatus').middleware('auth:api')
+    Route.put('/settings/is-active', 'PpdbSettingsController.updateActiveStatus').middleware('auth:api')
+
     Route.post('/settings/batches', 'PpdbSettingsController.createBatch').middleware('auth:api')
     Route.put('/settings/batches/:id', 'PpdbSettingsController.updateBatch').middleware('auth:api')
     Route.get('/settings/batches/:id', 'PpdbSettingsController.showBatch').middleware('auth:api,ppdb_api')

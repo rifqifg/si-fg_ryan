@@ -5,6 +5,7 @@ import PPDBBatch from '../../Models/PPDBBatch'
 import { validate as uuidValidation } from 'uuid'
 import UpdatePpdbBatchValidator from '../../Validators/UpdatePpdbBatchValidator'
 import UpdatePpdbSettingValidator from '../../Validators/UpdatePpdbSettingValidator'
+import UpdatePpdbStatusValidator from '../../Validators/UpdatePpdbStatusValidator'
 
 export default class PpdbSettingsController {
     public async showGuide({ response }: HttpContextContract) {
@@ -25,6 +26,27 @@ export default class PpdbSettingsController {
             response.ok({ message: "Berhasil mengubah data panduan pendaftaran", data })
         } catch (error) {
             response.internalServerError({ message: "Gagal mengubah data panduan pendaftaran", error: error.message })
+        }
+    }
+
+    public async showActiveStatus({ response }: HttpContextContract) {
+        try {
+            const data = await PPDBSetting.query().select('active')
+            response.ok({ message: "Berhasil mengambil data status aktivasi ppdb", data })
+        } catch (error) {
+            response.internalServerError({ message: "Gagal mengambil data status aktivasi ppdb", error: error.message })
+        }
+    }
+
+    public async updateActiveStatus({ request, response }: HttpContextContract) {
+        const payload = await request.validate(UpdatePpdbStatusValidator)
+
+        try {
+            const currentData = await PPDBSetting.first()
+            const data = await currentData!.merge(payload).save()
+            response.ok({ message: "Berhasil mengubah status aktivasi ppdb", data })
+        } catch (error) {
+            response.internalServerError({ message: "Gagal mengubah status aktivasi ppdb", error: error.message })
         }
     }
 

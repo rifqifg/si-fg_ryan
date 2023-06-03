@@ -4,14 +4,17 @@ import { v4 as uuidv4 } from 'uuid'
 
 let newId = ""
 
-export default class PPDBGuide extends BaseModel {
-  public static table = 'ppdb.ppdb_guide';
+export default class PPDBSetting extends BaseModel {
+  public static table = 'ppdb.ppdb_setting';
 
   @column({ isPrimary: true })
   public id: string
 
   @column()
-  public content: object
+  public guideContent: object
+
+  @column()
+  public active: boolean
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
@@ -20,15 +23,15 @@ export default class PPDBGuide extends BaseModel {
   public updatedAt: DateTime
 
   @beforeCreate()
-  public static assignUuid(ppdbGuide: PPDBGuide) {
-    if (!(ppdbGuide.id)) {
+  public static assignUuid(ppdbSettings: PPDBSetting) {
+    if (!(ppdbSettings.id)) {
       newId = uuidv4()
-      ppdbGuide.id = newId
+      ppdbSettings.id = newId
     }
   }
 
   @afterCreate()
-  public static setNewId(ppdbGuide: PPDBGuide) {
-    ppdbGuide.id = newId
+  public static setNewId(ppdbSettings: PPDBSetting) {
+    ppdbSettings.id = newId
   }
 }

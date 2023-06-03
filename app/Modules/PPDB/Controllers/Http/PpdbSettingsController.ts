@@ -1,15 +1,15 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import PPDBGuide from '../../Models/PPDBGuide'
-import UpdatePpdbGuideValidator from '../../Validators/UpdatePpdbGuideValidator'
+import PPDBSetting from '../../Models/PPDBSetting'
 import CreatePpdbBatchValidator from '../../Validators/CreatePpdbBatchValidator'
 import PPDBBatch from '../../Models/PPDBBatch'
 import { validate as uuidValidation } from 'uuid'
 import UpdatePpdbBatchValidator from '../../Validators/UpdatePpdbBatchValidator'
+import UpdatePpdbSettingValidator from '../../Validators/UpdatePpdbSettingValidator'
 
 export default class PpdbSettingsController {
     public async showGuide({ response }: HttpContextContract) {
         try {
-            const data = await PPDBGuide.all()
+            const data = await PPDBSetting.query().select('guideContent')
             response.ok({ message: "Berhasil mengambil data panduan pendaftaran", data })
         } catch (error) {
             response.internalServerError({ message: "Gagal mengambil data panduan pendaftaran", error: error.message })
@@ -17,12 +17,12 @@ export default class PpdbSettingsController {
     }
 
     public async updateGuide({ request, response }: HttpContextContract) {
-        const payload = await request.validate(UpdatePpdbGuideValidator)
+        const payload = await request.validate(UpdatePpdbSettingValidator)
 
         try {
-            const currentData = await PPDBGuide.first()
-            const newData = await currentData!.merge(payload).save()
-            response.ok({ message: "Berhasil mengubah data panduan pendaftaran", newData })
+            const currentData = await PPDBSetting.first()
+            const data = await currentData!.merge({ guideContent: payload.guide_content }).save()
+            response.ok({ message: "Berhasil mengubah data panduan pendaftaran", data })
         } catch (error) {
             response.internalServerError({ message: "Gagal mengubah data panduan pendaftaran", error: error.message })
         }

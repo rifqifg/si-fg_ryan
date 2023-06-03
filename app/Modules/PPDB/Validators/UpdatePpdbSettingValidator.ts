@@ -1,11 +1,12 @@
 import { schema, CustomMessages } from '@ioc:Adonis/Core/Validator'
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 
-export default class UpdatePpdbGuideValidator {
+export default class UpdatePpdbSettingValidator {
   constructor(protected ctx: HttpContextContract) { }
 
   public schema = schema.create({
-    content: schema.object().anyMembers()
+    // id: schema.string(),
+    guide_content: schema.object().anyMembers()
   })
 
   public messages: CustomMessages = {}

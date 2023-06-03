@@ -1,14 +1,15 @@
 import BaseSchema from '@ioc:Adonis/Lucid/Schema'
 
 export default class extends BaseSchema {
-  protected tableName = 'ppdb_guide'
+  protected tableName = 'ppdb_setting'
 
   public async up() {
     this.schema
       .withSchema('ppdb')
       .createTable(this.tableName, (table) => {
         table.uuid('id').primary().notNullable()
-        table.jsonb('content').notNullable()
+        table.jsonb('guide_content').notNullable()
+        table.boolean('active').notNullable()
 
         /**
          * Uses timestamptz for PostgreSQL and DATETIME2 for MSSQL

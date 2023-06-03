@@ -89,7 +89,7 @@ export default class PpdbSettingsController {
 
         if (payload.active === true) {
             try {
-                const activeBatch = await PPDBBatch.findByOrFail('active', true)
+                const activeBatch = await PPDBBatch.findBy('active', true)
                 if (activeBatch) {
                     throw new Error("Sudah ada gelombang lain yang aktif")
                 }

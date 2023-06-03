@@ -22,4 +22,6 @@ Route.group(() => {
     Route.get('/settings/batches/:id', 'PpdbSettingsController.showBatch').middleware('auth:api,ppdb_api')
     Route.get('/settings/batches/', 'PpdbSettingsController.indexBatches').middleware('auth:api')
 
+    Route.resource('/academic-years', 'AcademicYearsController').only(['index']).middleware({ 'index': 'auth:api,ppdb_api' })
+
 }).prefix('ppdb').namespace('PPDBControllers')

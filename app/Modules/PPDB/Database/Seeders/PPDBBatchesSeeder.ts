@@ -14,6 +14,13 @@ export default class extends BaseSeeder {
         academicYear: "2021 - 2022",
         description: "Batch 2021-2022",
         active: true
+      },
+      {
+        id: "f71ac16e-9b92-43f2-8e1d-4e4ebd4f9d24",
+        name: "Gelombang Khusus",
+        academicYear: "2022 - 2023",
+        description: "Batch 2022-2023",
+        active: false
       }
     ]
 

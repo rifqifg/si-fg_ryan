@@ -9,50 +9,52 @@ import Database from '@ioc:Adonis/Lucid/Database';
 
 export default class DailyAttendancesController {
   public async index({ request, response }: HttpContextContract) {
-    const { page = 1, limit = 10, keyword = "", mode = "page", classId = "", fromDate = hariIni, toDate = hariIni } = request.qs()
+    const { page = 1, limit = 10, keyword = "", mode = "page", classId = "", fromDate = hariIni, toDate = hariIni, recap = false } = request.qs()
 
     const formattedStartDate = `${fromDate ? fromDate : hariIni} 00:00:00.000 +0700`;
     const formattedEndDate = `${toDate ? toDate : hariIni} 23:59:59.000 +0700`;
 
     try {
       let data = {}
-      // if (recap) {
-      //   //TODO: buat rekap data absen harian
-      //   let totalDays = 0
-      //   let start = new Date(fromDate)
-      //   let end = new Date(toDate)
+      if (recap) {
+        //TODO: buat rekap data absen harian
+        let totalDays = 0
+        let start = new Date(fromDate)
+        let end = new Date(toDate)
 
-      //   while (start <= end) {
-      //     if (start.getDay() !== 0 && start.getDay() !== 6) {
-      //       totalDays++;
-      //     }
-      //     start.setDate(start.getDate() + 1);
-      //   }
+        while (start <= end) {
+          if (start.getDay() !== 0 && start.getDay() !== 6) {
+            totalDays++;
+          }
+          start.setDate(start.getDate() + 1);
+        }
 
-      //   console.log(totalDays);
+        console.log(totalDays);
+        
 
+        data = await DailyAttendance
+          .query()
+          .select('class_id')
+          .select(
+            Database.raw(`sum(case when status = 'present' then 1 else 0 end) as present`),
+            Database.raw(`sum(case when status = 'permission' then 1 else 0 end) as permission`),
+            Database.raw(`sum(case when status = 'sick' then 1 else 0 end) as sick`),
+            Database.raw(`sum(case when status = 'absent' then 1 else 0 end) as absent`),
 
-      //   data = await DailyAttendance
-      //     .query()
-      //     .select('class_id')
-      //     .select(
-      //       Database.raw(`sum(case when status = 'present' then 1 else 0 end) as present`),
-      //       Database.raw(`sum(case when status = 'permission' then 1 else 0 end) as permission`),
-      //       Database.raw(`sum(case when status = 'sick' then 1 else 0 end) as sick`),
-      //       Database.raw(`sum(case when status = 'absent' then 1 else 0 end) as absent`),
+            // Database.raw(`count(student_id) as students_count`),
+            Database.raw(`sum(case when status = 'present' then 1 else 0 end) * 100 / (28 * ${totalDays}) as present_precentage`),
+            Database.raw(`sum(case when status = 'permission' then 1 else 0 end) * 100 / (28 * ${totalDays}) as permission_precentage`),
+            Database.raw(`sum(case when status = 'sick' then 1 else 0 end) * 100 / (28 * ${totalDays}) as sick_precentage`),
+            Database.raw(`sum(case when status = 'absent' then 1 else 0 end) * 100 / (28 * ${totalDays}) as absent_precentage`),
+          )
+          .whereBetween('date_in', [formattedStartDate, formattedEndDate])
+          .preload('class', c => c.select('name').withCount('students'))
+          .groupBy('class_id')
+          console.log(data);
+          
 
-      //       // Database.raw(`count(student_id) as students_count`),
-      //       // Database.raw(`sum(case when status = 'present' then 1 else 0 end) / (students_count * ${totalDays}) * 100 as present_precentage`),
-      //       // Database.raw(`sum(case when status = 'permission' then 1 else 0 end) / (students_count * ${totalDays}) * 100 as permission_precentage`),
-      //       // Database.raw(`sum(case when status = 'sick' then 1 else 0 end) / (students_count * ${totalDays}) * 100 as sick_precentage`),
-      //       // Database.raw(`sum(case when status = 'absent' then 1 else 0 end) / (students_count * ${totalDays}) * 100 as absent_precentage`),
-      //     )
-      //     .withCount('student')
-      //     .preload('class', c => c.select('name'))
-      //     .groupBy('class_id')
-
-      //   return response.ok({ message: "Berhasil mengambil data", data })
-      // }
+        return response.ok({ message: "Berhasil mengambil data", data })
+      }
       if (mode === "page") {
         if (classId == "") {
           data = await DailyAttendance

@@ -9,6 +9,6 @@ Route.group(() => {
     Route.resource('teachers', 'TeachersController').apiOnly().middleware({ '*': ['auth'] })
     Route.resource('teachers.teachings', 'TeachingsController').apiOnly().middleware({ '*': ['auth'] })
     Route.shallowResource('students.parents', 'StudentParentsController').apiOnly().middleware({ '*': ['auth'] })
-    Route.resource('session', 'SessionController').only(['index', 'show'])
+    Route.resource('sessions', 'SessionController').only(['index', 'show']).middleware({ '*': ['auth'] })
     Route.shallowResource('daily-attendances', 'DailyAttendancesController').apiOnly().middleware({ '*': ['auth'] })
 }).prefix('academics').namespace('AcademicControllers')

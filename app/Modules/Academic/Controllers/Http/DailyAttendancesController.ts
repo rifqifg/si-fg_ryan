@@ -38,14 +38,15 @@ export default class DailyAttendancesController {
             Database.raw(`sum(case when status = 'sick' then 1 else 0 end) as sick`),
             Database.raw(`sum(case when status = 'absent' then 1 else 0 end) as absent`),
             //TODO: menghitung persen status
-            Database.raw(`sum(case when status = 'present' then 1 else 0 end) * 100 / (count(distinct student_id) * ${totalDays}) as present_precentage`),
-            Database.raw(`sum(case when status = 'permission' then 1 else 0 end) * 100 / (count(distinct student_id) * ${totalDays}) as permission_precentage`),
-            Database.raw(`sum(case when status = 'sick' then 1 else 0 end) * 100 / (count(distinct student_id) * ${totalDays}) as sick_precentage`),
-            Database.raw(`sum(case when status = 'absent' then 1 else 0 end) * 100 / (count(distinct student_id) * ${totalDays}) as absent_precentage`),
+            Database.raw(`ceiling(sum(case when status = 'present' then 1 else 0 end) * 100 / (count(distinct student_id) * ${totalDays}) as present_precentage)`),
+            Database.raw(`ceiling(sum(case when status = 'permission' then 1 else 0 end) * 100 / (count(distinct student_id) * ${totalDays}) as permission_precentage)`),
+            Database.raw(`ceiling(sum(case when status = 'sick' then 1 else 0 end) * 100 / (count(distinct student_id) * ${totalDays}) as sick_precentage)`),
+            Database.raw(`ceiling(sum(case when status = 'absent' then 1 else 0 end) * 100 / (count(distinct student_id) * ${totalDays}) as absent_precentage)`),
           )
           .whereBetween('date_in', [formattedStartDate, formattedEndDate])
           .preload('class', c => c.select('name').withCount('students'))
           .groupBy('class_id')
+          .paginate(page, limit)
 
         return response.ok({ message: "Berhasil mengambil data", data })
       }

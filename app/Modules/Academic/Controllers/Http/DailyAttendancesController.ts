@@ -30,7 +30,6 @@ export default class DailyAttendancesController {
         }
 
         console.log(totalDays);
-        
 
         data = await DailyAttendance
           .query()
@@ -50,8 +49,6 @@ export default class DailyAttendancesController {
           .whereBetween('date_in', [formattedStartDate, formattedEndDate])
           .preload('class', c => c.select('name').withCount('students'))
           .groupBy('class_id')
-          console.log(data);
-          
 
         return response.ok({ message: "Berhasil mengambil data", data })
       }
@@ -70,31 +67,33 @@ export default class DailyAttendancesController {
           data = await DailyAttendance
             .query()
             .select('*')
-            .where('class_id', `%${classId}%`)
+            .where('class_id', `${classId}`)
             .whereBetween('date_in', [formattedStartDate, formattedEndDate])
             .whereHas('student', s => s.whereILike('name', `%${keyword}%`))
             .preload('student', s => s.select('name'))
             .preload('class', s => s.select('name'))
             .paginate(page, limit)
         }
-
       } else if (mode === "list") {
-        data = await DailyAttendance
-          .query()
-          .select('student_id', 'class_id')
-          .select(
-            Database.raw(`sum(case when status = 'present' then 1 else 0 end) as present`),
-            Database.raw(`sum(case when status = 'permission' then 1 else 0 end) as permission`),
-            Database.raw(`sum(case when status = 'sick' then 1 else 0 end) as sick`),
-            Database.raw(`sum(case when status = 'absent' then 1 else 0 end) as absent`),
-          )
-          .where('class_id', classId)
-          .whereBetween('date_in', [formattedStartDate, formattedEndDate])
-          .whereHas('student', s => s.whereILike('name', `%${keyword}%`))
-          .preload('student', s => s.select('name'))
-          .preload('class', s => s.select('name'))
-          .groupBy('student_id', 'class_id')
-          .orderBy('present', 'desc')
+        if (classId == "") {
+          data = await DailyAttendance
+            .query()
+            .select('*')
+            .whereBetween('date_in', [formattedStartDate, formattedEndDate])
+            .whereHas('student', s => s.whereILike('name', `%${keyword}%`))
+            .preload('student', s => s.select('name'))
+            .preload('class', s => s.select('name'))
+            .orderBy('class_id')
+        } else {
+          data = await DailyAttendance
+            .query()
+            .select('*')
+            .where('class_id', `${classId}`)
+            .whereBetween('date_in', [formattedStartDate, formattedEndDate])
+            .whereHas('student', s => s.whereILike('name', `%${keyword}%`))
+            .preload('student', s => s.select('name'))
+            .preload('class', s => s.select('name'))
+        }
       } else {
         return response.badRequest({ message: "Mode tidak dikenali, (pilih: page / list)" })
       }

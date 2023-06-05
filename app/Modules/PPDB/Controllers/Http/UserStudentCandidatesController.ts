@@ -4,28 +4,48 @@ import Env from "@ioc:Adonis/Core/Env";
 import Database from "@ioc:Adonis/Lucid/Database";
 import CreateUserStudentCandidateValidator from "../../Validators/CreateUserStudentCandidateValidator";
 import Mail from '@ioc:Adonis/Addons/Mail';
+import { v4 as uuidv4 } from 'uuid'
 import jwt_decode from "jwt-decode";
 import UserStudentCandidate from '../../Models/UserStudentCandidate';
 import USCLoginValidator from '../../Validators/USCLoginValidator';
 import GoogleLoginValidator from '../../Validators/GoogleLoginValidator';
 import ChangePasswordUSCValidator from '../../Validators/ChangePasswordUSCValidator';
+import StudentCandidate from '../../Models/StudentCandidate';
+import { DateTime } from 'luxon';
 
 export default class UserStudentCandidatesController {
     public async register({ request, response }: HttpContextContract) {
         let payload = await request.validate(CreateUserStudentCandidateValidator)
 
+
         const token = string.generateRandom(64)
         const actionUrl = `${Env.get('BE_URL')}/ppdb/auth/verify-email?token=${token}`
 
-        let user_sc
+        let newUserSc: UserStudentCandidate
         try {
-            user_sc = await UserStudentCandidate.create({
+            newUserSc = await UserStudentCandidate.create({
                 ...payload,
                 verifyToken: token,
             })
         } catch (error) {
             return response.internalServerError({
                 message: "CO-USC-REG_01: Gagal input data user calon siswa baru",
+                error: error.message
+            })
+        }
+
+        const uuidBlock = uuidv4().split('-')[0]
+        const epoch = DateTime.now().valueOf()
+        const registrationId = `${uuidBlock}-${epoch}`
+
+        try {
+            await StudentCandidate.create({
+                userId: newUserSc.id,
+                registrationId
+            })
+        } catch (error) {
+            return response.internalServerError({
+                message: "CO-USC-REG_02: Gagal input data calon siswa baru",
                 error: error.message
             })
         }
@@ -42,11 +62,23 @@ export default class UserStudentCandidatesController {
             return response.send({ message: "email tidak valid" });
         }
 
-        response.ok({
-            message: "Berhasil melakukan register, silahkan verifikasi email anda",
-            user_sc,
-            actionUrl // TODO: remove after development
-        })
+        try {
+            const user_sc = await UserStudentCandidate.query()
+                .where('id', newUserSc.id)
+                .preload('studentCandidate')
+
+            response.ok({
+                message: "Berhasil melakukan register, silahkan verifikasi email anda",
+                user_sc,
+                actionUrl // TODO: remove after development
+            })
+        } catch (error) {
+            response.internalServerError({
+                message: "CO-USC-REG_0X: Gagal ambil data user baru",
+                error: error.message
+            })
+        }
+
     }
 
     public async login({ request, response, auth }: HttpContextContract) {
@@ -59,6 +91,7 @@ export default class UserStudentCandidatesController {
             const user = await UserStudentCandidate.query()
                 .where("id", auth.use('ppdb_api').user!.id)
                 .preload('roles', q => q.select("name", "permissions"))
+                .preload('studentCandidate')
 
             response.ok({
                 message: "login successful",

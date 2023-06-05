@@ -16,22 +16,22 @@ export enum ScSppChoice {
 }
 
 export enum ScStatus {
-    NEW,
-    FAILED,
-    PASS_EXAM,
-    PASS_ALL,
+    NEW = 'new',
+    FAILED = 'failed',
+    PASS_EXAM = 'pass_exam',
+    PASS_ALL = 'pass_all'
 }
 
 export enum ScStatusData {
-    NO_SUBMISSION,
-    DONE_PRIMARY_DATA,
-    DONE_SECONDARY_DATA
+    NO_SUBMISSION = 'no_submission',
+    DONE_PRIMARY_DATA = 'done_primary_data',
+    DONE_SECONDARY_DATA = 'done_secondary_data'
 }
 
 export enum ScStatusPayment {
-    WAITING,
-    DECLINED,
-    VERIFIED
+    WAITING = 'waiting',
+    DECLINED = 'declined',
+    VERIFIED = 'verified'
 }
 
 // export enum StudentReligion {

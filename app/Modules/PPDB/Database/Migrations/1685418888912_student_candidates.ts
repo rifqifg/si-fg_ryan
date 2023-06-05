@@ -30,7 +30,7 @@ export default class extends BaseSchema {
         table.enum('status', Object.values(ScStatus)).defaultTo(ScStatus.NEW)
         table.enum('data_status', Object.values(ScStatusData)).defaultTo(ScStatusData.NO_SUBMISSION)
         table.enum('payment_status', Object.values(ScStatusPayment)).defaultTo(ScStatusPayment.WAITING)
-        table.string('nik', 16).notNullable()
+        table.string('nik', 16)
         table.string('birth_city')
         table.text('address')
         table.string('desa')

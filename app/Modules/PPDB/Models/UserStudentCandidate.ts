@@ -1,9 +1,11 @@
 import { DateTime } from 'luxon'
 import Hash from '@ioc:Adonis/Core/Hash'
-import { BaseModel, BelongsTo, afterCreate, beforeCreate, belongsTo, column } from '@ioc:Adonis/Lucid/Orm'
+import { BaseModel, BelongsTo, HasOne, afterCreate, beforeCreate, belongsTo, column } from '@ioc:Adonis/Lucid/Orm'
 import { beforeSave } from '@ioc:Adonis/Lucid/Orm'
 import { v4 as uuidv4 } from 'uuid'
 import Role from 'App/Models/Role'
+import StudentCandidate from './StudentCandidate'
+import { hasOne } from '@ioc:Adonis/Lucid/Orm'
 
 let newId = ""
 
@@ -43,6 +45,11 @@ export default class UserStudentCandidate extends BaseModel {
 
   @column.dateTime({ serializeAs: null })
   public verifyExpiry: DateTime
+
+  @hasOne(() => StudentCandidate, {
+    foreignKey: 'userId'
+  })
+  public studentCandidate: HasOne<typeof StudentCandidate>
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime

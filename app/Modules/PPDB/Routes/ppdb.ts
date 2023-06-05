@@ -27,7 +27,8 @@ Route.group(() => {
     Route.get('/settings/batches/', 'PpdbSettingsController.indexBatches').middleware('auth:api')
 
     Route.resource('/academic-years', 'AcademicYearsController').only(['index']).middleware({ 'index': 'auth:api,ppdb_api' })
+    Route.resource('/exam-schedules', 'EntranceExamSchedulesController').only(['index']).middleware({ 'index': 'auth:api,ppdb_api' })
 
-    Route.put('student-candidates/:id/primary-data', 'StudentCandidatesController.updateDataPrimary').middleware('auth:api,ppdb_api')
+    Route.resource('student-candidates', 'StudentCandidatesController').apiOnly().middleware({ '*': 'auth:api,ppdb_api' })
     Route.put('student-candidates/:id/photo-upload', 'StudentCandidatesController.imageUpload').middleware('auth:api,ppdb_api')
 }).prefix('ppdb').namespace('PPDBControllers')

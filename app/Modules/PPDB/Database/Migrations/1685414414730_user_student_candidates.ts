@@ -9,6 +9,7 @@ export default class extends BaseSchema {
       .createTable(this.tableName, (table) => {
         table.uuid('id').primary().notNullable()
         table.string('nisn', 15).unique().notNullable()
+        table.string('name').notNullable()
         table.string('email').notNullable()
         table.string('role', 45).references('name').inTable('roles').onDelete('no action').defaultTo('student_candidate')
         table.string('password', 180).notNullable()

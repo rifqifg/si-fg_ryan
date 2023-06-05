@@ -5,20 +5,22 @@ import StudentCandidate from '../../Models/StudentCandidate'
 import ScImageUploadValidator from '../../Validators/ScImageUploadValidator'
 import Env from "@ioc:Adonis/Core/Env"
 import Drive from '@ioc:Adonis/Core/Drive'
+import { DateTime } from 'luxon'
+import { v4 as uuidv4 } from 'uuid'
 
 export default class StudentCandidatesController {
-    public async updateDataPrimary({ params, request, response }: HttpContextContract) {
-        const { id } = params
-        if (!uuidValidation(id)) { return response.badRequest({ message: "ID calon siswa tidak valid" }) }
+    public async store({ request, response }: HttpContextContract) {
+        const uuidBlock = uuidv4().split('-')[0]
+        const epoch = DateTime.now().valueOf()
+        const registrationId = `${uuidBlock}-${epoch}`
 
         const payload = await request.validate(InsertScPrimaryDatumValidator)
 
         try {
-            const candidate = await StudentCandidate.findOrFail(id)
-            const data = await candidate.merge(payload).save()
-            response.ok({ message: "Berhasil update data primary calon siswa", data })
+            const data = await StudentCandidate.create({ ...payload, registrationId })
+            response.created({ message: "Berhasil menyimpan data calon siswa", data })
         } catch (error) {
-            response.badRequest({ message: "Gagal update data primary calon siswa", error: error.message })
+            response.badRequest({ message: "Gagal menyimpan data calon siswa", error: error.message })
         }
     }
 

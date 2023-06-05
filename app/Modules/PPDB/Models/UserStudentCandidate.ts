@@ -19,6 +19,9 @@ export default class UserStudentCandidate extends BaseModel {
   public nisn: string
 
   @column()
+  public name: string
+
+  @column()
   public email: string
 
   @column({ serializeAs: 'role_name' })
@@ -66,8 +69,10 @@ export default class UserStudentCandidate extends BaseModel {
 
   @beforeCreate()
   public static assignUuid(userStudentCandidate: UserStudentCandidate) {
-    newId = uuidv4()
-    userStudentCandidate.id = newId
+    if (!(userStudentCandidate.id)) {
+      newId = uuidv4()
+      userStudentCandidate.id = newId
+    }
   }
 
   @afterCreate()

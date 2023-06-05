@@ -4,6 +4,7 @@ Route.group(() => {
         return "You got here at ppdb"
     })
     Route.post('/register', 'UserStudentCandidatesController.register')
+    Route.delete('/user-student-candidates/:id', 'UserStudentCandidatesController.destroy').middleware('auth:api')
 
     // TODO: pastikan yg bisa akses endpoint dibawah ini hanya calon siswa
     Route.post('/auth/login', 'UserStudentCandidatesController.login')

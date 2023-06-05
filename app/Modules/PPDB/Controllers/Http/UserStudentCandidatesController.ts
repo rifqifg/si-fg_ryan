@@ -9,6 +9,7 @@ import UserStudentCandidate from '../../Models/UserStudentCandidate';
 import USCLoginValidator from '../../Validators/USCLoginValidator';
 import GoogleLoginValidator from '../../Validators/GoogleLoginValidator';
 import ChangePasswordUSCValidator from '../../Validators/ChangePasswordUSCValidator';
+import { validate as uuidValidation } from 'uuid'
 
 export default class UserStudentCandidatesController {
     public async register({ request, response }: HttpContextContract) {
@@ -171,6 +172,20 @@ export default class UserStudentCandidatesController {
                 message: "Gagal mengubah password",
                 error: error.message
             })
+        }
+    }
+
+    public async destroy({ params, response }: HttpContextContract) {
+        const { id } = params
+        if (!uuidValidation(id)) { return response.badRequest({ message: "ID user calon siswa tidak valid" }) }
+
+        try {
+            const data = await UserStudentCandidate.findOrFail(id)
+            await data.delete()
+            response.ok({ message: "Berhasil menghapus data user calon siswa" })
+        } catch (error) {
+            console.log(error);
+            response.badRequest({ message: "Gagal menghapus data user calon siswa", error: error.message })
         }
     }
 

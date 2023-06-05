@@ -1,7 +1,8 @@
 import { DateTime } from 'luxon'
-import { BaseModel, BelongsTo, afterCreate, beforeCreate, belongsTo, column } from '@ioc:Adonis/Lucid/Orm'
+import { BaseModel, BelongsTo, HasMany, afterCreate, beforeCreate, belongsTo, column, hasMany } from '@ioc:Adonis/Lucid/Orm'
 import { v4 as uuidv4 } from 'uuid'
 import AcademicYear from './AcademicYear';
+import BatchCandidate from './BatchCandidate';
 
 let newId = ""
 
@@ -34,6 +35,11 @@ export default class PPDBBatch extends BaseModel {
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   public updatedAt: DateTime
+
+  @hasMany(() => BatchCandidate, {
+    foreignKey: 'batchId'
+  })
+  public batchCandidates: HasMany<typeof BatchCandidate>
 
   @beforeCreate()
   public static assignUuid(ppdbBatch: PPDBBatch) {

@@ -69,4 +69,23 @@ export default class StudentCandidatesController {
             image_url: imageUrl
         })
     }
+
+    public async destroy({ params, response }: HttpContextContract) {
+        const { id } = params
+        if (!uuidValidation(id)) { return response.badRequest({ message: "ID calon siswa tidak valid" }) }
+
+        // todo: berikan kondisi failsafe,
+        // jadi data calon siswa hanya bisa dihapus apabila status ppdb tidak aktif
+        try {
+            const data = await StudentCandidate.findOrFail(id)
+
+            await data.delete()
+            response.ok({ message: "Berhasil menghapus data calon siswa" })
+        } catch (error) {
+            response.badRequest({
+                message: "Gagal menghapus data calon siswa",
+                error: error.message
+            })
+        }
+    }
 }

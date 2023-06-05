@@ -52,5 +52,9 @@ export default class UpdateDailyAttendanceValidator {
    * }
    *
    */
-  public messages: CustomMessages = {}
+  public messages: CustomMessages = {
+    'status.enum': "Mohon maaf, status harus berisi ('present', 'absent', 'permission', 'sick')",
+    'date_in.date': "Mohon maaf, format date_in harus 'yyyy-MM-dd HH:mm:ss'",
+    'date_out.date': "Mohon maaf, format date_out harus 'yyyy-MM-dd HH:mm:ss'",
+  }
 }

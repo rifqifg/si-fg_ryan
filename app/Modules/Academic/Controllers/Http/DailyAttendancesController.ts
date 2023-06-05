@@ -38,10 +38,10 @@ export default class DailyAttendancesController {
             Database.raw(`sum(case when status = 'sick' then 1 else 0 end) as sick`),
             Database.raw(`sum(case when status = 'absent' then 1 else 0 end) as absent`),
             //TODO: menghitung persen status
-            Database.raw(`ceiling(sum(case when status = 'present' then 1 else 0 end) * 100 / (count(distinct student_id) * ${totalDays})) as present_precentage`),
-            Database.raw(`ceiling(sum(case when status = 'permission' then 1 else 0 end) * 100 / (count(distinct student_id) * ${totalDays})) as permission_precentage`),
-            Database.raw(`ceiling(sum(case when status = 'sick' then 1 else 0 end) * 100 / (count(distinct student_id) * ${totalDays})) as sick_precentage`),
-            Database.raw(`ceiling(sum(case when status = 'absent' then 1 else 0 end) * 100 / (count(distinct student_id) * ${totalDays})) as absent_precentage`),
+            Database.raw(`round(cast(sum(case when status = 'present' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as present_precentage`),
+            Database.raw(`round(cast(sum(case when status = 'permission' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as permission_precentage`),
+            Database.raw(`round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as sick_precentage`),
+            Database.raw(`round(cast(sum(case when status = 'absent' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as absent_precentage`),
           )
           .whereBetween('date_in', [formattedStartDate, formattedEndDate])
           .preload('class', c => c.select('name').withCount('students'))

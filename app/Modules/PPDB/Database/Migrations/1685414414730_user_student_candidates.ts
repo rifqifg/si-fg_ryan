@@ -10,7 +10,7 @@ export default class extends BaseSchema {
         table.uuid('id').primary().notNullable()
         table.string('nisn', 15).unique().notNullable()
         table.string('name').notNullable()
-        table.string('email').notNullable()
+        table.string('email').notNullable().unique()
         table.string('role', 45).references('name').inTable('roles').onDelete('no action').defaultTo('student_candidate')
         table.string('password', 180).notNullable()
         table.string('verify_token').defaultTo(null)

@@ -16,6 +16,7 @@ export default class extends BaseSchema {
         table.enum('program_choice', Object.values(StudentProgram))
         table.enum('major_choice', Object.values(ClassMajor))
         table.uuid('test_schedule_choice').references('id').inTable('ppdb.entrance_exam_schedules').onDelete('no action').onUpdate('cascade')
+        table.unique(['candidate_id', 'batch_id'])
 
         /**
          * Uses timestamptz for PostgreSQL and DATETIME2 for MSSQL

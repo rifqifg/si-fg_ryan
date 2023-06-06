@@ -3,6 +3,7 @@ import { BaseModel, BelongsTo, HasMany, afterCreate, beforeCreate, belongsTo, co
 import { v4 as uuidv4 } from 'uuid'
 import AcademicYear from './AcademicYear';
 import BatchCandidate from './BatchCandidate';
+import EntranceExamSchedule from './EntranceExamSchedule';
 
 let newId = ""
 
@@ -40,6 +41,11 @@ export default class PPDBBatch extends BaseModel {
     foreignKey: 'batchId'
   })
   public batchCandidates: HasMany<typeof BatchCandidate>
+
+  @hasMany(() => EntranceExamSchedule, {
+    foreignKey: 'batchId'
+  })
+  public entranceExamSchedule: HasMany<typeof EntranceExamSchedule>
 
   @beforeCreate()
   public static assignUuid(ppdbBatch: PPDBBatch) {

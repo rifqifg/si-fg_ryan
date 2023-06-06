@@ -6,6 +6,7 @@ import { validate as uuidValidation } from 'uuid'
 import UpdatePpdbBatchValidator from '../../Validators/UpdatePpdbBatchValidator'
 import UpdatePpdbSettingValidator from '../../Validators/UpdatePpdbSettingValidator'
 import UpdatePpdbStatusValidator from '../../Validators/UpdatePpdbStatusValidator'
+import { ModelPaginatorContract } from '@ioc:Adonis/Lucid/Orm'
 
 export default class PpdbSettingsController {
     public async showGuide({ response }: HttpContextContract) {
@@ -51,13 +52,22 @@ export default class PpdbSettingsController {
     }
 
     public async indexBatches({ request, response }: HttpContextContract) {
-        const { page = 1, limit = 10, keyword = "" } = request.qs()
+        const { page = 1, limit = 10, keyword = "", is_active } = request.qs()
 
         try {
-            const data = await PPDBBatch.query()
-                .whereILike('name', `%${keyword}%`)
-                .orderBy('name')
-                .paginate(page, limit)
+            let data: ModelPaginatorContract<PPDBBatch>
+            if (is_active) {
+                data = await PPDBBatch.query()
+                    .whereILike('name', `%${keyword}%`)
+                    .where('active', is_active)
+                    .orderBy('name')
+                    .paginate(page, limit)
+            } else {
+                data = await PPDBBatch.query()
+                    .whereILike('name', `%${keyword}%`)
+                    .orderBy('name')
+                    .paginate(page, limit)
+            }
 
             response.ok({ message: "Berhasil mengambil data semua gelombang pendaftaran", data })
         } catch (error) {

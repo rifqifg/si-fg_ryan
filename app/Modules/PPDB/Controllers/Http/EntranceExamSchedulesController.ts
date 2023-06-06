@@ -4,19 +4,19 @@ import PPDBBatch from '../../Models/PPDBBatch'
 
 export default class EntranceExamSchedulesController {
     public async index({ request, response }: HttpContextContract) {
-        const { page = 1, limit = 10, batch_name = "" } = request.qs()
+        const { page = 1, limit = 10, active } = request.qs()
 
+        console.log(typeof active)
         try {
-            let data
-            if (batch_name === "") {
+            let data: object
+            if (active === "true" || active === "false") {
+                data = await PPDBBatch.query()
+                    .where('active', active)
+                    .preload('entranceExamSchedule')
+            } else {
                 data = await EntranceExamSchedule.query()
                     // .whereILike('', `%${batch_name}%`)
                     // .orderBy('year')
-                    .paginate(page, limit)
-            } else {
-                data = await PPDBBatch.query()
-                    .whereILike('name', `%${batch_name}%`)
-                    .orderBy('name')
                     .paginate(page, limit)
             }
 

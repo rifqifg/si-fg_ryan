@@ -6,7 +6,6 @@ Route.group(() => {
     Route.post('/register', 'UserStudentCandidatesController.register')
     Route.delete('/user-student-candidates/:id', 'UserStudentCandidatesController.destroy').middleware('auth:api')
 
-    // TODO: pastikan yg bisa akses endpoint dibawah ini hanya calon siswa
     Route.post('/auth/login', 'UserStudentCandidatesController.login')
     Route.post('/auth/logout', 'UserStudentCandidatesController.logout').middleware('auth:ppdb_api')
     Route.get('/auth/verify-email', 'UserStudentCandidatesController.verify')
@@ -32,4 +31,15 @@ Route.group(() => {
 
     Route.resource('student-candidates', 'StudentCandidatesController').apiOnly().middleware({ '*': 'auth:api,ppdb_api' })
     Route.put('student-candidates/:id/photo-upload', 'StudentCandidatesController.imageUpload').middleware('auth:api,ppdb_api')
+
+    Route.resource('batch-candidates', 'BatchCandidatesController').apiOnly().middleware({
+        'index': 'auth:api',
+        'show': 'auth:api,ppdb_api',
+        'create': 'auth:ppdb_api',
+        'update': 'auth:ppdb_api',
+        'destroy': 'auth:api'
+    })
+    // Route.group(() => {
+    //     Route.get('get-active-batch')
+    // }).prefix('helpers')
 }).prefix('ppdb').namespace('PPDBControllers')

@@ -25,6 +25,7 @@ export enum ScStatus {
 export enum ScStatusData {
     NO_SUBMISSION = 'no_submission',
     DONE_PRIMARY_DATA = 'done_primary_data',
+    DONE_SELECTION = 'done_selection',
     DONE_SECONDARY_DATA = 'done_secondary_data'
 }
 

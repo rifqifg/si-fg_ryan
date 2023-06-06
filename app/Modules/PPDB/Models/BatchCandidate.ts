@@ -43,7 +43,7 @@ export default class BatchCandidate extends BaseModel {
   public majorChoice: ClassMajor | null
 
   @column()
-  public testScheduleChoice
+  public testScheduleChoice: string
 
   @belongsTo(() => EntranceExamSchedule, {
     foreignKey: 'test_schedule_choice',

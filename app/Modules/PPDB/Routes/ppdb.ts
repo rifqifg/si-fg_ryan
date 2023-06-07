@@ -32,13 +32,15 @@ Route.group(() => {
     Route.resource('student-candidates', 'StudentCandidatesController').apiOnly().middleware({ '*': 'auth:api,ppdb_api' })
     Route.put('student-candidates/:id/photo-upload', 'StudentCandidatesController.imageUpload').middleware('auth:api,ppdb_api')
 
-    Route.resource('batch-candidates', 'BatchCandidatesController').apiOnly().middleware({
-        'index': 'auth:api',
-        'show': 'auth:api,ppdb_api',
-        'create': 'auth:ppdb_api',
-        'update': 'auth:ppdb_api',
-        'destroy': 'auth:api'
-    })
+    Route.resource('batch-candidates', 'BatchCandidatesController').apiOnly()
+    // todo enable auth for ^^^ route
+    // .middleware({
+    //     'index': ['auth:api'],
+    //     'show': ['auth:api,ppdb_api'],
+    //     'create': ["auth:ppdb_api"],
+    //     'update': ['auth:ppdb_api'],
+    //     'destroy': ['auth:api']
+    // })
     // Route.group(() => {
     //     Route.get('get-active-batch')
     // }).prefix('helpers')

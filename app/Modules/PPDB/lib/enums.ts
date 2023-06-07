@@ -16,24 +16,30 @@ export enum ScSppChoice {
 }
 
 export enum ScStatus {
+    // NEW = 'new',
+    // FAILED = 'failed',
+    // PASS_EXAM = 'pass_exam',
+    // PASS_ALL = 'pass_all'
     NEW = 'new',
-    FAILED = 'failed',
-    PASS_EXAM = 'pass_exam',
-    PASS_ALL = 'pass_all'
-}
-
-export enum ScStatusData {
-    NO_SUBMISSION = 'no_submission',
     DONE_PRIMARY_DATA = 'done_primary_data',
     DONE_SELECTION = 'done_selection',
-    DONE_SECONDARY_DATA = 'done_secondary_data'
+    PASS_EXAM = 'pass_exam',
+    PASS_RE_REGISTER = 'pass_re_register',
+    FAILED = 'failed'
 }
 
-export enum ScStatusPayment {
-    WAITING = 'waiting',
-    DECLINED = 'declined',
-    VERIFIED = 'verified'
-}
+// export enum ScStatusData {
+//     NO_SUBMISSION = 'no_submission',
+//     DONE_PRIMARY_DATA = 'done_primary_data',
+//     DONE_SELECTION = 'done_selection',
+//     DONE_SECONDARY_DATA = 'done_secondary_data'
+// }
+
+// export enum ScStatusPayment {
+//     WAITING = 'waiting',
+//     DECLINED = 'declined',
+//     VERIFIED = 'verified'
+// }
 
 // export enum StudentReligion {
 //     ISLAM = 'islam'

@@ -29,7 +29,7 @@ export default class ProgramSemestersController {
           )
           .preload("mapel", (m) => m.select("name"))
           .if(subjectId, (q) => q.where("subjectId", subjectId))
-          .if(user.role === "super_admin", (q) =>
+          .if(user.role !== "super_admin", (q) =>
             q.where("teacherId", teacherId.employee.teacher.id)
           )
           .paginate(page, limit);
@@ -40,7 +40,7 @@ export default class ProgramSemestersController {
             t.preload("employee", (e) => e.select("name"))
           )
           .if(subjectId, (q) => q.where("subjectId", subjectId))
-          .if(user.role === "super_admin", (q) =>
+          .if(user.role !== "super_admin", (q) =>
             q.where("teacherId", teacherId.employee.teacher.id)
           )
           .preload("mapel", (m) => m.select("name"));

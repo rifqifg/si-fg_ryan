@@ -1,47 +1,50 @@
-import { DateTime } from 'luxon'
-import { BaseModel, BelongsTo, HasMany, beforeCreate, belongsTo, column, hasMany } from '@ioc:Adonis/Lucid/Orm'
-import { v4 as uuidv4 } from 'uuid'
-import Teacher from './Teacher'
-import Subject from './Subject'
-import ProgramSemesterDetail from './ProgramSemesterDetail'
+import { DateTime } from "luxon";
+import {
+  BaseModel,
+  BelongsTo,
+  HasMany,
+  beforeCreate,
+  belongsTo,
+  column,
+  hasMany,
+} from "@ioc:Adonis/Lucid/Orm";
+import { v4 as uuidv4 } from "uuid";
+import Teacher from "./Teacher";
+import Subject from "./Subject";
+import ProgramSemesterDetail from "./ProgramSemesterDetail";
 
 export default class ProgramSemester extends BaseModel {
-  public static table = 'academic.program_semesters';
-  
+  public static table = "academic.program_semesters";
+
   @column({ isPrimary: true })
-  public id: string
+  public id: string;
 
   @column()
-  public guruId: string
+  public teacherId: string;
 
   @column()
-  public mapelId: string
+  public subjectId: string;
 
   @column()
-  public totalPertemuan: number
+  public totalPertemuan: number;
 
-  @belongsTo(() => Teacher, {
-    foreignKey: 'guruId'
-  })
-  public teachers: BelongsTo<typeof Teacher>
+  @belongsTo(() => Teacher)
+  public teachers: BelongsTo<typeof Teacher>;
 
-  @belongsTo(() => Subject, {
-    foreignKey: 'mapelId'
-  })
-  public mapel: BelongsTo<typeof Subject>
+  @belongsTo(() => Subject)
+  public mapel: BelongsTo<typeof Subject>;
 
   @hasMany(() => ProgramSemesterDetail)
-  public programSemesterDetail: HasMany<typeof ProgramSemesterDetail>
-
+  public programSemesterDetail: HasMany<typeof ProgramSemesterDetail>;
 
   @beforeCreate()
   public static assignUuid(prosem: ProgramSemester) {
-    prosem.id = uuidv4()
+    prosem.id = uuidv4();
   }
 
   @column.dateTime({ autoCreate: true })
-  public createdAt: DateTime
+  public createdAt: DateTime;
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
-  public updatedAt: DateTime
+  public updatedAt: DateTime;
 }

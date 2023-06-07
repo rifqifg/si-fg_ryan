@@ -4,14 +4,8 @@ import ProgramSemester from "../../Models/ProgramSemester";
 import { validate as uuidValidation } from "uuid";
 
 export default class ProgramSemestersController {
-  public async index({ request, response, params }: HttpContextContract) {
-    const { page = 1, limit = 10, mode = "page" } = request.qs();
-
-    const { mapel_id: mapelId } = params;
-
-    if (!uuidValidation(mapelId)) {
-      return response.badRequest({ message: "mapel ID tidak valid" });
-    }
+  public async index({ request, response }: HttpContextContract) {
+    const { page = 1, limit = 10, mode = "page", subjectId } = request.qs();
 
     try {
       let data = {};
@@ -22,7 +16,7 @@ export default class ProgramSemestersController {
             t.preload("employee", (e) => e.select("name"))
           )
           .preload("mapel", (m) => m.select("name"))
-          .where("mapelId", mapelId)
+          .where("subjectId", subjectId)
           .paginate(page, limit);
       } else if (mode === "list") {
         data = await ProgramSemester.query()
@@ -46,22 +40,17 @@ export default class ProgramSemestersController {
     }
   }
 
-  public async store({ request, response, params }: HttpContextContract) {
+  public async store({ request, response }: HttpContextContract) {
     const payload = await request.validate({
       schema: schema.create({
-        guruId: schema.string([rules.uuid({ version: 4 }), rules.trim()]),
+        teacherId: schema.string([rules.uuid({ version: 4 }), rules.trim()]),
         totalPertemuan: schema.number(),
+        subjectId: schema.string([rules.uuid({ version: 4 })]),
       }),
     });
 
-    const {  mapel_id: mapelId } = params;
-
-    if (!uuidValidation(mapelId)) {
-      return response.badRequest({ message: "mapel ID tidak valid" });
-    }
-
     try {
-      const data = await ProgramSemester.create({ ...payload, mapelId });
+      const data = await ProgramSemester.create(payload);
 
       response.ok({ message: "Berhasil menyimpan data", data });
     } catch (error) {
@@ -86,9 +75,9 @@ export default class ProgramSemestersController {
         .preload("teachers", (t) =>
           t.preload("employee", (e) => e.select("name"))
         )
-        .preload("programSemesterDetail", (prosemDetail) =>
-          prosemDetail.select("*")
-        )
+        // .preload("programSemesterDetail", (prosemDetail) =>
+        //   prosemDetail.select("*")
+        // )
         .firstOrFail();
 
       response.ok({ message: "Berhasil mengambil data", data });
@@ -109,11 +98,11 @@ export default class ProgramSemestersController {
 
     const payload = await request.validate({
       schema: schema.create({
-        guruId: schema.string.optional([
+        teacherId: schema.string.optional([
           rules.uuid({ version: 4 }),
           rules.trim(),
         ]),
-        mapelId: schema.string.optional([
+        subjectId: schema.string.optional([
           rules.uuid({ version: 4 }),
           rules.trim(),
         ]),

@@ -23,7 +23,7 @@ export default class ProgramSemester extends BaseModel {
   public teacherId: string;
 
   @column()
-  public subjectId: string;
+  public subjectId: string | null;
 
   @column()
   public totalPertemuan: number;

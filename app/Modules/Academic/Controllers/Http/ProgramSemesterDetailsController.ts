@@ -2,6 +2,7 @@ import type { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import { schema, rules } from "@ioc:Adonis/Core/Validator";
 import ProgramSemesterDetail from "../../Models/ProgramSemesterDetail";
 import { validate as uuidValidation } from "uuid";
+import ProgramSemester from "../../Models/ProgramSemester";
 
 export default class ProgramSemesterDetailsController {
   public async index({ response, params }: HttpContextContract) {
@@ -13,9 +14,29 @@ export default class ProgramSemesterDetailsController {
       const data = await ProgramSemesterDetail.query()
         .select("*")
         .where("programSemesterId", programSemesterId)
-        .preload("programSemester", (prosem) => prosem.select("*"));
+        .preload("kompetensiInti", (ki) => ki.select("nama"));
 
-      response.ok({ message: "Berhasil mengambil data", data });
+      const kelas = await await ProgramSemester.query()
+        .where("id", programSemesterId)
+        .preload("mapel", (m) => m.select("name"))
+        .preload("teachers", (t) => {
+          t.select("employeeId");
+          t.preload("employee", (e) => e.select("name"));
+          t.preload(
+            "teaching",
+            (th) => (
+              th.select("classId"),
+              th.preload("class", (c) => (c.select("name"), c.firstOrFail()))
+            )
+          );
+        })
+        .firstOrFail();
+
+      // return kelas;
+      response.ok({
+        message: "Berhasil mengambil data",
+        data: { kelas, data },
+      });
     } catch (error) {
       response.badRequest({
         message: "Gagal mengambil data",
@@ -31,7 +52,10 @@ export default class ProgramSemesterDetailsController {
 
     const payload = await request.validate({
       schema: schema.create({
-        kompetensiIntiId: schema.string([rules.uuid({version: 4}), rules.trim()]),
+        kompetensiIntiId: schema.string([
+          rules.uuid({ version: 4 }),
+          rules.trim(),
+        ]),
         kompetensiDasar: schema.string([rules.trim()]),
         kompetensiDasarIndex: schema.number(),
         pertemuan: schema.number(),

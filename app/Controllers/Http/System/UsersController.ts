@@ -34,8 +34,7 @@ export default class UsersController {
     });
 
     const payload = await request.validate({ schema: loginSchema });
-    // const pg = Database.manager.get("primary");
-    // console.log(pg?.connection?.pool?.numUsed());
+   
     try {
       const token = await auth
         .use("api")
@@ -43,7 +42,10 @@ export default class UsersController {
       const user = await User.query()
         .where("id", auth.user!.id)
         .preload("roles", (query) => query.select("name", "permissions"))
-        .preload("employee", (e) => e.preload("teacher", (t) => t.select("id")))
+        .preload("employee", (e) => {
+          e.select("name");
+          e.preload("teacher", (t) => t.select("id"));
+        })
         .firstOrFail();
 
       response.ok({

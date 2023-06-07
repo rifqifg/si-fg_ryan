@@ -7,9 +7,10 @@ import Env from "@ioc:Adonis/Core/Env"
 import Drive from '@ioc:Adonis/Core/Drive'
 import { DateTime } from 'luxon'
 import { v4 as uuidv4 } from 'uuid'
-import { ScStatusData } from '../../lib/enums'
+// import { ScStatusData } from '../../lib/enums'
 import PPDBBatch from '../../Models/PPDBBatch'
 import UpdateScPrimaryDatumValidator from '../../Validators/UpdateScPrimaryDatumValidator'
+import { ScStatus } from '../../lib/enums'
 
 export default class StudentCandidatesController {
     public async index({ request, response }: HttpContextContract) {
@@ -50,7 +51,8 @@ export default class StudentCandidatesController {
         const payload = await request.validate(InsertScPrimaryDatumValidator)
 
         try {
-            const data = await StudentCandidate.create({ ...payload, registrationId, dataStatus: ScStatusData.DONE_PRIMARY_DATA })
+            // todo: cek perubahan status
+            const data = await StudentCandidate.create({ ...payload, registrationId, status: ScStatus.DONE_PRIMARY_DATA })
             response.created({ message: "Berhasil menyimpan data calon siswa", data })
         } catch (error) {
             response.badRequest({ message: "Gagal menyimpan data calon siswa", error: error.message })

@@ -14,10 +14,9 @@ export default class BatchCandidatesController {
             if (active === "true" || active === "false") {
                 data = await PPDBBatch.query()
                     .where('active', active)
-                    // todo: coba findorfail
+                    .has('batchCandidates')
                     .preload('batchCandidates')
                     .paginate(page, limit)
-
             } else {
                 data = await BatchCandidate.query()
                     // .whereILike('', `%${batch_name}%`)

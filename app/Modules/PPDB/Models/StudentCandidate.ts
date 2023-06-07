@@ -3,7 +3,7 @@ import { BaseModel, BelongsTo, afterCreate, beforeCreate, belongsTo, column } fr
 import { v4 as uuidv4 } from 'uuid'
 import UserStudentCandidate from './UserStudentCandidate';
 import { ClassMajor, StudentGender, StudentProgram, StudentReligion, StudentResidence } from 'App/Modules/Academic/lib/enums';
-import { PpdbInfoSource, ScSppChoice, ScStatus, ScStatusData, ScStatusPayment } from '../lib/enums';
+import { PpdbInfoSource, ScSppChoice, ScStatus } from '../lib/enums';
 import Wilayah from 'App/Models/Wilayah';
 
 let newId = ""
@@ -71,11 +71,11 @@ export default class StudentCandidate extends BaseModel {
   @column()
   public status: ScStatus | null
 
-  @column()
-  public dataStatus: ScStatusData | null
+  // @column()
+  // public dataStatus: ScStatusData | null
 
-  @column()
-  public paymentStatus: ScStatusPayment | null
+  // @column()
+  // public paymentStatus: ScStatusPayment | null
 
   @column()
   public nik: string | null

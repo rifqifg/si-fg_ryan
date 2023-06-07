@@ -8,34 +8,18 @@ import Drive from '@ioc:Adonis/Core/Drive'
 import { DateTime } from 'luxon'
 import { v4 as uuidv4 } from 'uuid'
 // import { ScStatusData } from '../../lib/enums'
-import PPDBBatch from '../../Models/PPDBBatch'
 import UpdateScPrimaryDatumValidator from '../../Validators/UpdateScPrimaryDatumValidator'
 import { ScStatus } from '../../lib/enums'
 
 export default class StudentCandidatesController {
     public async index({ request, response }: HttpContextContract) {
-        // todo: fitur pencarian calon siswa berdasarkan nama
-        const {
-            page = 1,
-            limit = 10,
-            // keyword = "",
-            show_all
-        } = request.qs()
+        const { page = 1, limit = 10, keyword = "", } = request.qs()
 
         try {
-            let data: object = {}
-            if (show_all === '0') {
-                // todo: coba yg ini jika batch_candidates sudah ada isinya
-                data = await PPDBBatch
-                    .query()
-                    .where('active', true)
-                    .preload('batchCandidates')//, q => q.preload('studentCandidates'))
-            } else if (show_all === '1') {
-                data = await StudentCandidate.query()
-                    .paginate(page, limit)
-                // .whereILike('year', `%${keyword}%`)
-                // .orderBy('year')
-            }
+            const data = await StudentCandidate.query()
+                .whereILike('full_name', `%${keyword}%`)
+                .orderBy('full_name')
+                .paginate(page, limit)
 
             response.ok({ message: "Berhasil mengambil data calon siswa", data })
         } catch (error) {

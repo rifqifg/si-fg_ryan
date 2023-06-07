@@ -1,6 +1,6 @@
 import BaseSchema from '@ioc:Adonis/Lucid/Schema'
 import { ClassMajor, StudentGender, StudentProgram, StudentReligion, StudentResidence } from 'App/Modules/Academic/lib/enums'
-import { PpdbInfoSource, ScSppChoice, ScStatus, ScStatusData, ScStatusPayment } from '../../lib/enums'
+import { PpdbInfoSource, ScSppChoice, ScStatus } from '../../lib/enums'
 
 export default class extends BaseSchema {
   protected tableName = 'student_candidates'
@@ -21,14 +21,14 @@ export default class extends BaseSchema {
         table.enum('info_source', Object.values(PpdbInfoSource))
         table.text('interest_in_fg')
         table.string('photo')
-        table.string('exam_link')
+        // table.string('exam_link')
         table.string('virtual_account_no')
         table.enum('program_final', Object.values(StudentProgram))
         table.enum('major_final', Object.values(ClassMajor))
         table.enum('spp_final', Object.values(ScSppChoice))
         table.enum('status', Object.values(ScStatus)).defaultTo(ScStatus.NEW)
-        table.enum('data_status', Object.values(ScStatusData)).defaultTo(ScStatusData.NO_SUBMISSION)
-        table.enum('payment_status', Object.values(ScStatusPayment)).defaultTo(ScStatusPayment.WAITING)
+        // table.enum('data_status', Object.values(ScStatusData)).defaultTo(ScStatusData.NO_SUBMISSION)
+        // table.enum('payment_status', Object.values(ScStatusPayment)).defaultTo(ScStatusPayment.WAITING)
         table.string('nik', 16)
         table.string('birth_city')
         table.text('address')

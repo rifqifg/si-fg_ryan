@@ -12,7 +12,7 @@ export default class extends BaseSchema {
         table.uuid('id').primary().notNullable().unique()
         table.uuid('user_id').references('id').inTable('ppdb.user_student_candidates').onDelete('SET NULL').onUpdate('cascade').unique()
         table.string('registration_id').notNullable().unique()
-        table.date('full_name')
+        table.string('full_name')
         table.date('birth_day')
         table.string('junior_hs_name')
         table.enum('gender', Object.values(StudentGender))

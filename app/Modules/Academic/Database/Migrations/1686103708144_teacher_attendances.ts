@@ -13,7 +13,7 @@ export default class extends BaseSchema {
       table.enum('status', ['teach', 'not_teach', 'exam', 'homework']).notNullable()
       table.string('material').notNullable()
       table.string('reason_not_teach')
-      table.boolean('post_test')
+      table.boolean('post_test').defaultTo(false)
 
   // session_id uuid [ref: > sessions.id] //@ > bukan -, karena boleh ada banyak id session disini
   // teacher_id uuid [ref: < teachers.id] //nama guru

@@ -75,9 +75,9 @@ export default class ProgramSemestersController {
         .preload("teachers", (t) =>
           t.preload("employee", (e) => e.select("name"))
         )
-        // .preload("programSemesterDetail", (prosemDetail) =>
-        //   prosemDetail.select("*")
-        // )
+        .preload("programSemesterDetail", (prosemDetail) =>
+          prosemDetail.select("*")
+        )
         .firstOrFail();
 
       response.ok({ message: "Berhasil mengambil data", data });

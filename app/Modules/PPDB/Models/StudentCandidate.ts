@@ -26,6 +26,9 @@ export default class StudentCandidate extends BaseModel {
   @column()
   public registrationId: string
 
+  @column()
+  public fullName: string
+
   @column.date()
   public birthDay: DateTime | null
 

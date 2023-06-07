@@ -64,3 +64,10 @@ export enum AttendanceStatus {
     SICK = 'sick',
     ABSENT = 'absent'
 }
+
+export enum TeacherAttendanceStatus {
+    TEACH = 'teach',
+    NOT_TEACH = 'not_teach',
+    EXAM = 'exam',
+    HOMEWORK = 'homework'
+} 

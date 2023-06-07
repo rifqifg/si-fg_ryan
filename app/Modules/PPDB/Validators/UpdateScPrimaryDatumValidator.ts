@@ -11,6 +11,7 @@ export default class UpdateScPrimaryDatumValidator {
       rules.exists({ table: 'ppdb.user_student_candidates', column: 'id' }),
       rules.unique({ table: 'ppdb.student_candidates', column: 'user_id' })
     ]),
+    full_name: schema.string.optional(),
     birth_day: schema.date.nullableAndOptional({ format: 'yyyy-MM-dd' }),
     junior_hs_name: schema.string.nullableAndOptional(),
     gender: schema.enum.nullableAndOptional(Object.values(StudentGender)),

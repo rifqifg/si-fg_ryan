@@ -1,7 +1,7 @@
 import { schema, CustomMessages, rules } from '@ioc:Adonis/Core/Validator'
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import { StudentGender, StudentReligion } from 'App/Modules/Academic/lib/enums'
-import { PpdbInfoSource } from '../lib/enums'
+import { ClassMajor, StudentGender, StudentProgram, StudentReligion } from 'App/Modules/Academic/lib/enums'
+import { PpdbInfoSource, ScSppChoice } from '../lib/enums'
 
 export default class InsertScPrimaryDatumValidator {
   constructor(protected ctx: HttpContextContract) { }
@@ -20,12 +20,13 @@ export default class InsertScPrimaryDatumValidator {
     correspondence_email: schema.string(),
     info_source: schema.enum(Object.values(PpdbInfoSource)),
     interest_in_fg: schema.string(),
-    // spp_choice: schema.enum(Object.values(ScSppChoice)),
-    // program_choice: schema.enum(Object.values(StudentProgram)),
-    // major_choice: schema.enum(Object.values(ClassMajor)),
-    // test_schedule_choice: schema.string({ trim: true }, [
-    //   rules.exists({ table: 'ppdb.entrance_exam_schedules', column: 'id' })
-    // ])
+    spp_choice: schema.enum(Object.values(ScSppChoice)),
+    program_choice: schema.enum(Object.values(StudentProgram)),
+    major_choice: schema.enum(Object.values(ClassMajor)),
+    test_schedule_choice: schema.string({ trim: true }, [
+      rules.uuid({ version: 4 }),
+      rules.exists({ table: 'ppdb.entrance_exam_schedules', column: 'id' })
+    ]),
   })
 
   public messages: CustomMessages = {}

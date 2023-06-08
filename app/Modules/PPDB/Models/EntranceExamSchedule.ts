@@ -40,8 +40,10 @@ export default class EntranceExamSchedule extends BaseModel {
 
   @beforeCreate()
   public static assignUuid(entranceExamSchedule: EntranceExamSchedule) {
-    newId = uuidv4()
-    entranceExamSchedule.id = newId
+    if (!(entranceExamSchedule.id)) {
+      newId = uuidv4()
+      entranceExamSchedule.id = newId
+    }
   }
 
   @afterCreate()

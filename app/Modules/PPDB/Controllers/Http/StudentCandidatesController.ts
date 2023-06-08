@@ -18,6 +18,7 @@ export default class StudentCandidatesController {
         try {
             const data = await StudentCandidate.query()
                 .whereILike('full_name', `%${keyword}%`)
+                .preload('batchCandidate', q => q.preload('batch'))
                 .orderBy('full_name')
                 .paginate(page, limit)
 
@@ -35,7 +36,6 @@ export default class StudentCandidatesController {
         const payload = await request.validate(InsertScPrimaryDatumValidator)
 
         try {
-            // todo: cek perubahan status
             const data = await StudentCandidate.create({ ...payload, registrationId, status: ScStatus.DONE_PRIMARY_DATA })
             response.created({ message: "Berhasil menyimpan data calon siswa", data })
         } catch (error) {
@@ -48,7 +48,12 @@ export default class StudentCandidatesController {
         if (!uuidValidation(id)) { return response.badRequest({ message: "ID calon siswa tidak valid" }) }
 
         try {
-            const data = await StudentCandidate.findOrFail(id)
+            // const data = await StudentCandidate.findOrFail(id)
+            const data = await StudentCandidate
+                .query()
+                .where('id', id)
+                .preload('batchCandidate', q => q.preload('batch'))
+                .firstOrFail()
             response.ok({ message: "Berhasil mengambil data calon siswa", data })
         } catch (error) {
             response.badRequest({ message: "Gagal mengambil data calon siswa", error: error.message })

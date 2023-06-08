@@ -3,9 +3,6 @@ import { BaseModel, BelongsTo, afterCreate, beforeCreate, belongsTo, column } fr
 import { v4 as uuidv4 } from 'uuid'
 import StudentCandidate from './StudentCandidate';
 import PPDBBatch from './PPDBBatch';
-import { ScSppChoice } from '../lib/enums';
-import { ClassMajor, StudentProgram } from 'App/Modules/Academic/lib/enums';
-import EntranceExamSchedule from './EntranceExamSchedule';
 
 let newId = ""
 
@@ -19,37 +16,19 @@ export default class BatchCandidate extends BaseModel {
   public candidateId: string
 
   @belongsTo(() => StudentCandidate, {
-    foreignKey: 'candidate_id',
+    foreignKey: 'candidateId',
     localKey: 'id'
   })
-  public studentCandidates: BelongsTo<typeof StudentCandidate>
+  public candidate: BelongsTo<typeof StudentCandidate>
 
   @column()
-  public batchId: string | null
+  public batchId: string
 
   @belongsTo(() => PPDBBatch, {
-    foreignKey: 'batch_id',
+    foreignKey: 'batchId',
     localKey: 'id'
   })
-  public batches: BelongsTo<typeof PPDBBatch>
-
-  @column()
-  public sppChoice: ScSppChoice | null
-
-  @column()
-  public programChoice: StudentProgram | null
-
-  @column()
-  public majorChoice: ClassMajor | null
-
-  @column()
-  public testScheduleChoice: string
-
-  @belongsTo(() => EntranceExamSchedule, {
-    foreignKey: 'test_schedule_choice',
-    localKey: 'id'
-  })
-  public entranceExamSchedules: BelongsTo<typeof EntranceExamSchedule>
+  public batch: BelongsTo<typeof PPDBBatch>
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime

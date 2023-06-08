@@ -1,10 +1,12 @@
 import { DateTime } from 'luxon'
-import { BaseModel, BelongsTo, afterCreate, beforeCreate, belongsTo, column } from '@ioc:Adonis/Lucid/Orm'
+import { BaseModel, BelongsTo, HasMany, afterCreate, beforeCreate, belongsTo, column, hasMany } from '@ioc:Adonis/Lucid/Orm'
 import { v4 as uuidv4 } from 'uuid'
 import UserStudentCandidate from './UserStudentCandidate';
 import { ClassMajor, StudentGender, StudentProgram, StudentReligion, StudentResidence } from 'App/Modules/Academic/lib/enums';
 import { PpdbInfoSource, ScSppChoice, ScStatus } from '../lib/enums';
 import Wilayah from 'App/Models/Wilayah';
+import BatchCandidate from './BatchCandidate';
+import EntranceExamSchedule from './EntranceExamSchedule';
 
 let newId = ""
 
@@ -25,6 +27,9 @@ export default class StudentCandidate extends BaseModel {
 
   @column()
   public registrationId: string
+
+  @column()
+  public nisn: string
 
   @column()
   public fullName: string
@@ -54,10 +59,28 @@ export default class StudentCandidate extends BaseModel {
   public interestInFg: string | null
 
   @column()
-  public photo: string | null
+  public sppChoice: ScSppChoice | null
 
   @column()
-  public examLink: string | null
+  public programChoice: StudentProgram | null
+
+  @column()
+  public majorChoice: ClassMajor | null
+
+  @column()
+  public testScheduleChoice: string
+
+  @belongsTo(() => EntranceExamSchedule, {
+    foreignKey: 'test_schedule_choice',
+    localKey: 'id'
+  })
+  public entranceExamSchedules: BelongsTo<typeof EntranceExamSchedule>
+
+  @column()
+  public photo: string | null
+
+  // @column()
+  // public examLink: string | null
 
   @column()
   public virtualAccountNo: string | null
@@ -241,6 +264,11 @@ export default class StudentCandidate extends BaseModel {
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   public updatedAt: DateTime
+
+  @hasMany(() => BatchCandidate, {
+    foreignKey: 'candidateId'
+  })
+  public batchCandidate: HasMany<typeof BatchCandidate>
 
   @beforeCreate()
   public static assignUuid(studentCandidate: StudentCandidate) {

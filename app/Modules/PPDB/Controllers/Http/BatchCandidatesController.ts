@@ -4,8 +4,6 @@ import BatchCandidate from '../../Models/BatchCandidate'
 import { validate as uuidValidation } from 'uuid'
 import UpdateBatchCandidateValidator from '../../Validators/UpdateBatchCandidateValidator'
 import PPDBBatch from '../../Models/PPDBBatch'
-import StudentCandidate from '../../Models/StudentCandidate'
-import { ScStatus } from '../../lib/enums'
 
 export default class BatchCandidatesController {
     public async index({ request, response }: HttpContextContract) {

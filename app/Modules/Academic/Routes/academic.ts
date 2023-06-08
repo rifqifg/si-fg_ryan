@@ -11,4 +11,6 @@ Route.group(() => {
     Route.shallowResource('students.parents', 'StudentParentsController').apiOnly().middleware({ '*': ['auth'] })
     Route.resource('sessions', 'SessionsController').only(['index', 'show']).middleware({ '*': ['auth'] })
     Route.shallowResource('daily-attendances', 'DailyAttendancesController').apiOnly().middleware({ '*': ['auth'] })
+    Route.shallowResource('lesson-attendances', 'LessonAttendancesController').apiOnly().middleware({ '*': ['auth'] })
+    Route.shallowResource('teacher-attendances', 'TeacherAttendancesController').apiOnly().middleware({ '*': ['auth'] })
 }).prefix('academics').namespace('AcademicControllers')

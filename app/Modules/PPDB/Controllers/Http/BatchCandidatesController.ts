@@ -38,12 +38,7 @@ export default class BatchCandidatesController {
         try {
             const data = await BatchCandidate.create({
                 candidateId: payload.candidate_id,
-                // candidateId: auth.use('ppdb_api').user!.id,
                 batchId: payload.batch_id,
-                sppChoice: payload.spp_choice,
-                programChoice: payload.program_choice,
-                majorChoice: payload.major_choice,
-                testScheduleChoice: payload.test_schedule_choice
             })
 
             const sc = await StudentCandidate.findOrFail(payload.candidate_id)
@@ -61,7 +56,8 @@ export default class BatchCandidatesController {
         if (!uuidValidation(id)) { return response.badRequest({ message: "ID tidak valid" }) }
 
         try {
-            const data = await BatchCandidate.findOrFail(id)
+            // const data = await BatchCandidate.findOrFail(id)
+            const data = await BatchCandidate.query().where('id', id).preload('candidate').firstOrFail()
             response.ok({ message: "Berhasil mengambil data", data })
         } catch (error) {
             console.log(error);
@@ -83,10 +79,6 @@ export default class BatchCandidatesController {
             const data = await batchCandidate.merge({
                 candidateId: payload.candidate_id,
                 batchId: payload.batch_id,
-                sppChoice: payload.spp_choice,
-                programChoice: payload.program_choice,
-                majorChoice: payload.major_choice,
-                testScheduleChoice: payload.test_schedule_choice
             }).save()
             response.ok({ message: "Berhasil mengubah data", data })
         } catch (error) {

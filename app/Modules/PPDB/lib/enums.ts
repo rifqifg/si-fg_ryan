@@ -22,7 +22,7 @@ export enum ScStatus {
     // PASS_ALL = 'pass_all'
     NEW = 'new',
     DONE_PRIMARY_DATA = 'done_primary_data',
-    DONE_SELECTION = 'done_selection',
+    // DONE_SELECTION = 'done_selection',
     PASS_EXAM = 'pass_exam',
     PASS_RE_REGISTER = 'pass_re_register',
     FAILED = 'failed'

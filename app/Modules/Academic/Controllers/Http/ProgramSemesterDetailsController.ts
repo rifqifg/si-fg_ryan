@@ -141,7 +141,7 @@ export default class ProgramSemesterDetailsController {
     }
 
     try {
-      const prosemDetail = await ProgramSemesterDetail.firstOrFail(id);
+      const prosemDetail = await ProgramSemesterDetail.findOrFail(id);
       const data = await prosemDetail.merge(payload).save();
 
       response.ok({ message: "Berhasil memperbarui data", data });
@@ -162,7 +162,7 @@ export default class ProgramSemesterDetailsController {
       });
 
     try {
-      const data = await ProgramSemesterDetail.firstOrFail(id);
+      const data = await ProgramSemesterDetail.findOrFail(id);
       await data.delete();
 
       response.ok({ message: "Berhasil menghapus data" });

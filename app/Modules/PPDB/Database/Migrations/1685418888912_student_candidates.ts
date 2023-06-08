@@ -12,7 +12,8 @@ export default class extends BaseSchema {
         table.uuid('id').primary().notNullable().unique()
         table.uuid('user_id').references('id').inTable('ppdb.user_student_candidates').onDelete('SET NULL').onUpdate('cascade').unique()
         table.string('registration_id').notNullable().unique()
-        table.string('nisn', 15).unique()
+        // todo: make unique after dev done
+        table.string('nisn', 15)//.unique()
         table.string('full_name')
         table.date('birth_day')
         table.string('junior_hs_name')

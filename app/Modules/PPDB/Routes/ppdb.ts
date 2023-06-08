@@ -24,7 +24,8 @@ Route.group(() => {
     Route.put('/settings/batches/:id', 'PpdbSettingsController.updateBatch').middleware('auth:api')
     Route.delete('/settings/batches/:id', 'PpdbSettingsController.deleteBatch').middleware('auth:api')
     Route.get('/settings/batches/:id', 'PpdbSettingsController.showBatch').middleware('auth:api,ppdb_api')
-    Route.get('/settings/batches/', 'PpdbSettingsController.indexBatches').middleware('auth:api')
+    // todo: auth ppdb_api
+    Route.get('/settings/batches/', 'PpdbSettingsController.indexBatches').middleware('auth:api,ppdb_api')
 
     Route.resource('/academic-years', 'AcademicYearsController').only(['index']).middleware({ 'index': 'auth:api,ppdb_api' })
     Route.resource('/exam-schedules', 'EntranceExamSchedulesController').only(['index']).middleware({ 'index': 'auth:api,ppdb_api' })

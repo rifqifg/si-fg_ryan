@@ -40,10 +40,6 @@ export default class BatchCandidatesController {
                 candidateId: payload.candidate_id,
                 batchId: payload.batch_id,
             })
-
-            const sc = await StudentCandidate.findOrFail(payload.candidate_id)
-            await sc.merge({ status: ScStatus.DONE_SELECTION }).save()
-
             response.created({ message: "Berhasil menyimpan data", data })
         } catch (error) {
             console.log(error);

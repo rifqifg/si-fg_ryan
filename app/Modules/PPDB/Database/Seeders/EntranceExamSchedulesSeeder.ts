@@ -22,6 +22,14 @@ export default class extends BaseSeeder {
         currentQuota: 10,
         timeStart: DateTime.local(2023, 4, 1, 11, 10, { zone: "utc+7" }),
         timeEnd: DateTime.local(2023, 4, 1, 13, 10, { zone: "utc+7" }),
+      },
+      {
+        id: "e1a9b04c-6a4b-4f68-8f02-731c0412c0fd",
+        batchId: "b0459123-ae5f-4d02-a518-8e6bdf6c1e14",
+        maxCapacity: 100,
+        currentQuota: 10,
+        timeStart: DateTime.local(2021, 5, 2, 11, 10, { zone: "utc+7" }),
+        timeEnd: DateTime.local(2021, 5, 2, 13, 10, { zone: "utc+7" }),
       }
     ]
 

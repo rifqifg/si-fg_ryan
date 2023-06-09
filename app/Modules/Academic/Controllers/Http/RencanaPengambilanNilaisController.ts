@@ -2,6 +2,7 @@ import type { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import { schema, rules } from "@ioc:Adonis/Core/Validator";
 import { validate as uuidValidation } from "uuid";
 import RencanaPengambilanNilai from "../../Models/RencanaPengambilanNilai";
+import Semester from "../../Models/Semester";
 
 export default class RencanaPengambilanNilaisController {
   public async index({ request, response }: HttpContextContract) {
@@ -9,9 +10,42 @@ export default class RencanaPengambilanNilaisController {
 
     try {
       let data = {};
+      const semester = await Semester.query()
+        .where("isActive", true)
+        .select("*")
+        .firstOrFail();
+
       if (mode === "page") {
         data = await RencanaPengambilanNilai.query()
           .select("*")
+          .whereILike("topik", `%${keyword}%`)
+          .preload("metodePengambilanNilai", (mp) => mp.select("id", "nama"))
+          .preload(
+            "programSemesterDetail",
+            (prosemDetail) => (
+              prosemDetail.select(
+                "id",
+                "pertemuan",
+                "kompetensiIntiId",
+                "programSemesterId"
+              ),
+              prosemDetail.preload("kompetensiInti", (ki) => ki.select("id", "nama")),
+              prosemDetail.preload(
+                "programSemester",
+                (prosem) => (
+                  prosem.select("teacherId", "subjectId"),
+                  prosem.preload(
+                    "teachers",
+                    (t) => (
+                      t.select("employeeId"),
+                      t.preload("employee", (e) => e.select("name"))
+                    )
+                  ),
+                  prosem.preload("mapel", (m) => m.select("name"))
+                )
+              )
+            )
+          )
           .paginate(page, limit);
       } else if (mode === "list") {
         data = await RencanaPengambilanNilai.query().select("*");
@@ -21,7 +55,10 @@ export default class RencanaPengambilanNilaisController {
         });
       }
 
-      response.ok({ message: "Berhasil mengambil data", data });
+      response.ok({
+        message: "Berhasil mengambil data",
+        data: { semester, data },
+      });
     } catch (error) {
       response.badRequest({
         message: "Gagal mengambil data",
@@ -74,8 +111,10 @@ export default class RencanaPengambilanNilaisController {
         .preload("programSemesterDetail", (prosemDetail) => {
           prosemDetail.select("*");
           prosemDetail.preload("programSemester", (prosem) => {
-            prosem.preload("teachers", t => t.preload('employee', e => e.select('name')));
-            prosem.preload('mapel')
+            prosem.preload("teachers", (t) =>
+              t.preload("employee", (e) => e.select("name"))
+            );
+            prosem.preload("mapel");
           });
         })
         .firstOrFail();

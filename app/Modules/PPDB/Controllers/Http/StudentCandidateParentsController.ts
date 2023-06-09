@@ -6,14 +6,18 @@ import CreateStudentCandidateParentValidator from '../../Validators/CreateStuden
 import UpdateStudentCandidateParentValidator from '../../Validators/UpdateStudentCandidateParentValidator'
 
 export default class StudentCandidateParentsController {
-    public async index({ request, response }: HttpContextContract) {
+    public async index({ request, response, params }: HttpContextContract) {
+        const { student_candidate_id } = params
+        if (!uuidValidation(student_candidate_id)) { return response.badRequest({ message: "Student candidate ID tidak valid" }) }
+
         const { page = 1, limit = 10, keyword = "", } = request.qs()
 
         try {
-            const data = await StudentCandidateParent.query()
-                .whereILike('name', `%${keyword}%`)
-                .preload('candidate')
-                .orderBy('name')
+            const data = await StudentCandidate.query()
+                .where('id', student_candidate_id)
+                .preload('parents', qp => {
+                    qp.whereILike('name', `%${keyword}%`).orderBy('name')
+                })
                 .paginate(page, limit)
 
             response.ok({ message: "Berhasil mengambil data", data })

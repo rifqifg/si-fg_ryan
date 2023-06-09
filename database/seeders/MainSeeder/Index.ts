@@ -29,6 +29,7 @@ export default class IndexSeeder extends BaseSeeder {
     // await this.runSeeder(await import('Academic/Database/Seeders/StudentParentsSeeder'))
     await this.runSeeder(await import('Academic/Database/Seeders/KompetensiInti'))
     await this.runSeeder(await import('Academic/Database/Seeders/MetodePengambilanNilai'))
+    await this.runSeeder(await import('Academic/Database/Seeders/AcademicYearSeeder'))
   }
 }
 

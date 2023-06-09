@@ -24,13 +24,19 @@ Route.group(() => {
     Route.put('/settings/batches/:id', 'PpdbSettingsController.updateBatch').middleware('auth:api')
     Route.delete('/settings/batches/:id', 'PpdbSettingsController.deleteBatch').middleware('auth:api')
     Route.get('/settings/batches/:id', 'PpdbSettingsController.showBatch').middleware('auth:api,ppdb_api')
-    // todo: auth ppdb_api
     Route.get('/settings/batches/', 'PpdbSettingsController.indexBatches').middleware('auth:api,ppdb_api')
 
     Route.resource('/academic-years', 'AcademicYearsController').only(['index']).middleware({ 'index': 'auth:api,ppdb_api' })
     Route.resource('/exam-schedules', 'EntranceExamSchedulesController').only(['index']).middleware({ 'index': 'auth:api,ppdb_api' })
 
     Route.resource('student-candidates', 'StudentCandidatesController').apiOnly().middleware({ '*': 'auth:api,ppdb_api' })
+    Route.shallowResource('student-candidates.parents', 'StudentCandidateParentsController').apiOnly().middleware({
+        'index': 'auth:api,ppdb_api',
+        'store': 'auth:ppdb_api',
+        'show': 'auth:api,ppdb_api',
+        'update': 'auth:api,ppdb_api',
+        'destroy': 'auth:api'
+    })
     Route.put('student-candidates/:id/photo-upload', 'StudentCandidatesController.imageUpload').middleware('auth:api,ppdb_api')
 
     Route.resource('batch-candidates', 'BatchCandidatesController').middleware({

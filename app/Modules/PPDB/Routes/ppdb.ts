@@ -30,6 +30,7 @@ Route.group(() => {
     Route.resource('/exam-schedules', 'EntranceExamSchedulesController').only(['index']).middleware({ 'index': 'auth:api,ppdb_api' })
 
     Route.resource('student-candidates', 'StudentCandidatesController').apiOnly().middleware({ '*': 'auth:api,ppdb_api' })
+    Route.put('student-candidates/:id/photo-upload', 'StudentCandidatesController.imageUpload').middleware('auth:api,ppdb_api')
     Route.shallowResource('student-candidates.parents', 'StudentCandidateParentsController').apiOnly().middleware({
         'index': 'auth:api,ppdb_api',
         'store': 'auth:api,ppdb_api',
@@ -37,7 +38,15 @@ Route.group(() => {
         'update': 'auth:api,ppdb_api',
         'destroy': 'auth:api'
     })
-    Route.put('student-candidates/:id/photo-upload', 'StudentCandidatesController.imageUpload').middleware('auth:api,ppdb_api')
+
+    Route.shallowResource('student-candidates.interviews', 'InterviewsController').apiOnly().middleware({
+        'index': 'auth:api,ppdb_api',
+        'store': 'auth:api',
+        'show': 'auth:api,ppdb_api',
+        'update': 'auth:api',
+        'destroy': 'auth:api'
+    })
+
 
     Route.resource('batch-candidates', 'BatchCandidatesController').middleware({
         'index': 'auth:api',

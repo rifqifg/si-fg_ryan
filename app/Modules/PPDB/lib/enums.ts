@@ -28,6 +28,11 @@ export enum ScStatus {
     FAILED = 'failed'
 }
 
+export enum InterviewTopic {
+    UMUM = 'umum',
+    TAHFIDZ = 'tahfidz'
+}
+
 // export enum ScStatusData {
 //     NO_SUBMISSION = 'no_submission',
 //     DONE_PRIMARY_DATA = 'done_primary_data',

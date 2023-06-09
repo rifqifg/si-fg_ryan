@@ -20,6 +20,10 @@ export default class StudentCandidatesController {
                 .whereILike('full_name', `%${keyword}%`)
                 .preload('batchCandidate', q => q.preload('batch'))
                 .preload('entranceExamSchedule')
+                .preload('kecamatan')
+                .preload('kelurahan')
+                .preload('kota')
+                .preload('provinsi')
                 .orderBy('full_name')
                 .paginate(page, limit)
 
@@ -55,6 +59,10 @@ export default class StudentCandidatesController {
                 .where('id', id)
                 .preload('batchCandidate', q => q.preload('batch'))
                 .preload('entranceExamSchedule')
+                .preload('kecamatan')
+                .preload('kelurahan')
+                .preload('kota')
+                .preload('provinsi')
                 .firstOrFail()
             response.ok({ message: "Berhasil mengambil data calon siswa", data })
         } catch (error) {

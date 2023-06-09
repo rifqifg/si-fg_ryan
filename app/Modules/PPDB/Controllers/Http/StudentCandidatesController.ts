@@ -19,6 +19,7 @@ export default class StudentCandidatesController {
             const data = await StudentCandidate.query()
                 .whereILike('full_name', `%${keyword}%`)
                 .preload('batchCandidate', q => q.preload('batch'))
+                .preload('entranceExamSchedule')
                 .orderBy('full_name')
                 .paginate(page, limit)
 
@@ -53,6 +54,7 @@ export default class StudentCandidatesController {
                 .query()
                 .where('id', id)
                 .preload('batchCandidate', q => q.preload('batch'))
+                .preload('entranceExamSchedule')
                 .firstOrFail()
             response.ok({ message: "Berhasil mengambil data calon siswa", data })
         } catch (error) {

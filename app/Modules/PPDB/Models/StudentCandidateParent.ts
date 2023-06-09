@@ -16,8 +16,8 @@ export default class StudentCandidateParent extends BaseModel {
   public candidateId: string
 
   @belongsTo(() => StudentCandidate, {
-    localKey: 'candidateId',
-    foreignKey: 'id'
+    foreignKey: 'candidateId',
+    localKey: 'id'
   })
   public candidate: BelongsTo<typeof StudentCandidate>
 

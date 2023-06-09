@@ -34,14 +34,19 @@ export default class UsersController {
     });
 
     const payload = await request.validate({ schema: loginSchema });
-
+   
     try {
       const token = await auth
         .use("api")
         .attempt(payload.email, payload.password);
       const user = await User.query()
         .where("id", auth.user!.id)
-        .preload("roles", (query) => query.select("name", "permissions"));
+        .preload("roles", (query) => query.select("name", "permissions"))
+        .preload("employee", (e) => {
+          e.select("name");
+          e.preload("teacher", (t) => t.select("id"));
+        })
+        .firstOrFail();
 
       response.ok({
         message: "login succesfull",
@@ -68,32 +73,18 @@ export default class UsersController {
 
     const userGoogle: UserGoogle = jwt_decode(cred);
 
-    // console.log(user)id
-    //  return { id}
-    // const provider = ally.use("google").stateless();
-    // const provider = await ally.use("google")
-    // const { token } = await provider.accessToken()
-    //  const user = provider.userFromToken(id)
-    // if (provider.accessDenied()) return "Access Denied";
-
-    // if (provider.hasError()) return provider.getError();
-
-    // const userGoogle = await provider.userFromToken(token);
-
-    // if (userGoogle.id === id) {
-    //   return {message: 'ok'}
-    // }
     const userDetails = {
       email: userGoogle.email,
       name: userGoogle.name,
       verified: userGoogle.email_verified,
       provider: "google",
     };
-    
+
     try {
       const user = await User.query()
         .where("email", "=", userGoogle.email)
         .preload("roles", (r) => r.select("name", "permissions"))
+        .preload("employee", (e) => e.preload("teacher", (t) => t.select("id")))
         .firstOrFail();
       const tokenAuth = await auth.use("api").login(user);
 

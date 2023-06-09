@@ -24,6 +24,13 @@ export default class UpdateScPrimaryDatumValidator {
     ]),
     info_source: schema.enum.nullableAndOptional(Object.values(PpdbInfoSource)),
     interest_in_fg: schema.string.nullableAndOptional(),
+    spp_choice: schema.enum.nullableAndOptional(Object.values(ScSppChoice)),
+    program_choice: schema.enum.nullableAndOptional(Object.values(StudentProgram)),
+    major_choice: schema.enum.nullableAndOptional(Object.values(ClassMajor)),
+    test_schedule_choice: schema.string.optional({ trim: true }, [
+      rules.uuid({ version: 4 }),
+      rules.exists({ table: 'ppdb.entrance_exam_schedules', column: 'id' })
+    ]),
     nik: schema.string.nullableAndOptional([
       rules.regex(/^[0-9]+$/),
       rules.minLength(16),
@@ -35,7 +42,8 @@ export default class UpdateScPrimaryDatumValidator {
     nisn: schema.string.optional([
       rules.regex(/^[0-9]+$/),
       rules.maxLength(15),
-      rules.unique({ table: 'ppdb.student_candidates', column: 'nisn' })
+      // todo: uncomment after dev
+      // rules.unique({ table: 'ppdb.student_candidates', column: 'nisn' })
     ]),
     virtual_account_no: schema.string.nullableAndOptional({ trim: true }, [
       rules.regex(/^[0-9]+$/),

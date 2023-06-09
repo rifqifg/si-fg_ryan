@@ -15,6 +15,11 @@ export default class StudentCandidateParentsController {
         try {
             const data = await StudentCandidate.query()
                 .where('id', student_candidate_id)
+                .preload('entranceExamSchedule')
+                .preload('kecamatan')
+                .preload('kelurahan')
+                .preload('kota')
+                .preload('provinsi')
                 .preload('parents', qp => {
                     qp.whereILike('name', `%${keyword}%`).orderBy('name')
                 })

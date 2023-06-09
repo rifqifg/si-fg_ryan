@@ -32,7 +32,7 @@ Route.group(() => {
     Route.resource('student-candidates', 'StudentCandidatesController').apiOnly().middleware({ '*': 'auth:api,ppdb_api' })
     Route.shallowResource('student-candidates.parents', 'StudentCandidateParentsController').apiOnly().middleware({
         'index': 'auth:api,ppdb_api',
-        'store': 'auth:ppdb_api',
+        'store': 'auth:api,ppdb_api',
         'show': 'auth:api,ppdb_api',
         'update': 'auth:api,ppdb_api',
         'destroy': 'auth:api'

@@ -3,6 +3,7 @@ import StudentCandidateParent from '../../Models/StudentCandidateParent'
 import { validate as uuidValidation } from 'uuid'
 import StudentCandidate from '../../Models/StudentCandidate'
 import CreateStudentCandidateParentValidator from '../../Validators/CreateStudentCandidateParentValidator'
+import UpdateStudentCandidateParentValidator from '../../Validators/UpdateStudentCandidateParentValidator'
 
 export default class StudentCandidateParentsController {
     public async index({ request, response }: HttpContextContract) {
@@ -33,6 +34,51 @@ export default class StudentCandidateParentsController {
         } catch (error) {
             console.log(error);
             response.badRequest({ message: "Gagal menyimpan data", error: error.message })
+        }
+    }
+
+    public async show({ params, response }: HttpContextContract) {
+        const { id } = params
+        if (!uuidValidation(id)) { return response.badRequest({ message: "ID tidak valid" }) }
+
+        try {
+            const data = await StudentCandidateParent.findOrFail(id)
+            response.ok({ message: "Berhasil mengambil data detail orang tua calon siswa", data })
+        } catch (error) {
+            console.log(error)
+            response.badRequest({ message: "Gagal mengambil data", error: error.message })
+        }
+    }
+
+    public async update({ params, request, response }: HttpContextContract) {
+        const { id } = params
+        if (!uuidValidation(id)) { return response.badRequest({ message: "CO-STP-UP_01: Student ID tidak valid" }) }
+
+        const payload = await request.validate(UpdateStudentCandidateParentValidator)
+        if (JSON.stringify(payload) === '{}') {
+            return response.badRequest({ message: "Data tidak boleh kosong" })
+        }
+        try {
+            const scParent = await StudentCandidateParent.findOrFail(id)
+            const data = await scParent.merge(payload).save()
+            response.ok({ message: "Berhasil mengubah data", data })
+        } catch (error) {
+            console.log(error)
+            response.badRequest({ message: "Gagal mengubah data", error: error.message })
+        }
+    }
+
+    public async destroy({ params, response }: HttpContextContract) {
+        const { id } = params
+        if (!uuidValidation(id)) { return response.badRequest({ message: "ID tidak valid" }) }
+
+        try {
+            const data = await StudentCandidateParent.findOrFail(id)
+            await data.delete()
+            response.ok({ message: "Berhasil menghapus data" })
+        } catch (error) {
+            console.log(error)
+            response.badRequest({ message: "Gagal menghapus data", error: error.message })
         }
     }
 }

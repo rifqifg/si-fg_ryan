@@ -7,11 +7,17 @@ import { PpdbInfoSource, ScSppChoice, ScStatus } from '../lib/enums';
 import Wilayah from 'App/Models/Wilayah';
 import BatchCandidate from './BatchCandidate';
 import EntranceExamSchedule from './EntranceExamSchedule';
+import StudentCandidateParent from './StudentCandidateParent';
 
 let newId = ""
 
 export default class StudentCandidate extends BaseModel {
   public static table = 'ppdb.student_candidates';
+
+  @hasMany(() => StudentCandidateParent, {
+    foreignKey: 'candidateId'
+  })
+  public parents: HasMany<typeof StudentCandidateParent>
 
   @column({ isPrimary: true })
   public id: string

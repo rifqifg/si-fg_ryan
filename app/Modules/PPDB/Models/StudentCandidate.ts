@@ -77,10 +77,10 @@ export default class StudentCandidate extends BaseModel {
   public testScheduleChoice: string
 
   @belongsTo(() => EntranceExamSchedule, {
-    foreignKey: 'test_schedule_choice',
+    foreignKey: 'testScheduleChoice',
     localKey: 'id'
   })
-  public entranceExamSchedules: BelongsTo<typeof EntranceExamSchedule>
+  public entranceExamSchedule: BelongsTo<typeof EntranceExamSchedule>
 
   @column()
   public photo: string | null

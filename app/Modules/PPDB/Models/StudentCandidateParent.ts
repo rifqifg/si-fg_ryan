@@ -30,6 +30,9 @@ export default class StudentCandidateParent extends BaseModel {
   @column()
   public phoneNumber: string | null
 
+  @column.date()
+  public birthDate: DateTime | null
+
   @column()
   public nik: string
 

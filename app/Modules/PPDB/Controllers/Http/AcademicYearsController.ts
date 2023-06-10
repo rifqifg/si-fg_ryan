@@ -1,5 +1,5 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import AcademicYear from '../../Models/AcademicYear'
+import AcademicYear from 'App/Modules/Academic/Models/AcademicYear'
 
 export default class AcademicYearsController {
     public async index({ request, response }: HttpContextContract) {

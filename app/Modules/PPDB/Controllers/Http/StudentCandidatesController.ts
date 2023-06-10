@@ -24,6 +24,7 @@ export default class StudentCandidatesController {
                 .preload('kelurahan')
                 .preload('kota')
                 .preload('provinsi')
+                .preload('interviews')
                 .orderBy('full_name')
                 .paginate(page, limit)
 
@@ -63,6 +64,7 @@ export default class StudentCandidatesController {
                 .preload('kelurahan')
                 .preload('kota')
                 .preload('provinsi')
+                .preload('interviews')
                 .firstOrFail()
             response.ok({ message: "Berhasil mengambil data calon siswa", data })
         } catch (error) {

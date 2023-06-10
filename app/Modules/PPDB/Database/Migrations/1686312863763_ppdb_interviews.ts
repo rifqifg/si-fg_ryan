@@ -18,6 +18,7 @@ export default class extends BaseSchema {
         table.enum('major_result', Object.values(ClassMajor))
         table.enum('spp_result', Object.values(ScSppChoice))
         table.string('note')
+        table.unique(['candidate_id', 'batch_id', 'topic'])
 
         /**
          * Uses timestamptz for PostgreSQL and DATETIME2 for MSSQL

@@ -1,9 +1,9 @@
 import { DateTime } from 'luxon'
 import { BaseModel, BelongsTo, HasMany, afterCreate, beforeCreate, belongsTo, column, hasMany } from '@ioc:Adonis/Lucid/Orm'
 import { v4 as uuidv4 } from 'uuid'
-import AcademicYear from './AcademicYear';
 import BatchCandidate from './BatchCandidate';
 import EntranceExamSchedule from './EntranceExamSchedule';
+import AcademicYear from 'App/Modules/Academic/Models/AcademicYear';
 
 let newId = ""
 
@@ -17,11 +17,11 @@ export default class PPDBBatch extends BaseModel {
   public name: string
 
   @column()
-  public academicYear: string
+  public academicYear: number
 
   @belongsTo(() => AcademicYear, {
     foreignKey: 'academicYear',
-    localKey: 'year',
+    localKey: 'id',
   })
   public academicYears: BelongsTo<typeof AcademicYear>
 

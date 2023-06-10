@@ -9,7 +9,7 @@ export default class extends BaseSchema {
       .createTable(this.tableName, (table) => {
         table.uuid('id').primary().notNullable()
         table.string('name').notNullable()
-        table.string('academic_year', 25).references('year').inTable('ppdb.academic_years').onDelete('no action').onUpdate('cascade').notNullable()
+        table.integer('academic_year').references('id').inTable('academic.academic_years').onDelete('no action').onUpdate('cascade').notNullable()
         table.string('description')
         table.boolean('active').defaultTo(false).notNullable()
         table.unique(['name', 'academic_year'])

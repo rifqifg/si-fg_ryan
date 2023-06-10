@@ -8,6 +8,7 @@ import Wilayah from 'App/Models/Wilayah';
 import BatchCandidate from './BatchCandidate';
 import EntranceExamSchedule from './EntranceExamSchedule';
 import StudentCandidateParent from './StudentCandidateParent';
+import PpdbInterview from './PpdbInterview';
 
 let newId = ""
 
@@ -275,6 +276,11 @@ export default class StudentCandidate extends BaseModel {
     foreignKey: 'candidateId'
   })
   public batchCandidate: HasMany<typeof BatchCandidate>
+
+  @hasMany(() => PpdbInterview, {
+    foreignKey: 'candidateId'
+  })
+  public interviews: HasMany<typeof PpdbInterview>
 
   @beforeCreate()
   public static assignUuid(studentCandidate: StudentCandidate) {

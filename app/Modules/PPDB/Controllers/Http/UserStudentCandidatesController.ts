@@ -99,7 +99,7 @@ export default class UserStudentCandidatesController {
         response.ok({ message: "Berhasil logout" })
     }
 
-    public async verify({ request, response }: HttpContextContract) {
+    public async verify({ request, response, view }: HttpContextContract) {
         const token = request.input("token")
 
         try {
@@ -107,7 +107,9 @@ export default class UserStudentCandidatesController {
 
             await usc.merge({ verifyToken: "", verified: true }).save()
 
-            response.ok({ message: "Akun berhasil diverifikasi" })
+            // response.ok({ message: "Akun berhasil diverifikasi" })
+            const LOGIN_URL = 'https://ian-fitur-fg.netlify.app/ppdb'
+            return view.render('ppdb/student_candidate_verification_success', {LOGIN_URL})
         } catch (error) {
             return response.badRequest({
                 message: "email tidak ditemukan / token tidak cocok",

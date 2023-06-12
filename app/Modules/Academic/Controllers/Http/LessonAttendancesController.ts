@@ -5,6 +5,7 @@ const luxon_1 = require("luxon");
 const hariIni = luxon_1.DateTime.now().toSQLDate().toString();
 import { validate as uuidValidation } from "uuid";
 import UpdateLessonAttendanceValidator from '../../Validators/UpdateLessonAttendanceValidator';
+import Database from '@ioc:Adonis/Lucid/Database';
 
 export default class LessonAttendancesController {
     public async index({ request, response }: HttpContextContract) {
@@ -15,7 +16,29 @@ export default class LessonAttendancesController {
         try {
             let data = {}
 
-            console.log(recap);
+            if (recap) {
+                data = await LessonAttendance
+                    .query()
+                    .select('class_id', 'subject_id')
+                    .select(
+                        Database.raw(`sum(case when status = 'present' then 1 else 0 end) as present`),
+                        Database.raw(`sum(case when status = 'permission' then 1 else 0 end) as permission`),
+                        Database.raw(`sum(case when status = 'sick' then 1 else 0 end) as sick`),
+                        Database.raw(`sum(case when status = 'absent' then 1 else 0 end) as absent`),
+                        //TODO: menghitung persen status
+                        Database.raw(`round(cast(sum(case when status = 'present' then 1 else 0 end) * 100.0 / (count(status))as decimal(10,2)),0) as present_precentage`),
+                        Database.raw(`round(cast(sum(case when status = 'permission' then 1 else 0 end) * 100.0 / (count(status))as decimal(10,2)),0) as permission_precentage`),
+                        Database.raw(`round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(status))as decimal(10,2)),0) as sick_precentage`),
+                        Database.raw(`round(cast(sum(case when status = 'absent' then 1 else 0 end) * 100.0 / (count(status))as decimal(10,2)),0) as absent_precentage`),
+                    )
+                    .whereBetween('date', [formattedStartDate, formattedEndDate])
+                    .preload('class', c => c.select('name').withCount('students'))
+                    .preload('subject', s => s.select('name'))
+                    .groupBy('class_id', 'subject_id')
+                    .paginate(page, limit)
+
+                return response.ok({ message: "Berhasil mengambil data", data })
+            }
 
             data = await LessonAttendance
                 .query()

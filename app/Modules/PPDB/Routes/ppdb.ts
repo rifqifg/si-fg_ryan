@@ -11,7 +11,7 @@ Route.group(() => {
     Route.get('/auth/verify-email', 'UserStudentCandidatesController.verify')
     Route.post('/auth/google', 'UserStudentCandidatesController.loginGoogle')
     Route.post('/auth/change-password', 'UserStudentCandidatesController.changePassword').middleware('auth:ppdb_api')
-    // FIXME: route ini harus bisa dijalankan menggunakan auth, dengan akun yg belum verifikasi
+    // FIXME: route ini harusnya bisa dijalankan menggunakan auth, dengan akun yg belum verifikasi
     // Route.get('/auth/ask-new-verification', 'UserStudentCandidatesController.askNewVerification').middleware('auth:ppdb_api')
 
     Route.get('/settings/guide', 'PpdbSettingsController.showGuide').middleware('auth:api,ppdb_api')
@@ -30,7 +30,8 @@ Route.group(() => {
     Route.resource('/exam-schedules', 'EntranceExamSchedulesController').only(['index']).middleware({ 'index': 'auth:api,ppdb_api' })
 
     Route.resource('student-candidates', 'StudentCandidatesController').apiOnly().middleware({ '*': 'auth:api,ppdb_api' })
-    Route.put('student-candidates/:id/photo-upload', 'StudentCandidatesController.imageUpload').middleware('auth:api,ppdb_api')
+    Route.put('student-candidates/:id/file-upload', 'StudentCandidatesController.fileUpload').middleware('auth:api,ppdb_api')
+    Route.get('student-candidates/:id/file', 'StudentCandidatesController.showFile').middleware('auth:api,ppdb_api')
     Route.shallowResource('student-candidates.parents', 'StudentCandidateParentsController').apiOnly().middleware({
         'index': 'auth:api,ppdb_api',
         'store': 'auth:api,ppdb_api',

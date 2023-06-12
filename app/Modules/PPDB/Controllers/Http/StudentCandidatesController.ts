@@ -92,26 +92,51 @@ export default class StudentCandidatesController {
         }
     }
 
-    public async imageUpload({ request, response, params }: HttpContextContract) {
+    public async fileUpload({ request, response, params }: HttpContextContract) {
         const { id } = params
         if (!uuidValidation(id)) { return response.badRequest({ message: "ID calon siswa tidak valid" }) }
 
+        // const file = request.file('file')
+        // const parameterLain = request.body()
+
+        // const obj = {
+        //     file,
+        //     // tipeDataCategory: typeof category,
+        //     parameterLain
+        //     // category: category
+        // }
+        
+        // return obj
+
         const payload = await request.validate(ScImageUploadValidator)
-        const imageName = `candidate_${id}.${payload.photo.extname}`
+
+        const imageName = `candidate_${id}_${payload.category}.${payload.file.extname}`
 
         const data = await StudentCandidate.findOrFail(id)
 
-        await payload.photo.moveToDisk(
+        await payload.file.moveToDisk(
             'student-candidates',
             { name: imageName, overwrite: true },
             'ppdb'
         )
 
-        const beHost = Env.get('BE_URL')
+        // const beHost = Env.get('BE_URL')
+        // todo: buat ngrok jalan di cloud / nggak lokalan
+        const beHost = 'https://f812-103-93-93-90.ngrok-free.app'
         const drivePpdb = Drive.use('ppdb')
         const imageUrl = beHost + await drivePpdb.getUrl('student-candidates/' + imageName)
 
-        await data.merge({ photo: imageName }).save()
+        if (payload.category === 'photo') {
+            await data.merge({ photo: imageName }).save()
+        } else if (payload.category === 'jhs_certificate') {
+            await data.merge({ jhsCertificateScan: imageName }).save()
+        } else if (payload.category === 'family_card') {
+            await data.merge({ familyCardScan: imageName }).save()
+        } else if (payload.category === 'birth_certificate') {
+            await data.merge({ birthCertScan: imageName }).save()
+        } else if (payload.category === 'payment_proof') {
+            await data.merge({ scanPaymentProof: imageName }).save()
+        }
 
         response.ok({
             message: "Upload Success",
@@ -119,6 +144,36 @@ export default class StudentCandidatesController {
             image_url: imageUrl
         })
     }
+
+    // public async showFile({request, response, params}: HttpContextContract) {
+    //     const { id } = params
+    //     if (!uuidValidation(id)) { return response.badRequest({ message: "ID calon siswa tidak valid" }) }
+
+    //     const { category = "" } = request.qs()
+
+    //     try {
+    //         let data: StudentCandidate[]
+
+    //         // TODO: benahi conditional
+    //         if (category === 'photo') {
+    //             data = await StudentCandidate.query().select('photo')
+    //         } else if (category === 'jhs_certificate') {
+    //             data = await StudentCandidate.query().select('photo')
+    //         } else if (category === 'family_card') {
+    //             data = await StudentCandidate.query().select('photo')
+    //         } else if (category === 'birth_certificate') {
+    //             data = await StudentCandidate.query().select('photo')
+    //         } else if (category === 'payment_proof') {
+    //             data = await StudentCandidate.query().select('photo')
+    //         } else {
+    //             throw new Error("Nilai query parameter tidak valid")
+    //         }
+
+    //         response.ok({ message: "Berhasil mengambil data", data })
+    //     } catch (error) {
+    //         response.badRequest({ message: "Gagal mengambil data", error })
+    //     }
+    // }
 
     public async destroy({ params, response }: HttpContextContract) {
         const { id } = params

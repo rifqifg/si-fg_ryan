@@ -5,10 +5,11 @@ export default class ScImageUploadValidator {
   constructor(protected ctx: HttpContextContract) { }
 
   public schema = schema.create({
-    photo: schema.file({
+    file: schema.file({
       size: '2mb',
-      extnames: ['jpg', 'jpeg', 'gif', 'png']
-    })
+      extnames: ['jpg', 'jpeg', 'gif', 'png', 'pdf']
+    }),
+    category: schema.enum(['photo', 'jhs_certificate', 'family_card', 'birth_certificate', 'payment_proof'])
   })
 
   public messages: CustomMessages = {}

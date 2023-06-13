@@ -39,6 +39,7 @@ Route.group(() => {
         'update': 'auth:api,ppdb_api',
         'destroy': 'auth:api'
     })
+    Route.put('parents/:id/file-upload', 'StudentCandidateParentsController.fileUpload').middleware('auth:api,ppdb_api')
 
     Route.shallowResource('student-candidates.interviews', 'InterviewsController').apiOnly().middleware({
         'index': 'auth:api,ppdb_api',

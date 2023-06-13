@@ -1,5 +1,5 @@
 import { DateTime } from 'luxon'
-import { BaseModel, BelongsTo, HasMany, afterCreate, beforeCreate, belongsTo, column, hasMany } from '@ioc:Adonis/Lucid/Orm'
+import { BaseModel, BelongsTo, HasMany, afterCreate, afterFetch, beforeCreate, belongsTo, column, hasMany } from '@ioc:Adonis/Lucid/Orm'
 import { v4 as uuidv4 } from 'uuid'
 import UserStudentCandidate from './UserStudentCandidate';
 import { ClassMajor, StudentGender, StudentProgram, StudentReligion, StudentResidence } from 'App/Modules/Academic/lib/enums';
@@ -264,6 +264,9 @@ export default class StudentCandidate extends BaseModel {
   public birthCertScan: string | null
 
   @column()
+  public jhsGraduationLetterScan: string | null
+
+  @column()
   public scanPaymentProof: string | null
 
   @column.dateTime({ autoCreate: true })
@@ -292,4 +295,18 @@ export default class StudentCandidate extends BaseModel {
   public static setNewId(studentCandidate: StudentCandidate) {
     studentCandidate.id = newId
   }
+
+  // @afterFetch()
+  // public static async getUrlProfile(users: User[]) {
+  //   users.map(async (user) => {
+  //     const url = await Drive.getUrl('upload/users/' + user.profilePicture)
+  //     const BE_URL = Env.get('BE_URL')
+  //     user.profilePicture = BE_URL + url
+
+  //     return user
+  //   })
+
+  //   return users
+  // }
+
 }

@@ -77,6 +77,7 @@ export default class extends BaseSchema {
         table.string('bank_account_owner', 50)
         table.string('bank_account_number', 30)
         table.string('jhs_certificate_scan')
+        table.string('jhs_graduation_letter_scan')
         table.string('family_card_scan')
         table.string('birth_cert_scan')
         table.string('scan_payment_proof')

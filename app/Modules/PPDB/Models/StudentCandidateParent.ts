@@ -54,6 +54,9 @@ export default class StudentCandidateParent extends BaseModel {
   @column()
   public address: string | null
 
+  @column()
+  public ktpScan: string | null
+
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
 

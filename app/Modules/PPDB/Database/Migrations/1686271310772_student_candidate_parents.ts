@@ -21,6 +21,7 @@ export default class extends BaseSchema {
         table.string('max_salary', 10)
         table.string('email', 50)
         table.text('address')
+        table.string('ktp_scan')
         table.unique(['candidate_id', 'nik'])
 
         /**

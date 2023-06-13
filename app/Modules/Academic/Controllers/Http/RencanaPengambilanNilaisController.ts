@@ -155,10 +155,10 @@ export default class RencanaPengambilanNilaisController {
           rules.uuid({ version: 4 }),
           rules.trim(),
         ]),
-        subjectId: schema.string([rules.uuid({ version: 4 }), rules.trim()]),
-        teacherId: schema.string([rules.uuid({ version: 4 }), rules.trim()]),
-        topik: schema.string([rules.trim()]),
-        presentase: schema.number(),
+        subjectId: schema.string.optional([rules.uuid({ version: 4 }), rules.trim()]),
+        teacherId: schema.string.optional([rules.uuid({ version: 4 }), rules.trim()]),
+        topik: schema.string.optional([rules.trim()]),
+        presentase: schema.number.optional(),
       }),
     });
 

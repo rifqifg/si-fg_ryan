@@ -31,7 +31,6 @@ Route.group(() => {
 
     Route.resource('student-candidates', 'StudentCandidatesController').apiOnly().middleware({ '*': 'auth:api,ppdb_api' })
     Route.put('student-candidates/:id/file-upload', 'StudentCandidatesController.fileUpload').middleware('auth:api,ppdb_api')
-    Route.get('student-candidates/:id/file', 'StudentCandidatesController.showFile').middleware('auth:api,ppdb_api')
     Route.shallowResource('student-candidates.parents', 'StudentCandidateParentsController').apiOnly().middleware({
         'index': 'auth:api,ppdb_api',
         'store': 'auth:api,ppdb_api',

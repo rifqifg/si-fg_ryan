@@ -1,5 +1,5 @@
 import { DateTime } from 'luxon'
-import { BaseModel, BelongsTo, HasMany, afterCreate, afterFetch, beforeCreate, belongsTo, column, hasMany } from '@ioc:Adonis/Lucid/Orm'
+import { BaseModel, BelongsTo, HasMany, afterCreate, afterFetch, afterFind, beforeCreate, belongsTo, column, hasMany } from '@ioc:Adonis/Lucid/Orm'
 import { v4 as uuidv4 } from 'uuid'
 import UserStudentCandidate from './UserStudentCandidate';
 import { ClassMajor, StudentGender, StudentProgram, StudentReligion, StudentResidence } from 'App/Modules/Academic/lib/enums';
@@ -9,6 +9,8 @@ import BatchCandidate from './BatchCandidate';
 import EntranceExamSchedule from './EntranceExamSchedule';
 import StudentCandidateParent from './StudentCandidateParent';
 import PpdbInterview from './PpdbInterview';
+import Drive from '@ioc:Adonis/Core/Drive'
+import Env from '@ioc:Adonis/Core/Env'
 
 let newId = ""
 
@@ -296,17 +298,79 @@ export default class StudentCandidate extends BaseModel {
     studentCandidate.id = newId
   }
 
-  // @afterFetch()
-  // public static async getUrlProfile(users: User[]) {
-  //   users.map(async (user) => {
-  //     const url = await Drive.getUrl('upload/users/' + user.profilePicture)
-  //     const BE_URL = Env.get('BE_URL')
-  //     user.profilePicture = BE_URL + url
+  @afterFetch()
+  public static async getUrlAll(candidate: StudentCandidate[]) {
+    const drivePpdb = Drive.use('ppdb')
+    const BE_URL = Env.get('BE_URL')
 
-  //     return user
-  //   })
+    candidate.map(async (sc) => {
+      if (sc.jhsGraduationLetterScan !== null) {
+        const url = await drivePpdb.getUrl('/' + sc.jhsGraduationLetterScan)
+        sc.jhsGraduationLetterScan = BE_URL + url
+      }
 
-  //   return users
-  // }
+      if (sc.photo !== null) {
+        const url = await drivePpdb.getUrl('/' + sc.photo)
+        sc.photo = BE_URL + url
+      }
 
+      if (sc.jhsCertificateScan !== null) {
+        const url = await drivePpdb.getUrl('/' + sc.jhsCertificateScan)
+        sc.jhsCertificateScan = BE_URL + url
+      }
+
+      if (sc.familyCardScan !== null) {
+        const url = await drivePpdb.getUrl('/' + sc.familyCardScan)
+        sc.familyCardScan = BE_URL + url
+      }
+
+      if (sc.birthCertScan !== null) {
+        const url = await drivePpdb.getUrl('/' + sc.birthCertScan)
+        sc.birthCertScan = BE_URL + url
+      }
+
+      if (sc.jhsGraduationLetterScan !== null) {
+        const url = await drivePpdb.getUrl('/' + sc.jhsGraduationLetterScan)
+        sc.jhsGraduationLetterScan = BE_URL + url
+      }
+
+      return sc
+    })
+  }
+
+  @afterFind()
+  public static async getUrl(candidate: StudentCandidate) {
+    const drivePpdb = Drive.use('ppdb')
+    const BE_URL = Env.get('BE_URL')
+
+    if (candidate.jhsGraduationLetterScan !== null) {
+      const url = await drivePpdb.getUrl('/' + candidate.jhsGraduationLetterScan)
+      candidate.jhsGraduationLetterScan = BE_URL + url
+    }
+
+    if (candidate.photo !== null) {
+      const url = await drivePpdb.getUrl('/' + candidate.photo)
+      candidate.photo = BE_URL + url
+    }
+
+    if (candidate.jhsCertificateScan !== null) {
+      const url = await drivePpdb.getUrl('/' + candidate.jhsCertificateScan)
+      candidate.jhsCertificateScan = BE_URL + url
+    }
+
+    if (candidate.familyCardScan !== null) {
+      const url = await drivePpdb.getUrl('/' + candidate.familyCardScan)
+      candidate.familyCardScan = BE_URL + url
+    }
+
+    if (candidate.birthCertScan !== null) {
+      const url = await drivePpdb.getUrl('/' + candidate.birthCertScan)
+      candidate.birthCertScan = BE_URL + url
+    }
+
+    if (candidate.jhsGraduationLetterScan !== null) {
+      const url = await drivePpdb.getUrl('/' + candidate.jhsGraduationLetterScan)
+      candidate.jhsGraduationLetterScan = BE_URL + url
+    }
+  }
 }

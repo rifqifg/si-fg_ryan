@@ -7,6 +7,8 @@ import Teacher from './Teacher'
 import Subject from './Subject'
 
 export default class BukuNilai extends BaseModel {
+  public static table = 'academic.buku_nilais'
+
   @column({ isPrimary: true })
   public id: string
 
@@ -20,7 +22,7 @@ export default class BukuNilai extends BaseModel {
   public teacherId: string
 
   @column()
-  public mapelId: string
+  public subjectId: string
 
   @column()
   public nilai: number

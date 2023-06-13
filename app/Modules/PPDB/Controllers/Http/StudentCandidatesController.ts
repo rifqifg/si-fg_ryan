@@ -120,6 +120,8 @@ export default class StudentCandidatesController {
             await data.merge({ birthCertScan: imageName }).save()
         } else if (payload.category === 'payment_proof') {
             await data.merge({ scanPaymentProof: imageName }).save()
+        } else if (payload.category === 'jhs_graduation_letter_scan') {
+            await data.merge({ jhsGraduationLetterScan: imageName }).save()
         }
 
         response.ok({
@@ -157,6 +159,9 @@ export default class StudentCandidatesController {
             } else if (category === 'payment_proof') {
                 data = await StudentCandidate.query().select('scanPaymentProof').where('id', id).firstOrFail()
                 imageUrl = (data.scanPaymentProof === null) ? "" : beHost + await drivePpdb.getUrl('student-candidates/' + data.scanPaymentProof)
+            } else if (category === 'jhs_graduation_letter_scan') {
+                data = await StudentCandidate.query().select('jhsGraduationLetterScan').where('id', id).firstOrFail()
+                imageUrl = (data.jhsGraduationLetterScan === null) ? "" : beHost + await drivePpdb.getUrl('student-candidates/' + data.jhsGraduationLetterScan)
             } else {
                 throw new Error("Nilai query parameter tidak valid")
             }

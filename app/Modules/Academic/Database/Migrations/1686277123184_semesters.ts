@@ -5,7 +5,7 @@ export default class extends BaseSchema {
 
   public async up() {
     this.schema.withSchema("academic").createTable(this.tableName, (table) => {
-      table.uuid("id").unique().notNullable();
+      table.uuid("id").unique().notNullable().primary()
       table.string("semester_name").notNullable();
       table.boolean("is_active");
       table.string("description");

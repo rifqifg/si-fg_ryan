@@ -5,7 +5,7 @@ export default class extends BaseSchema {
 
   public async up () {
     this.schema.createTable(this.tableName, (table) => {
-      table.uuid('id').unique().notNullable()
+      table.uuid('id').unique().notNullable().primary()
       table.uuid('program_semester_id').references('id').inTable('academic.program_semesters').onDelete('no action').onUpdate('cascade')
       table.uuid('kompetensi_inti_id').references('id').inTable('academic.kompetensi_intis').onDelete('no action').onUpdate('cascade')
       table.string('kompetensi_dasar').notNullable()

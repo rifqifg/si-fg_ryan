@@ -1,11 +1,12 @@
 import BaseSchema from '@ioc:Adonis/Lucid/Schema'
 
 export default class extends BaseSchema {
-  protected tableName = 'academic.buku_nilais'
+  protected tableName = 'buku_nilais'
 
   public async up () {
-    this.schema.createTable(this.tableName, (table) => {
-      table.uuid('id').unique().notNullable()
+    this.schema
+    .withSchema('academic').createTable(this.tableName, (table) => {
+      table.uuid('id').unique().notNullable().primary()
       table.uuid('program_semester_detail_id').references('id').inTable('academic.program_semester_details').onDelete('set null').onUpdate('cascade')
       table.uuid('student_id').references('id').inTable('academic.students').onDelete('set null').onUpdate('cascade')
       table.uuid('teacher_id').references('id').inTable('academic.teachers').onDelete('set null').onUpdate('cascade')

@@ -1,8 +1,10 @@
 import { DateTime } from 'luxon'
-import { BaseModel, BelongsTo, afterCreate, beforeCreate, belongsTo, column } from '@ioc:Adonis/Lucid/Orm'
+import { BaseModel, BelongsTo, afterCreate, afterFetch, afterFind, beforeCreate, belongsTo, column } from '@ioc:Adonis/Lucid/Orm'
 import { v4 as uuidv4 } from 'uuid'
 import StudentCandidate from './StudentCandidate';
 import { ParentEducation, ParentRelationship } from 'App/Modules/Academic/lib/enums';
+import Drive from '@ioc:Adonis/Core/Drive'
+import Env from '@ioc:Adonis/Core/Env'
 
 let newId = ""
 
@@ -72,5 +74,31 @@ export default class StudentCandidateParent extends BaseModel {
   @afterCreate()
   public static setNewId(studentCandidateParent: StudentCandidateParent) {
     studentCandidateParent.id = newId
+  }
+
+  @afterFetch()
+  public static async getUrlAll(parent: StudentCandidateParent[]) {
+    const drivePpdb = Drive.use('ppdb')
+    const BE_URL = Env.get('BE_URL')
+
+    parent.map(async (p) => {
+      if (p.ktpScan !== null) {
+        const url = await drivePpdb.getUrl('/' + p.ktpScan)
+        p.ktpScan = BE_URL + url
+      }
+
+      return p
+    })
+  }
+
+  @afterFind()
+  public static async getUrl(parent: StudentCandidateParent) {
+    const drivePpdb = Drive.use('ppdb')
+    const BE_URL = Env.get('BE_URL')
+
+    if (parent.ktpScan !== null) {
+      const url = await drivePpdb.getUrl('/' + parent.ktpScan)
+      parent.ktpScan = BE_URL + url
+    }
   }
 }

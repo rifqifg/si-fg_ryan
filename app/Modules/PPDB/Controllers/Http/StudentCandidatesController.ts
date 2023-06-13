@@ -131,47 +131,6 @@ export default class StudentCandidatesController {
         })
     }
 
-    public async showFile({ request, response, params }: HttpContextContract) {
-        const { id } = params
-        if (!uuidValidation(id)) { return response.badRequest({ message: "ID calon siswa tidak valid" }) }
-
-        const { category = "" } = request.qs()
-
-        const beHost = Env.get('BE_URL')
-        const drivePpdb = Drive.use('ppdb')
-
-        try {
-            let data: StudentCandidate
-            let imageUrl: string
-
-            if (category === 'photo') {
-                data = await StudentCandidate.query().select('photo').where('id', id).firstOrFail()
-                imageUrl = (data.photo === null) ? "" : beHost + await drivePpdb.getUrl('student-candidates/' + data.photo)
-            } else if (category === 'jhs_certificate') {
-                data = await StudentCandidate.query().select('jhsCertificateScan').where('id', id).firstOrFail()
-                imageUrl = (data.jhsCertificateScan === null) ? "" : beHost + await drivePpdb.getUrl('student-candidates/' + data.jhsCertificateScan)
-            } else if (category === 'family_card') {
-                data = await StudentCandidate.query().select('familyCardScan').where('id', id).firstOrFail()
-                imageUrl = (data.familyCardScan === null) ? "" : beHost + await drivePpdb.getUrl('student-candidates/' + data.familyCardScan)
-            } else if (category === 'birth_certificate') {
-                data = await StudentCandidate.query().select('birthCertScan').where('id', id).firstOrFail()
-                imageUrl = (data.birthCertScan === null) ? "" : beHost + await drivePpdb.getUrl('student-candidates/' + data.birthCertScan)
-            } else if (category === 'payment_proof') {
-                data = await StudentCandidate.query().select('scanPaymentProof').where('id', id).firstOrFail()
-                imageUrl = (data.scanPaymentProof === null) ? "" : beHost + await drivePpdb.getUrl('student-candidates/' + data.scanPaymentProof)
-            } else if (category === 'jhs_graduation_letter_scan') {
-                data = await StudentCandidate.query().select('jhsGraduationLetterScan').where('id', id).firstOrFail()
-                imageUrl = (data.jhsGraduationLetterScan === null) ? "" : beHost + await drivePpdb.getUrl('student-candidates/' + data.jhsGraduationLetterScan)
-            } else {
-                throw new Error("Nilai query parameter tidak valid")
-            }
-
-            response.ok({ message: "Berhasil mengambil data", data, imageUrl })
-        } catch (error) {
-            response.badRequest({ message: "Gagal mengambil data", error: error.message })
-        }
-    }
-
     public async destroy({ params, response }: HttpContextContract) {
         const { id } = params
         if (!uuidValidation(id)) { return response.badRequest({ message: "ID calon siswa tidak valid" }) }

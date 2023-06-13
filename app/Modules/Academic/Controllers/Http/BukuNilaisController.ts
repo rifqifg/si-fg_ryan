@@ -144,22 +144,63 @@ export default class BukuNilaisController {
     }
   }
 
-  public async update({ request, response, params }: HttpContextContract) {
+  public async update({
+    request,
+    response,
+    params,
+    auth,
+  }: HttpContextContract) {
     const { id } = params;
     if (!uuidValidation(id))
       return response.badRequest({ message: "Buku Nilai ID tidak valid" });
 
-    const payload = await request.validate({
-      schema: schema.create({
-        programSemesterDetailId: schema.string.optional([
-          rules.uuid({ version: 4 }),
-        ]),
-        studentId: schema.string.optional([rules.uuid({ version: 4 })]),
-        teacherId: schema.string.optional([rules.uuid({ version: 4 })]),
-        nilai: schema.number.optional(),
-        type: schema.enum.optional(["HARIAN", "UTS", "UAS"]),
-      }),
+    const user = auth.user!
+
+    const teacherId = await User.query()
+      .where("id", user ? user.id : "")
+      .preload("employee", (e) => e.preload("teacher", (t) => t.select("id")))
+      .firstOrFail();
+
+    const schemaForTeacher = schema.create({
+      subjectId: schema.string.optional([rules.uuid({ version: 4 })]),
+      programSemesterDetailId: schema.string.optional([rules.uuid({ version: 4 })]),
+      studentId: schema.string.optional([rules.uuid({ version: 4 })]),
+      teacherId: schema.string.optional([
+        rules.uuid({ version: 4 }),
+        rules.exists({
+          table: "academic.teachers",
+          column: "id",
+          where: {
+            id: teacherId.employee.teacher.id,
+          },
+        }),
+      ]),
+      nilai: schema.number.optional(),
+      type: schema.enum.optional(["HARIAN", "UTS", "UAS"]),
     });
+
+    const schemaForAdmin = schema.create({
+      subjectId: schema.string.optional([rules.uuid({ version: 4 })]),
+      programSemesterDetailId: schema.string.optional([rules.uuid({ version: 4 })]),
+      studentId: schema.string.optional([rules.uuid({ version: 4 })]),
+      teacherId: schema.string.optional([rules.uuid({ version: 4 })]),
+      nilai: schema.number.optional(),
+      type: schema.enum.optional(["HARIAN", "UTS", "UAS"]),
+    });
+
+    let payload;
+    if (user.role !== "super_admin") {
+      try {
+        payload = await request.validate({ schema: schemaForTeacher });
+      } catch (error) {
+        return response.badRequest({
+          message: "Masukkan nilai sesuai dengan ID anda",
+          error: error.message,
+        });
+      }
+    } else {
+      payload = await request.validate({ schema: schemaForAdmin });
+    }
 
     if (JSON.stringify(payload) === "{}") {
       console.log("data update kosong");

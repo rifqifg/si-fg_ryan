@@ -96,22 +96,8 @@ export default class StudentCandidatesController {
         const { id } = params
         if (!uuidValidation(id)) { return response.badRequest({ message: "ID calon siswa tidak valid" }) }
 
-        // const file = request.file('file')
-        // const parameterLain = request.body()
-
-        // const obj = {
-        //     file,
-        //     // tipeDataCategory: typeof category,
-        //     parameterLain
-        //     // category: category
-        // }
-        
-        // return obj
-
         const payload = await request.validate(ScImageUploadValidator)
-
         const imageName = `candidate_${id}_${payload.category}.${payload.file.extname}`
-
         const data = await StudentCandidate.findOrFail(id)
 
         await payload.file.moveToDisk(
@@ -120,9 +106,7 @@ export default class StudentCandidatesController {
             'ppdb'
         )
 
-        // const beHost = Env.get('BE_URL')
-        // todo: buat ngrok jalan di cloud / nggak lokalan
-        const beHost = 'https://f812-103-93-93-90.ngrok-free.app'
+        const beHost = Env.get('BE_URL')
         const drivePpdb = Drive.use('ppdb')
         const imageUrl = beHost + await drivePpdb.getUrl('student-candidates/' + imageName)
 
@@ -145,35 +129,43 @@ export default class StudentCandidatesController {
         })
     }
 
-    // public async showFile({request, response, params}: HttpContextContract) {
-    //     const { id } = params
-    //     if (!uuidValidation(id)) { return response.badRequest({ message: "ID calon siswa tidak valid" }) }
+    public async showFile({ request, response, params }: HttpContextContract) {
+        const { id } = params
+        if (!uuidValidation(id)) { return response.badRequest({ message: "ID calon siswa tidak valid" }) }
 
-    //     const { category = "" } = request.qs()
+        const { category = "" } = request.qs()
 
-    //     try {
-    //         let data: StudentCandidate[]
+        const beHost = Env.get('BE_URL')
+        const drivePpdb = Drive.use('ppdb')
 
-    //         // TODO: benahi conditional
-    //         if (category === 'photo') {
-    //             data = await StudentCandidate.query().select('photo')
-    //         } else if (category === 'jhs_certificate') {
-    //             data = await StudentCandidate.query().select('photo')
-    //         } else if (category === 'family_card') {
-    //             data = await StudentCandidate.query().select('photo')
-    //         } else if (category === 'birth_certificate') {
-    //             data = await StudentCandidate.query().select('photo')
-    //         } else if (category === 'payment_proof') {
-    //             data = await StudentCandidate.query().select('photo')
-    //         } else {
-    //             throw new Error("Nilai query parameter tidak valid")
-    //         }
+        try {
+            let data: StudentCandidate
+            let imageUrl: string
 
-    //         response.ok({ message: "Berhasil mengambil data", data })
-    //     } catch (error) {
-    //         response.badRequest({ message: "Gagal mengambil data", error })
-    //     }
-    // }
+            if (category === 'photo') {
+                data = await StudentCandidate.query().select('photo').where('id', id).firstOrFail()
+                imageUrl = (data.photo === null) ? "" : beHost + await drivePpdb.getUrl('student-candidates/' + data.photo)
+            } else if (category === 'jhs_certificate') {
+                data = await StudentCandidate.query().select('jhsCertificateScan').where('id', id).firstOrFail()
+                imageUrl = (data.jhsCertificateScan === null) ? "" : beHost + await drivePpdb.getUrl('student-candidates/' + data.jhsCertificateScan)
+            } else if (category === 'family_card') {
+                data = await StudentCandidate.query().select('familyCardScan').where('id', id).firstOrFail()
+                imageUrl = (data.familyCardScan === null) ? "" : beHost + await drivePpdb.getUrl('student-candidates/' + data.familyCardScan)
+            } else if (category === 'birth_certificate') {
+                data = await StudentCandidate.query().select('birthCertScan').where('id', id).firstOrFail()
+                imageUrl = (data.birthCertScan === null) ? "" : beHost + await drivePpdb.getUrl('student-candidates/' + data.birthCertScan)
+            } else if (category === 'payment_proof') {
+                data = await StudentCandidate.query().select('scanPaymentProof').where('id', id).firstOrFail()
+                imageUrl = (data.scanPaymentProof === null) ? "" : beHost + await drivePpdb.getUrl('student-candidates/' + data.scanPaymentProof)
+            } else {
+                throw new Error("Nilai query parameter tidak valid")
+            }
+
+            response.ok({ message: "Berhasil mengambil data", data, imageUrl })
+        } catch (error) {
+            response.badRequest({ message: "Gagal mengambil data", error: error.message })
+        }
+    }
 
     public async destroy({ params, response }: HttpContextContract) {
         const { id } = params

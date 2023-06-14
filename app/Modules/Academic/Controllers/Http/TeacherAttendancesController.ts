@@ -43,7 +43,7 @@ export default class TeacherAttendancesController {
     data = await TeacherAttendance
       .query()
       .whereBetween('date_in', [formattedStartDate, formattedEndDate])
-      .whereHas('teacher', s => s.preload('employee', e => e.whereILike('name', `%${keyword}%`)))
+      .whereHas('teacher', s => s.whereHas('employee', e => e.whereILike('name', `%${keyword}%`)))
       .whereHas('class', s => s.whereILike('name', `%${className}%`))
       .whereHas('subject', s => s.whereILike('name', `%${subject}%`))
       .whereHas('session', s => s.whereILike('session', `%${session}%`))

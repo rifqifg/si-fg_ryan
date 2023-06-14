@@ -54,7 +54,7 @@ export default class StudentCandidateParentsController {
         if (!uuidValidation(id)) { return response.badRequest({ message: "ID tidak valid" }) }
 
         try {
-            const data = await StudentCandidateParent.findOrFail(id)
+            const data = await StudentCandidateParent.query().where('id', id)
             response.ok({ message: "Berhasil mengambil data detail orang tua calon siswa", data })
         } catch (error) {
             console.log(error)

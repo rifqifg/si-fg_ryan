@@ -329,48 +329,12 @@ export default class StudentCandidate extends BaseModel {
         sc.birthCertScan = BE_URL + url
       }
 
-      if (sc.jhsGraduationLetterScan !== null) {
-        const url = await drivePpdb.getUrl('/' + sc.jhsGraduationLetterScan)
-        sc.jhsGraduationLetterScan = BE_URL + url
+      if (sc.scanPaymentProof !== null) {
+        const url = await drivePpdb.getUrl('/' + sc.scanPaymentProof)
+        sc.scanPaymentProof = BE_URL + url
       }
 
       return sc
     })
-  }
-
-  @afterFind()
-  public static async getUrl(candidate: StudentCandidate) {
-    const drivePpdb = Drive.use('ppdb')
-    const BE_URL = Env.get('BE_URL')
-
-    if (candidate.jhsGraduationLetterScan !== null) {
-      const url = await drivePpdb.getUrl('/' + candidate.jhsGraduationLetterScan)
-      candidate.jhsGraduationLetterScan = BE_URL + url
-    }
-
-    if (candidate.photo !== null) {
-      const url = await drivePpdb.getUrl('/' + candidate.photo)
-      candidate.photo = BE_URL + url
-    }
-
-    if (candidate.jhsCertificateScan !== null) {
-      const url = await drivePpdb.getUrl('/' + candidate.jhsCertificateScan)
-      candidate.jhsCertificateScan = BE_URL + url
-    }
-
-    if (candidate.familyCardScan !== null) {
-      const url = await drivePpdb.getUrl('/' + candidate.familyCardScan)
-      candidate.familyCardScan = BE_URL + url
-    }
-
-    if (candidate.birthCertScan !== null) {
-      const url = await drivePpdb.getUrl('/' + candidate.birthCertScan)
-      candidate.birthCertScan = BE_URL + url
-    }
-
-    if (candidate.jhsGraduationLetterScan !== null) {
-      const url = await drivePpdb.getUrl('/' + candidate.jhsGraduationLetterScan)
-      candidate.jhsGraduationLetterScan = BE_URL + url
-    }
   }
 }

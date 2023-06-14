@@ -16,9 +16,6 @@ export default class BukuNilaisController {
       const user = await auth.user!;
       const userId = await User.findOrFail(user.id);
 
-      // const userId = await User.query()
-      //   .where("id", user ? user.id : "")
-
       if (user.role === "teacher" && teacherId !== userId.employee.teacher.id)
         return response.badRequest({
           message: "Anda tidak bisa melihat data pengguna lain",
@@ -42,6 +39,13 @@ export default class BukuNilaisController {
           t.preload("employee", (e) => e.select("name", "nip", "nik"))
         )
         .preload("mapels", (m) => m.select("name"))
+        .preload("programSemesterDetail", (prosemDetail) =>
+          prosemDetail.select(
+            "kompetensiDasar",
+            "kompetensiDasarIndex",
+            "pertemuan"
+          )
+        )
         .paginate(page, limit);
 
       response.ok({ message: "Berhasil mengambil data", data });

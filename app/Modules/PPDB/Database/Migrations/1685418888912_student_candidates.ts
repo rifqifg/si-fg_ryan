@@ -29,7 +29,7 @@ export default class extends BaseSchema {
         table.enum('major_choice', Object.values(ClassMajor))
         table.uuid('test_schedule_choice').references('id').inTable('ppdb.entrance_exam_schedules').onDelete('no action').onUpdate('cascade')
         // table.string('exam_link')
-        table.string('virtual_account_no')
+        table.increments('virtual_account_no', { primaryKey: false })
         table.enum('program_final', Object.values(StudentProgram))
         table.enum('major_final', Object.values(ClassMajor))
         table.enum('spp_final', Object.values(ScSppChoice))

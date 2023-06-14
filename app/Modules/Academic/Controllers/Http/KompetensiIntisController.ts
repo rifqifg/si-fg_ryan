@@ -15,7 +15,7 @@ export default class KompetensiIntisController {
     }
   }
 
-  public async store({request, response, auth}: HttpContextContract) {
+  public async store({request, response}: HttpContextContract) {
     const payload = await request.validate({schema: schema.create({
       nama: schema.string([rules.trim()])
     })})
@@ -43,7 +43,7 @@ export default class KompetensiIntisController {
     }
   }
 
-  public async update({request, response, auth, params}: HttpContextContract) {
+  public async update({request, response, params}: HttpContextContract) {
     const {id} = params
 
     const payload = await request.validate({schema: schema.create({

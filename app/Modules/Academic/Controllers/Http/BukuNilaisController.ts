@@ -56,50 +56,41 @@ export default class BukuNilaisController {
   public async store({ request, response, auth }: HttpContextContract) {
     const user = await auth.user!;
     const teacherId = await User.query()
-      .where("id", user ? user.id : "")
+      .where("id", user.id)
       .preload("employee", (e) => e.preload("teacher", (t) => t.select("id")))
       .firstOrFail();
+    // return teacherId.employee
 
-    const schemaForTeacher = schema.create({
-      bukuNilai: schema.array().members(
-        schema.object().members({
-          subjectId: schema.string([rules.uuid({ version: 4 })]),
-          programSemesterDetailId: schema.string([rules.uuid({ version: 4 })]),
-          studentId: schema.string([rules.uuid({ version: 4 })]),
-          teacherId: schema.string([
-            rules.uuid({ version: 4 }),
-            rules.exists({
-              table: "academic.teachers",
-              column: "id",
-              where: {
-                id: teacherId.employee.teacher.id,
-              },
-            }),
-          ]),
-          nilai: schema.number(),
-          type: schema.enum(["HARIAN", "UTS", "UAS"]),
-        })
-      ),
-    });
-
-    const schemaForAdmin = schema.create({
-      bukuNilai: schema.array().members(
-        schema.object().members({
-          subjectId: schema.string([rules.uuid({ version: 4 })]),
-          programSemesterDetailId: schema.string([rules.uuid({ version: 4 })]),
-          studentId: schema.string([rules.uuid({ version: 4 })]),
-          teacherId: schema.string([rules.uuid({ version: 4 })]),
-          nilai: schema.number(),
-          type: schema.enum(["HARIAN", "UTS", "UAS"]),
-        })
-      ),
-    });
+    
 
     let payload;
 
     if (user.role !== "super_admin") {
+      const schemaForTeacher = schema.create({
+        bukuNilai: schema.array().members(
+          schema.object().members({
+            subjectId: schema.string([rules.uuid({ version: 4 })]),
+            programSemesterDetailId: schema.string([
+              rules.uuid({ version: 4 }),
+            ]),
+            studentId: schema.string([rules.uuid({ version: 4 })]),
+            teacherId: schema.string([
+              rules.uuid({ version: 4 }),
+              rules.exists({
+                table: "academic.teachers",
+                column: "id",
+                where: {
+                  id: teacherId.employee.teacher.id,
+                },
+              }),
+            ]),
+            nilai: schema.number(),
+            type: schema.enum(["HARIAN", "UTS", "UAS"]),
+          })
+        ),
+      });
+      payload = await request.validate({ schema: schemaForTeacher });
       try {
-        payload = await request.validate({ schema: schemaForTeacher });
       } catch (error) {
         return response.badRequest({
           message: "Masukkan nilai sesuai dengan ID anda",
@@ -107,9 +98,23 @@ export default class BukuNilaisController {
         });
       }
     } else {
+      const schemaForAdmin = schema.create({
+        bukuNilai: schema.array().members(
+          schema.object().members({
+            subjectId: schema.string([rules.uuid({ version: 4 })]),
+            programSemesterDetailId: schema.string([rules.uuid({ version: 4 })]),
+            studentId: schema.string([rules.uuid({ version: 4 })]),
+            teacherId: schema.string([rules.uuid({ version: 4 })]),
+            nilai: schema.number(),
+            type: schema.enum(["HARIAN", "UTS", "UAS"]),
+          })
+        ),
+      });
       payload = await request.validate({ schema: schemaForAdmin });
     }
-    // return payload
+
+    // return payload;
+
     try {
       const data = await BukuNilai.createMany(payload.bukuNilai);
 
@@ -154,7 +159,7 @@ export default class BukuNilaisController {
     if (!uuidValidation(id))
       return response.badRequest({ message: "Buku Nilai ID tidak valid" });
 
-    const user = auth.user!
+    const user = auth.user!;
 
     const teacherId = await User.query()
       .where("id", user ? user.id : "")
@@ -163,7 +168,9 @@ export default class BukuNilaisController {
 
     const schemaForTeacher = schema.create({
       subjectId: schema.string.optional([rules.uuid({ version: 4 })]),
-      programSemesterDetailId: schema.string.optional([rules.uuid({ version: 4 })]),
+      programSemesterDetailId: schema.string.optional([
+        rules.uuid({ version: 4 }),
+      ]),
       studentId: schema.string.optional([rules.uuid({ version: 4 })]),
       teacherId: schema.string.optional([
         rules.uuid({ version: 4 }),
@@ -181,7 +188,9 @@ export default class BukuNilaisController {
 
     const schemaForAdmin = schema.create({
       subjectId: schema.string.optional([rules.uuid({ version: 4 })]),
-      programSemesterDetailId: schema.string.optional([rules.uuid({ version: 4 })]),
+      programSemesterDetailId: schema.string.optional([
+        rules.uuid({ version: 4 }),
+      ]),
       studentId: schema.string.optional([rules.uuid({ version: 4 })]),
       teacherId: schema.string.optional([rules.uuid({ version: 4 })]),
       nilai: schema.number.optional(),

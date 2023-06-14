@@ -117,6 +117,7 @@ export default class StudentCandidatesController {
         } else if (payload.category === 'birth_certificate') {
             await data.merge({ birthCertScan: imageName }).save()
         } else if (payload.category === 'payment_proof') {
+            data.status = ScStatus.WAITING_REREGISTER_VERIFICATION
             await data.merge({ scanPaymentProof: imageName }).save()
         } else if (payload.category === 'jhs_graduation_letter_scan') {
             await data.merge({ jhsGraduationLetterScan: imageName }).save()

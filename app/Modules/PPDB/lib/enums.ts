@@ -20,7 +20,7 @@ export enum ScStatus {
     DONE_PRIMARY_DATA = 'done_primary_data',
     PASS_EXAM = 'pass_exam',
     PASS_RE_REGISTER = 'pass_re_register',
-    // FAILED = 'failed'
+    WAITING_REREGISTER_VERIFICATION = 'waiting_reregister_verification',
     FAILED_EXAM = 'failed_exam',
     FAILED_RE_REGISTER = 'failed_re_register'
 }

@@ -302,35 +302,36 @@ export default class StudentCandidate extends BaseModel {
   public static async getUrlAll(candidate: StudentCandidate[]) {
     const drivePpdb = Drive.use('ppdb')
     const BE_URL = Env.get('BE_URL')
+    const subUrl = 'student-candidates/'
 
     candidate.map(async (sc) => {
       if (sc.jhsGraduationLetterScan !== null) {
-        const url = await drivePpdb.getUrl('/' + sc.jhsGraduationLetterScan)
+        const url = await drivePpdb.getUrl('/' + subUrl + sc.jhsGraduationLetterScan)
         sc.jhsGraduationLetterScan = BE_URL + url
       }
 
       if (sc.photo !== null) {
-        const url = await drivePpdb.getUrl('/' + sc.photo)
+        const url = await drivePpdb.getUrl('/' + subUrl + sc.photo)
         sc.photo = BE_URL + url
       }
 
       if (sc.jhsCertificateScan !== null) {
-        const url = await drivePpdb.getUrl('/' + sc.jhsCertificateScan)
+        const url = await drivePpdb.getUrl('/' + subUrl + sc.jhsCertificateScan)
         sc.jhsCertificateScan = BE_URL + url
       }
 
       if (sc.familyCardScan !== null) {
-        const url = await drivePpdb.getUrl('/' + sc.familyCardScan)
+        const url = await drivePpdb.getUrl('/' + subUrl + sc.familyCardScan)
         sc.familyCardScan = BE_URL + url
       }
 
       if (sc.birthCertScan !== null) {
-        const url = await drivePpdb.getUrl('/' + sc.birthCertScan)
+        const url = await drivePpdb.getUrl('/' + subUrl + sc.birthCertScan)
         sc.birthCertScan = BE_URL + url
       }
 
       if (sc.scanPaymentProof !== null) {
-        const url = await drivePpdb.getUrl('/' + sc.scanPaymentProof)
+        const url = await drivePpdb.getUrl('/' + subUrl + sc.scanPaymentProof)
         sc.scanPaymentProof = BE_URL + url
       }
 

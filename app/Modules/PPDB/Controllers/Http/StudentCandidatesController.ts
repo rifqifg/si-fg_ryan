@@ -54,7 +54,6 @@ export default class StudentCandidatesController {
         if (!uuidValidation(id)) { return response.badRequest({ message: "ID calon siswa tidak valid" }) }
 
         try {
-            // const data = await StudentCandidate.findOrFail(id)
             const data = await StudentCandidate
                 .query()
                 .where('id', id)
@@ -65,7 +64,6 @@ export default class StudentCandidatesController {
                 .preload('kota')
                 .preload('provinsi')
                 .preload('interviews')
-                .firstOrFail()
             response.ok({ message: "Berhasil mengambil data calon siswa", data })
         } catch (error) {
             response.badRequest({ message: "Gagal mengambil data calon siswa", error: error.message })

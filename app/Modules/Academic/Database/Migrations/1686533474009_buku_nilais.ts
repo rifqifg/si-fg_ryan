@@ -11,6 +11,7 @@ export default class extends BaseSchema {
       table.uuid('student_id').references('id').inTable('academic.students').onDelete('set null').onUpdate('cascade')
       table.uuid('teacher_id').references('id').inTable('academic.teachers').onDelete('set null').onUpdate('cascade')
       table.uuid('subject_id').references('id').inTable('academic.subjects').onDelete('set null').onUpdate('cascade')
+      table.uuid('class_id').references('id').inTable('academic.classes').onDelete('set null').onUpdate('cascade')
       table.integer('nilai')
       table.enum('type', ['HARIAN', 'UTS', 'UAS'])
 

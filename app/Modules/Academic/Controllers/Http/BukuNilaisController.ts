@@ -11,12 +11,27 @@ export default class BukuNilaisController {
       subjectId = "",
       teacherId = "",
       studentId = "",
+      classId = "",
     } = request.qs();
     try {
       const user = await auth.user!;
-      const userId = await User.findOrFail(user.id);
+      const userId = await User.query()
+        .where("id", user.id)
+        .preload("employee", (e) => (e.select("id"), e.preload("teacher")))
+        .preload(
+          "studentParents",
+          (sp) => (
+            sp.select("id", "nik", "name"),
+            sp.preload("student", (s) => s.select("id", "name", "nis", "nisn"))
+          )
+        )
+        .firstOrFail();
 
-      if (user.role === "teacher" && teacherId !== userId.employee.teacher.id)
+      if (
+        user.role === "teacher" &&
+        teacherId !== userId.employee.teacher.id &&
+        teacherId
+      )
         return response.badRequest({
           message: "Anda tidak bisa melihat data pengguna lain",
         });
@@ -34,6 +49,7 @@ export default class BukuNilaisController {
         .if(teacherId, (t) => t.where("teacherId", teacherId))
         .if(studentId, (s) => s.where("studentId", studentId))
         .if(subjectId, (sb) => sb.where("subjectId", subjectId))
+        .if(classId, (c) => c.where("classId", classId))
         .preload("students", (s) => s.select("name", "nisn", "nis"))
         .preload("teachers", (t) =>
           t.preload("employee", (e) => e.select("name", "nip", "nik"))
@@ -46,6 +62,7 @@ export default class BukuNilaisController {
             "pertemuan"
           )
         )
+        .preload("classes", (c) => c.select("name"))
         .paginate(page, limit);
 
       response.ok({ message: "Berhasil mengambil data", data });
@@ -76,6 +93,7 @@ export default class BukuNilaisController {
               rules.uuid({ version: 4 }),
             ]),
             studentId: schema.string([rules.uuid({ version: 4 })]),
+            classId: schema.string([rules.uuid({ version: 4 })]),
             teacherId: schema.string([
               rules.uuid({ version: 4 }),
               rules.exists({
@@ -108,6 +126,7 @@ export default class BukuNilaisController {
               rules.uuid({ version: 4 }),
             ]),
             studentId: schema.string([rules.uuid({ version: 4 })]),
+            classId: schema.string([rules.uuid({ version: 4 })]),
             teacherId: schema.string([rules.uuid({ version: 4 })]),
             nilai: schema.number(),
             type: schema.enum(["HARIAN", "UTS", "UAS"]),
@@ -116,8 +135,6 @@ export default class BukuNilaisController {
       });
       payload = await request.validate({ schema: schemaForAdmin });
     }
-
-    // return payload;
 
     try {
       const data = await BukuNilai.createMany(payload.bukuNilai);
@@ -143,7 +160,9 @@ export default class BukuNilaisController {
         )
         .preload("programSemesterDetail", (prosemDetail) =>
           prosemDetail.select("kompetensiDasar", "materi")
-        );
+        )
+        .preload("classes", (c) => c.select("name"))
+        .firstOrFail();
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
       response.badRequest({
@@ -181,6 +200,7 @@ export default class BukuNilaisController {
             rules.uuid({ version: 4 }),
           ]),
           studentId: schema.string.optional([rules.uuid({ version: 4 })]),
+          classId: schema.string.optional([rules.uuid({ version: 4 })]),
           teacherId: schema.string.optional([
             rules.uuid({ version: 4 }),
             rules.exists({
@@ -209,6 +229,7 @@ export default class BukuNilaisController {
         ]),
         studentId: schema.string.optional([rules.uuid({ version: 4 })]),
         teacherId: schema.string.optional([rules.uuid({ version: 4 })]),
+        classId: schema.string.optional([rules.uuid({ version: 4 })]),
         nilai: schema.number.optional(),
         type: schema.enum.optional(["HARIAN", "UTS", "UAS"]),
       });

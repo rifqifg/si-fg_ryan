@@ -103,6 +103,9 @@ export default class PpdbSettingsController {
 
         if (payload.active === true) {
             try {
+                const inactiveAcademicYear = await PPDBBatch.query().where('id', id).whereHas('academicYears', ay => ay.where('active', false))
+                if (inactiveAcademicYear) throw new Error("Tidak dapat set status ke aktif, karena gelombang ini masuk tahun akademik yg tidak aktif")
+
                 const activeBatch = await PPDBBatch.findBy('active', true)
                 if (activeBatch) {
                     throw new Error("Sudah ada gelombang lain yang aktif")

@@ -10,6 +10,7 @@ import { v4 as uuidv4 } from 'uuid'
 // import { ScStatusData } from '../../lib/enums'
 import UpdateScPrimaryDatumValidator from '../../Validators/UpdateScPrimaryDatumValidator'
 import { ScStatus } from '../../lib/enums'
+import EntranceExamSchedule from '../../Models/EntranceExamSchedule'
 
 export default class StudentCandidatesController {
     public async index({ request, response }: HttpContextContract) {
@@ -42,6 +43,14 @@ export default class StudentCandidatesController {
         const payload = await request.validate(InsertScPrimaryDatumValidator)
 
         try {
+            const schedule = await EntranceExamSchedule
+                .query()
+                .where('id', payload.test_schedule_choice)
+                .whereHas('batches', batch => { batch.where('active', true) })
+                .preload('batches')
+
+            if (schedule.length <= 0) throw new Error("Jadwal ujian yang dipilih tidak masuk dalam tahun akademik aktif")
+
             const data = await StudentCandidate.create({ ...payload, registrationId, status: ScStatus.DONE_PRIMARY_DATA })
             response.created({ message: "Berhasil menyimpan data calon siswa", data })
         } catch (error) {

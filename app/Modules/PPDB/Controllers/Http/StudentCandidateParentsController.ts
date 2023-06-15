@@ -18,8 +18,9 @@ export default class StudentCandidateParentsController {
         try {
             const data = await StudentCandidateParent
                 .query()
-                .preload('candidate', candidate => candidate.select('id', 'user_id', 'registration_id', 'nisn', 'full_name'))
+                .whereHas('candidate', candidate => candidate.where('id', student_candidate_id))
                 .andWhereILike('name', `%${keyword}%`)
+                .preload('candidate', candidate => candidate.select('id', 'user_id', 'registration_id', 'nisn', 'full_name'))
                 .orderBy('name')
                 .paginate(page, limit)
             response.ok({ message: "Berhasil mengambil data", data })

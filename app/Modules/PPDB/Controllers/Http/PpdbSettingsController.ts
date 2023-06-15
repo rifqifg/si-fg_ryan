@@ -21,6 +21,11 @@ export default class PpdbSettingsController {
     public async updateGuide({ request, response }: HttpContextContract) {
         const payload = await request.validate(UpdatePpdbSettingValidator)
 
+        if (JSON.stringify(payload) === '{}') {
+            console.log("data update kosong");
+            return response.badRequest({ message: "Data tidak boleh kosong" })
+        }
+
         try {
             const currentData = await PPDBSetting.first()
             const data = await currentData!.merge({ guideContent: payload.guide_content }).save()

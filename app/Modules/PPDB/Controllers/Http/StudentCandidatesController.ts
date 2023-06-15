@@ -11,6 +11,7 @@ import { v4 as uuidv4 } from 'uuid'
 import UpdateScPrimaryDatumValidator from '../../Validators/UpdateScPrimaryDatumValidator'
 import { ScStatus } from '../../lib/enums'
 import EntranceExamSchedule from '../../Models/EntranceExamSchedule'
+import PPDBSetting from '../../Models/PPDBSetting'
 
 export default class StudentCandidatesController {
     public async index({ request, response }: HttpContextContract) {
@@ -41,6 +42,12 @@ export default class StudentCandidatesController {
         const registrationId = `${uuidBlock}-${epoch}`
 
         const payload = await request.validate(InsertScPrimaryDatumValidator)
+
+        try {
+            await PPDBSetting.query().where('active', true).firstOrFail()
+        } catch (error) {
+            return response.badRequest({ message: "Pendaftaran sedang tidak dibuka" })
+        }
 
         try {
             const schedule = await EntranceExamSchedule
@@ -80,6 +87,12 @@ export default class StudentCandidatesController {
     }
 
     public async update({ params, request, response }: HttpContextContract) {
+        try {
+            await PPDBSetting.query().where('active', true).firstOrFail()
+        } catch (error) {
+            return response.badRequest({ message: "Pendaftaran sedang tidak dibuka" })
+        }
+
         const { id } = params
         if (!uuidValidation(id)) { return response.badRequest({ message: "ID calon siswa tidak valid" }) }
 

@@ -7,7 +7,6 @@ import Env from "@ioc:Adonis/Core/Env"
 import Drive from '@ioc:Adonis/Core/Drive'
 import { DateTime } from 'luxon'
 import { v4 as uuidv4 } from 'uuid'
-// import { ScStatusData } from '../../lib/enums'
 import UpdateScPrimaryDatumValidator from '../../Validators/UpdateScPrimaryDatumValidator'
 import { ScStatus } from '../../lib/enums'
 import EntranceExamSchedule from '../../Models/EntranceExamSchedule'
@@ -27,12 +26,13 @@ export default class StudentCandidatesController {
                 .preload('kota')
                 .preload('provinsi')
                 .preload('interviews')
+                .preload('parents')
                 .orderBy('full_name')
                 .paginate(page, limit)
 
             response.ok({ message: "Berhasil mengambil data calon siswa", data })
         } catch (error) {
-            response.badRequest({ message: "Gagal mengambil data calon siswa", error })
+            response.badRequest({ message: "Gagal mengambil data calon siswa", error: error.message })
         }
     }
 
@@ -80,6 +80,7 @@ export default class StudentCandidatesController {
                 .preload('kota')
                 .preload('provinsi')
                 .preload('interviews')
+                .preload('parents')
             response.ok({ message: "Berhasil mengambil data calon siswa", data })
         } catch (error) {
             response.badRequest({ message: "Gagal mengambil data calon siswa", error: error.message })

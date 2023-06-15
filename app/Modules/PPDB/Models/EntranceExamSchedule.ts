@@ -15,7 +15,7 @@ export default class EntranceExamSchedule extends BaseModel {
   public batchId: string
 
   @belongsTo(() => PPDBBatch, {
-    foreignKey: 'batch_id',
+    foreignKey: 'batchId',
     localKey: 'id'
   })
   public batches: BelongsTo<typeof PPDBBatch>

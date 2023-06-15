@@ -5,7 +5,6 @@ export default class EntranceExamSchedulesController {
     public async index({ request, response }: HttpContextContract) {
         const { page = 1, limit = 10, active } = request.qs()
 
-        console.log(typeof active)
         try {
             let data: object
             if (active) {

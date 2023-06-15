@@ -11,8 +11,8 @@ export default class extends BaseSeeder {
       {
         id: "b0459123-ae5f-4d02-a518-8e6bdf6c1e14",
         name: "Gelombang Umum",
-        academicYear: 2,
-        description: "Batch 2021-2022",
+        academicYear: 4,
+        description: "Batch 2023-2024",
         active: true
       },
       {

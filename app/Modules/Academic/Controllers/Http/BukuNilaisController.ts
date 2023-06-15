@@ -27,11 +27,7 @@ export default class BukuNilaisController {
         )
         .firstOrFail();
 
-      if (
-        user.role === "teacher" &&
-        teacherId !== userId.employee.teacher.id &&
-        teacherId
-      )
+      if (user.role === "teacher" && teacherId !== userId.employee.teacher.id)
         return response.badRequest({
           message: "Anda tidak bisa melihat data pengguna lain",
         });

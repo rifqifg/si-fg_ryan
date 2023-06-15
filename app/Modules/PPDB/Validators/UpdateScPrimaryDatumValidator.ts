@@ -51,7 +51,12 @@ export default class UpdateScPrimaryDatumValidator {
     program_final: schema.enum.nullableAndOptional(Object.values(StudentProgram)),
     major_final: schema.enum.nullableAndOptional(Object.values(ClassMajor)),
     spp_final: schema.enum.nullableAndOptional(Object.values(ScSppChoice)),
-    status: schema.enum.nullableAndOptional(Object.values(ScStatus)),
+    status: schema.enum.nullableAndOptional([
+      ScStatus.FAILED_EXAM,
+      ScStatus.FAILED_RE_REGISTER,
+      ScStatus.PASS_EXAM,
+      ScStatus.PASS_RE_REGISTER
+    ]),
     desa: schema.string.nullableAndOptional(),
     rt: schema.string.nullableAndOptional([
       rules.regex(/^[0-9]+$/),

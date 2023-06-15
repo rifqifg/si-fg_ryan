@@ -16,12 +16,11 @@ export default class StudentCandidateParentsController {
         const { page = 1, limit = 10, keyword = "", } = request.qs()
 
         try {
-            const data = await StudentCandidateParent
+            const data = await StudentCandidate
                 .query()
-                .whereHas('candidate', candidate => candidate.where('id', student_candidate_id))
-                .andWhereILike('name', `%${keyword}%`)
-                .preload('candidate', candidate => candidate.select('id', 'user_id', 'registration_id', 'nisn', 'full_name'))
-                .orderBy('name')
+                .where('id', student_candidate_id)
+                .andWhereHas('parents', parents => parents.whereILike('name', `%${keyword}%`))
+                .preload('parents', parents => parents.whereILike('name', `%${keyword}%`))
                 .paginate(page, limit)
             response.ok({ message: "Berhasil mengambil data", data })
         } catch (error) {

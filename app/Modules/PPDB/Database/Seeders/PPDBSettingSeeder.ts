@@ -9,7 +9,7 @@ export default class extends BaseSeeder {
       {
         id: "7e8a06bf-82b9-4f4a-9e4d-605d3dc6b7d1",
         guide_content: { "title": "Panduan masa depan", "description": "Gunakan panduan ini sebagai pegangan" },
-        active: false
+        active: true
       },
     ]
 

@@ -60,11 +60,15 @@ export default class PpdbSettingsController {
                 data = await PPDBBatch.query()
                     .whereILike('name', `%${keyword}%`)
                     .where('active', is_active)
+                    .preload('academicYears')
+                    .preload('entranceExamSchedule')
                     .orderBy('name')
                     .paginate(page, limit)
             } else {
                 data = await PPDBBatch.query()
                     .whereILike('name', `%${keyword}%`)
+                    .preload('academicYears')
+                    .preload('entranceExamSchedule')
                     .orderBy('name')
                     .paginate(page, limit)
             }
@@ -125,7 +129,12 @@ export default class PpdbSettingsController {
         if (!uuidValidation(id)) { return response.badRequest({ message: "ID gelombang tidak valid" }) }
 
         try {
-            const data = await PPDBBatch.query().where('id', id).firstOrFail()
+            const data = await PPDBBatch
+                .query()
+                .where('id', id)
+                .preload('academicYears')
+                .preload('entranceExamSchedule')
+                .firstOrFail()
             response.ok({ message: "Berhasil mengambil data gelombang pendaftaran", data })
         } catch (error) {
             response.badRequest({ message: "Gagal mengambil data gelombang pendaftaran", error: error.message })

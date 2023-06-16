@@ -17,7 +17,9 @@ export default class InsertScPrimaryDatumValidator {
     gender: schema.enum(Object.values(StudentGender)),
     religion: schema.enum(Object.values(StudentReligion)),
     correspondence_phone: schema.string(),
-    correspondence_email: schema.string(),
+    correspondence_email: schema.string([
+      rules.email()
+    ]),
     info_source: schema.enum(Object.values(PpdbInfoSource)),
     interest_in_fg: schema.string(),
     spp_choice: schema.enum(Object.values(ScSppChoice)),

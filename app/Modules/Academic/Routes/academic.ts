@@ -18,6 +18,6 @@ Route.group(() => {
     Route.shallowResource('program-semester', 'ProgramSemestersController').apiOnly().middleware({ '*': ['auth'] })
     Route.shallowResource('program-semester.program-semester-detail', 'ProgramSemesterDetailsController').apiOnly().middleware({ '*': ['auth'] })
     Route.shallowResource('rencana-pengambilan-nilai', 'RencanaPengambilanNilaisController').apiOnly().middleware({ '*': ['auth'] })
-    Route.shallowResource('mapel.buku-nilai', 'BukuNilaisController').apiOnly().middleware({ '*': ['auth'] })
+    Route.shallowResource('buku-nilai', 'BukuNilaisController').apiOnly().middleware({ '*': ['auth'] })
 
 }).prefix('academics').namespace('AcademicControllers')

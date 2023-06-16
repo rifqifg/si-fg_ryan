@@ -1,27 +1,65 @@
 import type { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import { schema, rules } from "@ioc:Adonis/Core/Validator";
-import { validate as uuidValidation } from "uuid";
 import RencanaPengambilanNilai from "../../Models/RencanaPengambilanNilai";
+import { validate as uuidValidation } from "uuid";
+import Semester from "../../Models/Semester";
 
 export default class RencanaPengambilanNilaisController {
   public async index({ request, response }: HttpContextContract) {
-    const { page = 1, limit = 10, keyword = "", mode = "page" } = request.qs();
+    const {
+      page = 1,
+      limit = 10,
+      keyword = "",
+      subjectId = "",
+      teacherId = "",
+    } = request.qs();
+
+    if (!uuidValidation(subjectId) && subjectId)
+      return response.badRequest({ message: "Subject ID tidak valid" });
+
+    if (!uuidValidation(teacherId) && teacherId)
+      return response.badRequest({ message: "Teacher ID tidak valid" });
 
     try {
-      let data = {};
-      if (mode === "page") {
-        data = await RencanaPengambilanNilai.query()
-          .select("*")
-          .paginate(page, limit);
-      } else if (mode === "list") {
-        data = await RencanaPengambilanNilai.query().select("*");
-      } else {
-        return response.badRequest({
-          message: "Mode tidak dikenali, (pilih: page / list)",
-        });
-      }
+      const semester = await Semester.query()
+        .where("isActive", true)
+        .select("*")
+        .firstOrFail();
 
-      response.ok({ message: "Berhasil mengambil data", data });
+      const data = await RencanaPengambilanNilai.query()
+        .select("*")
+        .whereILike("topik", `%${keyword}%`)
+        .if(subjectId, (s) => s.where("subjectId", subjectId))
+        .if(teacherId, (t) => t.where("teacherId", teacherId))
+        .preload("metodePengambilanNilai", (mp) => mp.select("id", "nama"))
+        .preload(
+          "programSemesterDetail",
+          (prosemDetail) => (
+            prosemDetail.select(
+              "id",
+              "pertemuan",
+              "kompetensiIntiId",
+              "programSemesterId"
+            ),
+            prosemDetail.preload("kompetensiInti", (ki) =>
+              ki.select("id", "nama")
+            )
+          )
+        )
+        .preload(
+          "teachers",
+          (t) => (
+            t.select("id", "employeeId"),
+            t.preload("employee", (e) => e.select("id", "name"))
+          )
+        )
+        .preload("subjects", (s) => s.select("name"))
+        .paginate(page, limit);
+
+      response.ok({
+        message: "Berhasil mengambil data",
+        data: { semester, data },
+      });
     } catch (error) {
       response.badRequest({
         message: "Gagal mengambil data",
@@ -41,6 +79,8 @@ export default class RencanaPengambilanNilaisController {
           rules.uuid({ version: 4 }),
           rules.trim(),
         ]),
+        subjectId: schema.string([rules.uuid({ version: 4 }), rules.trim()]),
+        teacherId: schema.string([rules.uuid({ version: 4 }), rules.trim()]),
         topik: schema.string([rules.trim()]),
         presentase: schema.number(),
       }),
@@ -73,11 +113,18 @@ export default class RencanaPengambilanNilaisController {
         .preload("metodePengambilanNilai", (mtn) => mtn.select("*"))
         .preload("programSemesterDetail", (prosemDetail) => {
           prosemDetail.select("*");
-          prosemDetail.preload("programSemester", (prosem) => {
-            prosem.preload("teachers", t => t.preload('employee', e => e.select('name')));
-            prosem.preload('mapel')
-          });
+          prosemDetail.preload("programSemester", (prosem) =>
+            prosem.select("id", "totalPertemuan")
+          );
         })
+        .preload("subjects", (s) => s.select("name"))
+        .preload(
+          "teachers",
+          (t) => (
+            t.select("id", "employeeId"),
+            t.preload("employee", (e) => e.select("id", "name"))
+          )
+        )
         .firstOrFail();
 
       response.ok({ message: "Berhasil mengambil data", data });
@@ -108,6 +155,8 @@ export default class RencanaPengambilanNilaisController {
           rules.uuid({ version: 4 }),
           rules.trim(),
         ]),
+        subjectId: schema.string.optional([rules.uuid({ version: 4 }), rules.trim()]),
+        teacherId: schema.string.optional([rules.uuid({ version: 4 }), rules.trim()]),
         topik: schema.string.optional([rules.trim()]),
         presentase: schema.number.optional(),
       }),

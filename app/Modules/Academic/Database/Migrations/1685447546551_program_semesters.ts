@@ -5,7 +5,7 @@ export default class extends BaseSchema {
 
   public async up () {
     this.schema.createTable(this.tableName, (table) => {
-      table.uuid('id').unique().notNullable()
+      table.uuid('id').unique().notNullable().primary()
       table.uuid('teacher_id').references('id').inTable('academic.teachers').onDelete('no action').onUpdate('cascade')
       table.uuid('subject_id').references('id').inTable('academic.subjects').onDelete('no action').onUpdate('cascade')
       table.integer('total_pertemuan').notNullable()

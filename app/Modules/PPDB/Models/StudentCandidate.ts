@@ -29,7 +29,7 @@ export default class StudentCandidate extends BaseModel {
   public userId: string
 
   @belongsTo(() => UserStudentCandidate, {
-    foreignKey: 'user_id',
+    foreignKey: 'userId',
     localKey: 'id'
   })
   public userStudentCandidate: BelongsTo<typeof UserStudentCandidate>

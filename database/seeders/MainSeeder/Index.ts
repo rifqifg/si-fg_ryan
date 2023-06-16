@@ -27,9 +27,10 @@ export default class IndexSeeder extends BaseSeeder {
     // await this.runSeeder(await import('Inventory/Database/Seeders/CreateAsset'))
     // await this.runSeeder(await import('Academic/Database/Seeders/StudentsSeeder'))
     // await this.runSeeder(await import('Academic/Database/Seeders/StudentParentsSeeder'))
-    await this.runSeeder(await import('Academic/Database/Seeders/KompetensiInti'))
-    await this.runSeeder(await import('Academic/Database/Seeders/MetodePengambilanNilai'))
-    await this.runSeeder(await import('Academic/Database/Seeders/AcademicYearSeeder'))
+    // await this.runSeeder(await import('Academic/Database/Seeders/KompetensiInti'))
+    // await this.runSeeder(await import('Academic/Database/Seeders/MetodePengambilanNilai'))
+    // await this.runSeeder(await import('Academic/Database/Seeders/AcademicYearSeeder'))
+    await this.runSeeder(await import('Academic/Database/Seeders/SessionsSeeder'))
   }
 }
 

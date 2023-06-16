@@ -11,7 +11,9 @@ Route.group(() => {
     Route.get('/auth/verify-email', 'UserStudentCandidatesController.verify')
     Route.post('/auth/google', 'UserStudentCandidatesController.loginGoogle')
     Route.post('/auth/change-password', 'UserStudentCandidatesController.changePassword').middleware('auth:ppdb_api')
-    // FIXME: route ini harusnya bisa dijalankan menggunakan auth, dengan akun yg belum verifikasi
+    // TODO: kerjakan route ini
+    // Route ini untuk meminta kirim ulang kode verifikasi
+    // PROBLEM: route harusnya bisa dijalankan menggunakan auth ppdb_api, meskipun emailnya belum diverifikasi
     // Route.get('/auth/ask-new-verification', 'UserStudentCandidatesController.askNewVerification').middleware('auth:ppdb_api')
 
     Route.get('/settings/guide', 'PpdbSettingsController.showGuide').middleware('auth:api,ppdb_api')
@@ -48,7 +50,6 @@ Route.group(() => {
         'destroy': 'auth:api'
     })
 
-
     Route.resource('batch-candidates', 'BatchCandidatesController').middleware({
         'index': 'auth:api',
         'show': 'auth:api,ppdb_api',
@@ -56,7 +57,4 @@ Route.group(() => {
         'update': 'auth:api,ppdb_api',
         'destroy': 'auth:api'
     })
-    // Route.group(() => {
-    //     Route.get('get-active-batch')
-    // }).prefix('helpers')
 }).prefix('ppdb').namespace('PPDBControllers')

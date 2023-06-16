@@ -27,6 +27,7 @@ export default class StudentCandidatesController {
                 .preload('provinsi')
                 .preload('interviews')
                 .preload('parents')
+                .preload('userStudentCandidate')
                 .orderBy('full_name')
                 .paginate(page, limit)
 
@@ -81,6 +82,7 @@ export default class StudentCandidatesController {
                 .preload('provinsi')
                 .preload('interviews')
                 .preload('parents')
+                .preload('userStudentCandidate')
             response.ok({ message: "Berhasil mengambil data calon siswa", data })
         } catch (error) {
             response.badRequest({ message: "Gagal mengambil data calon siswa", error: error.message })

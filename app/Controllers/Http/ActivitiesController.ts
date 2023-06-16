@@ -16,7 +16,6 @@ export default class ActivitiesController {
         .whereILike('name', `%${keyword}%`)
         .orderBy(orderBy, orderDirection)
         .paginate(page, limit)
-
     } else {
       data = await Activity.query()
         .preload('division', division=>division.select('id','name'))

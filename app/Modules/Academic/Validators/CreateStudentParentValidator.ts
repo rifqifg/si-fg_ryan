@@ -6,13 +6,13 @@ export default class CreateStudentParentValidator {
   constructor(protected ctx: HttpContextContract) { }
 
   public schema = schema.create({
-    relationship_w_student: schema.enum.optional(Object.values(ParentRelationship)),
-    nik: schema.string([
+    relationship_w_student: schema.enum(Object.values(ParentRelationship)),
+    nik: schema.string.optional([
       rules.regex(new RegExp("^[0-9]+$")),
       rules.minLength(16),
       rules.maxLength(16),
     ]),
-    name: schema.string({}, [
+    name: schema.string.optional({}, [
       rules.alphaNum({ allow: ['space'] }),
       rules.minLength(5)]),
     birth_date: schema.date.optional({ format: "yyyy-MM-dd" }),

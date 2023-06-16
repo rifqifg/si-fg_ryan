@@ -13,4 +13,11 @@ Route.group(() => {
     Route.shallowResource('daily-attendances', 'DailyAttendancesController').apiOnly().middleware({ '*': ['auth'] })
     Route.shallowResource('lesson-attendances', 'LessonAttendancesController').apiOnly().middleware({ '*': ['auth'] })
     Route.shallowResource('teacher-attendances', 'TeacherAttendancesController').apiOnly().middleware({ '*': ['auth'] })
+    Route.shallowResource('kompetensi-inti', 'KompetensiIntisController').apiOnly().middleware({ '*': ['auth'] })
+    Route.shallowResource('metode-pengambilain-nilai', 'MetodePengambilanNilaisController').apiOnly().middleware({ '*': ['auth'] })
+    Route.shallowResource('program-semester', 'ProgramSemestersController').apiOnly().middleware({ '*': ['auth'] })
+    Route.shallowResource('program-semester.program-semester-detail', 'ProgramSemesterDetailsController').apiOnly().middleware({ '*': ['auth'] })
+    Route.shallowResource('rencana-pengambilan-nilai', 'RencanaPengambilanNilaisController').apiOnly().middleware({ '*': ['auth'] })
+    Route.shallowResource('mapel.buku-nilai', 'BukuNilaisController').apiOnly().middleware({ '*': ['auth'] })
+
 }).prefix('academics').namespace('AcademicControllers')

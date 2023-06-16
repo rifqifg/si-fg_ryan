@@ -20,6 +20,12 @@ export default class InsertScPrimaryDatumValidator {
     correspondence_email: schema.string([
       rules.email()
     ]),
+    nisn: schema.string([
+      rules.regex(/^[0-9]+$/),
+      rules.maxLength(15),
+      // todo: uncomment after dev
+      // rules.unique({ table: 'ppdb.student_candidates', column: 'nisn' })
+    ]),
     info_source: schema.enum(Object.values(PpdbInfoSource)),
     interest_in_fg: schema.string(),
     spp_choice: schema.enum(Object.values(ScSppChoice)),

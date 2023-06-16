@@ -57,3 +57,17 @@ export enum ParentRelationship {
     STEP_MOTHER = 'step mother',
     GUARDIAN = 'guardian'
 }
+
+export enum AttendanceStatus {
+    PRESENT = 'present',
+    PERMISSION = 'permission',
+    SICK = 'sick',
+    ABSENT = 'absent'
+}
+
+export enum TeacherAttendanceStatus {
+    TEACH = 'teach',
+    NOT_TEACH = 'not_teach',
+    EXAM = 'exam',
+    HOMEWORK = 'homework'
+} 

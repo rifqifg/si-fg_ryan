@@ -50,7 +50,6 @@ export default class BatchCandidatesController {
         if (!uuidValidation(id)) { return response.badRequest({ message: "ID tidak valid" }) }
 
         try {
-            // const data = await BatchCandidate.findOrFail(id)
             const data = await BatchCandidate.query().where('id', id).preload('candidate').firstOrFail()
             response.ok({ message: "Berhasil mengambil data", data })
         } catch (error) {

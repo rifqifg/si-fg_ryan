@@ -15,14 +15,6 @@ export default class InterviewsController {
     try {
       const data = await StudentCandidate.query()
         .where('id', student_candidate_id)
-        // .preload('entranceExamSchedule')
-        // .preload('kecamatan')
-        // .preload('kelurahan')
-        // .preload('kota')
-        // .preload('provinsi')
-        // .preload('interviews', qp => {
-        //   qp.whereILike('name', `%${keyword}%`).orderBy('name')
-        // })
         .preload('interviews')
         .paginate(page, limit)
 

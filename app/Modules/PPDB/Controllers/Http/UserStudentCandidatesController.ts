@@ -31,22 +31,6 @@ export default class UserStudentCandidatesController {
             })
         }
 
-        // const uuidBlock = uuidv4().split('-')[0]
-        // const epoch = DateTime.now().valueOf()
-        // const registrationId = `${uuidBlock}-${epoch}`
-
-        // try {
-        //     await StudentCandidate.create({
-        //         userId: newUserSc.id,
-        //         registrationId
-        //     })
-        // } catch (error) {
-        //     return response.internalServerError({
-        //         message: "CO-USC-REG_02: Gagal input data calon siswa baru",
-        //         error: error.message
-        //     })
-        // }
-
         try {
             await Mail.send((message) => {
                 message
@@ -107,9 +91,8 @@ export default class UserStudentCandidatesController {
 
             await usc.merge({ verifyToken: "", verified: true }).save()
 
-            // response.ok({ message: "Akun berhasil diverifikasi" })
             const LOGIN_URL = 'https://ian-fitur-fg.netlify.app/ppdb'
-            return view.render('ppdb/student_candidate_verification_success', {LOGIN_URL})
+            return view.render('ppdb/student_candidate_verification_success', { LOGIN_URL })
         } catch (error) {
             return response.badRequest({
                 message: "email tidak ditemukan / token tidak cocok",

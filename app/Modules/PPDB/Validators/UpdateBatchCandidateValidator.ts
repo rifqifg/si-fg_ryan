@@ -12,13 +12,6 @@ export default class UpdateBatchCandidateValidator {
       rules.uuid({ version: 4 }),
       rules.exists({ table: 'ppdb.ppdb_batches', column: 'id' })
     ]),
-    // spp_choice: schema.enum.nullableAndOptional(Object.values(ScSppChoice)),
-    // program_choice: schema.enum.nullableAndOptional(Object.values(StudentProgram)),
-    // major_choice: schema.enum.nullableAndOptional(Object.values(ClassMajor)),
-    // test_schedule_choice: schema.string.optional({ trim: true }, [
-    //   rules.uuid({ version: 4 }),
-    //   rules.exists({ table: 'ppdb.entrance_exam_schedules', column: 'id' })
-    // ]),
   })
 
   public messages: CustomMessages = {}

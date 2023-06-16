@@ -7,10 +7,6 @@ export default class UpdateScPrimaryDatumValidator {
   constructor(protected ctx: HttpContextContract) { }
 
   public schema = schema.create({
-    // user_id: schema.string.optional({ trim: true }, [
-    //   rules.exists({ table: 'ppdb.user_student_candidates', column: 'id' }),
-    //   rules.unique({ table: 'ppdb.student_candidates', column: 'user_id' })
-    // ]),
     full_name: schema.string.optional(),
     birth_day: schema.date.nullableAndOptional({ format: 'yyyy-MM-dd' }),
     junior_hs_name: schema.string.nullableAndOptional(),

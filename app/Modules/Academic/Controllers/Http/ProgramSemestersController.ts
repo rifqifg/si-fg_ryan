@@ -66,31 +66,24 @@ export default class ProgramSemestersController {
       .preload("employee", (e) => e.preload("teacher", (t) => t.select("id")))
       .firstOrFail();
 
-    const newProsemAdminSchema = schema.create({
-      teacherId: schema.string([rules.uuid({ version: 4 })]),
-      subjectId: schema.string([rules.uuid({ version: 4 })]),
-      totalPertemuan: schema.number(),
-    });
-
-    const newProsemNonAdminSchema = schema.create({
-      teacherId: schema.string([
-        rules.uuid({ version: 4 }),
-        rules.trim(),
-        rules.exists({
-          table: "academic.teachers",
-          column: "id",
-          where: {
-            id: teacherId.employee.teacher.id,
-          },
-        }),
-      ]),
-      totalPertemuan: schema.number(),
-      subjectId: schema.string([rules.uuid({ version: 4 })]),
-    });
-
     let payload;
 
     if (user.role !== "super_admin") {
+      const newProsemNonAdminSchema = schema.create({
+        teacherId: schema.string([
+          rules.uuid({ version: 4 }),
+          rules.trim(),
+          rules.exists({
+            table: "academic.teachers",
+            column: "id",
+            where: {
+              id: teacherId.employee.teacher.id,
+            },
+          }),
+        ]),
+        totalPertemuan: schema.number(),
+        subjectId: schema.string([rules.uuid({ version: 4 })]),
+      });
       try {
         payload = await request.validate({ schema: newProsemNonAdminSchema });
       } catch (error) {
@@ -100,6 +93,11 @@ export default class ProgramSemestersController {
         });
       }
     } else {
+      const newProsemAdminSchema = schema.create({
+        teacherId: schema.string([rules.uuid({ version: 4 })]),
+        subjectId: schema.string([rules.uuid({ version: 4 })]),
+        totalPertemuan: schema.number(),
+      });
       payload = await request.validate({ schema: newProsemAdminSchema });
     }
     try {
@@ -142,26 +140,58 @@ export default class ProgramSemestersController {
     }
   }
 
-  public async update({ request, response, params }: HttpContextContract) {
+  public async update({
+    request,
+    response,
+    params,
+    auth,
+  }: HttpContextContract) {
     const { id } = params;
 
     if (!uuidValidation(id)) {
       return response.badRequest({ message: "Program Semeter ID tidak valid" });
     }
 
-    const payload = await request.validate({
-      schema: schema.create({
+    const user = await auth.user!;
+    const teacherId = await User.query()
+      .where("id", user ? user.id : "")
+      .preload("employee", (e) => e.preload("teacher", (t) => t.select("id")))
+      .firstOrFail();
+
+    let payload;
+
+    if (user.role !== "super_admin") {
+      const newProsemNonAdminSchema = schema.create({
         teacherId: schema.string.optional([
           rules.uuid({ version: 4 }),
           rules.trim(),
-        ]),
-        subjectId: schema.string.optional([
-          rules.uuid({ version: 4 }),
-          rules.trim(),
+          rules.exists({
+            table: "academic.teachers",
+            column: "id",
+            where: {
+              id: teacherId.employee.teacher.id,
+            },
+          }),
         ]),
         totalPertemuan: schema.number.optional(),
-      }),
-    });
+        subjectId: schema.string.optional([rules.uuid({ version: 4 })]),
+      });
+      try {
+        payload = await request.validate({ schema: newProsemNonAdminSchema });
+      } catch (error) {
+        return response.badRequest({
+          message: "Buatlah prosem sesuai dengan mapel anda",
+          error: error.message,
+        });
+      }
+    } else {
+      const newProsemAdminSchema = schema.create({
+        teacherId: schema.string.optional([rules.uuid({ version: 4 })]),
+        subjectId: schema.string.optional([rules.uuid({ version: 4 })]),
+        totalPertemuan: schema.number.optional(),
+      });
+      payload = await request.validate({ schema: newProsemAdminSchema });
+    }
 
     if (JSON.stringify(payload) === "{}") {
       console.log("data update kosong");

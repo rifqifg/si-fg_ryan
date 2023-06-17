@@ -7,7 +7,7 @@ export default class extends BaseSchema {
     this.schema
       .withSchema('academic')
       .alterTable(this.tableName, (table) => {
-        table.uuid('class_id').alter().notNullable()
+        table.uuid('class_id').alter().notNullable().primary()
         table.string('nik', 16).alter().unique().notNullable()
       })
   }

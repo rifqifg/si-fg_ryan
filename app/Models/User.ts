@@ -13,6 +13,8 @@ import { v4 as uuidv4 } from "uuid";
 import Role from "./Role";
 import Employee from "./Employee";
 import Division from "./Division";
+import Student from "App/Modules/Academic/Models/Student";
+import StudentParent from "App/Modules/Academic/Models/StudentParent";
 let newId = "";
 
 export default class User extends BaseModel {
@@ -37,6 +39,21 @@ export default class User extends BaseModel {
 
   @belongsTo(() => Employee)
   public employee: BelongsTo<typeof Employee>;
+
+
+  @column()
+  public studentId: string | null
+
+  @belongsTo(() => Student)
+  public students: BelongsTo<typeof Student>
+
+  @column()
+  public studentParentId: string
+
+  @belongsTo(() => StudentParent)
+  public studentParents: BelongsTo<typeof StudentParent>
+
+
 
   @column()
   public email: string;

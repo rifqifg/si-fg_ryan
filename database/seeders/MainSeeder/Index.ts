@@ -1,5 +1,5 @@
-import BaseSeeder from '@ioc:Adonis/Lucid/Seeder'
-import Application from '@ioc:Adonis/Core/Application'
+import BaseSeeder from "@ioc:Adonis/Lucid/Seeder";
+import Application from "@ioc:Adonis/Core/Application";
 
 export default class IndexSeeder extends BaseSeeder {
   private async runSeeder(seeder: { default: typeof BaseSeeder }) {
@@ -8,10 +8,10 @@ export default class IndexSeeder extends BaseSeeder {
      * only
      */
     if (seeder.default.developmentOnly && !Application.inDev) {
-      return
+      return;
     }
 
-    await new seeder.default(this.client).run()
+    await new seeder.default(this.client).run();
   }
 
   public async run() {
@@ -34,7 +34,6 @@ export default class IndexSeeder extends BaseSeeder {
     await this.runSeeder(await import('PPDB/Database/Seeders/PPDBSettingSeeder'))
     await this.runSeeder(await import('PPDB/Database/Seeders/PPDBBatchesSeeder'))
     await this.runSeeder(await import('PPDB/Database/Seeders/EntranceExamSchedulesSeeder'))
+    await this.runSeeder(await import("Academic/Database/Seeders/Semester"));
   }
 }
-
-

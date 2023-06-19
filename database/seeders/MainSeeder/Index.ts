@@ -31,9 +31,9 @@ export default class IndexSeeder extends BaseSeeder {
     // await this.runSeeder(await import('Academic/Database/Seeders/MetodePengambilanNilai'))
     // await this.runSeeder(await import('Academic/Database/Seeders/AcademicYearSeeder'))
     // await this.runSeeder(await import('Academic/Database/Seeders/SessionsSeeder'))
+    // await this.runSeeder(await import("Academic/Database/Seeders/Semester"));
     await this.runSeeder(await import('PPDB/Database/Seeders/PPDBSettingSeeder'))
     await this.runSeeder(await import('PPDB/Database/Seeders/PPDBBatchesSeeder'))
     await this.runSeeder(await import('PPDB/Database/Seeders/EntranceExamSchedulesSeeder'))
-    await this.runSeeder(await import("Academic/Database/Seeders/Semester"));
   }
 }

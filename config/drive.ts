@@ -87,6 +87,14 @@ export default driveConfig({
       basePath: '/inventory/uploads',
       serveFiles: true
     },
+
+    ppdb: {
+      driver: 'local',
+      visibility: 'public',
+      root: Application.makePath('app/Modules/PPDB/uploads/'),
+      basePath: '/ppdb/uploads',
+      serveFiles: true
+    }
     /*
     |--------------------------------------------------------------------------
     | S3 Driver

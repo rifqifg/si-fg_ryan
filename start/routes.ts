@@ -22,11 +22,21 @@ import Route from '@ioc:Adonis/Core/Route'
 import User from 'App/Models/User'
 import 'Inventory/Routes/inventory'
 import 'Academic/Routes/academic'
+import 'PPDB/Routes/ppdb'
+import UserStudentCandidate from 'App/Modules/PPDB/Models/UserStudentCandidate'
 
 Route.get('/', async ({ auth, response }) => {
-  const data = await User.query().preload('roles').where('id', auth.user!.id)
-  response.ok({ message: 'you are logged in', data })
-}).middleware("auth")
+  if (auth.use('api').isLoggedIn) {
+    const data = await User.query().preload('roles').where('id', auth.user!.id)
+    response.ok({ message: 'you are logged in', data })
+  } else if (auth.use('ppdb_api').isLoggedIn) {
+    const data = await UserStudentCandidate.query()
+      .preload('roles')
+      .preload('studentCandidate')
+      .where('id', auth.user!.id)
+    response.ok({ message: 'you are logged in as student candidate', data })
+  }
+}).middleware("auth:api,ppdb_api")
 
 Route.group(() => {
   Route.get('pendaftar-baru', 'PPDBChartsController.pendaftarBaru')

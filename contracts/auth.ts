@@ -6,6 +6,7 @@
  */
 
 import User from 'App/Models/User'
+import UserStudentCandidate from 'App/Modules/PPDB/Models/UserStudentCandidate'
 
 declare module '@ioc:Adonis/Addons/Auth' {
   /*
@@ -37,6 +38,10 @@ declare module '@ioc:Adonis/Addons/Auth' {
       implementation: LucidProviderContract<typeof User>
       config: LucidProviderConfig<typeof User>
     }
+    ppdb_user: {
+      implementation: LucidProviderContract<typeof UserStudentCandidate>
+      config: LucidProviderConfig<typeof UserStudentCandidate>
+    }
   }
 
   /*
@@ -67,6 +72,10 @@ declare module '@ioc:Adonis/Addons/Auth' {
     api: {
       implementation: OATGuardContract<'user', 'api'>
       config: OATGuardConfig<'user'>
+    },
+    ppdb_api: {
+      implementation: OATGuardContract<'ppdb_user', 'api'>
+      config: OATGuardConfig<'ppdb_user'>
     }
   }
 }

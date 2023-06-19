@@ -29,6 +29,9 @@
       ],
       "Academic/*": [
         "./app/Modules/Academic/*"
+      ],
+      "PPDB/*": [
+        "./app/Modules/PPDB/*"
       ]
     },
     "types": [

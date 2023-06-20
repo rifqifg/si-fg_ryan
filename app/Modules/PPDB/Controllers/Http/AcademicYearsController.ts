@@ -8,12 +8,12 @@ export default class AcademicYearsController {
         try {
             const data = await AcademicYear.query()
                 .whereILike('year', `%${keyword}%`)
-                .orderBy('year')
+                .orderBy('yer')
                 .paginate(page, limit)
 
             response.ok({ message: "Berhasil mengambil data semua tahun akademik", data })
         } catch (error) {
-            response.badRequest({ message: "Gagal mengambil data semua tahun akademik", error })
+            response.badRequest({ message: "PP_AYE01: Gagal mengambil data semua tahun akademik", error })
         }
     }
 }

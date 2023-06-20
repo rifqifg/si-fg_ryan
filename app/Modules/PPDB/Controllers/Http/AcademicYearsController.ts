@@ -8,7 +8,7 @@ export default class AcademicYearsController {
         try {
             const data = await AcademicYear.query()
                 .whereILike('year', `%${keyword}%`)
-                .orderBy('yer')
+                .orderBy('year')
                 .paginate(page, limit)
 
             response.ok({ message: "Berhasil mengambil data semua tahun akademik", data })

@@ -58,7 +58,9 @@
     "InventoryControllers": "app/Modules/Inventory/Controllers/Http",
     "InventoryModels": "app/Modules/Inventory/Models/",
     "Academic": "app/Modules/Academic",
-    "AcademicControllers": "app/Modules/Academic/Controllers/Http"
+    "AcademicControllers": "app/Modules/Academic/Controllers/Http",
+    "PPDB": "app/Modules/PPDB",
+    "PPDBControllers": "app/Modules/PPDB/Controllers/Http"
   },
   "metaFiles": [
     {

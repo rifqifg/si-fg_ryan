@@ -42,12 +42,12 @@ export enum ParentEducation {
     ELEMENTARY_SCHOOL = 'SD / Sederajat',
     JUNIOR_HIGH_SCHOOL = 'SMP / Sederajat',
     HIGH_SCHOOL = 'SMA / Sederajat',
-    S1 = 's1',
-    S2 = 's2',
-    D1 = 'd1',
-    D2 = 'd2',
-    D3 = 'd3',
-    D4 = 'd4'
+    S1 = 'S1',
+    S2 = 'S2',
+    D1 = 'D1',
+    D2 = 'D2',
+    D3 = 'D3',
+    D4 = 'D4'
 }
 
 export enum ParentRelationship {
@@ -57,3 +57,17 @@ export enum ParentRelationship {
     STEP_MOTHER = 'step mother',
     GUARDIAN = 'guardian'
 }
+
+export enum AttendanceStatus {
+    PRESENT = 'present',
+    PERMISSION = 'permission',
+    SICK = 'sick',
+    ABSENT = 'absent'
+}
+
+export enum TeacherAttendanceStatus {
+    TEACH = 'teach',
+    NOT_TEACH = 'not_teach',
+    EXAM = 'exam',
+    HOMEWORK = 'homework'
+} 

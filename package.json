@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "node ace serve --watch",
     "build": "node ace build --production --ignore-ts-errors",
-    "start": "node build/server.js"
+    "start": "node build/server.js",
+    "test": "node ace test"
   },
   "devDependencies": {
     "@adonisjs/assembler": "^5.8.1",
@@ -27,6 +28,7 @@
     "aws-sdk": "^2.1199.0",
     "bcrypt": "^5.1.0",
     "google-spreadsheet": "^3.3.0",
+    "jwt-decode": "^3.1.2",
     "luxon": "^3.0.1",
     "pg": "^8.7.3",
     "phc-bcrypt": "^1.0.7",

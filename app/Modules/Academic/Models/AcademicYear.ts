@@ -7,6 +7,15 @@ export default class AcademicYear extends BaseModel {
   @column({ isPrimary: true })
   public id: number
 
+  @column()
+  public year: string
+
+  @column()
+  public description: string | null
+
+  @column()
+  public active: boolean
+
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
 

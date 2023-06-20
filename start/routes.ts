@@ -22,11 +22,21 @@ import Route from '@ioc:Adonis/Core/Route'
 import User from 'App/Models/User'
 import 'Inventory/Routes/inventory'
 import 'Academic/Routes/academic'
+import 'PPDB/Routes/ppdb'
+import UserStudentCandidate from 'App/Modules/PPDB/Models/UserStudentCandidate'
 
 Route.get('/', async ({ auth, response }) => {
-  const data = await User.query().preload('roles').where('id', auth.user!.id)
-  response.ok({ message: 'you are logged in', data })
-}).middleware("auth")
+  if (auth.use('api').isLoggedIn) {
+    const data = await User.query().preload('roles').where('id', auth.user!.id)
+    response.ok({ message: 'you are logged in', data })
+  } else if (auth.use('ppdb_api').isLoggedIn) {
+    const data = await UserStudentCandidate.query()
+      .preload('roles')
+      .preload('studentCandidate')
+      .where('id', auth.user!.id)
+    response.ok({ message: 'you are logged in as student candidate', data })
+  }
+}).middleware("auth:api,ppdb_api")
 
 Route.group(() => {
   Route.get('pendaftar-baru', 'PPDBChartsController.pendaftarBaru')
@@ -42,8 +52,10 @@ Route.get('/wilayah-all/:keyword', 'System/WilayahsController.getAllByKel')
 
 Route.post('/password-encrypt', 'System/UsersController.password_encrypt').as('passwordEncrypt')
 Route.post('/auth/login', 'System/UsersController.login').as('auth.login')
+Route.post('/auth/google', 'System/UsersController.googleCallback').as('auth.googleSignIn')
 Route.post('/auth/logout', 'System/UsersController.logout').as('auth.logout').middleware('auth')
 Route.post('/auth/register', 'System/UsersController.register').as('auth.register')
+Route.get('/auth/verify-email', 'System/UsersController.verify').as('auth.verify')
 Route.post('/auth/reset-password', 'System/UsersController.resetUserPassword').as('auth.resetUserPassword').middleware(['auth'])
 Route.get('/admin/get-users', 'System/UsersController.getUsers').as('admin.get-user').middleware('auth')
 Route.resource('/division/', 'DivisionsController').as('division').apiOnly().middleware({ '*': ['auth', 'checkRole:admin'] })

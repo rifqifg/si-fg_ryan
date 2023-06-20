@@ -33,7 +33,7 @@ export default class StudentCandidatesController {
 
             response.ok({ message: "Berhasil mengambil data calon siswa", data })
         } catch (error) {
-            response.badRequest({ message: "Gagal mengambil data calon siswa", error: error.message })
+            response.badRequest({ message: "PP_SC_IN-01: Gagal mengambil data calon siswa", error: error.message })
         }
     }
 
@@ -47,7 +47,7 @@ export default class StudentCandidatesController {
         try {
             await PPDBSetting.query().where('active', true).firstOrFail()
         } catch (error) {
-            return response.badRequest({ message: "Pendaftaran sedang tidak dibuka" })
+            return response.badRequest({ message: "PP_SC_ST-01: Pendaftaran sedang tidak dibuka" })
         }
 
         try {
@@ -62,13 +62,13 @@ export default class StudentCandidatesController {
             const data = await StudentCandidate.create({ ...payload, registrationId, status: ScStatus.DONE_PRIMARY_DATA })
             response.created({ message: "Berhasil menyimpan data calon siswa", data })
         } catch (error) {
-            response.badRequest({ message: "Gagal menyimpan data calon siswa", error: error.message })
+            response.badRequest({ message: "PP_SC_ST-02: Gagal menyimpan data calon siswa", error: error.message })
         }
     }
 
     public async show({ params, response }: HttpContextContract) {
         const { id } = params
-        if (!uuidValidation(id)) { return response.badRequest({ message: "ID calon siswa tidak valid" }) }
+        if (!uuidValidation(id)) { return response.badRequest({ message: "PP_SC_SH-01: ID calon siswa tidak valid" }) }
 
         try {
             const data = await StudentCandidate
@@ -85,7 +85,7 @@ export default class StudentCandidatesController {
                 .preload('userStudentCandidate')
             response.ok({ message: "Berhasil mengambil data calon siswa", data })
         } catch (error) {
-            response.badRequest({ message: "Gagal mengambil data calon siswa", error: error.message })
+            response.badRequest({ message: "PP_SC_SH-02: Gagal mengambil data calon siswa", error: error.message })
         }
     }
 
@@ -93,16 +93,16 @@ export default class StudentCandidatesController {
         try {
             await PPDBSetting.query().where('active', true).firstOrFail()
         } catch (error) {
-            return response.badRequest({ message: "Pendaftaran sedang tidak dibuka" })
+            return response.badRequest({ message: "PP_SC_UP-01: Pendaftaran sedang tidak dibuka" })
         }
 
         const { id } = params
-        if (!uuidValidation(id)) { return response.badRequest({ message: "ID calon siswa tidak valid" }) }
+        if (!uuidValidation(id)) { return response.badRequest({ message: "PP_SC_UP-02: ID calon siswa tidak valid" }) }
 
         const payload = await request.validate(UpdateScPrimaryDatumValidator)
         if (JSON.stringify(payload) === '{}') {
             console.log("data update kosong");
-            return response.badRequest({ message: "Data tidak boleh kosong" })
+            return response.badRequest({ message: "PP_SC_UP-03: Data tidak boleh kosong" })
         }
 
         try {
@@ -111,13 +111,13 @@ export default class StudentCandidatesController {
             response.ok({ message: "Berhasil mengubah data calon siswa", data })
         } catch (error) {
             console.log(error);
-            response.badRequest({ message: "Gagal mengubah data calon siswa", error: error.message })
+            response.badRequest({ message: "PP_SC_UP-04: Gagal mengubah data calon siswa", error: error.message })
         }
     }
 
     public async fileUpload({ request, response, params }: HttpContextContract) {
         const { id } = params
-        if (!uuidValidation(id)) { return response.badRequest({ message: "ID calon siswa tidak valid" }) }
+        if (!uuidValidation(id)) { return response.badRequest({ message: "PP_SC_FU-01: ID calon siswa tidak valid" }) }
 
         const payload = await request.validate(ScImageUploadValidator)
         const imageName = `candidate_${id}_${payload.category}.${payload.file.extname}`
@@ -157,7 +157,7 @@ export default class StudentCandidatesController {
 
     public async destroy({ params, response }: HttpContextContract) {
         const { id } = params
-        if (!uuidValidation(id)) { return response.badRequest({ message: "ID calon siswa tidak valid" }) }
+        if (!uuidValidation(id)) { return response.badRequest({ message: "PP_SC_DE-01: ID calon siswa tidak valid" }) }
 
         // todo: berikan kondisi failsafe,
         // jadi data calon siswa hanya bisa dihapus apabila status ppdb tidak aktif
@@ -168,7 +168,7 @@ export default class StudentCandidatesController {
             response.ok({ message: "Berhasil menghapus data calon siswa" })
         } catch (error) {
             response.badRequest({
-                message: "Gagal menghapus data calon siswa",
+                message: "PP_SC_DE-02: Gagal menghapus data calon siswa",
                 error: error.message
             })
         }

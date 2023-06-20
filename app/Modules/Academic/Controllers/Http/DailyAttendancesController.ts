@@ -60,6 +60,7 @@ export default class DailyAttendancesController {
             .preload('student', s => s.select('name'))
             .preload('class', s => s.select('name'))
             .orderBy('class_id')
+            .orderBy('created_at')
             .paginate(page, limit)
         } else {
           data = await DailyAttendance
@@ -82,6 +83,7 @@ export default class DailyAttendancesController {
             .preload('student', s => s.select('name'))
             .preload('class', s => s.select('name'))
             .orderBy('class_id')
+            .orderBy('created_at')
         } else {
           data = await DailyAttendance
             .query()

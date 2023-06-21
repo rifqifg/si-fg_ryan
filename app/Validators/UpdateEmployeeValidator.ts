@@ -1,8 +1,8 @@
-import { schema, CustomMessages, rules } from '@ioc:Adonis/Core/Validator'
-import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import { schema, CustomMessages, rules } from "@ioc:Adonis/Core/Validator";
+import type { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 
 export default class UpdateEmployeeValidator {
-  constructor(protected ctx: HttpContextContract) { }
+  constructor(protected ctx: HttpContextContract) {}
 
   /*
    * Define schema to validate the "shape", "type", "formatting" and "integrity" of data.
@@ -25,20 +25,23 @@ export default class UpdateEmployeeValidator {
    */
   public schema = schema.create({
     nip: schema.string.optional(),
+    nik: schema.string.optional([rules.trim(), rules.minLength(16), rules.maxLength(16)]),
     name: schema.string.optional({}, [
       rules.minLength(5)
     ]),
     birthCity: schema.string.optional(),
-    birthDay: schema.date.optional(),
+    birthDay: schema.date.optional({format: 'yyyy-MM-dd'}),
     gender: schema.enum.optional(['L', 'P']),
     address: schema.string.optional({}, [
       rules.minLength(20)
     ]),
-    status: schema.enum.optional(['FULLTIME', 'PARTTIME', 'RESIGNED']),
-    dateIn: schema.date.optional(),
-    dateOut: schema.date.nullableAndOptional(),
-    rfid: schema.string.nullableAndOptional(),
-    kodeProvinsi: schema.string.nullableAndOptional([
+    dateIn: schema.date.optional({format: 'yyyy-MM-dd'}),
+    dateOut: schema.date.optional(),
+    rfid: schema.string.optional(),
+    lastEducationName: schema.string.optional([rules.trim()]),
+    lastEducationMajor: schema.string.optional([rules.trim()]),
+    lastEducationGraduate: schema.date.optional({format: 'yyyy-MM-dd'}),
+    kodeProvinsi: schema.string.optional([
       rules.minLength(2),
       rules.maxLength(2),
       rules.exists({ table: 'wilayah', column: 'kode' })
@@ -63,7 +66,7 @@ export default class UpdateEmployeeValidator {
     ]),
     nuptk: schema.string.optional([rules.regex(/^\d+$/)]),
     employeeTypeId: schema.string.optional([rules.exists({table: 'employee_types', column: 'id'})])
-  })
+  });
 
   /**
    * Custom messages for validation failures. You can make use of dot notation `(.)`
@@ -77,6 +80,6 @@ export default class UpdateEmployeeValidator {
    *
    */
   public messages: CustomMessages = {
-    requiredWhen: 'Wajib Null Apabila Parent Null'
-  }
+    requiredWhen: "Wajib Null Apabila Parent Null",
+  };
 }

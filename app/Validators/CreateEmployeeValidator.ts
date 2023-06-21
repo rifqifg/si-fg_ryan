@@ -25,19 +25,22 @@ export default class CreateEmployeeValidator {
    */
   public schema = schema.create({
     nip: schema.string.optional(),
+    nik: schema.string([rules.trim(), rules.minLength(16), rules.maxLength(16)]),
     name: schema.string({}, [
       rules.minLength(5)
     ]),
     birthCity: schema.string(),
-    birthDay: schema.date(),
+    birthDay: schema.date({format: 'yyyy-MM-dd'}),
     gender: schema.enum(['L', 'P']),
     address: schema.string({}, [
       rules.minLength(20)
     ]),
-    status: schema.enum.optional(['FULLTIME', 'PARTTIME', 'RESIGNED']),
     dateIn: schema.date(),
     dateOut: schema.date.optional(),
     rfid: schema.string.optional(),
+    lastEducationName: schema.string.optional([rules.trim()]),
+    lastEducationMajor: schema.string.optional([rules.trim()]),
+    lastEducationGraduate: schema.date.optional({format: 'yyyy-MM-dd'}),
     kodeProvinsi: schema.string.optional([
       rules.minLength(2),
       rules.maxLength(2),
@@ -63,6 +66,7 @@ export default class CreateEmployeeValidator {
     ]),
     nuptk: schema.string.optional([rules.regex(/^\d+$/)]),
     employeeTypeId: schema.string([rules.exists({table: 'employee_types', column: 'id'})])
+    
   })
 
   /**

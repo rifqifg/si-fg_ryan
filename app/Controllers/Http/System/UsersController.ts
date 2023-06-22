@@ -146,7 +146,7 @@ export default class UsersController {
           .htmlView("emails/registered", { FE_URL });
       });
     } catch (error) {
-      return response.send({ message: "email tidak valid" });
+      return response.internalServerError({ message: "Gagal mengirim email verifikasi", error: error.message });
     }
 
     if (payload.role === ROLE.EMPLOYEE) {

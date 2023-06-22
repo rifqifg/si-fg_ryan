@@ -214,10 +214,7 @@ export default class UsersController {
       const LOGIN_URL = 'https://hrd.smafg.sch.id/'
       return view.render('user_verification_success', { LOGIN_URL })
     } catch (error) {
-      return response.badRequest({
-        message: "email tidak ditemukan / token tidak cocok",
-        error,
-      });
+      return response.badRequest({ message: "email tidak ditemukan / token tidak cocok", error });
     }
   }
 

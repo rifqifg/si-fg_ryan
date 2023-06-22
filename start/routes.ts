@@ -60,6 +60,7 @@ Route.post('/auth/reset-password', 'System/UsersController.resetUserPassword').a
 Route.get('/admin/get-users', 'System/UsersController.getUsers').as('admin.get-user').middleware('auth')
 Route.resource('/division/', 'DivisionsController').as('division').apiOnly().middleware({ '*': ['auth', 'checkRole:admin'] })
 Route.resource('/employee/', 'EmployeesController').as('employee').apiOnly().middleware({ '*': ['auth', 'checkRole:admin'] })
+Route.get('/employee-list/', 'EmployeesController.getEmployee').as('employee.list').middleware(['auth', 'checkRole:admin,qa,piket'])
 Route.resource('employee.divisions', 'EmployeeDivisionsController').as('employee.divisions').only(['store', 'update', 'destroy']).middleware({ '*': ['auth', 'checkRole:admin'] })
 Route.resource('/employee-types/', 'EmployeeTypesController').as('employee-type').apiOnly().middleware({ '*': ['auth', 'checkRole:admin'] })
 Route.resource('/activity/', 'ActivitiesController').as('activity').apiOnly().middleware({ '*': ['auth', 'checkRole:admin,piket,qa'] })

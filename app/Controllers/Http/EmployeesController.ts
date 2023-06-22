@@ -13,6 +13,7 @@ export default class EmployeesController {
       orderBy = "name",
       orderDirection = "ASC",
     } = request.qs();
+    // TODO: filter by division
     const data = await Employee.query()
       .select("*")
       .if(employeeTypeId, (e) => e.where("employeeTypeId", employeeTypeId))
@@ -36,6 +37,38 @@ export default class EmployeesController {
       .orderBy(orderBy, orderDirection)
       .paginate(page, limit);
 
+    response.ok({ message: "Data Berhasil Didapatkan", data });
+  }
+
+  public async getEmployee({ request, response }: HttpContextContract) {
+    const {
+      keyword = "",
+      employeeTypeId = "",
+      orderBy = "name",
+      orderDirection = "ASC",
+    } = request.qs();
+
+    const data = await Employee.query()
+      .select("*")
+      .if(employeeTypeId, (e) => e.where("employeeTypeId", employeeTypeId))
+      .preload(
+        "divisions",
+        (d) => (
+          d.select("title", "divisionId"),
+          d.preload("division", (x) => x.select("name"))
+        )
+      )
+      .preload("provinsi")
+      .preload("kota")
+      .preload("kecamatan")
+      .preload("kelurahan")
+      .andWhere((query) => {
+        query.whereILike("name", `%${keyword}%`);
+        query.orWhereILike("nik", `%${keyword}%`);
+        query.orWhereILike("nip", `%${keyword}%`);
+        // query.orWhereILike("division", `%${keyword}%`);
+      })
+      .orderBy(orderBy, orderDirection);
     response.ok({ message: "Data Berhasil Didapatkan", data });
   }
 

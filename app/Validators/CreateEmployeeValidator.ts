@@ -35,8 +35,8 @@ export default class CreateEmployeeValidator {
     address: schema.string({}, [
       rules.minLength(20)
     ]),
-    dateIn: schema.date(),
-    dateOut: schema.date.optional(),
+    dateIn: schema.date({format: 'yyyy-MM-dd'}),
+    dateOut: schema.date.optional({format: 'yyyy-MM-dd'}),
     rfid: schema.string.optional(),
     lastEducationName: schema.string.optional([rules.trim()]),
     lastEducationMajor: schema.string.optional([rules.trim()]),
@@ -66,7 +66,7 @@ export default class CreateEmployeeValidator {
     ]),
     nuptk: schema.string.optional([rules.regex(/^\d+$/)]),
     employeeTypeId: schema.string([rules.exists({table: 'employee_types', column: 'id'})])
-    
+
   })
 
   /**

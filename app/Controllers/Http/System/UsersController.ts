@@ -173,6 +173,7 @@ export default class UsersController {
         user = await User.create({
           name: payload.name,
           password: payload.password,
+          studentId: student.id,
           email: payload.email,
           verifyToken,
           role: ROLE.STUDENT,
@@ -202,20 +203,16 @@ export default class UsersController {
     });
   }
 
-  public async verify({ request, response }: HttpContextContract) {
+  public async verify({ request, response, view }: HttpContextContract) {
     const token = request.input("token");
 
     try {
       const user = await User.query().where("verifyToken", token).firstOrFail();
 
-      await user
-        .merge({
-          verifyToken: "",
-          verified: true,
-        })
-        .save();
+      await user.merge({verifyToken: "", verified: true,}).save();
 
-      response.ok({ message: "Akun sudah terverifikasi" });
+      const LOGIN_URL = 'https://hrd.smafg.sch.id/'
+      return view.render('user_verification_success', { LOGIN_URL })
     } catch (error) {
       return response.badRequest({
         message: "email tidak ditemukan / token tidak cocok",

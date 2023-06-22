@@ -10,6 +10,7 @@ export default class EmployeesController {
       limit = 10,
       keyword = "",
       employeeTypeId = "",
+      divisionId = "",
       orderBy = "name",
       orderDirection = "ASC",
     } = request.qs();
@@ -24,6 +25,7 @@ export default class EmployeesController {
           d.preload("division", (x) => x.select("name"))
         )
       )
+      .if(divisionId, d => d.whereHas("divisions", (q) => q.where("divisionId", "=", divisionId)) )
       .preload("provinsi")
       .preload("kota")
       .preload("kecamatan")

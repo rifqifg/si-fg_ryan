@@ -46,10 +46,11 @@ export default class EmployeesController {
     const {
       keyword = "",
       employeeTypeId = "",
+      divisionId = "",
       orderBy = "name",
       orderDirection = "ASC",
     } = request.qs();
-
+    // TODO: filter by division
     const data = await Employee.query()
       .select("*")
       .if(employeeTypeId, (e) => e.where("employeeTypeId", employeeTypeId))
@@ -60,6 +61,7 @@ export default class EmployeesController {
           d.preload("division", (x) => x.select("name"))
         )
       )
+      .if(divisionId, d => d.whereHas("divisions", (q) => q.where("divisionId", "=", divisionId)) )
       .preload("provinsi")
       .preload("kota")
       .preload("kecamatan")
@@ -70,7 +72,7 @@ export default class EmployeesController {
         query.orWhereILike("nip", `%${keyword}%`);
         // query.orWhereILike("division", `%${keyword}%`);
       })
-      .orderBy(orderBy, orderDirection);
+      .orderBy(orderBy, orderDirection)
     response.ok({ message: "Data Berhasil Didapatkan", data });
   }
 

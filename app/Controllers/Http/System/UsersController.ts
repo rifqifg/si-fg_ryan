@@ -215,7 +215,7 @@ export default class UsersController {
 
       await user.merge({verifyToken: "", verified: true,}).save();
 
-      const LOGIN_URL = 'https://hrd.smafg.sch.id/'
+      const LOGIN_URL = Env.get("FE_URL")
       return view.render('user_verification_success', { LOGIN_URL })
     } catch (error) {
       return response.badRequest({ message: "email tidak ditemukan / token tidak cocok", error });

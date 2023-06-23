@@ -128,6 +128,10 @@ export default class UsersController {
         ]),
         password: schema.string([rules.minLength(6), rules.confirmed()]),
       }),
+      messages: {
+        'email.unique': "Email sudah digunakan user lain",
+        exists: "{{ field }} yang dimasukkan tidak terdaftar di sistem",
+      }
     });
 
     let employee;

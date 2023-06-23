@@ -139,7 +139,7 @@ export default class UsersController {
     let user;
     const verifyToken = string.generateRandom(64);
 
-    const FE_URL = Env.get("FE_URL") + verifyToken;
+    const verify_url = Env.get("BE_URL") + "/auth/verify-email?token=" + verifyToken;
 
     try {
       await Mail.send((message) => {
@@ -147,7 +147,7 @@ export default class UsersController {
           .from(Env.get("SMTP_USERNAME"))
           .to(payload.email)
           .subject("Welcome Onboard!")
-          .htmlView("emails/registered", { FE_URL });
+          .htmlView("emails/registered", { verify_url });
       });
     } catch (error) {
       return response.internalServerError({ message: "Gagal mengirim email verifikasi", error: error.message });

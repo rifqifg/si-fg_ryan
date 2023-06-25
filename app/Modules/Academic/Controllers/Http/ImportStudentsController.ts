@@ -12,16 +12,20 @@ export default class ImportStudentsController {
     public async store({ request, response }: HttpContextContract) {
         let payload = await request.validate(CreateImportStudentValidator)
         let fname = `${new Date().getTime()}.${payload.upload.extname}`
-        let dir = Application.makePath('/app/modules/academic/uploads')
+
+        console.log(__dirname);
+        let dir = Application.makePath('/app/Modules/Academic/uploads')
+        console.log('MakePatch Success');
+        
 
         await payload.upload.move(
             dir,
             { name: fname, overwrite: true }
         )
 
-        await ImportService.ImportClassification('app/modules/academic/uploads/' + fname)
+        await ImportService.ImportClassification('app/Modules/Academic/uploads/' + fname)
 
-        response.ok({ message: "Success" })
+        response.ok({ message: "Success import data" })
     }
 }
 

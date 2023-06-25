@@ -1,5 +1,4 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import Application from '@ioc:Adonis/Core/Application'
 import CreateImportStudentValidator from '../../Validators/CreateImportStudentValidator'
 import Student from '../../Models/Student'
 import StudentParent from '../../Models/StudentParent'
@@ -12,18 +11,15 @@ export default class ImportStudentsController {
     public async store({ request, response }: HttpContextContract) {
         let payload = await request.validate(CreateImportStudentValidator)
         let fname = `${new Date().getTime()}.${payload.upload.extname}`
-        let dir = 'upload/'
+        let dir = 'excel/'
 
-        // move uploaded file into custom folder
-        await payload.upload.move(Application.tmpPath(dir), {
-            name: fname
-        })
+        await payload.upload.moveToDisk(
+            dir,
+            { name: fname, overwrite: true },
+            'import_students'
+        )
 
-        if (process.env.NODE_ENV == 'production') {
-            await ImportService.ImportClassification('tmp/' + dir + fname)
-        } else {
-            await ImportService.ImportClassification('/build/tmp/' + dir + fname)
-        }
+        await ImportService.ImportClassification('app/Modules/Academic/uploads/' + dir + fname)
 
         response.ok({ message: "Success" })
     }
@@ -119,7 +115,7 @@ class ImportService {
                         rowObjectStudents['gender'] = cell.value == 'L' ? 'male' : 'female';
                     }
                     else if (key[colNumber] == "NISN") {
-                        rowObjectStudents['nisn'] = cell.value;
+                        rowObjectStudents['nisn'] = String(cell.value);
                     }
                     else if (key[colNumber] == "Tempat Lahir") {
                         rowObjectStudents['birth_city'] = cell.value;

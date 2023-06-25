@@ -4,7 +4,9 @@ export default class extends BaseSchema {
   protected tableName = 'students'
 
   public async up () {
-    this.schema.alterTable(this.tableName, (table) => {
+    this.schema
+    .withSchema('academic')
+    .alterTable(this.tableName, (table) => {
         table.uuid('class_id').nullable().alter()
     })
   }

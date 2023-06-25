@@ -40,7 +40,7 @@ export default class UserStudentCandidatesController {
                     .htmlView("emails/student_candidate_verify_request", { actionUrl })
             })
         } catch (error) {
-            return response.send({ message: "email tidak valid" });
+            return response.send({ message: "CO-USC-REG_02: email tidak valid", error: error.message });
         }
 
         response.ok({
@@ -71,7 +71,7 @@ export default class UserStudentCandidatesController {
             console.log(error)
 
             return response.badRequest({
-                message: "Invalid credentials",
+                message: "CO-USC-LOG_01: Invalid credentials",
                 error: error.message
             });
         }
@@ -95,7 +95,7 @@ export default class UserStudentCandidatesController {
             return view.render('ppdb/student_candidate_verification_success', { LOGIN_URL })
         } catch (error) {
             return response.badRequest({
-                message: "email tidak ditemukan / token tidak cocok",
+                message: "CO-USC-VER_01: email tidak ditemukan / token tidak cocok",
                 error: error.message
             })
         }
@@ -128,8 +128,9 @@ export default class UserStudentCandidatesController {
             response.ok({ message: "Login berhasil", token: tokenAuth, data: user })
         } catch (error) {
             return response.badRequest({
-                message: "Anda belum memiliki akun",
+                message: "CO-USC-GLO_01: Anda belum memiliki akun",
                 email: userDetails.email,
+                error: error.message
             });
         }
     }
@@ -142,7 +143,7 @@ export default class UserStudentCandidatesController {
                 .verifyCredentials(auth.use('ppdb_api').user!.email, payload.current_password)
         } catch (error) {
             return response.unprocessableEntity({
-                message: "Password lama salah",
+                message: "CO-USC-CPAS_01: Password lama salah",
                 error: error.message,
             })
         }
@@ -154,7 +155,7 @@ export default class UserStudentCandidatesController {
             response.ok({ message: "Berhasil mengubah password" })
         } catch (error) {
             return response.badRequest({
-                message: "Gagal mengubah password",
+                message: "CO-USC-CPAS_02: Gagal mengubah password",
                 error: error.message
             })
         }
@@ -162,7 +163,7 @@ export default class UserStudentCandidatesController {
 
     public async destroy({ params, response }: HttpContextContract) {
         const { id } = params
-        if (!uuidValidation(id)) { return response.badRequest({ message: "ID user calon siswa tidak valid" }) }
+        if (!uuidValidation(id)) { return response.badRequest({ message: "CO-USC-DES_01: ID user calon siswa tidak valid" }) }
 
         try {
             const data = await UserStudentCandidate.findOrFail(id)
@@ -170,7 +171,7 @@ export default class UserStudentCandidatesController {
             response.ok({ message: "Berhasil menghapus data user calon siswa" })
         } catch (error) {
             console.log(error);
-            response.badRequest({ message: "Gagal menghapus data user calon siswa", error: error.message })
+            response.badRequest({ message: "CO-USC-DES_02: Gagal menghapus data user calon siswa", error: error.message })
         }
     }
 

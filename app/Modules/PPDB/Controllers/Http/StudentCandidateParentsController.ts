@@ -11,7 +11,7 @@ import ScParentFileUploadValidator from '../../Validators/ScParentFileUploadVali
 export default class StudentCandidateParentsController {
     public async index({ request, response, params }: HttpContextContract) {
         const { student_candidate_id } = params
-        if (!uuidValidation(student_candidate_id)) { return response.badRequest({ message: "Student candidate ID tidak valid" }) }
+        if (!uuidValidation(student_candidate_id)) { return response.badRequest({ message: "PP_SCP_IN-01: Student candidate ID tidak valid" }) }
 
         const { page = 1, limit = 10, keyword = "", } = request.qs()
 
@@ -24,13 +24,13 @@ export default class StudentCandidateParentsController {
                 .paginate(page, limit)
             response.ok({ message: "Berhasil mengambil data", data })
         } catch (error) {
-            response.badRequest({ message: "Gagal mengambil data", error: error.message })
+            response.badRequest({ message: "PP_SCP_IN-02: Gagal mengambil data", error: error.message })
         }
     }
 
     public async store({ request, response, params }: HttpContextContract) {
         const { student_candidate_id } = params
-        if (!uuidValidation(student_candidate_id)) { return response.badRequest({ message: "Student candidate ID tidak valid" }) }
+        if (!uuidValidation(student_candidate_id)) { return response.badRequest({ message: "PP_SCP_STO-01: Student candidate ID tidak valid" }) }
 
         const payload = await request.validate(CreateStudentCandidateParentValidator)
         try {
@@ -39,13 +39,13 @@ export default class StudentCandidateParentsController {
             response.created({ message: "Berhasil menyimpan data orang tua calon siswa", data })
         } catch (error) {
             console.log(error);
-            response.badRequest({ message: "Gagal menyimpan data", error: error.message })
+            response.badRequest({ message: "PP_SCP_STO-02: Gagal menyimpan data", error: error.message })
         }
     }
 
     public async show({ params, response }: HttpContextContract) {
         const { id } = params
-        if (!uuidValidation(id)) { return response.badRequest({ message: "ID tidak valid" }) }
+        if (!uuidValidation(id)) { return response.badRequest({ message: "PP_SCP_SHO-01: ID tidak valid" }) }
 
         try {
             const data = await StudentCandidateParent
@@ -55,17 +55,17 @@ export default class StudentCandidateParentsController {
             response.ok({ message: "Berhasil mengambil data detail orang tua calon siswa", data })
         } catch (error) {
             console.log(error)
-            response.badRequest({ message: "Gagal mengambil data", error: error.message })
+            response.badRequest({ message: "PP_SCP_SHO-02: Gagal mengambil data", error: error.message })
         }
     }
 
     public async update({ params, request, response }: HttpContextContract) {
         const { id } = params
-        if (!uuidValidation(id)) { return response.badRequest({ message: "CO-STP-UP_01: Student ID tidak valid" }) }
+        if (!uuidValidation(id)) { return response.badRequest({ message: "PP_SCP_UP-01: Student ID tidak valid" }) }
 
         const payload = await request.validate(UpdateStudentCandidateParentValidator)
         if (JSON.stringify(payload) === '{}') {
-            return response.badRequest({ message: "Data tidak boleh kosong" })
+            return response.badRequest({ message: "PP_SCP_UP-02: Data tidak boleh kosong" })
         }
         try {
             const scParent = await StudentCandidateParent.findOrFail(id)
@@ -73,13 +73,13 @@ export default class StudentCandidateParentsController {
             response.ok({ message: "Berhasil mengubah data", data })
         } catch (error) {
             console.log(error)
-            response.badRequest({ message: "Gagal mengubah data", error: error.message })
+            response.badRequest({ message: "PP_SCP_UP-03: Gagal mengubah data", error: error.message })
         }
     }
 
     public async fileUpload({ request, response, params }: HttpContextContract) {
         const { id } = params
-        if (!uuidValidation(id)) { return response.badRequest({ message: "ID ortu calon siswa tidak valid" }) }
+        if (!uuidValidation(id)) { return response.badRequest({ message: "PP_SCP_FU-01: ID ortu calon siswa tidak valid" }) }
 
         const payload = await request.validate(ScParentFileUploadValidator)
         const imageName = `candidate_parent_${id}_${payload.category}.${payload.file.extname}`
@@ -108,7 +108,7 @@ export default class StudentCandidateParentsController {
 
     public async destroy({ params, response }: HttpContextContract) {
         const { id } = params
-        if (!uuidValidation(id)) { return response.badRequest({ message: "ID tidak valid" }) }
+        if (!uuidValidation(id)) { return response.badRequest({ message: "PP_SCP_DE-01: ID tidak valid" }) }
 
         try {
             const data = await StudentCandidateParent.findOrFail(id)
@@ -116,7 +116,7 @@ export default class StudentCandidateParentsController {
             response.ok({ message: "Berhasil menghapus data" })
         } catch (error) {
             console.log(error)
-            response.badRequest({ message: "Gagal menghapus data", error: error.message })
+            response.badRequest({ message: "PP_SCP_DE-02: Gagal menghapus data", error: error.message })
         }
     }
 }

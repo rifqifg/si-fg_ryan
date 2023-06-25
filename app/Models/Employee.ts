@@ -32,7 +32,22 @@ export default class Employee extends BaseModel {
   public nuptk: string;
 
   @column()
+  public nik: string;
+
+  @column()
+  public lastEducationName: string | null;
+
+  @column()
+  public lastEducationMajor: string | null;
+
+  @column.date()
+  public lastEducationGraduate: DateTime | null
+
+  @column()
   public name: string;
+
+  @column()
+  public scanPresenceRequired: boolean;
 
   @column()
   public birthCity: string;

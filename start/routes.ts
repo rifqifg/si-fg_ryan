@@ -81,3 +81,5 @@ Route.group(() => {
   Route.resource('roles.menus', 'System/RolesMenusController').only(['store', 'destroy', 'update']).middleware({ '*': ['auth', 'checkRole:admin'] }).as('roles.menus')
   Route.resource('roles.functions', 'System/RolesFunctionsController').only(['store', 'destroy', 'update']).middleware({ '*': ['auth', 'checkRole:admin'] }).as('roles.functions')
 }).prefix('/system')
+
+Route.shallowResource('template-excels', 'TemplateExcelsController').apiOnly().only(['index'])

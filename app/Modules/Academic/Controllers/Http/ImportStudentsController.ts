@@ -14,16 +14,15 @@ export default class ImportStudentsController {
         let fname = `${new Date().getTime()}.${payload.upload.extname}`
 
         console.log(__dirname);
-        let dir = Application.makePath('../../uploads')
+        let dir = Application.makePath('/app/Modules/Academic/uploads')
         console.log('MakePatch Success');
         
-
         await payload.upload.move(
             dir,
             { name: fname, overwrite: true }
         )
 
-        await ImportService.ImportClassification('../../uploads/' + fname)
+        await ImportService.ImportClassification('app/Modules/Academic/uploads' + fname)
 
         response.ok({ message: "Success import data" })
     }

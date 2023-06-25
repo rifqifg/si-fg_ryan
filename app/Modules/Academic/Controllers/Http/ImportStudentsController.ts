@@ -1,4 +1,5 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import Application from '@ioc:Adonis/Core/Application'
 import CreateImportStudentValidator from '../../Validators/CreateImportStudentValidator'
 import Student from '../../Models/Student'
 import StudentParent from '../../Models/StudentParent'
@@ -11,15 +12,14 @@ export default class ImportStudentsController {
     public async store({ request, response }: HttpContextContract) {
         let payload = await request.validate(CreateImportStudentValidator)
         let fname = `${new Date().getTime()}.${payload.upload.extname}`
-        let dir = 'excel/'
+        let dir = Application.makePath('app/Modules/Academic/uploads/')
 
-        await payload.upload.moveToDisk(
+        await payload.upload.move(
             dir,
-            { name: fname, overwrite: true },
-            'import_students'
+            { name: fname, overwrite: true }
         )
 
-        await ImportService.ImportClassification('app/Modules/Academic/uploads/' + dir + fname)
+        await ImportService.ImportClassification('app/Modules/Academic/uploads/' + fname)
 
         response.ok({ message: "Success" })
     }

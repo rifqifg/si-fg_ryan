@@ -94,6 +94,14 @@ export default driveConfig({
       root: Application.makePath('app/Modules/PPDB/uploads/'),
       basePath: '/ppdb/uploads',
       serveFiles: true
+    },
+
+    import_students: {
+      driver: 'local',
+      visibility: 'public',
+      root: Application.makePath('app/Modules/Academic/uploads/'),
+      basePath: '/importStudents/uploads',
+      serveFiles: true
     }
     /*
     |--------------------------------------------------------------------------

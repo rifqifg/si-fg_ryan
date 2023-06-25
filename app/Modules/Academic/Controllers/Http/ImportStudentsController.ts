@@ -12,7 +12,7 @@ export default class ImportStudentsController {
     public async store({ request, response }: HttpContextContract) {
         let payload = await request.validate(CreateImportStudentValidator)
         let fname = `${new Date().getTime()}.${payload.upload.extname}`
-        let dir = Application.makePath('app/Modules/Academic/uploads/')
+        let dir = Application.makePath('/app/Modules/Academic/uploads')
 
         await payload.upload.move(
             dir,

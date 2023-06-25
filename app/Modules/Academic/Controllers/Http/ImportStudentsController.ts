@@ -19,7 +19,11 @@ export default class ImportStudentsController {
             name: fname
         })
 
-        await ImportService.ImportClassification('tmp/' + dir + fname)
+        if (process.env.NODE_ENV == 'production') {
+            await ImportService.ImportClassification('tmp/' + dir + fname)
+        } else {
+            await ImportService.ImportClassification('/build/tmp/' + dir + fname)
+        }
 
         response.ok({ message: "Success" })
     }

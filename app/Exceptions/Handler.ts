@@ -36,12 +36,12 @@ export default class ExceptionHandler extends HttpExceptionHandler {
         message: 'Data not found',
       })
     }
-    if (error.code === 'E_VALIDATION_FAILURE') {
-      return ctx.response.badRequest({
-        message: error.message,
-        data: error.messages.errors,
-      })
-    }
+    // if (error.code === 'E_VALIDATION_FAILURE') {
+    //   return ctx.response.badRequest({
+    //     message: error.message,
+    //     data: error.messages.errors,
+    //   })
+    // }
     if (error.code === 'E_ROUTE_NOT_FOUND') {
       return ctx.response.badRequest({
         message: 'Route not found',

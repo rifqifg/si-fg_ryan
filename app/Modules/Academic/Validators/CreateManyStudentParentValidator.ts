@@ -37,7 +37,6 @@ export default class CreateManyStudentParentValidator {
           rules.maxLength(16),
         ]),
         name: schema.string.optional({}, [
-          rules.alphaNum({ allow: ['space'] }),
           rules.minLength(5)]),
         birth_date: schema.date.optional({ format: "yyyy-MM-dd" }),
         education: schema.enum.optional(Object.values(ParentEducation)),

@@ -22,7 +22,7 @@ export default class ImportStudentsController {
             { name: fname, overwrite: true }
         )
 
-        await ImportService.ImportClassification('app/Modules/Academic/uploads' + fname)
+        await ImportService.ImportClassification('app/Modules/Academic/uploads/' + fname)
 
         response.ok({ message: "Success import data" })
     }

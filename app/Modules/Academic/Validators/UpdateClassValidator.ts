@@ -24,7 +24,7 @@ export default class UpdateClassValidator {
    *    ```
    */
   public schema = schema.create({
-    name: schema.string.optional({}, [rules.alphaNum({ allow: ['dash', 'underscore'] })]),
+    name: schema.string.optional(),
     description: schema.string.nullableAndOptional(),
     employeeId: schema.string.nullableAndOptional({}, [
       rules.exists({ table: 'public.employees', column: 'id' })

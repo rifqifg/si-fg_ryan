@@ -1,19 +1,22 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import CreateDailyAttendanceValidator from '../../Validators/CreateDailyAttendanceValidator'
 import DailyAttendance from '../../Models/DailyAttendance'
-const luxon_1 = require("luxon");
-const hariIni = luxon_1.DateTime.now().toSQLDate().toString();
+import { DateTime } from 'luxon'
 import { validate as uuidValidation } from "uuid";
 import UpdateDailyAttendanceValidator from '../../Validators/UpdateDailyAttendanceValidator';
 import Database from '@ioc:Adonis/Lucid/Database';
 
 export default class DailyAttendancesController {
   public async index({ request, response }: HttpContextContract) {
+    const hariIni = DateTime.now().toSQLDate()!.toString();
     const { page = 1, limit = 10, keyword = "", mode = "page", classId = "", fromDate = hariIni, toDate = hariIni, recap = false } = request.qs()
 
-    const formattedStartDate = `${fromDate ? fromDate : hariIni} 00:00:00.000 +0700`;
-    const formattedEndDate = `${toDate ? toDate : hariIni} 23:59:59.000 +0700`;
+    // karena ada kemungkinan input fromDate & toDate formatnya 'yyyy-MM-dd 00:00:00', maka diambil value yg sebelum whitespace
+    const splittedFromDate = fromDate.split(' ')[0]
+    const splittedToDate = toDate.split(' ')[0]
 
+    const formattedStartDate = `${splittedFromDate ? splittedFromDate : hariIni} 00:00:00.000 +0700`;
+    const formattedEndDate = `${splittedToDate ? splittedToDate : hariIni} 23:59:59.000 +0700`;
     try {
       let data = {}
       if (recap) {

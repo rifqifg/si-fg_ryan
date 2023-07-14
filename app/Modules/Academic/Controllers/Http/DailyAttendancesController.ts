@@ -1,19 +1,22 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import CreateDailyAttendanceValidator from '../../Validators/CreateDailyAttendanceValidator'
 import DailyAttendance from '../../Models/DailyAttendance'
-const luxon_1 = require("luxon");
-const hariIni = luxon_1.DateTime.now().toSQLDate().toString();
+import { DateTime } from 'luxon'
 import { validate as uuidValidation } from "uuid";
 import UpdateDailyAttendanceValidator from '../../Validators/UpdateDailyAttendanceValidator';
 import Database from '@ioc:Adonis/Lucid/Database';
 
 export default class DailyAttendancesController {
   public async index({ request, response }: HttpContextContract) {
+    const hariIni = DateTime.now().toSQLDate()!.toString();
     const { page = 1, limit = 10, keyword = "", mode = "page", classId = "", fromDate = hariIni, toDate = hariIni, recap = false } = request.qs()
 
-    const formattedStartDate = `${fromDate ? fromDate : hariIni} 00:00:00.000 +0700`;
-    const formattedEndDate = `${toDate ? toDate : hariIni} 23:59:59.000 +0700`;
+    // karena ada kemungkinan input fromDate & toDate formatnya 'yyyy-MM-dd 00:00:00', maka diambil value yg sebelum whitespace
+    const splittedFromDate = fromDate.split(' ')[0]
+    const splittedToDate = toDate.split(' ')[0]
 
+    const formattedStartDate = `${splittedFromDate ? splittedFromDate : hariIni} 00:00:00.000 +0700`;
+    const formattedEndDate = `${splittedToDate ? splittedToDate : hariIni} 23:59:59.000 +0700`;
     try {
       let data = {}
       if (recap) {
@@ -113,6 +116,17 @@ export default class DailyAttendancesController {
   public async store({ request, response }: HttpContextContract) {
     const payload = await request.validate(CreateDailyAttendanceValidator)
 
+    if (payload.dailyAttendance[0].date_out) {
+      const dateIn = payload.dailyAttendance[0].date_in
+      const dateOut = payload.dailyAttendance[0].date_out
+
+      const selisihDetik = dateOut.diff(dateIn, 'seconds').toObject().seconds!
+
+      if (selisihDetik < 1) {
+        return response.badRequest({message: "Waktu mulai tidak boleh dibelakang waktu berakhir"})
+      }
+    }
+
     try {
       const data = await DailyAttendance.createMany(payload.dailyAttendance)
       response.created({ message: "Berhasil menyimpan data", data })
@@ -160,6 +174,27 @@ export default class DailyAttendancesController {
     }
     try {
       const daily = await DailyAttendance.findOrFail(id)
+
+      let waktuAwal
+      let waktuAkhir
+
+      if (payload.date_in && payload.date_out) {
+        waktuAwal = payload.date_in
+        waktuAkhir = payload.date_out
+      } else if (payload.date_in && daily.date_out !== null) {
+        waktuAwal = payload.date_in
+        waktuAkhir = daily.date_out
+      } else if (payload.date_out && daily.date_in !== null) {
+        waktuAwal = daily.date_in
+        waktuAkhir = payload.date_out
+      }
+
+      const selisihDetik = waktuAkhir.diff(waktuAwal, 'seconds').toObject().seconds!
+  
+      if (selisihDetik < 1) {
+        throw new Error("Waktu mulai harus lebih dahulu dari waktu berakhir1")
+      }
+
       const data = await daily.merge(payload).save()
       response.ok({ message: "Berhasil mengubah data", data })
     } catch (error) {

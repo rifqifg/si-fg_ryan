@@ -116,6 +116,17 @@ export default class DailyAttendancesController {
   public async store({ request, response }: HttpContextContract) {
     const payload = await request.validate(CreateDailyAttendanceValidator)
 
+    if (payload.dailyAttendance[0].date_out) {
+      const dateIn = payload.dailyAttendance[0].date_in
+      const dateOut = payload.dailyAttendance[0].date_out
+
+      const selisihDetik = dateOut.diff(dateIn, 'seconds').toObject().seconds!
+
+      if (selisihDetik < 1) {
+        return response.badRequest({message: "Waktu mulai tidak boleh dibelakang waktu berakhir"})
+      }
+    }
+
     try {
       const data = await DailyAttendance.createMany(payload.dailyAttendance)
       response.created({ message: "Berhasil menyimpan data", data })
@@ -163,6 +174,28 @@ export default class DailyAttendancesController {
     }
     try {
       const daily = await DailyAttendance.findOrFail(id)
+
+      let waktuAwal
+      let waktuAkhir
+
+      // TODO: hapus variable dateIn dateOut, lalu testing
+      if (payload.date_in && payload.date_out) {
+        waktuAwal = payload.date_in
+        waktuAkhir = payload.date_out
+      } else if (payload.date_in && daily.date_out !== null) {
+        waktuAwal = payload.date_in
+        waktuAkhir = daily.date_out
+      } else if (payload.date_out && daily.date_in !== null) {
+        waktuAwal = daily.date_in
+        waktuAkhir = payload.date_out
+      }
+
+      const selisihDetik = waktuAkhir.diff(waktuAwal, 'seconds').toObject().seconds!
+  
+      if (selisihDetik < 1) {
+        throw new Error("Waktu mulai harus lebih dahulu dari waktu berakhir1")
+      }
+
       const data = await daily.merge(payload).save()
       response.ok({ message: "Berhasil mengubah data", data })
     } catch (error) {

@@ -178,7 +178,6 @@ export default class DailyAttendancesController {
       let waktuAwal
       let waktuAkhir
 
-      // TODO: hapus variable dateIn dateOut, lalu testing
       if (payload.date_in && payload.date_out) {
         waktuAwal = payload.date_in
         waktuAkhir = payload.date_out

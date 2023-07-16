@@ -115,13 +115,18 @@ export default class DailyAttendancesController {
 
   public async store({ request, response }: HttpContextContract) {
     const payload = await request.validate(CreateDailyAttendanceValidator)
-
-    const dateInDateOnly = payload.dailyAttendance[0].date_in.toSQLDate()!
-    const existingAttendance = await DailyAttendance.query()
-      .whereRaw('date_in::timestamp::date = ?', [dateInDateOnly])
-      .andWhere('class_id', payload.dailyAttendance[0].classId)
     
     try {
+      const weekdayNumber = payload.dailyAttendance[0].date_in.weekday
+      if (weekdayNumber === 6 || weekdayNumber === 7) {
+        throw new Error("Tidak dapat melakukan absen di hari sabtu / minggu")
+      }
+
+      const dateInDateOnly = payload.dailyAttendance[0].date_in.toSQLDate()!
+      const existingAttendance = await DailyAttendance.query()
+        .whereRaw('date_in::timestamp::date = ?', [dateInDateOnly])
+        .andWhere('class_id', payload.dailyAttendance[0].classId)
+    
       if (existingAttendance.length > 0) {
           throw new Error("Abensi kelas ini untuk tanggal yang dipilih sudah ada")
       }

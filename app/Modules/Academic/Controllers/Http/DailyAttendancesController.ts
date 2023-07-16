@@ -117,7 +117,9 @@ export default class DailyAttendancesController {
     const payload = await request.validate(CreateDailyAttendanceValidator)
 
     const dateInDateOnly = payload.dailyAttendance[0].date_in.toSQLDate()!
-    const existingAttendance = await DailyAttendance.query().whereRaw('date_in::timestamp::date = ?', [dateInDateOnly])
+    const existingAttendance = await DailyAttendance.query()
+      .whereRaw('date_in::timestamp::date = ?', [dateInDateOnly])
+      .andWhere('class_id', payload.dailyAttendance[0].classId)
     
     try {
       if (existingAttendance.length > 0) {

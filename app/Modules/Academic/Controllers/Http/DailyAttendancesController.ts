@@ -116,18 +116,25 @@ export default class DailyAttendancesController {
   public async store({ request, response }: HttpContextContract) {
     const payload = await request.validate(CreateDailyAttendanceValidator)
 
-    if (payload.dailyAttendance[0].date_out) {
-      const dateIn = payload.dailyAttendance[0].date_in
-      const dateOut = payload.dailyAttendance[0].date_out
-
-      const selisihDetik = dateOut.diff(dateIn, 'seconds').toObject().seconds!
-
-      if (selisihDetik < 1) {
-        return response.badRequest({message: "Waktu mulai tidak boleh dibelakang waktu berakhir"})
-      }
-    }
-
+    const dateInDateOnly = payload.dailyAttendance[0].date_in.toSQLDate()!
+    const existingAttendance = await DailyAttendance.query().whereRaw('date_in::timestamp::date = ?', [dateInDateOnly])
+    
     try {
+      if (existingAttendance.length > 0) {
+          throw new Error("Abensi kelas ini untuk tanggal yang dipilih sudah ada")
+      }
+
+      if (payload.dailyAttendance[0].date_out) {
+        const dateIn = payload.dailyAttendance[0].date_in
+        const dateOut = payload.dailyAttendance[0].date_out
+
+        const selisihDetik = dateOut.diff(dateIn, 'seconds').toObject().seconds!
+
+        if (selisihDetik < 1) {
+          throw new Error("Waktu mulai tidak boleh dibelakang waktu berakhir")
+        }
+      }
+
       const data = await DailyAttendance.createMany(payload.dailyAttendance)
       response.created({ message: "Berhasil menyimpan data", data })
     } catch (error) {

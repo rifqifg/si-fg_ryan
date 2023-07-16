@@ -189,10 +189,12 @@ export default class DailyAttendancesController {
         waktuAkhir = payload.date_out
       }
 
-      const selisihDetik = waktuAkhir.diff(waktuAwal, 'seconds').toObject().seconds!
+      if (waktuAwal !== undefined && waktuAkhir !== undefined) {
+        const selisihDetik = waktuAkhir.diff(waktuAwal, 'seconds').toObject().seconds!
   
-      if (selisihDetik < 1) {
-        throw new Error("Waktu mulai harus lebih dahulu dari waktu berakhir1")
+        if (selisihDetik < 1) {
+          throw new Error("Waktu mulai harus lebih dahulu dari waktu berakhir1")
+        }
       }
 
       const data = await daily.merge(payload).save()

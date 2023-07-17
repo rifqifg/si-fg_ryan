@@ -21,9 +21,9 @@ export default class ImportStudentsController {
 
       await ImportService.ImportClassification(excelBuffer);
 
-      return response.ok({ message: "Success import data" });
+      response.ok({ message: "Success import data" });
     } catch (error) {
-      return response.badRequest({ message: error.message, error });
+      response.badRequest({ message: error.message, error });
     }
   }
 }

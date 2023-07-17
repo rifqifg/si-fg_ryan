@@ -186,6 +186,19 @@ export default class DailyAttendancesController {
       console.log("data update kosong");
       return response.badRequest({ message: "Data tidak boleh kosong" })
     }
+
+    if (payload.date_in) {
+      if (payload.date_in.weekday === 6 || payload.date_in.weekday === 7) {
+        return response.badRequest({ message: "ACSU101: Tidak dapat mengubah absen ke hari sabtu / minggu" })
+      }
+    }
+
+    if (payload.date_out) {
+      if (payload.date_out.weekday === 6 || payload.date_out.weekday === 7) {
+        return response.badRequest({ message: "ACSU101: Tidak dapat mengubah absen ke hari sabtu / minggu" })
+      }
+    }
+
     try {
       const daily = await DailyAttendance.findOrFail(id)
 

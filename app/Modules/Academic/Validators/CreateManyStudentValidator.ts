@@ -1,9 +1,8 @@
 import { schema, CustomMessages, rules } from '@ioc:Adonis/Core/Validator'
-import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import { StudentGender, StudentProgram, StudentReligion, StudentResidence, StudentUnit } from '../lib/enums'
 
 export default class CreateManyStudentValidator {
-  constructor(protected ctx: HttpContextContract, public data: {}) {}
+  constructor( public data: {}) {}
 
   /*
    * Define schema to validate the "shape", "type", "formatting" and "integrity" of data.
@@ -62,7 +61,7 @@ export default class CreateManyStudentValidator {
           rules.minLength(1),
           rules.maxLength(3),
         ]),
-        zip: schema.string([
+        zip: schema.string.optional([
           rules.regex(/^[0-9]+$/),
           rules.minLength(5),
           rules.maxLength(5),

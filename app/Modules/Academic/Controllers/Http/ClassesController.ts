@@ -5,8 +5,8 @@ import UpdateClassValidator from 'Academic/Validators/UpdateClassValidator'
 import { validate as uuidValidation } from "uuid";
 
 export default class ClassesController {
-  public async index({ request, response }: HttpContextContract) {
-    const { page = 1, limit = 10, keyword = "", mode = "page" } = request.qs()
+  public async index({ request, response, params }: HttpContextContract) {
+    const { page = 1, limit = 10, keyword = "", mode = "page", is_graduated = false } = request.qs()
 
     try {
       let data = {}
@@ -16,6 +16,7 @@ export default class ClassesController {
           .preload('homeroomTeacher', query => query.select('name', 'nip'))
           .withCount('students')
           .whereILike('name', `%${keyword}%`)
+          .where('is_graduated', '=', is_graduated)
           .orderBy('name')
           .paginate(page, limit)
       } else if (mode === "list") {
@@ -25,6 +26,7 @@ export default class ClassesController {
           .preload('homeroomTeacher', query => query.select('name', 'nip'))
           .withCount('students')
           .whereILike('name', `%${keyword}%`)
+          .where('is_graduated', '=', is_graduated)
           .orderBy('name')
       } else {
         return response.badRequest({ message: "Mode tidak dikenali, (pilih: page / list)" })
@@ -73,6 +75,14 @@ export default class ClassesController {
       console.log("data update kosong");
       return response.badRequest({ message: "Data tidak boleh kosong" })
     }
+
+    if (payload.is_graduated) {
+      // jika is_graduated bernilai true pada tabel Classes maka update semua kolom is_graduated pada tabel siswa juga
+      console.log(payload.is_graduated);
+    } else {
+      console.log(payload.is_graduated);
+    }
+    return 0
     try {
       const clazz = await Class.findOrFail(id)
       const data = await clazz.merge(payload).save()

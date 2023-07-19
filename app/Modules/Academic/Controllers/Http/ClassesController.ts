@@ -5,7 +5,7 @@ import UpdateClassValidator from 'Academic/Validators/UpdateClassValidator'
 import { validate as uuidValidation } from "uuid";
 
 export default class ClassesController {
-  public async index({ request, response, params }: HttpContextContract) {
+  public async index({ request, response }: HttpContextContract) {
     const { page = 1, limit = 10, keyword = "", mode = "page", is_graduated = false } = request.qs()
 
     try {

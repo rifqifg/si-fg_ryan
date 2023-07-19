@@ -28,7 +28,8 @@ export default class CreateClassValidator {
     description: schema.string.optional(),
     employeeId: schema.string({}, [
       rules.exists({ table: 'public.employees', column: 'id' })
-    ])
+    ]),
+    is_graduated: schema.boolean.optional()
   })
 
   /**

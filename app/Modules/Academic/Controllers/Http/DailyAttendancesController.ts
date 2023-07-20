@@ -189,12 +189,12 @@ export default class DailyAttendancesController {
     // maka utk pengecekan cukup ambil index ke-0
     const payloadZero = payload.daily_attendance[0]
 
+    // validasi input weekend
     if (payloadZero.date_in) {
       if (payloadZero.date_in.weekday === 6 || payloadZero.date_in.weekday === 7) {
         return response.badRequest({ message: "ACSU101: Tidak dapat mengubah absen ke hari sabtu / minggu" })
       }
     }
-
     if (payloadZero.date_out) {
       if (payloadZero.date_out.weekday === 6 || payloadZero.date_out.weekday === 7) {
         return response.badRequest({ message: "ACSU101: Tidak dapat mengubah absen ke hari sabtu / minggu" })
@@ -206,21 +206,11 @@ export default class DailyAttendancesController {
       const attendances = await DailyAttendance.findMany(attendanceIds)
 
       for (const attendance of attendances) {
-        let waktuAwal
-        let waktuAkhir
+        const waktuAwal:DateTime = (payloadZero.date_in) ? payloadZero.date_in : attendance.date_in
+        const waktuAkhir:DateTime = (payloadZero.date_out) ? payloadZero.date_out : attendance.date_out // <-- hati2 ini bisa null
 
-        if (payloadZero.date_in && payloadZero.date_out) {
-          waktuAwal = payloadZero.date_in
-          waktuAkhir = payloadZero.date_out
-        } else if (payloadZero.date_in && attendance.date_out !== null) {
-          waktuAwal = payloadZero.date_in
-          waktuAkhir = attendance.date_out
-        } else if (payloadZero.date_out && attendance.date_in !== null) {
-          waktuAwal = attendance.date_in
-          waktuAkhir = payloadZero.date_out
-        }
-
-        if (waktuAwal !== undefined && waktuAkhir !== undefined) {
+        // validasi tanggal overlap
+        if (waktuAkhir !== null) {
           const selisihDetik = waktuAkhir.diff(waktuAwal, 'seconds').toObject().seconds!
 
           if (selisihDetik < 1) {
@@ -228,11 +218,12 @@ export default class DailyAttendancesController {
           }
         }
 
-        if (payloadZero.date_in) {
+        // validasi data duplikat
+        if (payloadZero.date_in || payloadZero.class_id || payloadZero.student_id) {
           const existingRecord = await DailyAttendance.query()
             .where('class_id', attendance.classId)
             .where('student_id', attendance.studentId)
-            .whereRaw('date_in::timestamp::date = ?', waktuAwal.toSQLDate())
+            .whereRaw('date_in::timestamp::date = ?', [waktuAwal.toSQLDate()!])
             .preload('class')
             .preload('student')
             .first()

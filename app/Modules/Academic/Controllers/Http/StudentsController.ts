@@ -29,8 +29,10 @@ export default class StudentsController {
           .preload("kota")
           .preload("provinsi")
           .where("isGraduated", false)
-          .whereILike("name", `%${keyword}%`)
-          .orWhereILike("nis", `%${keyword}%`)
+          .andWhere((q) => {
+            q.whereILike("name", `%${keyword}%`);
+            q.orWhereILike("nis", `%${keyword}%`);
+          })
           .if(classId, (c) => c.where("classId", classId))
           .orderBy("name")
           .paginate(page, limit);
@@ -42,8 +44,10 @@ export default class StudentsController {
           .preload("kecamatan")
           .preload("kota")
           .preload("provinsi")
-          .whereILike("name", `%${keyword}%`)
-          .orWhereILike("nis", `%${keyword}%`)
+          .andWhere((q) => {
+            q.whereILike("name", `%${keyword}%`);
+            q.orWhereILike("nis", `%${keyword}%`);
+          })
           .if(classId, (c) => c.where("classId", classId))
           .orderBy("name");
       } else {

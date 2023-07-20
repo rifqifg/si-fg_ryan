@@ -221,6 +221,7 @@ export default class DailyAttendancesController {
         // validasi data duplikat
         if (payloadZero.date_in || payloadZero.class_id || payloadZero.student_id) {
           const existingRecord = await DailyAttendance.query()
+            .whereNot('id', attendance.id)
             .where('class_id', attendance.classId)
             .where('student_id', attendance.studentId)
             .whereRaw('date_in::timestamp::date = ?', [waktuAwal.toSQLDate()!])

@@ -20,4 +20,5 @@ Route.group(() => {
     Route.shallowResource('rencana-pengambilan-nilai', 'RencanaPengambilanNilaisController').apiOnly().middleware({ '*': ['auth'] })
     Route.shallowResource('buku-nilai', 'BukuNilaisController').apiOnly().middleware({ '*': ['auth'] })
     Route.shallowResource('import-students', 'ImportStudentsController').only(['store']).apiOnly().middleware({ '*': ['auth'] })
+    Route.shallowResource('mutating-many-students', 'MutatingManyStudentsController').only(['update']).apiOnly().middleware({ '*': ['auth'] })
 }).prefix('academics').namespace('AcademicControllers')

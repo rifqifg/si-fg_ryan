@@ -20,10 +20,10 @@ export default class UpdateDailyAttendanceValidator {
         status: schema.enum.optional(Object.values(AttendanceStatus)),
         description: schema.string.optional({}, [rules.alphaNum({ allow: ['space'] })]),
         class_id: schema.string.optional({}, [
-          rules.exists({ table: 'public.classes', column: 'id' })
+          rules.exists({ table: 'academic.classes', column: 'id' })
         ]),
         student_id: schema.string.optional({}, [
-          rules.exists({ table: 'public.students', column: 'id' })
+          rules.exists({ table: 'academic.students', column: 'id' })
         ])
       })
     )

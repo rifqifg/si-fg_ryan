@@ -115,7 +115,7 @@ export default class DailyAttendancesController {
 
   public async store({ request, response }: HttpContextContract) {
     const payload = await request.validate(CreateDailyAttendanceValidator)
-    
+
     try {
       const weekdayNumber = payload.dailyAttendance[0].date_in.weekday
       if (weekdayNumber === 6 || weekdayNumber === 7) {
@@ -126,9 +126,9 @@ export default class DailyAttendancesController {
       const existingAttendance = await DailyAttendance.query()
         .whereRaw('date_in::timestamp::date = ?', [dateInDateOnly])
         .andWhere('class_id', payload.dailyAttendance[0].classId)
-    
+
       if (existingAttendance.length > 0) {
-          throw new Error("Abensi kelas ini untuk tanggal yang dipilih sudah ada")
+        throw new Error("Abensi kelas ini untuk tanggal yang dipilih sudah ada")
       }
 
       if (payload.dailyAttendance[0].date_out) {
@@ -177,54 +177,73 @@ export default class DailyAttendancesController {
     }
   }
 
-  public async update({ params, request, response }: HttpContextContract) {
-    const { id } = params
-    if (!uuidValidation(id)) { return response.badRequest({ message: "Daily Attendance ID tidak valid" }) }
+  public async update({ request, response }: HttpContextContract) {
 
     const payload = await request.validate(UpdateDailyAttendanceValidator)
-    if (JSON.stringify(payload) === '{}') {
+    if (JSON.stringify(payload) === '{}' || payload.daily_attendance.length < 1) {
       console.log("data update kosong");
       return response.badRequest({ message: "Data tidak boleh kosong" })
     }
 
-    if (payload.date_in) {
-      if (payload.date_in.weekday === 6 || payload.date_in.weekday === 7) {
+    // karena isi array sama (kecuali attendance_id),
+    // maka utk pengecekan cukup ambil index ke-0
+    const payloadZero = payload.daily_attendance[0]
+
+    if (payloadZero.date_in) {
+      if (payloadZero.date_in.weekday === 6 || payloadZero.date_in.weekday === 7) {
         return response.badRequest({ message: "ACSU101: Tidak dapat mengubah absen ke hari sabtu / minggu" })
       }
     }
 
-    if (payload.date_out) {
-      if (payload.date_out.weekday === 6 || payload.date_out.weekday === 7) {
+    if (payloadZero.date_out) {
+      if (payloadZero.date_out.weekday === 6 || payloadZero.date_out.weekday === 7) {
         return response.badRequest({ message: "ACSU101: Tidak dapat mengubah absen ke hari sabtu / minggu" })
       }
     }
 
     try {
-      const daily = await DailyAttendance.findOrFail(id)
+      const attendanceIds = payload.daily_attendance.map(el => el.id)
+      const attendances = await DailyAttendance.findMany(attendanceIds)
 
-      let waktuAwal
-      let waktuAkhir
+      for (const attendance of attendances) {
+        let waktuAwal
+        let waktuAkhir
 
-      if (payload.date_in && payload.date_out) {
-        waktuAwal = payload.date_in
-        waktuAkhir = payload.date_out
-      } else if (payload.date_in && daily.date_out !== null) {
-        waktuAwal = payload.date_in
-        waktuAkhir = daily.date_out
-      } else if (payload.date_out && daily.date_in !== null) {
-        waktuAwal = daily.date_in
-        waktuAkhir = payload.date_out
-      }
+        if (payloadZero.date_in && payloadZero.date_out) {
+          waktuAwal = payloadZero.date_in
+          waktuAkhir = payloadZero.date_out
+        } else if (payloadZero.date_in && attendance.date_out !== null) {
+          waktuAwal = payloadZero.date_in
+          waktuAkhir = attendance.date_out
+        } else if (payloadZero.date_out && attendance.date_in !== null) {
+          waktuAwal = attendance.date_in
+          waktuAkhir = payloadZero.date_out
+        }
 
-      if (waktuAwal !== undefined && waktuAkhir !== undefined) {
-        const selisihDetik = waktuAkhir.diff(waktuAwal, 'seconds').toObject().seconds!
-  
-        if (selisihDetik < 1) {
-          throw new Error("Waktu mulai harus lebih dahulu dari waktu berakhir1")
+        if (waktuAwal !== undefined && waktuAkhir !== undefined) {
+          const selisihDetik = waktuAkhir.diff(waktuAwal, 'seconds').toObject().seconds!
+
+          if (selisihDetik < 1) {
+            throw new Error("Waktu mulai harus lebih dahulu dari waktu berakhir")
+          }
+        }
+
+        if (payloadZero.date_in) {
+          const existingRecord = await DailyAttendance.query()
+            .where('class_id', attendance.classId)
+            .where('student_id', attendance.studentId)
+            .whereRaw('date_in::timestamp::date = ?', waktuAwal.toSQLDate())
+            .preload('class')
+            .preload('student')
+            .first()
+
+          if (existingRecord) {
+            throw new Error(`Abensi siswa dengan nama ${existingRecord.student.name}, kelas ${existingRecord.class.name}, untuk tanggal ${waktuAwal.toSQLDate()} sudah ada`)
+          }
         }
       }
 
-      const data = await daily.merge(payload).save()
+      const data = await DailyAttendance.updateOrCreateMany('id', payload.daily_attendance)
       response.ok({ message: "Berhasil mengubah data", data })
     } catch (error) {
       const message = "ACSU101: " + error.message || error

@@ -32,24 +32,46 @@ export default class DailyAttendancesController {
           start.setDate(start.getDate() + 1);
         }
 
-        data = await DailyAttendance
-          .query()
-          .select('class_id')
-          .select(
-            Database.raw(`sum(case when status = 'present' then 1 else 0 end) as present`),
-            Database.raw(`sum(case when status = 'permission' then 1 else 0 end) as permission`),
-            Database.raw(`sum(case when status = 'sick' then 1 else 0 end) as sick`),
-            Database.raw(`sum(case when status = 'absent' then 1 else 0 end) as absent`),
-            //TODO: menghitung persen status
-            Database.raw(`round(cast(sum(case when status = 'present' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as present_precentage`),
-            Database.raw(`round(cast(sum(case when status = 'permission' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as permission_precentage`),
-            Database.raw(`round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as sick_precentage`),
-            Database.raw(`round(cast(sum(case when status = 'absent' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as absent_precentage`),
-          )
-          .whereBetween('date_in', [formattedStartDate, formattedEndDate])
-          .preload('class', c => c.select('name').withCount('students'))
-          .groupBy('class_id')
-          .paginate(page, limit)
+        if (recap === 'kelas') {
+          data = await DailyAttendance
+            .query()
+            .select('class_id')
+            .select(
+              Database.raw(`sum(case when status = 'present' then 1 else 0 end) as present`),
+              Database.raw(`sum(case when status = 'permission' then 1 else 0 end) as permission`),
+              Database.raw(`sum(case when status = 'sick' then 1 else 0 end) as sick`),
+              Database.raw(`sum(case when status = 'absent' then 1 else 0 end) as absent`),
+              //TODO: menghitung persen status
+              Database.raw(`round(cast(sum(case when status = 'present' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as present_precentage`),
+              Database.raw(`round(cast(sum(case when status = 'permission' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as permission_precentage`),
+              Database.raw(`round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as sick_precentage`),
+              Database.raw(`round(cast(sum(case when status = 'absent' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as absent_precentage`),
+            )
+            .whereBetween('date_in', [formattedStartDate, formattedEndDate])
+            .preload('class', c => c.select('name').withCount('students'))
+            .groupBy('class_id')
+            .paginate(page, limit)
+        } else if (recap === 'siswa') {
+          data = await DailyAttendance
+            .query()
+            .select('student_id', 'class_id')
+            .select(
+              Database.raw(`sum(case when status = 'present' then 1 else 0 end) as present`),
+              Database.raw(`sum(case when status = 'permission' then 1 else 0 end) as permission`),
+              Database.raw(`sum(case when status = 'sick' then 1 else 0 end) as sick`),
+              Database.raw(`sum(case when status = 'absent' then 1 else 0 end) as absent`),
+              //TODO: menghitung persen status
+              Database.raw(`round(cast(sum(case when status = 'present' then 1 else 0 end) * 100.0 / ${totalDays} as decimal(10,2)),0) as present_precentage`),
+              Database.raw(`round(cast(sum(case when status = 'permission' then 1 else 0 end) * 100.0 / ${totalDays} as decimal(10,2)),0) as permission_precentage`),
+              Database.raw(`round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / ${totalDays} as decimal(10,2)),0) as sick_precentage`),
+              Database.raw(`round(cast(sum(case when status = 'absent' then 1 else 0 end) * 100.0 / ${totalDays} as decimal(10,2)),0) as absent_precentage`),
+            )
+            .whereBetween('date_in', [formattedStartDate, formattedEndDate])
+            .groupBy('student_id', 'class_id')
+            .paginate(page, limit)
+        } else {
+          return response.badRequest({ message: "Value parameter recap tidak dikenali, (pilih: kelas / siswa)" })
+        }
 
         return response.ok({ message: "Berhasil mengambil data", data })
       }
@@ -206,8 +228,8 @@ export default class DailyAttendancesController {
       const attendances = await DailyAttendance.findMany(attendanceIds)
 
       for (const attendance of attendances) {
-        const waktuAwal:DateTime = (payloadZero.date_in) ? payloadZero.date_in : attendance.date_in
-        const waktuAkhir:DateTime = (payloadZero.date_out) ? payloadZero.date_out : attendance.date_out // <-- hati2 ini bisa null
+        const waktuAwal: DateTime = (payloadZero.date_in) ? payloadZero.date_in : attendance.date_in
+        const waktuAkhir: DateTime = (payloadZero.date_out) ? payloadZero.date_out : attendance.date_out // <-- hati2 ini bisa null
 
         // validasi tanggal overlap
         if (waktuAkhir !== null) {

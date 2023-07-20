@@ -3,9 +3,10 @@ import Class from 'Academic/Models/Class'
 import CreateClassValidator from 'Academic/Validators/CreateClassValidator'
 import UpdateClassValidator from 'Academic/Validators/UpdateClassValidator'
 import { validate as uuidValidation } from "uuid";
+import Student from '../../Models/Student';
 
 export default class ClassesController {
-  public async index({ request, response, params }: HttpContextContract) {
+  public async index({ request, response }: HttpContextContract) {
     const { page = 1, limit = 10, keyword = "", mode = "page", is_graduated = false } = request.qs()
 
     try {
@@ -76,14 +77,28 @@ export default class ClassesController {
       return response.badRequest({ message: "Data tidak boleh kosong" })
     }
 
-    if (payload.is_graduated) {
-      // jika is_graduated bernilai true pada tabel Classes maka update semua kolom is_graduated pada tabel siswa juga
-      console.log(payload.is_graduated);
-    } else {
-      console.log(payload.is_graduated);
-    }
-    return 0
     try {
+      // update is_graduated siswa jika is_graduated kelas diubah
+      if (payload.is_graduated != undefined) {
+        let dataStudentsUpdate: any = []
+        const dataStudents = await Student
+          .query()
+          .where('class_id', '=', id)
+
+        dataStudents.map(value => {
+          dataStudentsUpdate.push({
+            id: value.$original.id,
+            isGraduated: payload.is_graduated
+          })
+        })
+
+        for (const studentData of dataStudentsUpdate) {
+          const siswa = await Student.findOrFail(studentData.id)
+          await siswa?.merge({isGraduated: studentData.isGraduated}).save()
+        }
+      }
+
+      // update kelas
       const clazz = await Class.findOrFail(id)
       const data = await clazz.merge(payload).save()
       response.ok({ message: "Berhasil mengubah data", data })

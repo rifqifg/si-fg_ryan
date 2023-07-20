@@ -6,7 +6,17 @@ import UpdateStudentValidator from "Academic/Validators/UpdateStudentValidator";
 
 export default class StudentsController {
   public async index({ request, response }: HttpContextContract) {
-    const { page = 1, limit = 10, keyword = "", mode = "page" } = request.qs();
+    const {
+      page = 1,
+      limit = 10,
+      keyword = "",
+      mode = "page",
+      classId = "",
+    } = request.qs();
+
+    if (classId && !uuidValidation(classId)) {
+      return response.badRequest({ message: "Class ID tidak valid" });
+    }
 
     try {
       let data: object = {};
@@ -20,6 +30,8 @@ export default class StudentsController {
           .preload("provinsi")
           .where("isGraduated", false)
           .whereILike("name", `%${keyword}%`)
+          .orWhereILike("nis", `%${keyword}%`)
+          .if(classId, (c) => c.where("classId", classId))
           .orderBy("name")
           .paginate(page, limit);
       } else if (mode === "list") {
@@ -31,6 +43,8 @@ export default class StudentsController {
           .preload("kota")
           .preload("provinsi")
           .whereILike("name", `%${keyword}%`)
+          .orWhereILike("nis", `%${keyword}%`)
+          .if(classId, (c) => c.where("classId", classId))
           .orderBy("name");
       } else {
         return response.badRequest({

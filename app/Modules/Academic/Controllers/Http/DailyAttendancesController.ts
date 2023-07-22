@@ -67,6 +67,7 @@ export default class DailyAttendancesController {
               Database.raw(`round(cast(sum(case when status = 'absent' then 1 else 0 end) * 100.0 / ${totalDays} as decimal(10,2)),0) as absent_precentage`),
             )
             .whereBetween('date_in', [formattedStartDate, formattedEndDate])
+            .preload('student', student => student.select('name', 'classId').preload('class', kelas => kelas.select('name')))
             .groupBy('student_id', 'class_id')
             .paginate(page, limit)
         } else {

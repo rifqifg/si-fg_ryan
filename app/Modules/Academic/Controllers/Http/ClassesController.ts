@@ -51,14 +51,16 @@ export default class ClassesController {
     }
   }
 
-  public async show({ params, response }: HttpContextContract) {
+  public async show({ params, response, request }: HttpContextContract) {
     const { id } = params
+    const { keyword = "" } = request.qs()
+
     if (!uuidValidation(id)) { return response.badRequest({ message: "Class ID tidak valid" }) }
 
     try {
       const data = await Class.query()
         .preload('homeroomTeacher', query => query.select('name', 'nip'))
-        .preload('students', student => student.select('id', 'name', 'nis', 'nisn'))
+        .preload('students', student => student.select('id', 'name', 'nis', 'nisn').whereILike('name', `%${keyword}%`))
         .where('id', id).firstOrFail()
       response.ok({ message: "Berhasil mengambil data", data })
     } catch (error) {
@@ -94,7 +96,7 @@ export default class ClassesController {
 
         for (const studentData of dataStudentsUpdate) {
           const siswa = await Student.findOrFail(studentData.id)
-          await siswa?.merge({isGraduated: studentData.isGraduated}).save()
+          await siswa?.merge({ isGraduated: studentData.isGraduated }).save()
         }
       }
 

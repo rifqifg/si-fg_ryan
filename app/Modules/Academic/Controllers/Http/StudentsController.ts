@@ -12,7 +12,7 @@ export default class StudentsController {
       keyword = "",
       mode = "page",
       classId = "",
-      isGraduated = false
+      isGraduated = false,
     } = request.qs();
 
     if (classId && !uuidValidation(classId)) {
@@ -29,7 +29,7 @@ export default class StudentsController {
           .preload("kecamatan")
           .preload("kota")
           .preload("provinsi")
-          .if(isGraduated, g => g.where("isGraduated", isGraduated))
+          .if(isGraduated, (g) => g.where("isGraduated", isGraduated))
           .andWhere((q) => {
             q.whereILike("name", `%${keyword}%`);
             q.orWhereILike("nis", `%${keyword}%`);
@@ -45,6 +45,7 @@ export default class StudentsController {
           .preload("kecamatan")
           .preload("kota")
           .preload("provinsi")
+          .if(isGraduated, (g) => g.where("isGraduated", isGraduated))
           .andWhere((q) => {
             q.whereILike("name", `%${keyword}%`);
             q.orWhereILike("nis", `%${keyword}%`);

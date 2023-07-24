@@ -27,7 +27,6 @@ export default class ClassesController {
           .preload('homeroomTeacher', query => query.select('name', 'nip'))
           .withCount('students')
           .whereILike('name', `%${keyword}%`)
-          .where('is_graduated', '=', is_graduated)
           .orderBy('name')
       } else {
         return response.badRequest({ message: "Mode tidak dikenali, (pilih: page / list)" })

@@ -29,7 +29,7 @@ export default class StudentsController {
           .preload("kecamatan")
           .preload("kota")
           .preload("provinsi")
-          .where("isGraduated", isGraduated)
+          .if(isGraduated, g => g.where("isGraduated", isGraduated))
           .andWhere((q) => {
             q.whereILike("name", `%${keyword}%`);
             q.orWhereILike("nis", `%${keyword}%`);

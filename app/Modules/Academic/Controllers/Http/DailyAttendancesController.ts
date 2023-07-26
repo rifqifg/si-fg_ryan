@@ -48,7 +48,7 @@ export default class DailyAttendancesController {
               Database.raw(`round(cast(sum(case when status = 'absent' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as absent_precentage`),
             )
             .whereBetween('date_in', [formattedStartDate, formattedEndDate])
-            .preload('class', c => c.select('name', 'nis').withCount('students'))
+            .preload('class', c => c.select('name').withCount('students'))
             .groupBy('class_id')
             .paginate(page, limit)
         } else if (recap === 'siswa') {

@@ -7,7 +7,9 @@ import Student from '../../Models/Student';
 
 export default class ClassesController {
   public async index({ request, response }: HttpContextContract) {
-    const { page = 1, limit = 10, keyword = "", mode = "page", is_graduated = false } = request.qs()
+    let { page = 1, limit = 10, keyword = "", mode = "page", is_graduated = false } = request.qs()
+
+    is_graduated = is_graduated == "true" ? true : false
 
     try {
       let data = {}

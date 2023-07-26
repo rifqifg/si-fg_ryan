@@ -48,7 +48,6 @@ export default class DailyAttendancesController {
               Database.raw(`round(cast(sum(case when status = 'present' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) + round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as present_accumulation`)
             )
             .whereBetween('date_in', [formattedStartDate, formattedEndDate])
-            .whereHas('class', c => c.whereILike('name', `%${keyword}%`))
             .preload('class', c => c.select('name').withCount('students'))
             .groupBy('class_id')
             .paginate(page, limit)

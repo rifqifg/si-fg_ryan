@@ -48,7 +48,7 @@ export default class DailyAttendancesController {
               Database.raw(`round(cast(sum(case when status = 'absent' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as absent_precentage`),
             )
             .whereBetween('date_in', [formattedStartDate, formattedEndDate])
-            .preload('class', c => c.select('name').withCount('students'))
+            .preload('class', c => c.select('name', 'nis').withCount('students'))
             .groupBy('class_id')
             .paginate(page, limit)
         } else if (recap === 'siswa') {
@@ -67,7 +67,7 @@ export default class DailyAttendancesController {
               Database.raw(`round(cast(sum(case when status = 'absent' then 1 else 0 end) * 100.0 / ${totalDays} as decimal(10,2)),0) as absent_precentage`),
             )
             .whereBetween('date_in', [formattedStartDate, formattedEndDate])
-            .preload('student', student => student.select('name', 'classId').preload('class', kelas => kelas.select('name')))
+            .preload('student', student => student.select('name', 'classId', 'nis').preload('class', kelas => kelas.select('name')))
             .groupBy('student_id', 'class_id')
             .paginate(page, limit)
         } else {
@@ -83,7 +83,7 @@ export default class DailyAttendancesController {
             .select('*')
             .whereBetween('date_in', [formattedStartDate, formattedEndDate])
             .whereHas('student', s => s.whereILike('name', `%${keyword}%`))
-            .preload('student', s => s.select('name'))
+            .preload('student', s => s.select('name', 'nis'))
             .preload('class', s => s.select('name'))
             .orderBy('class_id')
             .orderBy('created_at')
@@ -95,7 +95,7 @@ export default class DailyAttendancesController {
             .where('class_id', `${classId}`)
             .whereBetween('date_in', [formattedStartDate, formattedEndDate])
             .whereHas('student', s => s.whereILike('name', `%${keyword}%`))
-            .preload('student', s => s.select('name'))
+            .preload('student', s => s.select('name', 'nis'))
             .preload('class', s => s.select('name'))
             .paginate(page, limit)
         }
@@ -106,7 +106,7 @@ export default class DailyAttendancesController {
             .select('*')
             .whereBetween('date_in', [formattedStartDate, formattedEndDate])
             .whereHas('student', s => s.whereILike('name', `%${keyword}%`))
-            .preload('student', s => s.select('name'))
+            .preload('student', s => s.select('name', 'nis'))
             .preload('class', s => s.select('name'))
             .orderBy('class_id')
             .orderBy('created_at')
@@ -117,7 +117,7 @@ export default class DailyAttendancesController {
             .where('class_id', `${classId}`)
             .whereBetween('date_in', [formattedStartDate, formattedEndDate])
             .whereHas('student', s => s.whereILike('name', `%${keyword}%`))
-            .preload('student', s => s.select('name'))
+            .preload('student', s => s.select('name', 'nis'))
             .preload('class', s => s.select('name'))
         }
       } else {

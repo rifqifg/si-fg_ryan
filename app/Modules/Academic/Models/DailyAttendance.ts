@@ -19,7 +19,7 @@ export default class DailyAttendance extends BaseModel {
       permission_precentage: this.$extras.permission_precentage,
       sick_precentage: this.$extras.sick_precentage,
       absent_precentage: this.$extras.absent_precentage,
-      total_present_percentage: this.$extras.total_present_percentage
+      present_accumulation: this.$extras.present_accumulation
       // students_count: this.$extras.students_count
     }
   }

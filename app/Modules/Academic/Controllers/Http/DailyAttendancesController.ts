@@ -45,7 +45,7 @@ export default class DailyAttendancesController {
               Database.raw(`round(cast(sum(case when status = 'permission' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as permission_precentage`),
               Database.raw(`round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as sick_precentage`),
               Database.raw(`round(cast(sum(case when status = 'absent' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as absent_precentage`),
-              Database.raw(`round(cast(sum(case when status = 'present' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) + round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as total_present_percentage`)
+              Database.raw(`round(cast(sum(case when status = 'present' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) + round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as present_accumulation`)
             )
             .whereBetween('date_in', [formattedStartDate, formattedEndDate])
             .whereHas('class', c => c.whereILike('name', `%${keyword}%`))
@@ -65,7 +65,7 @@ export default class DailyAttendancesController {
               Database.raw(`round(cast(sum(case when status = 'permission' then 1 else 0 end) * 100.0 / ${totalDays} as decimal(10,2)),0) as permission_precentage`),
               Database.raw(`round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / ${totalDays} as decimal(10,2)),0) as sick_precentage`),
               Database.raw(`round(cast(sum(case when status = 'absent' then 1 else 0 end) * 100.0 / ${totalDays} as decimal(10,2)),0) as absent_precentage`),
-              Database.raw(`round(cast(sum(case when status = 'present' then 1 else 0 end) * 100.0 / ${totalDays} as decimal(10,2)),0) + round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / ${totalDays} as decimal(10,2)),0) as total_present_percentage`)
+              Database.raw(`round(cast(sum(case when status = 'present' then 1 else 0 end) * 100.0 / ${totalDays} as decimal(10,2)),0) + round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / ${totalDays} as decimal(10,2)),0) as present_accumulation`)
             )
             .whereBetween('date_in', [formattedStartDate, formattedEndDate])
             .whereHas('student', s => s.whereILike('name', `%${keyword}%`))

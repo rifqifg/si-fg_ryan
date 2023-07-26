@@ -17,7 +17,7 @@ export default class ClassesController {
           .preload('homeroomTeacher', query => query.select('name', 'nip'))
           .withCount('students')
           .whereILike('name', `%${keyword}%`)
-          .where('is_graduated', '=', is_graduated)
+          .if(typeof is_graduated === 'boolean', query => query.where('is_graduated', '=', is_graduated))
           .orderBy('name')
           .paginate(page, limit)
       } else if (mode === "list") {
@@ -25,6 +25,7 @@ export default class ClassesController {
           .query()
           .select('id', 'name', 'description', 'employeeId')
           .preload('homeroomTeacher', query => query.select('name', 'nip'))
+          .if(typeof is_graduated === 'boolean', query => query.where('is_graduated', '=', is_graduated))
           .withCount('students')
           .whereILike('name', `%${keyword}%`)
           .orderBy('name')

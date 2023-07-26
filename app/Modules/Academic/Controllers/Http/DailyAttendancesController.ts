@@ -41,11 +41,11 @@ export default class DailyAttendancesController {
               Database.raw(`sum(case when status = 'permission' then 1 else 0 end) as permission`),
               Database.raw(`sum(case when status = 'sick' then 1 else 0 end) as sick`),
               Database.raw(`sum(case when status = 'absent' then 1 else 0 end) as absent`),
-              //TODO: menghitung persen status
               Database.raw(`round(cast(sum(case when status = 'present' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as present_precentage`),
               Database.raw(`round(cast(sum(case when status = 'permission' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as permission_precentage`),
               Database.raw(`round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as sick_precentage`),
               Database.raw(`round(cast(sum(case when status = 'absent' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as absent_precentage`),
+              Database.raw(`round(cast(sum(case when status = 'present' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) + round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as total_present_percentage`)
             )
             .whereBetween('date_in', [formattedStartDate, formattedEndDate])
             .preload('class', c => c.select('name').withCount('students'))
@@ -60,11 +60,11 @@ export default class DailyAttendancesController {
               Database.raw(`sum(case when status = 'permission' then 1 else 0 end) as permission`),
               Database.raw(`sum(case when status = 'sick' then 1 else 0 end) as sick`),
               Database.raw(`sum(case when status = 'absent' then 1 else 0 end) as absent`),
-              //TODO: menghitung persen status
               Database.raw(`round(cast(sum(case when status = 'present' then 1 else 0 end) * 100.0 / ${totalDays} as decimal(10,2)),0) as present_precentage`),
               Database.raw(`round(cast(sum(case when status = 'permission' then 1 else 0 end) * 100.0 / ${totalDays} as decimal(10,2)),0) as permission_precentage`),
               Database.raw(`round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / ${totalDays} as decimal(10,2)),0) as sick_precentage`),
               Database.raw(`round(cast(sum(case when status = 'absent' then 1 else 0 end) * 100.0 / ${totalDays} as decimal(10,2)),0) as absent_precentage`),
+              Database.raw(`round(cast(sum(case when status = 'present' then 1 else 0 end) * 100.0 / ${totalDays} as decimal(10,2)),0) + round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / ${totalDays} as decimal(10,2)),0) as total_present_percentage`)
             )
             .whereBetween('date_in', [formattedStartDate, formattedEndDate])
             .preload('student', student => student.select('name', 'classId', 'nis').preload('class', kelas => kelas.select('name')))

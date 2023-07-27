@@ -44,11 +44,19 @@ export default class ExceptionHandler extends HttpExceptionHandler {
       // Extract the unique error messages from the object
       //@ts-ignore
       const uniqueErrorMessages = Object.values(data).flatMap((errorMessages) => [...new Set(errorMessages)]);
+      const combinedData = uniqueErrorMessages.join(' \n ');
 
-      return ctx.response.badRequest({
-        message: "Data tidak valid",
-        data: uniqueErrorMessages,
-      })
+      if (uniqueErrorMessages.every(item => typeof item === 'object')) {
+        return ctx.response.badRequest({
+          message: 'Data tidak valid',
+          data: error.messages.errors,
+        })
+      }else {
+        return ctx.response.badRequest({
+          message: combinedData,
+        })
+      }
+      
     }
     if (error.code === 'E_ROUTE_NOT_FOUND') {
       return ctx.response.badRequest({

@@ -41,13 +41,14 @@ export default class DailyAttendancesController {
               Database.raw(`sum(case when status = 'permission' then 1 else 0 end) as permission`),
               Database.raw(`sum(case when status = 'sick' then 1 else 0 end) as sick`),
               Database.raw(`sum(case when status = 'absent' then 1 else 0 end) as absent`),
-              //TODO: menghitung persen status
               Database.raw(`round(cast(sum(case when status = 'present' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as present_precentage`),
               Database.raw(`round(cast(sum(case when status = 'permission' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as permission_precentage`),
               Database.raw(`round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as sick_precentage`),
               Database.raw(`round(cast(sum(case when status = 'absent' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as absent_precentage`),
+              Database.raw(`round(cast(sum(case when status = 'present' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) + round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as present_accumulation`)
             )
             .whereBetween('date_in', [formattedStartDate, formattedEndDate])
+            .if(classId, q => q.where('class_id', `${classId}`))
             .preload('class', c => c.select('name').withCount('students'))
             .groupBy('class_id')
             .paginate(page, limit)
@@ -60,14 +61,15 @@ export default class DailyAttendancesController {
               Database.raw(`sum(case when status = 'permission' then 1 else 0 end) as permission`),
               Database.raw(`sum(case when status = 'sick' then 1 else 0 end) as sick`),
               Database.raw(`sum(case when status = 'absent' then 1 else 0 end) as absent`),
-              //TODO: menghitung persen status
               Database.raw(`round(cast(sum(case when status = 'present' then 1 else 0 end) * 100.0 / ${totalDays} as decimal(10,2)),0) as present_precentage`),
               Database.raw(`round(cast(sum(case when status = 'permission' then 1 else 0 end) * 100.0 / ${totalDays} as decimal(10,2)),0) as permission_precentage`),
               Database.raw(`round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / ${totalDays} as decimal(10,2)),0) as sick_precentage`),
               Database.raw(`round(cast(sum(case when status = 'absent' then 1 else 0 end) * 100.0 / ${totalDays} as decimal(10,2)),0) as absent_precentage`),
+              Database.raw(`round(cast(sum(case when status = 'present' then 1 else 0 end) * 100.0 / ${totalDays} as decimal(10,2)),0) + round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / ${totalDays} as decimal(10,2)),0) as present_accumulation`)
             )
             .whereBetween('date_in', [formattedStartDate, formattedEndDate])
-            .preload('student', student => student.select('name', 'classId').preload('class', kelas => kelas.select('name')))
+            .whereHas('student', s => s.whereILike('name', `%${keyword}%`))
+            .preload('student', student => student.select('name', 'classId', 'nis').preload('class', kelas => kelas.select('name')))
             .groupBy('student_id', 'class_id')
             .paginate(page, limit)
         } else {
@@ -83,7 +85,7 @@ export default class DailyAttendancesController {
             .select('*')
             .whereBetween('date_in', [formattedStartDate, formattedEndDate])
             .whereHas('student', s => s.whereILike('name', `%${keyword}%`))
-            .preload('student', s => s.select('name'))
+            .preload('student', s => s.select('name', 'nis'))
             .preload('class', s => s.select('name'))
             .orderBy('class_id')
             .orderBy('created_at')
@@ -95,7 +97,7 @@ export default class DailyAttendancesController {
             .where('class_id', `${classId}`)
             .whereBetween('date_in', [formattedStartDate, formattedEndDate])
             .whereHas('student', s => s.whereILike('name', `%${keyword}%`))
-            .preload('student', s => s.select('name'))
+            .preload('student', s => s.select('name', 'nis'))
             .preload('class', s => s.select('name'))
             .paginate(page, limit)
         }
@@ -106,7 +108,7 @@ export default class DailyAttendancesController {
             .select('*')
             .whereBetween('date_in', [formattedStartDate, formattedEndDate])
             .whereHas('student', s => s.whereILike('name', `%${keyword}%`))
-            .preload('student', s => s.select('name'))
+            .preload('student', s => s.select('name', 'nis'))
             .preload('class', s => s.select('name'))
             .orderBy('class_id')
             .orderBy('created_at')
@@ -117,7 +119,7 @@ export default class DailyAttendancesController {
             .where('class_id', `${classId}`)
             .whereBetween('date_in', [formattedStartDate, formattedEndDate])
             .whereHas('student', s => s.whereILike('name', `%${keyword}%`))
-            .preload('student', s => s.select('name'))
+            .preload('student', s => s.select('name', 'nis'))
             .preload('class', s => s.select('name'))
         }
       } else {

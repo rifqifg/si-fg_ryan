@@ -26,6 +26,8 @@ export default class ExceptionHandler extends HttpExceptionHandler {
     /**
      * Self handle the validation exception
      */
+    // console.log(error.messages);
+
     if (error.code === 'E_INVALID_AUTH_PASSWORD') {
       return ctx.response.badRequest({
         message: 'Wrong password',
@@ -37,10 +39,24 @@ export default class ExceptionHandler extends HttpExceptionHandler {
       })
     }
     if (error.code === 'E_VALIDATION_FAILURE') {
-      return ctx.response.badRequest({
-        message: error.message,
-        data: error.messages.errors,
-      })
+      const data = error.messages
+      
+      // Extract the unique error messages from the object
+      //@ts-ignore
+      const uniqueErrorMessages = Object.values(data).flatMap((errorMessages) => [...new Set(errorMessages)]);
+      const combinedData = uniqueErrorMessages.join(' \n ');
+
+      if (uniqueErrorMessages.every(item => typeof item === 'object')) {
+        return ctx.response.badRequest({
+          message: 'Data tidak valid',
+          data: error.messages.errors,
+        })
+      }else {
+        return ctx.response.badRequest({
+          message: combinedData,
+        })
+      }
+      
     }
     if (error.code === 'E_ROUTE_NOT_FOUND') {
       return ctx.response.badRequest({

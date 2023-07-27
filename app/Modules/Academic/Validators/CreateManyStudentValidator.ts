@@ -144,7 +144,7 @@ export default class CreateManyStudentValidator {
       let cekColumn;
       switch (column[2]) {
         case 'name':
-          cekColumn = 'nama'
+          cekColumn = 'Nama Siswa'
           break;
         case 'gender':
           cekColumn = 'Jenis Kelamin'

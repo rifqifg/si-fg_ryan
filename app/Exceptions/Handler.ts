@@ -44,7 +44,7 @@ export default class ExceptionHandler extends HttpExceptionHandler {
       // Extract the unique error messages from the object
       //@ts-ignore
       const uniqueErrorMessages = Object.values(data).flatMap((errorMessages) => [...new Set(errorMessages)]);
-      const combinedData = uniqueErrorMessages.join(' </br> ');
+      const combinedData = uniqueErrorMessages.join(' /n ');
 
       if (uniqueErrorMessages.every(item => typeof item === 'object')) {
         return ctx.response.badRequest({

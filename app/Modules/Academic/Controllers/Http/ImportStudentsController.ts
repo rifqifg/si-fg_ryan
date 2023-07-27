@@ -3,10 +3,10 @@ import CreateImportStudentValidator from '../../Validators/CreateImportStudentVa
 import Student from '../../Models/Student'
 import StudentParent from '../../Models/StudentParent'
 import CreateManyStudentValidator from '../../Validators/CreateManyStudentValidator'
-const XLSX = require("xlsx");
+import XLSX from "xlsx";
 import { validator } from '@ioc:Adonis/Core/Validator'
 import CreateManyStudentParentValidator from '../../Validators/CreateManyStudentParentValidator'
-const fs = require('fs');
+import fs from "fs";
 
 export default class ImportStudentsController {
     public async store({ request, response }: HttpContextContract) {

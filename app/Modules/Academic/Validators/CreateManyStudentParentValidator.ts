@@ -1,8 +1,9 @@
 import { schema, CustomMessages, rules } from "@ioc:Adonis/Core/Validator";
+import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import { ParentEducation, ParentRelationship } from "../lib/enums";
 
 export default class CreateManyStudentParentValidator {
-  constructor(public data: {}) {}
+  constructor(protected ctx: HttpContextContract, public data: {}) { }
 
   /*
    * Define schema to validate the "shape", "type", "formatting" and "integrity" of data.
@@ -75,5 +76,92 @@ export default class CreateManyStudentParentValidator {
    * }
    *
    */
-  public messages: CustomMessages = {};
+  public messages: CustomMessages = {
+    '*': (field, rule) => {
+      const numberPattern = /\d+/;
+      const match = field.match(numberPattern);
+      let number = match ? parseInt(match[0], 10) : null;
+      number! += 3;
+
+      const column = field.split('.');
+
+      let cekColumn;
+      switch (column[2]) {
+        case 'studentId':
+          cekColumn = 'Nama Siswa'
+          break;
+        case 'relationship_w_student':
+          cekColumn = 'biological mother'
+          break;
+        case 'name':
+          cekColumn = 'Nama Ayah/Ibu/Wali'
+          break;
+        case 'birth_date':
+          cekColumn = 'Tanggal Lahir Ayah/Ibu/Wali'
+          break;
+        case 'education':
+          cekColumn = 'Jenjang Pendidikan Ayah/Ibu/Wali'
+          break;
+        case 'occupation':
+          cekColumn = 'Pekerjaan Ayah/Ibu/Wali'
+          break;
+        case 'min_salary':
+          cekColumn = 'Min Salary Ayah/Ibu/Wali'
+          break;
+        case 'max_salary':
+          cekColumn = 'Max Salary Ayah/Ibu/Wali'
+          break;
+        case 'transportation':
+          cekColumn = 'Alat Transportasi'
+          break;
+        case 'nik':
+          cekColumn = 'NIK Ayah/Ibu/Wali'
+          break;
+
+        default:
+          cekColumn = column[2]
+          break;
+      }
+
+      let cekRule;
+
+      switch (rule) {
+        case 'required':
+          cekRule = "Data tidak boleh kosong";
+          break;
+        case 'regex':
+          cekRule = "Data berupa angka 0 - 9";
+          break;
+        case 'unique':
+          cekRule = "Data tidak boleh sama";
+          break;
+        case 'email':
+          cekRule = "Email tidak valid";
+          break;
+        case 'minLength':
+          if (column[2] === 'name') {
+            cekRule = "Kurang dari 5";
+          } else if (column[2] === 'nik') {
+            cekRule = "Kurang dari 16"
+          }
+          break;
+        case 'maxLength':
+          if (column[2] === 'nik' || column[2] === 'phone_number') {
+            cekRule = "Lebih dari 16";
+          } else if (column[2] === 'occupation') {
+            cekRule = "Lebih dari 40";
+          }else if (column[2] === 'email') {
+            cekRule = "Lebih dari 50";
+          }else {
+            cekRule = "Lebih dari 10"
+          }
+          break;
+        default:
+          cekRule = rule;
+          break;
+      }
+
+      return `Baris ${number}: ${cekColumn} - ${cekRule}`
+    },
+  };
 }

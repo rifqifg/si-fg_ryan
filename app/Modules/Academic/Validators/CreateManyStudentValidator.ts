@@ -29,7 +29,7 @@ export default class CreateManyStudentValidator {
       schema.object().members({
         name: schema.string({}, [
           rules.minLength(5)]),
-        nik: schema.string([
+        nik: schema.string.optional([
           rules.regex(new RegExp("^[0-9]+$")),
           rules.minLength(16),
           rules.maxLength(16),
@@ -39,7 +39,7 @@ export default class CreateManyStudentValidator {
           rules.email(),
           rules.unique({ table: 'academic.students', column: 'email' })
         ]),
-        nis: schema.string.optional([
+        nis: schema.string([
           rules.regex(/^[0-9]+$/),
           rules.unique({ table: 'academic.students', column: 'nis' })
         ]),

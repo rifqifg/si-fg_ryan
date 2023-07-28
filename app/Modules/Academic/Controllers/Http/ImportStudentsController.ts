@@ -7,6 +7,11 @@ import XLSX from "xlsx";
 import { validator } from '@ioc:Adonis/Core/Validator'
 import CreateManyStudentParentValidator from '../../Validators/CreateManyStudentParentValidator'
 import fs from "fs";
+import {
+    PayloadImportStudent,
+    PayloadImportStudentParent,
+} from "../../lib/types/payload-import-student";
+
 
 export default class ImportStudentsController {
     public async store({ request, response }: HttpContextContract) {
@@ -31,18 +36,24 @@ class ImportService {
         const firstSheet = workbook.Sheets[sheetNames[0]];
         const jsonData = XLSX.utils.sheet_to_json(firstSheet);
 
-        const students = {
-            "manyStudents": []
-        }
-        const studentFathers = {
-            "manyStudentParents": []
-        }
-        const studentMothers = {
-            "manyStudentParents": []
-        }
-        const studentGuardians = {
-            "manyStudentParents": []
-        }
+        const students: { manyStudents: PayloadImportStudent[] } = {
+            manyStudents: [],
+        };
+
+        const studentFathers: { manyStudentParents: PayloadImportStudentParent[] } =
+        {
+            manyStudentParents: [],
+        };
+        const studentMothers: { manyStudentParents: PayloadImportStudentParent[] } =
+        {
+            manyStudentParents: [],
+        };
+        const studentGuardians: {
+            manyStudentParents: PayloadImportStudentParent[];
+        } = {
+            manyStudentParents: [],
+        };
+
 
         function checkResidence(value) {
             if (value) {
@@ -112,9 +123,8 @@ class ImportService {
             }
         }
 
-        jsonData.map((value, index) => {
+        jsonData.map((value: PayloadImportStudent, index) => {
             if (index > 0) {
-                //@ts-ignore
                 students.manyStudents.push({
                     name: value['Nama Siswa'],
                     nis: String(value['NIS']),
@@ -162,7 +172,6 @@ class ImportService {
                     program: checkProgram(value['Program']),
                 })
 
-                //@ts-ignore
                 studentFathers.manyStudentParents.push({
                     studentId: value['Nama Siswa'],
                     relationship_w_student: 'biological father',
@@ -175,7 +184,6 @@ class ImportService {
                     nik: value['NIK Ayah'] === undefined ? "0000000000000000" : String(value['NIK Ayah']),
                 })
 
-                //@ts-ignore
                 studentMothers.manyStudentParents.push({
                     studentId: value['Nama Siswa'],
                     relationship_w_student: 'biological mother',
@@ -188,7 +196,6 @@ class ImportService {
                     nik: value['NIK Ibu'] === undefined ? "0000000000000000" : String(value['NIK Ayah']),
                 })
 
-                //@ts-ignore
                 studentGuardians.manyStudentParents.push({
                     studentId: value['Nama Siswa'],
                     relationship_w_student: 'guardian',
@@ -204,7 +211,6 @@ class ImportService {
             }
         })
 
-
         //@ts-ignore
         const studentValidator = new CreateManyStudentValidator(null, students)
         const resultStudentValidator = await validator.validate(studentValidator)
@@ -212,23 +218,17 @@ class ImportService {
 
         dataStudents.map(value => {
             studentFathers.manyStudentParents.map((sf, index) => {
-                //@ts-ignore
                 if (value.$attributes.name == sf.studentId) {
-                    //@ts-ignore
                     studentFathers.manyStudentParents[index]['studentId'] = value.$attributes.id
                 }
             })
             studentMothers.manyStudentParents.map((sf, index) => {
-                //@ts-ignore
                 if (value.$attributes.name == sf.studentId) {
-                    //@ts-ignore
                     studentMothers.manyStudentParents[index]['studentId'] = value.$attributes.id
                 }
             })
             studentGuardians.manyStudentParents.map((sf, index) => {
-                //@ts-ignore
                 if (value.$attributes.name == sf.studentId) {
-                    //@ts-ignore
                     studentGuardians.manyStudentParents[index]['studentId'] = value.$attributes.id
                 }
             })

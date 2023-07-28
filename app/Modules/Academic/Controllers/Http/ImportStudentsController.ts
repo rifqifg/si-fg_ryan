@@ -17,11 +17,17 @@ export default class ImportStudentsController {
     public async store({ request, response }: HttpContextContract) {
         let payload = await request.validate(CreateImportStudentValidator)
 
+        //@ts-ignore
         const excelBuffer = fs.readFileSync(payload.upload.tmpPath);
 
-        await ImportService.ImportClassification(excelBuffer)
+        const importExcel = await ImportService.ImportClassification(excelBuffer)
+        
+        if (importExcel == 0) {
+            response.badRequest({ message: "Data tidak boleh kosong"})
+        } else {
+            response.ok({ message: "Success import data" })
+        }
 
-        response.ok({ message: "Success import data" })
     }
 }
 
@@ -35,6 +41,11 @@ class ImportService {
         // membaca isi dari sheet pertama
         const firstSheet = workbook.Sheets[sheetNames[0]];
         const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+
+        // Mengecek jika data excelnya kosong
+        if (jsonData.length <= 1) {
+            return 0
+        }
 
         const students: { manyStudents: PayloadImportStudent[] } = {
             manyStudents: [],

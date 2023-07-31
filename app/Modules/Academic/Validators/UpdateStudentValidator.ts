@@ -11,6 +11,10 @@ import {
 export default class UpdateStudentValidator {
   constructor(protected ctx: HttpContextContract) {}
 
+  public refs = schema.refs({
+		id: this.ctx.params.id
+	})
+
   public schema = schema.create({
     name: schema.string.nullableAndOptional({}, [
       rules.alpha({ allow: ["space"] }),
@@ -23,19 +27,19 @@ export default class UpdateStudentValidator {
       rules.regex(/^[0-9]+$/),
       rules.minLength(16),
       rules.maxLength(16),
-      rules.unique({ table: "academic.students", column: "nik" }),
+      rules.unique({ table: "academic.students", column: "nik", whereNot: { id: this.refs.id } }),
     ]),
     email: schema.string.nullableAndOptional([
       rules.email(),
-      rules.unique({ table: "academic.students", column: "email" }),
+      rules.unique({ table: "academic.students", column: "email", whereNot: { id: this.refs.id } }),
     ]),
     nis: schema.string.nullableAndOptional([
       rules.regex(/^[0-9]+$/),
-      rules.unique({ table: "academic.students", column: "nis" }),
+      rules.unique({ table: "academic.students", column: "nis", whereNot: { id: this.refs.id } }),
     ]),
     nisn: schema.string.nullableAndOptional([
       rules.regex(/^[0-9]+$/),
-      rules.unique({ table: "academic.students", column: "nisn" }),
+      rules.unique({ table: "academic.students", column: "nisn", whereNot: { id: this.refs.id } }),
     ]),
     isGraduated: schema.boolean.optional(),
     birth_city: schema.string.nullableAndOptional(),

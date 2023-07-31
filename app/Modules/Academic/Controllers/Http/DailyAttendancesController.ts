@@ -5,6 +5,8 @@ import { DateTime } from 'luxon'
 import { validate as uuidValidation } from "uuid";
 import UpdateDailyAttendanceValidator from '../../Validators/UpdateDailyAttendanceValidator';
 import Database from '@ioc:Adonis/Lucid/Database';
+import Class from '../../Models/Class';
+import Student from '../../Models/Student';
 
 export default class DailyAttendancesController {
   public async index({ request, response }: HttpContextContract) {
@@ -165,6 +167,11 @@ export default class DailyAttendancesController {
         if (selisihDetik < 1) {
           throw new Error("Waktu mulai tidak boleh dibelakang waktu berakhir")
         }
+      }
+
+      const studentCount = await Student.query().where('class_id', payload.dailyAttendance[0].classId)
+      if(studentCount.length !== payload.dailyAttendance.length) {
+        throw new Error("Jumlah data absen tidak sesuai dengan jumlah siswa di kelas")
       }
 
       const data = await DailyAttendance.createMany(payload.dailyAttendance)

@@ -20,6 +20,10 @@ export default class DailyAttendancesController {
       recap = false,
     } = request.qs();
 
+if(classId && !uuidValidation(classId)) {
+  return response.badRequest({ message: "class ID tidak valid" })
+}
+
     // karena ada kemungkinan input fromDate & toDate formatnya 'yyyy-MM-dd 00:00:00', maka diambil value yg sebelum whitespace
     const splittedFromDate = fromDate.split(" ")[0];
     const splittedToDate = toDate.split(" ")[0];

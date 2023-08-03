@@ -28,25 +28,36 @@ export default class SubjectsController {
           .orderBy("name")
           .paginate(page, limit);
       } else if (mode === "list") {
-        if (classId !== "" && teacherId !== "") {
-          data = await Subject.query()
-            .whereDoesntHave("teaching", (th) => {
-              th.where("teacher_id", "=", teacherId);
-              th.where("class_id", "=", classId);
-            })
-            .if(isExtracurricular, (q) =>
-              q.where("is_extracurricular", isExtracurricular)
+        data = await Subject.query()
+          .if(classId, (q) =>
+            q.whereDoesntHave("teaching", (th) =>
+              th.where("teacher_id", teacherId)
             )
-            .whereILike("name", `%${keyword}%`)
-            .orderBy("name");
-        } else {
-          data = await Subject.query()
-            .if(isExtracurricular, (q) =>
-              q.where("is_extracurricular", isExtracurricular)
-            )
-            .whereILike("name", `%${keyword}%`)
-            .orderBy("name");
-        }
+          )
+          .if(teacherId, (q) =>
+            q.whereDoesntHave("teaching", (th) => th.where("class_id", classId))
+          )
+          .whereILike("name", `%${keyword}%`)
+          .orderBy("name");
+        // if (classId !== "" && teacherId !== "") {
+        //   data = await Subject.query()
+        //     .whereDoesntHave("teaching", (th) => {
+        //       th.where("teacher_id", "=", teacherId);
+        //       th.where("class_id", "=", classId);
+        //     })
+        //     .if(isExtracurricular, (q) =>
+        //       q.where("is_extracurricular", isExtracurricular)
+        //     )
+        //     .whereILike("name", `%${keyword}%`)
+        //     .orderBy("name");
+        // } else {
+        //   data = await Subject.query()
+        //     .if(isExtracurricular, (q) =>
+        //       q.where("is_extracurricular", isExtracurricular)
+        //     )
+        //     .whereILike("name", `%${keyword}%`)
+        //     .orderBy("name");
+        // }
       } else {
         return response.badRequest({
           message: "Mode tidak dikenali, (pilih: page / list)",

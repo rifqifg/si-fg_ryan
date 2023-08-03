@@ -29,13 +29,13 @@ export default class SubjectsController {
           .paginate(page, limit);
       } else if (mode === "list") {
         data = await Subject.query()
-          .if(classId, (q) =>
-            q.whereDoesntHave("teaching", (th) =>
-              th.where("teacher_id", teacherId)
+          .if(classId && teacherId, (q) =>
+            q.whereDoesntHave(
+              "teaching",
+              (th) => (
+                th.where("class_id", classId), th.where("teacher_id", teacherId)
+              )
             )
-          )
-          .if(teacherId, (q) =>
-            q.whereDoesntHave("teaching", (th) => th.where("class_id", classId))
           )
           .whereILike("name", `%${keyword}%`)
           .orderBy("name");

@@ -30,7 +30,6 @@ export default class SubjectsController {
       } else if (mode === "list") {
         if (classId !== "" && teacherId !== "") {
           data = await Subject.query()
-            .where("is_extracurricular", isExtracurricular)
             .whereDoesntHave("teaching", (th) => {
               th.where("teacher_id", "=", teacherId);
               th.where("class_id", "=", classId);

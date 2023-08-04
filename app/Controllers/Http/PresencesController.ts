@@ -6,6 +6,9 @@ import Presence from 'App/Models/Presence'
 import CreatePresenceValidator from 'App/Validators/CreatePresenceValidator'
 import UpdatePresenceValidator from 'App/Validators/UpdatePresenceValidator'
 import { DateTime, Duration } from 'luxon'
+import { validate as uuidValidation } from "uuid";
+import { validator } from '@ioc:Adonis/Core/Validator'
+import UpdateTimeOutPresenceValidator from 'App/Validators/UpdateTimeOutPresenceValidator'
 export default class PresencesController {
   public async index({ request, response }: HttpContextContract) { // @ts-ignore
     const hariIni = DateTime.now().toSQLDate().toString() // @ts-ignore
@@ -137,14 +140,40 @@ export default class PresencesController {
 
   public async update({ params, request, response }: HttpContextContract) {
     const { id } = params
-    const payload = await request.validate(UpdatePresenceValidator)
-    try {
-      const findData = await Presence.findOrFail(id) // @ts-ignore
-      const data = await findData.merge(payload).save()
-      response.ok({ message: "Update data success", data })
-    } catch (error) {
-      console.log(error);
-      response.badGateway({ ...error })
+    if (id == 'timeout') {
+      // @ts-ignore
+      const hariIni = DateTime.now().toSQLDate().toString()
+      const { fromDate = hariIni, toDate = hariIni, timeOut = '12:30:00' } = request.qs()
+
+      const presence = await Presence.query()
+        .select("id", "time_in", "time_out")
+        .whereNull('time_out')
+        .andWhereRaw(`time_in::date between '${fromDate}' and '${toDate}'`)
+
+      presence.map(async value => {
+        const id = value.$attributes.id
+        const time_in = new Date(value.$attributes.timeIn).toISOString()
+        const extractedDate = time_in.split("T")[0];
+        let time_out = extractedDate + " " + timeOut;
+        //@ts-ignore
+        const presenceTimeOutValidator = new UpdateTimeOutPresenceValidator(null, { timeOut: time_out })
+        const payload = await validator.validate(presenceTimeOutValidator)
+
+        const findData = await Presence.findOrFail(id) // @ts-ignore
+        await findData.merge(payload).save()
+      })
+      response.ok({ message: "Update data success" })
+    } else {
+      if (!uuidValidation(id)) { return response.badRequest({ message: "Presence ID tidak valid" }) }
+      const payload = await request.validate(UpdatePresenceValidator)
+      try {
+        const findData = await Presence.findOrFail(id) // @ts-ignore
+        const data = await findData.merge(payload).save()
+        response.ok({ message: "Update data success", data })
+      } catch (error) {
+        console.log(error);
+        response.badGateway({ ...error })
+      }
     }
   }
 

@@ -150,6 +150,10 @@ export default class PresencesController {
         .whereNull('time_out')
         .andWhereRaw(`time_in::date between '${fromDate}' and '${toDate}'`)
 
+      if (presence.length == 0) {
+        return response.badRequest({ message: "Data sudah lengkap" })
+      }
+
       presence.map(async value => {
         const id = value.$attributes.id
         const time_in = new Date(value.$attributes.timeIn).toISOString()

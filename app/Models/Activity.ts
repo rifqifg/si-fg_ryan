@@ -53,6 +53,9 @@ export default class Activity extends BaseModel {
   @hasMany(() => Presence)
   public presence: HasMany<typeof Presence>
 
+  @column()
+  public timeOutDefault: string
+
   @column.dateTime({ autoCreate: true, serializeAs: null })
   public createdAt: DateTime
 

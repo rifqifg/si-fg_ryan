@@ -3,8 +3,9 @@ import CreateDailyAttendanceValidator from "../../Validators/CreateDailyAttendan
 import DailyAttendance from "../../Models/DailyAttendance";
 import { DateTime } from "luxon";
 import { validate as uuidValidation } from "uuid";
-import UpdateDailyAttendanceValidator from "../../Validators/UpdateDailyAttendanceValidator";
-import Database from "@ioc:Adonis/Lucid/Database";
+import UpdateDailyAttendanceValidator from '../../Validators/UpdateDailyAttendanceValidator';
+import Database from '@ioc:Adonis/Lucid/Database';
+import Student from '../../Models/Student';
 
 export default class DailyAttendancesController {
   public async index({ request, response }: HttpContextContract) {
@@ -209,8 +210,13 @@ if(classId && !uuidValidation(classId)) {
         }
       }
 
-      const data = await DailyAttendance.createMany(payload.dailyAttendance);
-      response.created({ message: "Berhasil menyimpan data", data });
+      const studentCount = await Student.query().where('class_id', payload.dailyAttendance[0].classId)
+      if(studentCount.length !== payload.dailyAttendance.length) {
+        throw new Error("Jumlah data absen tidak sesuai dengan jumlah siswa di kelas")
+      }
+
+      const data = await DailyAttendance.createMany(payload.dailyAttendance)
+      response.created({ message: "Berhasil menyimpan data", data })
     } catch (error) {
       const message = "ACDA-store: " + error.message || error;
       console.log(error);

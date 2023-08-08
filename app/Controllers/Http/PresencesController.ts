@@ -6,6 +6,9 @@ import Presence from 'App/Models/Presence'
 import CreatePresenceValidator from 'App/Validators/CreatePresenceValidator'
 import UpdatePresenceValidator from 'App/Validators/UpdatePresenceValidator'
 import { DateTime, Duration } from 'luxon'
+import { validate as uuidValidation } from "uuid";
+import { validator } from '@ioc:Adonis/Core/Validator'
+import UpdateTimeOutPresenceValidator from 'App/Validators/UpdateTimeOutPresenceValidator'
 export default class PresencesController {
   public async index({ request, response }: HttpContextContract) { // @ts-ignore
     const hariIni = DateTime.now().toSQLDate().toString() // @ts-ignore
@@ -94,7 +97,7 @@ export default class PresencesController {
 
     // return response.ok({date :  DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss').toString()})
     if (prezence === null) { //belum ada data = belum pernah masuk
-      // @ts-ignore 
+      // @ts-ignore
       const scanIn = await Presence.create({ activityId, employeeId, timeIn: DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss').toString() })
       response.ok({ message: "Scan In Success", activity, scanIn })
     } else if (prezence!.timeOut === null) { //sudah ada data & belum keluar
@@ -137,14 +140,52 @@ export default class PresencesController {
 
   public async update({ params, request, response }: HttpContextContract) {
     const { id } = params
-    const payload = await request.validate(UpdatePresenceValidator)
-    try {
-      const findData = await Presence.findOrFail(id) // @ts-ignore
-      const data = await findData.merge(payload).save()
-      response.ok({ message: "Update data success", data })
-    } catch (error) {
-      console.log(error);
-      response.badGateway({ ...error })
+    if (id == 'timeout') {
+      // @ts-ignore
+      const hariIni = DateTime.now().toSQLDate().toString()
+      const { fromDate = hariIni, toDate = hariIni, timeOut = null, activity_id } = request.qs()
+      if (activity_id) {
+        const activity = await Activity.findOrFail(activity_id)
+        const timeOutDefault = activity.$attributes.timeOutDefault
+
+        const presence = await Presence.query()
+          .select("id", "time_in", "time_out")
+          .whereNull('time_out')
+          .andWhereRaw(`time_in::date between '${fromDate}' and '${toDate}'`)
+
+        if (presence.length == 0) {
+          return response.badRequest({ message: "Data sudah lengkap" })
+        }
+
+        if (timeOutDefault == null && timeOut == null) {
+          return response.badRequest({ message: "Data timeout harus diisi" })
+        }
+
+        presence.map(async value => {
+          const id = value.$attributes.id
+          const time_in = new Date(value.$attributes.timeIn).toISOString()
+          const extractedDate = time_in.split("T")[0];
+          let time_out = timeOutDefault ? extractedDate + " " + timeOutDefault : extractedDate + " " + timeOut;
+          //@ts-ignore
+          const presenceTimeOutValidator = new UpdateTimeOutPresenceValidator(null, { timeOut: time_out })
+          const payload = await validator.validate(presenceTimeOutValidator)
+
+          const findData = await Presence.findOrFail(id) // @ts-ignore
+          await findData.merge(payload).save()
+        })
+        response.ok({ message: "Update data success" })
+      }
+    } else {
+      if (!uuidValidation(id)) { return response.badRequest({ message: "Presence ID tidak valid" }) }
+      const payload = await request.validate(UpdatePresenceValidator)
+      try {
+        const findData = await Presence.findOrFail(id) // @ts-ignore
+        const data = await findData.merge(payload).save()
+        response.ok({ message: "Update data success", data })
+      } catch (error) {
+        console.log(error);
+        response.badGateway({ ...error })
+      }
     }
   }
 
@@ -171,9 +212,9 @@ export default class PresencesController {
       select name, time_in, time_out, case when (keterlambatan > interval '1 second') then cast(keterlambatan as varchar) else '0' end late
       from (
         select e.name, p.time_in, p.time_out, time_in ::time - '07:30:00'::time keterlambatan
-        from presences p 
-        left join employees e 
-          on e.id = p.employee_id 
+        from presences p
+        left join employees e
+          on e.id = p.employee_id
         where activity_id  = '${id}'
         and time_in::date between '${from}' and '${to}'
         order by e.name , time_in
@@ -190,9 +231,9 @@ export default class PresencesController {
         select e.id, e.name
         ,time_in
         ,case when time_out is not null then time_out else time_in :: date + '12:30:00':: time end time_out
-        from presences p 
-        left join employees e 
-          on e.id = p.employee_id 
+        from presences p
+        left join employees e
+          on e.id = p.employee_id
         where activity_id  = '${id}'
         and time_in::date between '${from}' and '${to}'
         order by e.name
@@ -211,7 +252,7 @@ export default class PresencesController {
         select cast(sum(time_in ::time - '07:30:00'::time) as varchar)  late_total, employee_total, ('${to}'::date - '${from}'::date + 1) day_total
         ,  ('${to}'::date - '${from}'::date + 1) * employee_total presence_expected
         , count(*) presence_total
-        from presences p 
+        from presences p
           ,(select count(id) employee_total from employees) e
         where activity_id  = '${id}'
         and time_in::date between '${from}' and '${to}'
@@ -220,11 +261,11 @@ export default class PresencesController {
       ,
       (
         select e.name employee_most_present, count(e.name) employee_presence_total
-        from presences p 
-        left join employees e 
-          on e.id = p.employee_id 
+        from presences p
+        left join employees e
+          on e.id = p.employee_id
         where activity_id  = '${id}'
-        and time_in::date between '${from}' and '${to}' 
+        and time_in::date between '${from}' and '${to}'
         group by e.name
         order by count(e.name) desc, sum(time_in ::time - '07:30:00'::time)
         limit 1
@@ -248,7 +289,7 @@ export default class PresencesController {
         from (
           select *
             -- ini untuk cek apakah dia tap in setelah jam 12:30 siang
-            ,case when left(total_hours_check, 1) <> '-' then total_hours_check else '00:00:00' end total_hours 
+            ,case when left(total_hours_check, 1) <> '-' then total_hours_check else '00:00:00' end total_hours
           from (
             select *
                 ,cast((sum(time_out :: time - time_in::time)) as varchar) total_hours_check
@@ -257,11 +298,11 @@ export default class PresencesController {
                     ,e.name
                     ,time_in
                     ,case when time_out is not null then time_out else time_in :: date + '12:30:00':: time end time_out
-                    ,a.max_working_duration 
-                    from presences p 
-                  left join employees e 
-                    on e.id = p.employee_id 
-                  left join activities a 
+                    ,a.max_working_duration
+                    from presences p
+                  left join employees e
+                    on e.id = p.employee_id
+                  left join activities a
                     on a.id = activity_id
                     where activity_id  = '${id}'
                     and time_in::date between '${from}' and '${to}'

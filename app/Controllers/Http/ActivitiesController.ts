@@ -55,12 +55,13 @@ export default class ActivitiesController {
       const formattedPayload = {
         name: payload.name,
         description: payload.description,
-        timeInStart: payload.timeInStart.toFormat('HH:mm'),
-        timeLateStart: payload.timeLateStart.toFormat('HH:mm'),
-        timeInEnd: payload.timeInEnd.toFormat('HH:mm'),
-        timeOutStart: payload.timeOutStart.toFormat('HH:mm'),
-        timeOutEnd: payload.timeOutEnd.toFormat('HH:mm'),
-        maxWorkingDuration: payload.maxWorkingDuration?.toFormat('HH:mm'),
+        timeInStart: payload.timeInStart.toFormat('HH:mm:ss'),
+        timeLateStart: payload.timeLateStart.toFormat('HH:mm:ss'),
+        timeInEnd: payload.timeInEnd.toFormat('HH:mm:ss'),
+        timeOutStart: payload.timeOutStart.toFormat('HH:mm:ss'),
+        timeOutEnd: payload.timeOutEnd.toFormat('HH:mm:ss'),
+        timeOutDefault: payload.timeOutDefault?.toFormat('HH:mm:ss'),
+        maxWorkingDuration: payload.maxWorkingDuration?.toFormat('HH:mm:ss'),
         type: payload.type,
         scheduleActive: payload.scheduleActive,
         days: payload.days,
@@ -157,11 +158,12 @@ export default class ActivitiesController {
 
       payload.name ? formattedPayload['name'] = payload.name : ''
       payload.description ? formattedPayload['description'] = payload.description : ''
-      payload.timeInStart ? formattedPayload['timeInStart'] = payload.timeInStart!.toFormat('HH:mm') : ''
-      payload.timeLateStart ? formattedPayload['timeLateStart'] = payload.timeLateStart!.toFormat('HH:mm') : ''
-      payload.timeInEnd ? formattedPayload['timeInEnd'] = payload.timeInEnd!.toFormat('HH:mm') : ''
-      payload.timeOutStart ? formattedPayload['timeOutStart'] = payload.timeOutStart!.toFormat('HH:mm') : ''
-      payload.timeOutEnd ? formattedPayload['timeOutEnd'] = payload.timeOutEnd!.toFormat('HH:mm') : ''
+      payload.timeInStart ? formattedPayload['timeInStart'] = payload.timeInStart!.toFormat('HH:mm:ss') : ''
+      payload.timeLateStart ? formattedPayload['timeLateStart'] = payload.timeLateStart!.toFormat('HH:mm:ss') : ''
+      payload.timeInEnd ? formattedPayload['timeInEnd'] = payload.timeInEnd!.toFormat('HH:mm:ss') : ''
+      payload.timeOutStart ? formattedPayload['timeOutStart'] = payload.timeOutStart!.toFormat('HH:mm:ss') : ''
+      payload.timeOutEnd ? formattedPayload['timeOutEnd'] = payload.timeOutEnd!.toFormat('HH:mm:ss') : ''
+      payload.timeOutDefault ? formattedPayload['timeOutDefault'] = payload.timeOutDefault!.toFormat('HH:mm:ss') : ''
       payload.maxWorkingDuration ? formattedPayload['maxWorkingDuration'] = payload.maxWorkingDuration?.toFormat('HH:mm:00') : ''
       payload.type ? formattedPayload['type'] = payload.type : ''
       payload.scheduleActive ? formattedPayload['scheduleActive'] = payload.scheduleActive : ''

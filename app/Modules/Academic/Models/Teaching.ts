@@ -11,7 +11,6 @@ import { v4 as uuidv4 } from "uuid";
 import Teacher from "./Teacher";
 import Class from "./Class";
 import Subject from "./Subject";
-import BukuNilai from "./BukuNilai";
 let newId = "";
 
 export default class Teaching extends BaseModel {

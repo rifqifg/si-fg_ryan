@@ -15,7 +15,13 @@ export default class SubjectMembersController {
     try {
       const data = await SubjectMember.query()
         .where("subject_id", subjectId)
-        .preload("students", (s) => s.select("name", "nisn", "nis"))
+        .preload(
+          "students",
+          (s) => (
+            s.select("name", "nisn", "nis", 'class_id'),
+            s.preload("class", (c) => c.select("name"))
+          )
+        )
         .preload("subjects", (su) =>
           su.select("name", "is_extracurricular", "description")
         )

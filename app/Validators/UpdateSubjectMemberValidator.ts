@@ -24,11 +24,11 @@ export default class UpdateSubjectMemberValidator {
    *    ```
    */
   public schema = schema.create({
-    subjectId: schema.string([
+    subjectId: schema.string.optional([
       rules.trim(),
       rules.exists({ table: "academic.subjects", column: "id" }),
     ]),
-    studentId: schema.string([
+    studentId: schema.string.optional([
       rules.trim(),
       rules.exists({ table: "academic.students", column: "id" }),
     ]),

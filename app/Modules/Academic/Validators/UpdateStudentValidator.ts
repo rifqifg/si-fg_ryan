@@ -1,35 +1,47 @@
-import { schema, CustomMessages, rules } from '@ioc:Adonis/Core/Validator'
-import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import { StudentGender, StudentProgram, StudentReligion, StudentResidence, StudentUnit } from '../lib/enums'
+import { schema, CustomMessages, rules } from "@ioc:Adonis/Core/Validator";
+import type { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
+import {
+  StudentGender,
+  StudentProgram,
+  StudentReligion,
+  StudentResidence,
+  StudentUnit,
+} from "../lib/enums";
 
 export default class UpdateStudentValidator {
-  constructor(protected ctx: HttpContextContract) { }
+  constructor(protected ctx: HttpContextContract) {}
+
+  public refs = schema.refs({
+		id: this.ctx.params.id
+	})
 
   public schema = schema.create({
     name: schema.string.nullableAndOptional({}, [
-      rules.alpha({ allow: ['space'] }),
-      rules.minLength(5)]),
+      rules.alpha({ allow: ["space"] }),
+      rules.minLength(5),
+    ]),
     class_id: schema.string.nullableAndOptional({}, [
-      rules.exists({ table: 'academic.classes', column: 'id' })
+      rules.exists({ table: "academic.classes", column: "id" }),
     ]),
     nik: schema.string.nullableAndOptional([
       rules.regex(/^[0-9]+$/),
       rules.minLength(16),
       rules.maxLength(16),
-      rules.unique({ table: 'academic.students', column: 'nik' })
+      rules.unique({ table: "academic.students", column: "nik", whereNot: { id: this.refs.id } }),
     ]),
     email: schema.string.nullableAndOptional([
       rules.email(),
-      rules.unique({ table: 'academic.students', column: 'email' })
+      rules.unique({ table: "academic.students", column: "email", whereNot: { id: this.refs.id } }),
     ]),
     nis: schema.string.nullableAndOptional([
       rules.regex(/^[0-9]+$/),
-      rules.unique({ table: 'academic.students', column: 'nis' })
+      rules.unique({ table: "academic.students", column: "nis", whereNot: { id: this.refs.id } }),
     ]),
     nisn: schema.string.nullableAndOptional([
       rules.regex(/^[0-9]+$/),
-      rules.unique({ table: 'academic.students', column: 'nisn' })
+      rules.unique({ table: "academic.students", column: "nisn", whereNot: { id: this.refs.id } }),
     ]),
+    isGraduated: schema.boolean.optional(),
     birth_city: schema.string.nullableAndOptional(),
     birth_day: schema.date.nullableAndOptional({ format: "yyyy-MM-dd" }),
     religion: schema.enum.nullableAndOptional(Object.values(StudentReligion)),
@@ -48,38 +60,32 @@ export default class UpdateStudentValidator {
     kel: schema.string.nullableAndOptional([
       rules.minLength(13),
       rules.maxLength(13),
-      rules.exists({ table: 'public.wilayah', column: 'kode' })
+      rules.exists({ table: "public.wilayah", column: "kode" }),
     ]),
     kec: schema.string.nullableAndOptional([
       rules.minLength(8),
       rules.maxLength(8),
-      rules.exists({ table: 'public.wilayah', column: 'kode' })
+      rules.exists({ table: "public.wilayah", column: "kode" }),
     ]),
     kot: schema.string.nullableAndOptional([
       rules.minLength(5),
       rules.maxLength(5),
-      rules.exists({ table: 'public.wilayah', column: 'kode' })
+      rules.exists({ table: "public.wilayah", column: "kode" }),
     ]),
     prov: schema.string.nullableAndOptional([
       rules.minLength(2),
       rules.maxLength(2),
-      rules.exists({ table: 'public.wilayah', column: 'kode' })
+      rules.exists({ table: "public.wilayah", column: "kode" }),
     ]),
     zip: schema.string.nullableAndOptional([
       rules.regex(/^[0-9]+$/),
       rules.minLength(5),
       rules.maxLength(5),
     ]),
-    phone: schema.string.nullableAndOptional([
-      rules.regex(/^[0-9]+$/),
-    ]),
-    mobile_phone: schema.string.nullableAndOptional([
-      rules.regex(/^[0-9]+$/),
-    ]),
+    phone: schema.string.nullableAndOptional([rules.regex(/^[0-9]+$/)]),
+    mobile_phone: schema.string.nullableAndOptional([rules.regex(/^[0-9]+$/)]),
     residence: schema.enum.nullableAndOptional(Object.values(StudentResidence)),
-    transportation: schema.string.nullableAndOptional([
-      rules.maxLength(40),
-    ]),
+    transportation: schema.string.nullableAndOptional([rules.maxLength(40)]),
     has_kps: schema.boolean.nullableAndOptional(),
     kps_number: schema.string.nullableAndOptional({ trim: true }),
     junior_hs_cert_no: schema.string.nullableAndOptional({ trim: true }),
@@ -103,26 +109,26 @@ export default class UpdateStudentValidator {
     height: schema.number.nullableAndOptional(),
     head_circumference: schema.number.nullableAndOptional(),
     siblings: schema.string.nullableAndOptional({ trim: true }, [
-      rules.maxLength(2)
+      rules.maxLength(2),
     ]),
     distance_to_school_in_km: schema.number.nullableAndOptional(),
     program: schema.enum.nullableAndOptional(Object.values(StudentProgram)),
     unit: schema.enum.nullableAndOptional(Object.values(StudentUnit)),
     bank_name: schema.string.nullableAndOptional({ trim: true }, [
-      rules.maxLength(30)
+      rules.maxLength(30),
     ]),
     bank_account_owner: schema.string.nullableAndOptional({ trim: true }, [
-      rules.maxLength(50)
+      rules.maxLength(50),
     ]),
     bank_account_number: schema.string.nullableAndOptional({ trim: true }, [
-      rules.maxLength(30)
+      rules.maxLength(30),
     ]),
     nat_exam_no: schema.string.nullableAndOptional({ trim: true }, [
-      rules.maxLength(30)
+      rules.maxLength(30),
     ]),
-  })
+  });
 
   public messages: CustomMessages = {
-    'regex': 'Only accept numbers'
-  }
+    regex: "Only accept numbers",
+  };
 }

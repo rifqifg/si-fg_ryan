@@ -13,7 +13,7 @@ export default class AcademicYearsController {
 
             response.ok({ message: "Berhasil mengambil data semua tahun akademik", data })
         } catch (error) {
-            response.badRequest({ message: "Gagal mengambil data semua tahun akademik", error })
+            response.badRequest({ message: "PP_AYE01: Gagal mengambil data semua tahun akademik", error })
         }
     }
 }

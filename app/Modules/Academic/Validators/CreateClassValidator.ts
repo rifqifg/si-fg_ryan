@@ -24,11 +24,12 @@ export default class CreateClassValidator {
    *    ```
    */
   public schema = schema.create({
-    name: schema.string({}, [rules.alphaNum({ allow: ['dash', 'underscore'] })]),
+    name: schema.string(),
     description: schema.string.optional(),
     employeeId: schema.string({}, [
       rules.exists({ table: 'public.employees', column: 'id' })
-    ])
+    ]),
+    is_graduated: schema.boolean.optional()
   })
 
   /**

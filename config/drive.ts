@@ -94,7 +94,8 @@ export default driveConfig({
       root: Application.makePath('app/Modules/PPDB/uploads/'),
       basePath: '/ppdb/uploads',
       serveFiles: true
-    }
+    },
+
     /*
     |--------------------------------------------------------------------------
     | S3 Driver

@@ -10,7 +10,8 @@ Route.group(() => {
     Route.resource('teachers.teachings', 'TeachingsController').apiOnly().middleware({ '*': ['auth'] })
     Route.shallowResource('students.parents', 'StudentParentsController').apiOnly().middleware({ '*': ['auth'] })
     Route.resource('sessions', 'SessionsController').only(['index', 'show']).middleware({ '*': ['auth'] })
-    Route.shallowResource('daily-attendances', 'DailyAttendancesController').apiOnly().middleware({ '*': ['auth'] })
+    Route.shallowResource('daily-attendances', 'DailyAttendancesController').apiOnly().except(['update']).middleware({ '*': ['auth'] })
+    Route.put('daily-attendances', 'DailyAttendancesController.update').middleware(['auth'])
     Route.shallowResource('lesson-attendances', 'LessonAttendancesController').apiOnly().middleware({ '*': ['auth'] })
     Route.shallowResource('teacher-attendances', 'TeacherAttendancesController').apiOnly().middleware({ '*': ['auth'] })
     Route.shallowResource('kompetensi-inti', 'KompetensiIntisController').apiOnly().middleware({ '*': ['auth'] })
@@ -19,5 +20,6 @@ Route.group(() => {
     Route.shallowResource('program-semester.program-semester-detail', 'ProgramSemesterDetailsController').apiOnly().middleware({ '*': ['auth'] })
     Route.shallowResource('rencana-pengambilan-nilai', 'RencanaPengambilanNilaisController').apiOnly().middleware({ '*': ['auth'] })
     Route.shallowResource('buku-nilai', 'BukuNilaisController').apiOnly().middleware({ '*': ['auth'] })
-
+    Route.shallowResource('import-students', 'ImportStudentsController').only(['store']).apiOnly().middleware({ '*': ['auth'] })
+    Route.shallowResource('mutating-many-students', 'MutatingManyStudentsController').only(['update']).apiOnly().middleware({ '*': ['auth'] })
 }).prefix('academics').namespace('AcademicControllers')

@@ -26,29 +26,30 @@ export default class CreateActivityValidator {
   public schema = schema.create({
     name: schema.string(),
     description: schema.string.optional(),
-    timeInStart: schema.date({ format: 'HH:mm' }, [
+    timeInStart: schema.date({ format: 'HH:mm:ss' }, [
       rules.beforeField('timeInEnd'),
       rules.beforeField('timeOutStart'),
       rules.beforeField('timeOutEnd'),
     ]),
-    timeLateStart: schema.date({ format: 'HH:mm' }, [
+    timeLateStart: schema.date({ format: 'HH:mm:ss' }, [
       rules.afterField('timeInStart'),
     ]),
-    timeInEnd: schema.date({ format: 'HH:mm' }, [
+    timeInEnd: schema.date({ format: 'HH:mm:ss' }, [
       rules.afterField('timeInStart'),
       rules.beforeField('timeOutStart'),
       rules.beforeField('timeOutEnd'),
     ]),
-    timeOutStart: schema.date({ format: 'HH:mm' }, [
+    timeOutStart: schema.date({ format: 'HH:mm:ss' }, [
       rules.afterField('timeInStart'),
       rules.afterField('timeInEnd'),
       rules.beforeField('timeOutEnd'),
     ]),
-    timeOutEnd: schema.date({ format: 'HH:mm' }, [
+    timeOutEnd: schema.date({ format: 'HH:mm:ss' }, [
       rules.afterField('timeInStart'),
       rules.afterField('timeInEnd'),
       rules.afterField('timeOutStart'),
     ]),
+    timeOutDefault: schema.date.nullableAndOptional({ format: 'HH:mm:ss' }),
     maxWorkingDuration: schema.date.optional({ format: 'HH:mm:ss' }),
     type: schema.enum(['scheduled', 'standalone']),
     scheduleActive: schema.boolean.optional([

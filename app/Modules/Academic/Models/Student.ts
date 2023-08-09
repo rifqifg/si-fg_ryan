@@ -1,215 +1,232 @@
-import { DateTime } from 'luxon'
-import { afterCreate, BaseModel, beforeCreate, BelongsTo, belongsTo, column, HasMany } from '@ioc:Adonis/Lucid/Orm'
-import Class from './Class';
-import { v4 as uuidv4 } from 'uuid'
-import { StudentGender, StudentProgram, StudentReligion, StudentResidence, StudentUnit } from '../lib/enums';
-import Wilayah from 'App/Models/Wilayah';
-import { hasMany } from '@ioc:Adonis/Lucid/Orm';
-import StudentParent from './StudentParent';
-let newId = ""
+import { DateTime } from "luxon";
+import {
+  afterCreate,
+  BaseModel,
+  beforeCreate,
+  BelongsTo,
+  belongsTo,
+  column,
+  HasMany,
+} from "@ioc:Adonis/Lucid/Orm";
+import Class from "./Class";
+import { v4 as uuidv4 } from "uuid";
+import {
+  StudentGender,
+  StudentProgram,
+  StudentReligion,
+  StudentResidence,
+  StudentUnit,
+} from "../lib/enums";
+import Wilayah from "App/Models/Wilayah";
+import { hasMany } from "@ioc:Adonis/Lucid/Orm";
+import StudentParent from "./StudentParent";
+let newId = "";
 
 export default class Student extends BaseModel {
-  public static table = 'academic.students';
+  public static table = "academic.students";
 
   @column({ isPrimary: true })
-  public id: string
+  public id: string;
 
   @column()
-  public classId: string | null
+  public classId: string | null;
 
   @belongsTo(() => Class)
-  public class: BelongsTo<typeof Class>
+  public class: BelongsTo<typeof Class>;
 
   @column()
-  public nik: string | null
+  public nik: string | null;
 
   @column()
-  public name: string | null
+  public name: string | null;
 
   @column()
-  public nis: string | null
+  public nis: string | null;
 
   @column()
-  public nisn: string | null
+  public nisn: string | null;
 
   @column()
-  public birthCity: string | null
+  public isGraduated: boolean;
+
+  @column()
+  public birthCity: string | null;
 
   @column.date()
-  public birthDay: DateTime | null
+  public birthDay: DateTime | null;
 
   @column()
-  public religion: StudentReligion | null
+  public religion: StudentReligion | null;
 
   @column()
-  public address: string | null
+  public address: string | null;
 
   @column()
-  public gender: StudentGender | null
+  public gender: StudentGender | null;
 
   @column()
-  public rt: string | null
+  public rt: string | null;
 
   @column()
-  public rw: string | null
+  public rw: string | null;
 
   @column()
-  public kel: string | null
+  public kel: string | null;
 
   @belongsTo(() => Wilayah, {
-    localKey: 'kode',
-    foreignKey: 'kel'
+    localKey: "kode",
+    foreignKey: "kel",
   })
-  kelurahan: BelongsTo<typeof Wilayah>
+  kelurahan: BelongsTo<typeof Wilayah>;
 
   @column()
-  public kec: string | null
+  public kec: string | null;
 
   @belongsTo(() => Wilayah, {
-    localKey: 'kode',
-    foreignKey: 'kec'
+    localKey: "kode",
+    foreignKey: "kec",
   })
-  kecamatan: BelongsTo<typeof Wilayah>
+  kecamatan: BelongsTo<typeof Wilayah>;
 
   @column()
-  public kot: string | null
+  public kot: string | null;
 
   @belongsTo(() => Wilayah, {
-    localKey: 'kode',
-    foreignKey: 'kot'
+    localKey: "kode",
+    foreignKey: "kot",
   })
-  kota: BelongsTo<typeof Wilayah>
+  kota: BelongsTo<typeof Wilayah>;
 
   @column()
-  public prov: string | null
+  public prov: string | null;
 
   @belongsTo(() => Wilayah, {
-    localKey: 'kode',
-    foreignKey: 'prov'
+    localKey: "kode",
+    foreignKey: "prov",
   })
-  provinsi: BelongsTo<typeof Wilayah>
+  provinsi: BelongsTo<typeof Wilayah>;
 
   @column()
-  public zip: string | null
+  public zip: string | null;
 
   @column()
-  public phone: string | null
+  public phone: string | null;
 
   @column()
-  public mobilePhone: string | null
+  public mobilePhone: string | null;
 
   @column()
-  public email: string | null
+  public email: string | null;
 
   @column()
-  public residence: StudentResidence | null
+  public residence: StudentResidence | null;
 
   @column()
-  public transportation: string | null
+  public transportation: string | null;
 
   @column()
-  public hasKps: boolean
+  public hasKps: boolean;
 
   @column()
-  public kpsNumber: string | null
+  public kpsNumber: string | null;
 
   @column()
-  public juniorHsCertNo: string | null
+  public juniorHsCertNo: string | null;
 
   @column()
-  public hasKip: boolean
+  public hasKip: boolean;
 
   @column()
-  public kipNumber: string | null
+  public kipNumber: string | null;
 
   @column()
-  public nameOnKip: boolean
+  public nameOnKip: boolean;
 
   @column()
-  public hasKks: boolean
+  public hasKks: boolean;
 
   @column()
-  public kksNumber: string | null
+  public kksNumber: string | null;
 
   @column()
-  public birthCertNo: string | null
+  public birthCertNo: string | null;
 
   @column()
-  public pipEligible: boolean
+  public pipEligible: boolean;
 
   @column()
-  public pipDesc: string | null
+  public pipDesc: string | null;
 
   @column()
-  public specialNeeds: string | null
+  public specialNeeds: string | null;
 
   @column()
-  public junior_hs_name: string | null
+  public junior_hs_name: string | null;
 
   @column()
-  public child_no: string | null
+  public child_no: string | null;
 
   @column()
-  public address_lat: number | null
+  public address_lat: number | null;
 
   @column()
-  public address_long: number | null
+  public address_long: number | null;
 
   @column()
-  public family_card_no: string | null
+  public family_card_no: string | null;
 
   @column()
-  public weight: number | null
+  public weight: number | null;
 
   @column()
-  public height: number | null
+  public height: number | null;
 
   @column()
-  public head_circumference: number | null
+  public head_circumference: number | null;
 
   @column()
-  public siblings: string | null
+  public siblings: string | null;
 
   @column()
-  public distance_to_school_in_km: number | null
+  public distance_to_school_in_km: number | null;
 
   @column()
-  public program: StudentProgram | null
+  public program: StudentProgram | null;
 
   @column()
-  public unit: StudentUnit | null
+  public unit: StudentUnit | null;
 
   @column()
-  public bank_name: string | null
+  public bank_name: string | null;
 
   @column()
-  public bank_account_owner: string | null
+  public bank_account_owner: string | null;
 
   @column()
-  public bank_account_number: string | null
+  public bank_account_number: string | null;
 
   @column()
-  public nat_exam_no: string | null
+  public nat_exam_no: string | null;
 
   @hasMany(() => StudentParent)
-  public parents: HasMany<typeof StudentParent>
+  public parents: HasMany<typeof StudentParent>;
 
   @column.dateTime({ autoCreate: true })
-  public createdAt: DateTime | null
+  public createdAt: DateTime | null;
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
-  public updatedAt: DateTime | null
+  public updatedAt: DateTime | null;
 
   @beforeCreate()
   public static assignUuid(student: Student) {
-    if (!(student.id)) {
-      newId = uuidv4()
-      student.id = newId
+    if (!student.id) {
+      newId = uuidv4();
+      student.id = newId;
     }
   }
 
   @afterCreate()
   public static setNewId(student: Student) {
-    student.id = newId
+    student.id = newId;
   }
 }

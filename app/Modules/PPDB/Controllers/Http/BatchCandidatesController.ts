@@ -65,7 +65,7 @@ export default class BatchCandidatesController {
         const payload = await request.validate(UpdateBatchCandidateValidator)
         if (JSON.stringify(payload) === '{}') {
             console.log("data update kosong");
-            return response.badRequest({ message: "Data tidak boleh kosong" })
+            return response.badRequest({ message: "BAC_UPD-02: Data tidak boleh kosong" })
         }
         try {
             const batchCandidate = await BatchCandidate.findOrFail(id)
@@ -76,13 +76,13 @@ export default class BatchCandidatesController {
             response.ok({ message: "Berhasil mengubah data", data })
         } catch (error) {
             console.log(error);
-            response.badRequest({ message: "Gagal mengubah data", error: error.message })
+            response.badRequest({ message: "BAC_UPD-03: Gagal mengubah data", error: error.message })
         }
     }
 
     public async destroy({ params, response }: HttpContextContract) {
         const { id } = params
-        if (!uuidValidation(id)) { return response.badRequest({ message: "ID tidak valid" }) }
+        if (!uuidValidation(id)) { return response.badRequest({ message: "BAC_DES-01: ID tidak valid" }) }
 
         try {
             const data = await BatchCandidate.findOrFail(id)
@@ -90,7 +90,7 @@ export default class BatchCandidatesController {
             response.ok({ message: "Berhasil menghapus data" })
         } catch (error) {
             console.log(error);
-            response.badRequest({ message: "BAC_DES-01: Gagal menghapus data", error: error.message })
+            response.badRequest({ message: "BAC_DES-02: Gagal menghapus data", error: error.message })
         }
     }
 }

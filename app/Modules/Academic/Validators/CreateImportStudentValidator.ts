@@ -1,8 +1,8 @@
-import { schema, CustomMessages, rules } from '@ioc:Adonis/Core/Validator'
+import { schema, CustomMessages } from '@ioc:Adonis/Core/Validator'
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 
-export default class UpdateActivityValidator {
-  constructor(protected ctx: HttpContextContract) { }
+export default class CreateImportStudentValidator {
+  constructor(protected ctx: HttpContextContract) {}
 
   /*
    * Define schema to validate the "shape", "type", "formatting" and "integrity" of data.
@@ -24,21 +24,9 @@ export default class UpdateActivityValidator {
    *    ```
    */
   public schema = schema.create({
-    name: schema.string.optional(),
-    description: schema.string.optional(),
-    timeInStart: schema.date.optional({ format: 'HH:mm:ss' }, []),
-    timeLateStart: schema.date.optional({ format: 'HH:mm:ss' }),
-    timeInEnd: schema.date.optional({ format: 'HH:mm:ss' }, []),
-    timeOutStart: schema.date.optional({ format: 'HH:mm:ss' }, []),
-    timeOutEnd: schema.date.optional({ format: 'HH:mm:ss' }, []),
-    timeOutDefault: schema.date.nullableAndOptional({ format: 'HH:mm:ss' }),
-    maxWorkingDuration: schema.date.optional({ format: 'HH:mm:ss' }),
-    type: schema.enum.optional(['scheduled', 'standalone']),
-    scheduleActive: schema.boolean.optional(),
-    days: schema.string.optional(),
-    division_id: schema.string.optional({}, [
-      rules.exists({ table: 'divisions', column: 'id' })
-    ]),
+    upload: schema.file({
+      extnames: ['xlsx', 'csv']
+    })
   })
 
   /**
@@ -52,5 +40,5 @@ export default class UpdateActivityValidator {
    * }
    *
    */
-  public messages: CustomMessages = {}
+  public messages: CustomMessages = { }
 }

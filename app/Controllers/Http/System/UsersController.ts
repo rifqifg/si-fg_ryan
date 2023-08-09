@@ -128,6 +128,10 @@ export default class UsersController {
         ]),
         password: schema.string([rules.minLength(6), rules.confirmed()]),
       }),
+      messages: {
+        'email.unique': "Email sudah digunakan user lain",
+        exists: "{{ field }} yang dimasukkan tidak terdaftar di sistem",
+      }
     });
 
     let employee;
@@ -135,7 +139,7 @@ export default class UsersController {
     let user;
     const verifyToken = string.generateRandom(64);
 
-    const FE_URL = Env.get("FE_URL") + verifyToken;
+    const verify_url = Env.get("BE_URL") + "/auth/verify-email?token=" + verifyToken;
 
     try {
       await Mail.send((message) => {
@@ -143,10 +147,10 @@ export default class UsersController {
           .from(Env.get("SMTP_USERNAME"))
           .to(payload.email)
           .subject("Welcome Onboard!")
-          .htmlView("emails/registered", { FE_URL });
+          .htmlView("emails/registered", { verify_url });
       });
     } catch (error) {
-      return response.send({ message: "email tidak valid" });
+      return response.internalServerError({ message: "Gagal mengirim email verifikasi", error: error.message });
     }
 
     if (payload.role === ROLE.EMPLOYEE) {
@@ -173,6 +177,7 @@ export default class UsersController {
         user = await User.create({
           name: payload.name,
           password: payload.password,
+          studentId: student.id,
           email: payload.email,
           verifyToken,
           role: ROLE.STUDENT,
@@ -202,25 +207,18 @@ export default class UsersController {
     });
   }
 
-  public async verify({ request, response }: HttpContextContract) {
+  public async verify({ request, response, view }: HttpContextContract) {
     const token = request.input("token");
 
     try {
       const user = await User.query().where("verifyToken", token).firstOrFail();
 
-      await user
-        .merge({
-          verifyToken: "",
-          verified: true,
-        })
-        .save();
+      await user.merge({verifyToken: "", verified: true,}).save();
 
-      response.ok({ message: "Akun sudah terverifikasi" });
+      const LOGIN_URL = Env.get("FE_URL")
+      return view.render('user_verification_success', { LOGIN_URL })
     } catch (error) {
-      return response.badRequest({
-        message: "email tidak ditemukan / token tidak cocok",
-        error,
-      });
+      return response.badRequest({ message: "email tidak ditemukan / token tidak cocok", error });
     }
   }
 

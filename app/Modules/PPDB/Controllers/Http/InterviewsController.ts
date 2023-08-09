@@ -8,7 +8,7 @@ import UpdateCandidateInterviewValidator from '../../Validators/UpdateCandidateI
 export default class InterviewsController {
   public async index({ request, response, params }: HttpContextContract) {
     const { student_candidate_id } = params
-    if (!uuidValidation(student_candidate_id)) { return response.badRequest({ message: "Student candidate ID tidak valid" }) }
+    if (!uuidValidation(student_candidate_id)) { return response.badRequest({ message: "PP_INT_IN-01: Student candidate ID tidak valid" }) }
 
     const { page = 1, limit = 10 } = request.qs()
 
@@ -20,13 +20,13 @@ export default class InterviewsController {
 
       response.ok({ message: "Berhasil mengambil data", data })
     } catch (error) {
-      response.badRequest({ message: "Gagal mengambil data", error: error.message })
+      response.badRequest({ message: "PP_INT_IN-02: Gagal mengambil data", error: error.message })
     }
   }
 
   public async store({ request, response, params }: HttpContextContract) {
     const { student_candidate_id } = params
-    if (!uuidValidation(student_candidate_id)) { return response.badRequest({ message: "Student candidate ID tidak valid" }) }
+    if (!uuidValidation(student_candidate_id)) { return response.badRequest({ message: "PP_INT_ST-01: Student candidate ID tidak valid" }) }
 
     const payload = await request.validate(CreateCandidateInterviewValidator)
     try {
@@ -35,30 +35,30 @@ export default class InterviewsController {
       response.created({ message: "Berhasil menyimpan data interview", data })
     } catch (error) {
       console.log(error);
-      response.badRequest({ message: "Gagal menyimpan data", error: error.message })
+      response.badRequest({ message: "PP_INT_ST-01: Gagal menyimpan data", error: error.message })
     }
   }
 
   public async show({ params, response }: HttpContextContract) {
     const { id } = params
-    if (!uuidValidation(id)) { return response.badRequest({ message: "ID tidak valid" }) }
+    if (!uuidValidation(id)) { return response.badRequest({ message: "PP_INT_SH-01: ID tidak valid" }) }
 
     try {
       const data = await PpdbInterview.findOrFail(id)
       response.ok({ message: "Berhasil mengambil data interview", data })
     } catch (error) {
       console.log(error)
-      response.badRequest({ message: "Gagal mengambil data", error: error.message })
+      response.badRequest({ message: "PP_INT_SH-02: Gagal mengambil data", error: error.message })
     }
   }
 
   public async update({ params, request, response }: HttpContextContract) {
     const { id } = params
-    if (!uuidValidation(id)) { return response.badRequest({ message: "ID tidak valid" }) }
+    if (!uuidValidation(id)) { return response.badRequest({ message: "PP_INT_UP-01: ID tidak valid" }) }
 
     const payload = await request.validate(UpdateCandidateInterviewValidator)
     if (JSON.stringify(payload) === '{}') {
-      return response.badRequest({ message: "Data tidak boleh kosong" })
+      return response.badRequest({ message: "PP_INT_UP-02: Data tidak boleh kosong" })
     }
     try {
       const interview = await PpdbInterview.findOrFail(id)
@@ -66,13 +66,13 @@ export default class InterviewsController {
       response.ok({ message: "Berhasil mengubah data", data })
     } catch (error) {
       console.log(error)
-      response.badRequest({ message: "Gagal mengubah data", error: error.message })
+      response.badRequest({ message: "PP_INT_UP-03: Gagal mengubah data", error: error.message })
     }
   }
 
   public async destroy({ params, response }: HttpContextContract) {
     const { id } = params
-    if (!uuidValidation(id)) { return response.badRequest({ message: "ID tidak valid" }) }
+    if (!uuidValidation(id)) { return response.badRequest({ message: "PP_INT_DE-01: ID tidak valid" }) }
 
     try {
       const data = await PpdbInterview.findOrFail(id)
@@ -80,7 +80,7 @@ export default class InterviewsController {
       response.ok({ message: "Berhasil menghapus data" })
     } catch (error) {
       console.log(error)
-      response.badRequest({ message: "Gagal menghapus data", error: error.message })
+      response.badRequest({ message: "PP_INT_DE-02: Gagal menghapus data", error: error.message })
     }
   }
 }

@@ -14,7 +14,7 @@ export default class PpdbSettingsController {
             const data = await PPDBSetting.query().select('guideContent')
             response.ok({ message: "Berhasil mengambil data panduan pendaftaran", data })
         } catch (error) {
-            response.internalServerError({ message: "Gagal mengambil data panduan pendaftaran", error: error.message })
+            response.internalServerError({ message: "PP_SET_SH-01: Gagal mengambil data panduan pendaftaran", error: error.message })
         }
     }
 
@@ -23,7 +23,7 @@ export default class PpdbSettingsController {
 
         if (JSON.stringify(payload) === '{}') {
             console.log("data update kosong");
-            return response.badRequest({ message: "Data tidak boleh kosong" })
+            return response.badRequest({ message: "PP_SET_UP-01: Data tidak boleh kosong" })
         }
 
         try {
@@ -31,7 +31,7 @@ export default class PpdbSettingsController {
             const data = await currentData!.merge({ guideContent: payload.guide_content }).save()
             response.ok({ message: "Berhasil mengubah data panduan pendaftaran", data })
         } catch (error) {
-            response.internalServerError({ message: "Gagal mengubah data panduan pendaftaran", error: error.message })
+            response.internalServerError({ message: "PP_SET_UP-02: Gagal mengubah data panduan pendaftaran", error: error.message })
         }
     }
 
@@ -40,7 +40,7 @@ export default class PpdbSettingsController {
             const data = await PPDBSetting.query().select('active')
             response.ok({ message: "Berhasil mengambil data status aktivasi ppdb", data })
         } catch (error) {
-            response.internalServerError({ message: "Gagal mengambil data status aktivasi ppdb", error: error.message })
+            response.internalServerError({ message: "PP_SET_ACT_SH-01: Gagal mengambil data status aktivasi ppdb", error: error.message })
         }
     }
 
@@ -52,7 +52,7 @@ export default class PpdbSettingsController {
             const data = await currentData!.merge(payload).save()
             response.ok({ message: "Berhasil mengubah status aktivasi ppdb", data })
         } catch (error) {
-            response.internalServerError({ message: "Gagal mengubah status aktivasi ppdb", error: error.message })
+            response.internalServerError({ message: "PP_SET_ACT_UP-01: Gagal mengubah status aktivasi ppdb", error: error.message })
         }
     }
 
@@ -80,7 +80,7 @@ export default class PpdbSettingsController {
 
             response.ok({ message: "Berhasil mengambil data semua gelombang pendaftaran", data })
         } catch (error) {
-            response.badRequest({ message: "Gagal mengambil data gelombang pendaftaran", error })
+            response.badRequest({ message: "PP_SET_BAT_IN-01: Gagal mengambil data gelombang pendaftaran", error: error.message })
         }
     }
 
@@ -91,7 +91,7 @@ export default class PpdbSettingsController {
             const data = await PPDBBatch.create(payload)
             response.created({ message: "Berhasil menyimpan data gelombang pendaftaran", data })
         } catch (error) {
-            response.badRequest({ message: "Gagal menyimpan data gelombang pendaftaran", error: error.message })
+            response.badRequest({ message: "PP_SET_BAT_CR-01: Gagal menyimpan data gelombang pendaftaran", error: error.message })
         }
     }
 
@@ -103,7 +103,7 @@ export default class PpdbSettingsController {
 
         if (JSON.stringify(payload) === '{}') {
             console.log("data update kosong");
-            return response.badRequest({ message: "Data tidak boleh kosong" })
+            return response.badRequest({ message: "PP_SET_BAT_UP-01: Data tidak boleh kosong" })
         }
 
         if (payload.active === true) {
@@ -117,7 +117,7 @@ export default class PpdbSettingsController {
                 }
             } catch (error) {
                 return response.badRequest({
-                    message: "Gagal update data gelombang pendaftaran",
+                    message: "PP_SET_BAT_UP-02: Gagal update data gelombang pendaftaran",
                     error: error.message
                 })
             }
@@ -128,13 +128,13 @@ export default class PpdbSettingsController {
             const data = await batch.merge(payload).save()
             response.ok({ message: "Berhasil update data gelombang pendaftaran", data })
         } catch (error) {
-            response.badRequest({ message: "Gagal update data gelombang pendaftaran", error: error.message })
+            response.badRequest({ message: "PP_SET_BAT_UP-03: Gagal update data gelombang pendaftaran", error: error.message })
         }
     }
 
     public async showBatch({ params, response }: HttpContextContract) {
         const { id } = params
-        if (!uuidValidation(id)) { return response.badRequest({ message: "ID gelombang tidak valid" }) }
+        if (!uuidValidation(id)) { return response.badRequest({ message: "PP_SET_BAT_SH-01: ID gelombang tidak valid" }) }
 
         try {
             const data = await PPDBBatch
@@ -145,13 +145,13 @@ export default class PpdbSettingsController {
                 .firstOrFail()
             response.ok({ message: "Berhasil mengambil data gelombang pendaftaran", data })
         } catch (error) {
-            response.badRequest({ message: "Gagal mengambil data gelombang pendaftaran", error: error.message })
+            response.badRequest({ message: "PP_SET_BAT_SH-02: Gagal mengambil data gelombang pendaftaran", error: error.message })
         }
     }
 
     public async deleteBatch({ params, response }: HttpContextContract) {
         const { id } = params
-        if (!uuidValidation(id)) { return response.badRequest({ message: "ID gelombang tidak valid" }) }
+        if (!uuidValidation(id)) { return response.badRequest({ message: "PP_SET_BAT_DE-01: ID gelombang tidak valid" }) }
 
         try {
             const data = await PPDBBatch.find(id)
@@ -163,7 +163,7 @@ export default class PpdbSettingsController {
             response.ok({ message: "Berhasil menghapus data gelombang pendaftaran" })
         } catch (error) {
             response.badRequest({
-                message: "Gagal menghapus data gelombang pendaftaran",
+                message: "PP_SET_BAT_DE-02: Gagal menghapus data gelombang pendaftaran",
                 error: error.message
             })
         }

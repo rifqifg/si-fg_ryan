@@ -25,6 +25,9 @@ export default class Class extends BaseModel {
   @column()
   public employeeId: string | null
 
+  @column()
+  public isGraduated: boolean
+
   @belongsTo(() => Employee)
   public homeroomTeacher: BelongsTo<typeof Employee>
 

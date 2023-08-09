@@ -13,7 +13,8 @@ export default class StudentsController {
       mode = "page",
       classId = "",
       isGraduated = false,
-      notInSubject = ""
+      notInSubject = "",
+      subjectMember = ""
     } = request.qs();
 
     if (classId && !uuidValidation(classId)) {
@@ -22,6 +23,10 @@ export default class StudentsController {
 
     if (notInSubject && !uuidValidation(notInSubject)) {
       return response.badRequest({ message: "Subject ID tidak valid" });
+    }
+
+    if (subjectMember && !uuidValidation(subjectMember)) {
+      return response.badRequest(({message: "Subject ID tidak valid"}))
     }
 
     try {
@@ -34,6 +39,7 @@ export default class StudentsController {
           .preload("kecamatan")
           .preload("kota")
           .preload("provinsi")
+          .if(subjectMember, sm => sm.whereHas('extracurricular', ex => ex.where('subjectId', subjectMember)))
           .if(notInSubject, q => q.whereDoesntHave('extracurricular', q => q.where('subjectId', notInSubject)))
           .if(isGraduated, (g) => g.where("isGraduated", isGraduated))
           .andWhere((q) => {
@@ -51,6 +57,8 @@ export default class StudentsController {
           .preload("kecamatan")
           .preload("kota")
           .preload("provinsi")
+          .if(subjectMember, sm => sm.whereHas('extracurricular', ex => ex.where('subjectId', subjectMember)))
+          .if(notInSubject, q => q.whereDoesntHave('extracurricular', q => q.where('subjectId', notInSubject)))
           .if(isGraduated, (g) => g.where("isGraduated", isGraduated))
           .andWhere((q) => {
             q.whereILike("name", `%${keyword}%`);

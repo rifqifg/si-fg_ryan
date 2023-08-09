@@ -149,8 +149,9 @@ export default class PresencesController {
         const timeOutDefault = activity.$attributes.timeOutDefault
 
         const presence = await Presence.query()
-          .select("id", "time_in", "time_out")
+          .select("id", "time_in", "time_out", "activity_id")
           .whereNull('time_out')
+          .andWhere('activity_id', '=', activity_id)
           .andWhereRaw(`time_in::date between '${fromDate}' and '${toDate}'`)
 
         if (presence.length == 0) {
@@ -165,7 +166,7 @@ export default class PresencesController {
           const id = value.$attributes.id
           const time_in = new Date(value.$attributes.timeIn).toISOString()
           const extractedDate = time_in.split("T")[0];
-          let time_out = timeOutDefault ? extractedDate + " " + timeOutDefault : extractedDate + " " + timeOut;
+          let time_out = timeOut ?  extractedDate + " " + timeOut : extractedDate + " " + timeOutDefault;
           //@ts-ignore
           const presenceTimeOutValidator = new UpdateTimeOutPresenceValidator(null, { timeOut: time_out })
           const payload = await validator.validate(presenceTimeOutValidator)

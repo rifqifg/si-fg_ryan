@@ -149,8 +149,9 @@ export default class PresencesController {
         const timeOutDefault = activity.$attributes.timeOutDefault
 
         const presence = await Presence.query()
-          .select("id", "time_in", "time_out")
+          .select("id", "time_in", "time_out", "activity_id")
           .whereNull('time_out')
+          .andWhere('activity_id', '=', activity_id)
           .andWhereRaw(`time_in::date between '${fromDate}' and '${toDate}'`)
 
         if (presence.length == 0) {

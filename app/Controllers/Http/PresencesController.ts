@@ -166,7 +166,7 @@ export default class PresencesController {
           const id = value.$attributes.id
           const time_in = new Date(value.$attributes.timeIn).toISOString()
           const extractedDate = time_in.split("T")[0];
-          let time_out = timeOutDefault ? extractedDate + " " + timeOutDefault : extractedDate + " " + timeOut;
+          let time_out = timeOut ?  extractedDate + " " + timeOut : extractedDate + " " + timeOutDefault;
           //@ts-ignore
           const presenceTimeOutValidator = new UpdateTimeOutPresenceValidator(null, { timeOut: time_out })
           const payload = await validator.validate(presenceTimeOutValidator)

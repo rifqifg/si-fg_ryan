@@ -5,10 +5,11 @@ import CreateSubjectMemberValidator from "../../Validators/CreateSubjectMemberVa
 import UpdateSubjectMemberValidator from "App/Validators/UpdateSubjectMemberValidator";
 
 export default class SubjectMembersController {
-  public async index({ request, response }: HttpContextContract) {
-    const { page = 1, limit = 10, keyword = "", subjectId = "" } = request.qs();
+  public async index({ request, response, params }: HttpContextContract) {
 
-    if (subjectId && !uuidValidation(subjectId)) {
+    const { page = 1, limit = 10, keyword = "" } = request.qs();
+  const {subject_id: subjectId} = params
+    if (!uuidValidation(subjectId)) {
       return response.badRequest({ message: "SubjectId tidak valid" });
     }
 
@@ -38,11 +39,21 @@ export default class SubjectMembersController {
     }
   }
 
-  public async store({ request, response }: HttpContextContract) {
-    const payload = await request.validate(CreateSubjectMemberValidator);
+  public async store({ request, response, params }: HttpContextContract) {
+    const rawPayload = await request.validate(CreateSubjectMemberValidator);
+    const {subject_id: subjectId} = params
+    if (!uuidValidation(subjectId)) {
+      return response.badRequest({ message: "SubjectId tidak valid" });
+    }
 
+    const payload = rawPayload.subjectMember.map(sm => {
+     return {...sm, subjectId }
+    })
+
+
+    // return payload.subjectMember.map(sm => sm.subjectId)
     try {
-      const data = await SubjectMember.createMany(payload.subjectMember);
+      const data = await SubjectMember.createMany(payload);
 
       response.ok({ message: "Berhasil membuat data", data });
     } catch (error) {

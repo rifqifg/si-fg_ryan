@@ -20,6 +20,8 @@ import {
 import Wilayah from "App/Models/Wilayah";
 import { hasMany } from "@ioc:Adonis/Lucid/Orm";
 import StudentParent from "./StudentParent";
+import Subject from "Academic/Models/Subject";
+import SubjectMember from "Academic/Models/SubjectMember";
 let newId = "";
 
 export default class Student extends BaseModel {
@@ -229,4 +231,9 @@ export default class Student extends BaseModel {
   public static setNewId(student: Student) {
     student.id = newId;
   }
+
+  @hasMany(() => SubjectMember )
+  public extracurricular : HasMany<typeof SubjectMember>
+
+
 }

@@ -13,10 +13,15 @@ export default class StudentsController {
       mode = "page",
       classId = "",
       isGraduated = false,
+      notInSubject = ""
     } = request.qs();
 
     if (classId && !uuidValidation(classId)) {
       return response.badRequest({ message: "Class ID tidak valid" });
+    }
+
+    if (notInSubject && !uuidValidation(notInSubject)) {
+      return response.badRequest({ message: "Subject ID tidak valid" });
     }
 
     try {
@@ -29,6 +34,7 @@ export default class StudentsController {
           .preload("kecamatan")
           .preload("kota")
           .preload("provinsi")
+          .if(notInSubject, q => q.whereDoesntHave('extracurricular', q => q.where('subjectId', notInSubject)))
           .if(isGraduated, (g) => g.where("isGraduated", isGraduated))
           .andWhere((q) => {
             q.whereILike("name", `%${keyword}%`);

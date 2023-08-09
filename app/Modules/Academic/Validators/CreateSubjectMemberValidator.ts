@@ -4,6 +4,10 @@ import type { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 export default class CreateSubjectMemberValidator {
   constructor(protected ctx: HttpContextContract) {}
 
+
+  // public refs = schema.refs({
+  //   subjectId: this.ctx.params
+  // })
   /*
    * Define schema to validate the "shape", "type", "formatting" and "integrity" of data.
    *
@@ -26,13 +30,13 @@ export default class CreateSubjectMemberValidator {
   public schema = schema.create({
     subjectMember: schema.array().members(
       schema.object().members({
-        subjectId: schema.string.optional([
-          rules.trim(),
-          rules.exists({ table: "academic.subjects", column: "id" }),
-        ]),
+
         studentId: schema.string.optional([
           rules.trim(),
           rules.exists({ table: "academic.students", column: "id" }),
+          rules.unique({table: 'academic.subject_members', column: 'student_id', where: {
+            subject_id: this.ctx.params.subject_id
+            } })
         ]),
         description: schema.string.optional([rules.trim()]),
       })

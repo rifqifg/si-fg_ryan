@@ -51,7 +51,7 @@ export default class StudentsController {
           .paginate(page, limit);
       } else if (mode === "list") {
         data = await Student.query()
-          .select("id", "name", "nis", "nisn")
+          .select("*")
           .preload("class", (query) => query.select("name"))
           .preload("kelurahan")
           .preload("kecamatan")

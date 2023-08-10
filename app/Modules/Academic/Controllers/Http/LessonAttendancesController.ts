@@ -70,20 +70,18 @@ export default class LessonAttendancesController {
     data = await LessonAttendance.query()
       .select("*")
       .whereBetween("date", [formattedStartDate, formattedEndDate])
-      .andWhere((query) => {
-        query.orWhereHas("student", (s) =>
-          s.whereILike("name", `%${keyword}%`)
-        );
-        query.orWhereHas("class", (s) =>
-          s.whereILike("name", `%${className}%`)
-        );
-        query.orWhereHas("subject", (s) =>
-          s.whereILike("name", `%${subject}%`)
-        );
-        query.orWhereHas("session", (s) =>
-          s.whereILike("session", `%${session}%`)
-        );
-      })
+      .if(keyword, (k) =>
+        k.whereHas("student", (s) => s.whereILike("name", `%${keyword}%`))
+      )
+      .if(className, (c) =>
+        c.whereHas("class", (s) => s.whereILike("name", `%${className}%`))
+      )
+      .if(subject, (su) =>
+        su.whereHas("subject", (s) => s.whereILike("name", `%${subject}%`))
+      )
+      .if(session, (se) =>
+        se.whereHas("session", (s) => s.whereILike("session", `%${session}%`))
+      )
       .preload(
         "student",
         (s) => (

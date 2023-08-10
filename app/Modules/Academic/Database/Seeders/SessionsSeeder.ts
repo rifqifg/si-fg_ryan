@@ -59,8 +59,8 @@ export default class extends BaseSeeder {
       // },
       {
         'session': 'Sesi extracurricular',
-        'time_in': '16:30:00',
-        'time_out': '17:15:00'
+        'time_in': '15:45:00',
+        'time_out': '17:30:00'
       }
     ])
 

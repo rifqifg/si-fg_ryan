@@ -70,18 +70,36 @@ export default class TeacherAttendancesController {
     }
 
     data = await TeacherAttendance.query()
-      .andWhere((query) => {
-        query.whereBetween("date_in", [formattedStartDate, formattedEndDate]);
-
-        query.orWhereHas("teacher", (s) =>
+      .select("*")
+      .whereBetween("date_in", [formattedStartDate, formattedEndDate])
+      // .andWhere((query) => {
+      //   query.whereHas("teacher", (s) =>
+      //     s.whereHas("employee", (e) => e.whereILike("name", `%${keyword}%`))
+      //   );
+      //   query.whereHas("class", (s) =>
+      //     s.whereILike("name", `%${className}%`)
+      //   );
+      // query.or("subject", (s) =>
+      //   s.whereILike("name", `%${subject}%`)
+      // );
+      // query.orWhereHas("session", (s) =>
+      //   s.whereILike("session", `%${session}%`)
+      // );
+      // })
+      .if(keyword, (k) =>
+        k.whereHas("teacher", (s) =>
           s.whereHas("employee", (e) => e.whereILike("name", `%${keyword}%`))
-        );
-        query.orWhereHas("class", (s) => s.whereILike("name", `%${className}%`));
-        query.orWhereHas("subject", (s) => s.whereILike("name", `%${subject}%`));
-        query.orWhereHas("session", (s) =>
-          s.whereILike("session", `%${session}%`)
-        );
-      })
+        )
+      )
+      .if(className, (c) =>
+        c.whereHas("class", (s) => s.whereILike("name", `%${className}%`))
+      )
+      .if(subject, (s) =>
+        s.whereHas("subject", (s) => s.whereILike("name", `%${subject}%`))
+      )
+      .if(session, (se) =>
+        se.whereHas("session", (s) => s.whereILike("session", `%${session}%`))
+      )
       .preload("teacher", (s) => s.preload("employee", (e) => e.select("name")))
       .preload("class", (c) => c.select("name"))
       .preload("session", (s) => s.select("session"))

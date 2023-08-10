@@ -19,6 +19,7 @@ export default class LessonAttendancesController {
       className = "",
       subject = "",
       session = "",
+      isExtracurricular = false,
     } = request.qs();
     const formattedStartDate = `${
       fromDate ? fromDate : hariIni
@@ -83,8 +84,21 @@ export default class LessonAttendancesController {
           s.whereILike("session", `%${session}%`)
         );
       })
-      .preload("student", (s) => s.select("name"))
-      .preload("class", (c) => c.select("name"))
+      .preload(
+        "student",
+        (s) => (
+          s.select("name"),
+          s.if(
+            isExtracurricular,
+            (q) => (
+              q.select("classId"), q.preload("class", (c) => c.select("name"))
+            )
+          )
+        )
+      )
+      .if(!isExtracurricular, (ex) =>
+        ex.preload("class", (c) => c.select("name"))
+      )
       .preload("session", (s) => s.select("session"))
       .preload("subject", (s) => s.select("name"))
       .orderBy("date", "desc")

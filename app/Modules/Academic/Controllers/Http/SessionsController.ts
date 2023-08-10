@@ -7,21 +7,10 @@ export default class SessionsController {
     const { page = 1, limit = 10, keyword = "", mode = "page" } = request.qs();
 
     try {
-      let data = {};
-      if (mode === "page") {
-        data = await Session.query()
-          .whereILike("session", `%${keyword}%`)
-
-          .paginate(page, limit);
-      } else if (mode === "list") {
-        data = await Session.query()
-          .whereILike("session", `%${keyword}%`)
-          .orderBy("session");
-      } else {
-        return response.badRequest({
-          message: "Mode tidak dikenali, (pilih: page / list)",
-        });
-      }
+      const data = await Session.query()
+        .whereILike("session", `%${keyword}%`)
+        .whereILike("session", `%${keyword}%`)
+        .if(mode === "page" && limit && page, (q) => q.paginate(page, limit));
 
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {

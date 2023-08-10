@@ -12,7 +12,7 @@ export default class SessionsController {
                 data = await Session
                     .query()
                     .whereILike('session', `%${keyword}%`)
-                    .orderBy('session')
+                    .orderBy([{column: 'session', order:'asc', column: 'created_at', order: 'desc'}])
                     .paginate(page, limit)
             } else if (mode === "list") {
                 data = await Session

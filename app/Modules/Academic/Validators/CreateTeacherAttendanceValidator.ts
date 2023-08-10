@@ -35,7 +35,7 @@ export default class CreateTeacherAttendanceValidator {
     material: schema.string({}, [rules.alphaNum({ allow: ['space'] })]),
     reason_not_teach: schema.string.optional({}, [rules.alphaNum({ allow: ['space'] })]),
     post_test: schema.boolean.optional(),
-    classId: schema.string({}, [
+    classId: schema.string.optional({}, [
       rules.exists({ table: 'academic.classes', column: 'id' })
     ]),
     teacherId: schema.string({}, [

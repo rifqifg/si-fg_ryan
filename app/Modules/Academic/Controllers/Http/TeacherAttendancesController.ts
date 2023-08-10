@@ -70,13 +70,18 @@ export default class TeacherAttendancesController {
     }
 
     data = await TeacherAttendance.query()
-      .whereBetween("date_in", [formattedStartDate, formattedEndDate])
-      .whereHas("teacher", (s) =>
-        s.whereHas("employee", (e) => e.whereILike("name", `%${keyword}%`))
-      )
-      .whereHas("class", (s) => s.whereILike("name", `%${className}%`))
-      .whereHas("subject", (s) => s.whereILike("name", `%${subject}%`))
-      .whereHas("session", (s) => s.whereILike("session", `%${session}%`))
+      .andWhere((query) => {
+        query.whereBetween("date_in", [formattedStartDate, formattedEndDate]);
+
+        query.orWhereHas("teacher", (s) =>
+          s.whereHas("employee", (e) => e.whereILike("name", `%${keyword}%`))
+        );
+        query.orWhereHas("class", (s) => s.whereILike("name", `%${className}%`));
+        query.orWhereHas("subject", (s) => s.whereILike("name", `%${subject}%`));
+        query.orWhereHas("session", (s) =>
+          s.whereILike("session", `%${session}%`)
+        );
+      })
       .preload("teacher", (s) => s.preload("employee", (e) => e.select("name")))
       .preload("class", (c) => c.select("name"))
       .preload("session", (s) => s.select("session"))

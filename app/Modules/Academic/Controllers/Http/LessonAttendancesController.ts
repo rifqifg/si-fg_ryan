@@ -30,7 +30,7 @@ export default class LessonAttendancesController {
 
     if (recap) {
       data = await LessonAttendance.query()
-        .select("class_id", "subject_id")
+        .select("class_id", "subject_id", 'student_id')
         .select(
           Database.raw(
             `sum(case when status = 'present' then 1 else 0 end) as present`
@@ -59,9 +59,10 @@ export default class LessonAttendancesController {
           )
         )
         .whereBetween("date", [formattedStartDate, formattedEndDate])
+        .preload('student', st => st.select('name'))
         .preload("class", (c) => c.select("name").withCount("students"))
         .preload("subject", (s) => s.select("name"))
-        .groupBy("class_id", "subject_id")
+        .groupBy("class_id", "subject_id", "student_id")
         .paginate(page, limit);
 
       return response.ok({ message: "Berhasil mengambil data", data });

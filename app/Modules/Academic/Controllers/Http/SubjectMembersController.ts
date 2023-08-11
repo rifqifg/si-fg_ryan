@@ -7,14 +7,17 @@ import UpdateSubjectMemberValidator from "App/Validators/UpdateSubjectMemberVali
 export default class SubjectMembersController {
   public async index({ request, response, params }: HttpContextContract) {
 
-    const { page = 1, limit = 10, keyword = "" } = request.qs();
+    const { page = 1, limit = 10, mode = "page", keyword = "" } = request.qs();
   const {subject_id: subjectId} = params
     if (!uuidValidation(subjectId)) {
       return response.badRequest({ message: "SubjectId tidak valid" });
     }
 
     try {
-      const data = await SubjectMember.query()
+      let data =  {}
+      if (mode === 'page') {
+
+        data = await SubjectMember.query()
         .where("subject_id", subjectId)
         .preload(
           "students",
@@ -27,7 +30,22 @@ export default class SubjectMembersController {
           su.select("name", "is_extracurricular", "description")
         )
         .whereHas("students", (q) => q.whereILike("name", `%${keyword}%`))
-        .paginate(page, limit);
+        .paginate(page, limit)
+      } else {
+        data = await SubjectMember.query()
+          .where("subject_id", subjectId)
+          .preload(
+            "students",
+            (s) => (
+              s.select("name", "nisn", "nis", 'class_id'),
+                s.preload("class", (c) => c.select("name"))
+            )
+          )
+          .preload("subjects", (su) =>
+            su.select("name", "is_extracurricular", "description")
+          )
+          .whereHas("students", (q) => q.whereILike("name", `%${keyword}%`))
+      }
 
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {

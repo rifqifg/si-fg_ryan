@@ -20,7 +20,6 @@ import {
 import Wilayah from "App/Models/Wilayah";
 import { hasMany } from "@ioc:Adonis/Lucid/Orm";
 import StudentParent from "./StudentParent";
-import Subject from "Academic/Models/Subject";
 import SubjectMember from "Academic/Models/SubjectMember";
 let newId = "";
 

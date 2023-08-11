@@ -72,20 +72,6 @@ export default class TeacherAttendancesController {
     data = await TeacherAttendance.query()
       .select("*")
       .whereBetween("date_in", [formattedStartDate, formattedEndDate])
-      // .andWhere((query) => {
-      //   query.whereHas("teacher", (s) =>
-      //     s.whereHas("employee", (e) => e.whereILike("name", `%${keyword}%`))
-      //   );
-      //   query.whereHas("class", (s) =>
-      //     s.whereILike("name", `%${className}%`)
-      //   );
-      // query.or("subject", (s) =>
-      //   s.whereILike("name", `%${subject}%`)
-      // );
-      // query.orWhereHas("session", (s) =>
-      //   s.whereILike("session", `%${session}%`)
-      // );
-      // })
       .if(keyword, (k) =>
         k.whereHas("teacher", (s) =>
           s.whereHas("employee", (e) => e.whereILike("name", `%${keyword}%`))

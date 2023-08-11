@@ -3,12 +3,10 @@ import { schema, rules } from "@ioc:Adonis/Core/Validator";
 import KompetensiInti from '../../Models/KompetensiInti'
 
 export default class KompetensiIntisController {
-  public async index({request, response}: HttpContextContract) {
-    const { page = 1, limit = 10 } = request.qs()
+  public async index({ response}: HttpContextContract) {
 
     try {
-      let data = {}
-      data = await KompetensiInti.query().select('*').paginate(page, limit)
+      const data = await KompetensiInti.query().select('*')
       response.ok({message: 'Berhasil mengambil data', data})
     } catch (error) {
       response.badRequest({message: 'Gagal mengambil data', error: error.message})
@@ -20,7 +18,7 @@ export default class KompetensiIntisController {
       nama: schema.string([rules.trim()])
     })})
     try {
-      
+
       const data = await KompetensiInti.create(payload)
 
       response.ok({message: 'Berhasil menyimpan data', data})
@@ -57,7 +55,7 @@ export default class KompetensiIntisController {
       }
       const kompetensiInti = await KompetensiInti.findByOrFail('id', id)
       const data = await kompetensiInti.merge(payload).save()
-      
+
       response.ok({message: 'Berhasil memperbarui data', data})
 
     } catch (error) {

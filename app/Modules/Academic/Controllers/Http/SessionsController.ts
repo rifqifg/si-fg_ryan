@@ -7,10 +7,15 @@ export default class SessionsController {
     const { page = 1, limit = 10, keyword = "", mode = "page" } = request.qs();
 
     try {
-      const data = await Session.query()
+      let data = {}
+      if (mode === 'page') {
+
+       data = await Session.query()
         .whereILike("session", `%${keyword}%`)
-        .whereILike("session", `%${keyword}%`)
-        .if(mode === "page" && limit && page, (q) => q.paginate(page, limit));
+        .paginate(page, limit);
+      } else {
+        data = await  Session.query().whereILike('session', `%${keyword}%`)
+      }
 
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {

@@ -1,5 +1,6 @@
 import { schema, CustomMessages, rules } from '@ioc:Adonis/Core/Validator'
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import { ActivityType } from 'App/lib/enum'
 
 export default class UpdateActivityValidator {
   constructor(protected ctx: HttpContextContract) { }
@@ -38,6 +39,12 @@ export default class UpdateActivityValidator {
     days: schema.string.optional(),
     division_id: schema.string.optional({}, [
       rules.exists({ table: 'divisions', column: 'id' })
+    ]),
+    assessment: schema.boolean.optional(),
+    default: schema.number.nullableAndOptional(),
+    activityType: schema.enum.optional(Object.values(ActivityType)),
+    categoryActivityId: schema.string.optional({}, [
+      rules.exists({ table: 'category_activities', column: 'id' })
     ]),
   })
 

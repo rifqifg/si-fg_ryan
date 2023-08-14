@@ -21,7 +21,7 @@ export default class TeachersController {
           .preload('employee', e => e.select('id', 'name', 'nip'))
           .preload('teaching', t => t.select('id', 'class_id', 'subject_id')
             .preload('class', c => c.select('id', 'name'))
-            .preload('subject', s => s.select('id', 'name'))
+            .preload('subject', s => s.select('id', 'name', 'is_extracurricular'))
           )
           .paginate(page, limit)
       } else if (mode === "list") {
@@ -35,7 +35,7 @@ export default class TeachersController {
           .preload('employee', e => e.select('id', 'name', 'nip'))
           .preload('teaching', t => t.select('id', 'class_id', 'subject_id')
             .preload('class', c => c.select('id', 'name'))
-            .preload('subject', s => s.select('id', 'name'))
+            .preload('subject', s => s.select('id', 'name', 'is_extracurricular'))
           )
       } else {
         return response.badRequest({ message: "Mode tidak dikenali, (pilih: page / list)" })

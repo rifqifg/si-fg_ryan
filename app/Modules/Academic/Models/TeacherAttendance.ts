@@ -52,7 +52,7 @@ export default class TeacherAttendance extends BaseModel {
   public session: BelongsTo<typeof Session>
 
   @column()
-  public classId: string
+  public classId: string | null
 
   @belongsTo(() => Class)
   public class: BelongsTo<typeof Class>

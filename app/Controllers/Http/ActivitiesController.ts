@@ -13,12 +13,14 @@ export default class ActivitiesController {
     if (auth.use('api').user!.role == 'super_admin') {
       data = await Activity.query()
         .preload('division', division => division.select('id', 'name'))
+        .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
         .whereILike('name', `%${keyword}%`)
         .orderBy(orderBy, orderDirection)
         .paginate(page, limit)
     } else {
       data = await Activity.query()
         .preload('division', division => division.select('id', 'name'))
+        .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
         .whereILike('name', `%${keyword}%`)
         .andWhere('division_id', auth.use('api').user!.divisionId)
         .orderBy(orderBy, orderDirection)
@@ -35,15 +37,16 @@ export default class ActivitiesController {
     if (auth.use('api').user!.role == 'super_admin') {
       data = await Activity.query()
         .preload('division', division => division.select('id', 'name'))
+        .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
         .whereILike('name', `%${keyword}%`)
         .orderBy(orderBy, orderDirection)
     } else {
       data = await Activity.query()
         .preload('division', division => division.select('id', 'name'))
+        .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
         .whereILike('name', `%${keyword}%`)
         .andWhere('owner', auth.user!.id)
         .orderBy(orderBy, orderDirection)
-
     }
     response.ok({ message: "Data Berhasil Didapatkan", data })
   }
@@ -55,18 +58,22 @@ export default class ActivitiesController {
       const formattedPayload = {
         name: payload.name,
         description: payload.description,
-        timeInStart: payload.timeInStart.toFormat('HH:mm:ss'),
-        timeLateStart: payload.timeLateStart.toFormat('HH:mm:ss'),
-        timeInEnd: payload.timeInEnd.toFormat('HH:mm:ss'),
-        timeOutStart: payload.timeOutStart.toFormat('HH:mm:ss'),
-        timeOutEnd: payload.timeOutEnd.toFormat('HH:mm:ss'),
+        timeInStart: payload.timeInStart?.toFormat('HH:mm:ss'),
+        timeLateStart: payload.timeLateStart?.toFormat('HH:mm:ss'),
+        timeInEnd: payload.timeInEnd?.toFormat('HH:mm:ss'),
+        timeOutStart: payload.timeOutStart?.toFormat('HH:mm:ss'),
+        timeOutEnd: payload.timeOutEnd?.toFormat('HH:mm:ss'),
         timeOutDefault: payload.timeOutDefault?.toFormat('HH:mm:ss'),
         maxWorkingDuration: payload.maxWorkingDuration?.toFormat('HH:mm:ss'),
         type: payload.type,
         scheduleActive: payload.scheduleActive,
         days: payload.days,
         owner: auth.user!.id,
-        division_id: payload.division_id || auth.use('api').user!.divisionId
+        division_id: payload.division_id || auth.use('api').user!.divisionId,
+        assessment: payload.assessment,
+        default: payload.default,
+        activityType: payload.activityType,
+        categoryActivityId: payload.categoryActivityId
       }
       const data = await Activity.create(formattedPayload)
 
@@ -169,6 +176,9 @@ export default class ActivitiesController {
       payload.scheduleActive ? formattedPayload['scheduleActive'] = payload.scheduleActive : ''
       payload.days ? formattedPayload['days'] = payload.days : ""
       formattedPayload['division_id'] = payload.division_id
+      formattedPayload['categoryActivityId'] = payload.categoryActivityId
+      payload.assessment ? formattedPayload['assessment'] = payload.assessment : ""
+      payload.activityType ? formattedPayload['activityType'] = payload.activityType : ""
 
       const findData = await Activity.findOrFail(id)
       const data = await findData.merge(formattedPayload).save()

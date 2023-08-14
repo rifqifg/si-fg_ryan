@@ -85,7 +85,7 @@ export default class BukuNilaisController {
         bukuNilai: schema.array().members(
           schema.object().members({
             subjectId: schema.string([rules.uuid({ version: 4 })]),
-            programSemesterDetailId: schema.string([
+            programSemesterDetailId: schema.string.optional([
               rules.uuid({ version: 4 }),
             ]),
             studentId: schema.string([rules.uuid({ version: 4 })]),

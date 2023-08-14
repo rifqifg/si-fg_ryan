@@ -28,7 +28,7 @@ export default class LessonAttendancesController {
 
     let data = {};
 
-    if (recap) {
+    if (recap && recap !== "false") {
       data = await LessonAttendance.query()
         .select("class_id", "subject_id", 'student_id')
         .select(

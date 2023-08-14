@@ -1,8 +1,10 @@
 import { DateTime } from 'luxon'
-import { afterCreate, BaseModel, beforeCreate, BelongsTo, belongsTo, column, HasMany, hasMany } from '@ioc:Adonis/Lucid/Orm'
+import { afterCreate, BaseModel, beforeCreate, BelongsTo, belongsTo, column, HasMany, hasMany, HasOne, hasOne } from '@ioc:Adonis/Lucid/Orm'
 import { v4 as uuidv4 } from 'uuid'
 import Presence from './Presence'
 import Division from './Division'
+import { ActivityType } from 'App/lib/enum'
+import CategoryActivity from './CategoryActivity'
 let newId = ""
 export default class Activity extends BaseModel {
   @column({ isPrimary: true })
@@ -55,6 +57,21 @@ export default class Activity extends BaseModel {
 
   @column()
   public timeOutDefault: string
+
+  @column()
+  public assessment: Boolean
+
+  @column()
+  public default: Number
+
+  @column()
+  public activityType: ActivityType
+
+  @column()
+  public categoryActivityId: string
+
+  @belongsTo(() => CategoryActivity)
+  public categoryActivity: BelongsTo<typeof CategoryActivity>
 
   @column.dateTime({ autoCreate: true, serializeAs: null })
   public createdAt: DateTime

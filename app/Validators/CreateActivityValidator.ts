@@ -1,5 +1,6 @@
 import { schema, CustomMessages, rules } from '@ioc:Adonis/Core/Validator'
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import { ActivityType } from 'App/lib/enum'
 
 export default class CreateActivityValidator {
   constructor(protected ctx: HttpContextContract) { }
@@ -26,28 +27,33 @@ export default class CreateActivityValidator {
   public schema = schema.create({
     name: schema.string(),
     description: schema.string.optional(),
-    timeInStart: schema.date({ format: 'HH:mm:ss' }, [
+    timeInStart: schema.date.nullableAndOptional({ format: 'HH:mm:ss' }, [
       rules.beforeField('timeInEnd'),
       rules.beforeField('timeOutStart'),
       rules.beforeField('timeOutEnd'),
+      rules.requiredWhen('activityType', '=', ActivityType.FIXED_TIME)
     ]),
-    timeLateStart: schema.date({ format: 'HH:mm:ss' }, [
+    timeLateStart: schema.date.nullableAndOptional({ format: 'HH:mm:ss' }, [
       rules.afterField('timeInStart'),
+      rules.requiredWhen('activityType', '=', ActivityType.FIXED_TIME)
     ]),
-    timeInEnd: schema.date({ format: 'HH:mm:ss' }, [
+    timeInEnd: schema.date.nullableAndOptional({ format: 'HH:mm:ss' }, [
       rules.afterField('timeInStart'),
       rules.beforeField('timeOutStart'),
       rules.beforeField('timeOutEnd'),
+      rules.requiredWhen('activityType', '=', ActivityType.FIXED_TIME)
     ]),
-    timeOutStart: schema.date({ format: 'HH:mm:ss' }, [
+    timeOutStart: schema.date.nullableAndOptional({ format: 'HH:mm:ss' }, [
       rules.afterField('timeInStart'),
       rules.afterField('timeInEnd'),
       rules.beforeField('timeOutEnd'),
+      rules.requiredWhen('activityType', '=', ActivityType.FIXED_TIME)
     ]),
-    timeOutEnd: schema.date({ format: 'HH:mm:ss' }, [
+    timeOutEnd: schema.date.nullableAndOptional({ format: 'HH:mm:ss' }, [
       rules.afterField('timeInStart'),
       rules.afterField('timeInEnd'),
       rules.afterField('timeOutStart'),
+      rules.requiredWhen('activityType', '=', ActivityType.FIXED_TIME)
     ]),
     timeOutDefault: schema.date.nullableAndOptional({ format: 'HH:mm:ss' }),
     maxWorkingDuration: schema.date.optional({ format: 'HH:mm:ss' }),
@@ -60,6 +66,12 @@ export default class CreateActivityValidator {
     ]),
     division_id: schema.string.optional({}, [
       rules.exists({ table: 'divisions', column: 'id' })
+    ]),
+    assessment: schema.boolean(),
+    default: schema.number.optional(),
+    activityType: schema.enum(Object.values(ActivityType)),
+    categoryActivityId: schema.string({}, [
+      rules.exists({ table: 'category_activities', column: 'id' })
     ]),
   })
 

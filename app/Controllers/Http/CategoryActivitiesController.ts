@@ -8,10 +8,10 @@ export default class CategoryActivitiesController {
     let data = {}
 
     data = await CategoryActivity.query()
-        .whereILike('name', `%${keyword}%`)
-        .orderBy('name')
-        .paginate(page, limit)
+      .whereILike('name', `%${keyword}%`)
+      .orderBy('name')
+      .paginate(page, limit)
 
     response.ok({ message: "Berhasil mengambil data", data })
-}
+  }
 }

@@ -27,11 +27,21 @@ export default class UpdateActivityValidator {
   public schema = schema.create({
     name: schema.string.optional(),
     description: schema.string.optional(),
-    timeInStart: schema.date.optional({ format: 'HH:mm:ss' }, []),
-    timeLateStart: schema.date.optional({ format: 'HH:mm:ss' }),
-    timeInEnd: schema.date.optional({ format: 'HH:mm:ss' }, []),
-    timeOutStart: schema.date.optional({ format: 'HH:mm:ss' }, []),
-    timeOutEnd: schema.date.optional({ format: 'HH:mm:ss' }, []),
+    timeInStart: schema.date.nullableAndOptional({ format: 'HH:mm:ss' }, [
+      rules.requiredWhen('activityType', '=', ActivityType.FIXED_TIME)
+    ]),
+    timeLateStart: schema.date.nullableAndOptional({ format: 'HH:mm:ss' }, [
+      rules.requiredWhen('activityType', '=', ActivityType.FIXED_TIME)
+    ]),
+    timeInEnd: schema.date.nullableAndOptional({ format: 'HH:mm:ss' }, [
+      rules.requiredWhen('activityType', '=', ActivityType.FIXED_TIME)
+    ]),
+    timeOutStart: schema.date.nullableAndOptional({ format: 'HH:mm:ss' }, [
+      rules.requiredWhen('activityType', '=', ActivityType.FIXED_TIME)
+    ]),
+    timeOutEnd: schema.date.nullableAndOptional({ format: 'HH:mm:ss' }, [
+      rules.requiredWhen('activityType', '=', ActivityType.FIXED_TIME)
+    ]),
     timeOutDefault: schema.date.nullableAndOptional({ format: 'HH:mm:ss' }),
     maxWorkingDuration: schema.date.optional({ format: 'HH:mm:ss' }),
     type: schema.enum.optional(['scheduled', 'standalone']),

@@ -23,6 +23,7 @@ import User from 'App/Models/User'
 import 'Inventory/Routes/inventory'
 import 'Academic/Routes/academic'
 import 'PPDB/Routes/ppdb'
+import 'Finance/Routes/finance'
 import UserStudentCandidate from 'App/Modules/PPDB/Models/UserStudentCandidate'
 
 Route.get('/', async ({ auth, response }) => {

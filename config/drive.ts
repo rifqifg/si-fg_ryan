@@ -96,6 +96,14 @@ export default driveConfig({
       serveFiles: true
     },
 
+    finance: {
+      driver: 'local',
+      visibility: 'private',
+      root: Application.makePath('app/Modules/Finance/uploads/'),
+      basePath: '/finance/uploads',
+      serveFiles: true
+    },
+
     /*
     |--------------------------------------------------------------------------
     | S3 Driver

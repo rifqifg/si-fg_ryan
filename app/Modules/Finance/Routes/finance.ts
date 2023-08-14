@@ -4,4 +4,6 @@ Route.group(() => {
         return "You got here at finance!"
     })
 
+    Route.resource('master-billings', 'MasterBillingsController').apiOnly().middleware({ '*': ['auth'] })
+
 }).prefix('finance').namespace('FinanceControllers')

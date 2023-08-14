@@ -59,12 +59,19 @@ export default class LessonAttendancesController {
           )
         )
         .whereBetween("date", [formattedStartDate, formattedEndDate])
-        .preload('student', st => (st.select('name'), st.if(
-          isExtracurricular,
-          (q) => (
-            q.select("classId"), q.preload("class", (c) => c.select("name"))
-          )
-        )))
+        .if(keyword, (k) =>
+          k.whereHas("student", (s) => s.whereILike("name", `%${keyword}%`))
+        )
+        .if(className, (c) =>
+          c.whereHas("class", (s) => s.whereILike("name", `%${className}%`))
+        )
+        .if(subject, (su) =>
+          su.whereHas("subject", (s) => s.whereILike("name", `%${subject}%`))
+        )
+        .if(session, (se) =>
+          se.whereHas("session", (s) => s.whereILike("session", `%${session}%`))
+        )
+        .preload('student', st => (st.select('name', 'classId'), st.preload("class", (c) => c.select("name"))))
         .preload("class", (c) => c.select("name").withCount("students"))
         .preload("subject", (s) => s.select("name"))
         .groupBy("class_id", "subject_id", "student_id")

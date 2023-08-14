@@ -141,7 +141,6 @@ if(classId && !uuidValidation(classId)) {
       if (mode === "page") {
         data = await DailyAttendance.query()
           .select("academic.daily_attendances.*")
-          // .leftJoin('academic.classes as c', 'c.id', 'class_id')
           .preload("student", (s) => s.select("name", "nis"))
           .preload("class", (s) => s.select("name"))
           .whereBetween("date_in", [formattedStartDate, formattedEndDate])

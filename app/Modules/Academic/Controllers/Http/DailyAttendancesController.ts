@@ -19,6 +19,7 @@ export default class DailyAttendancesController {
       fromDate = hariIni,
       toDate = hariIni,
       recap = false,
+      sortingByAbsent = false
     } = request.qs();
 
 if(classId && !uuidValidation(classId)) {
@@ -139,12 +140,14 @@ if(classId && !uuidValidation(classId)) {
       }
       if (mode === "page") {
         data = await DailyAttendance.query()
-          .select("*")
+          .select("academic.daily_attendances.*")
+          // .leftJoin('academic.classes as c', 'c.id', 'class_id')
           .preload("student", (s) => s.select("name", "nis"))
           .preload("class", (s) => s.select("name"))
           .whereBetween("date_in", [formattedStartDate, formattedEndDate])
           .whereHas("student", (s) => s.whereILike("name", `%${keyword}%`))
           .whereHas("student", (s) => s.orderBy("name"))
+          .if(sortingByAbsent, q => q.orderBy('status', 'desc'))
           .orderBy("class_id")
           .orderBy("created_at")
           .if(classId, (c) => c.where("classId", classId))
@@ -157,7 +160,8 @@ if(classId && !uuidValidation(classId)) {
         .whereBetween("date_in", [formattedStartDate, formattedEndDate])
         .whereHas("student", (s) => s.whereILike("name", `%${keyword}%`))
         .whereHas("student", (s) => s.orderBy("name"))
-        .orderBy("class_id")
+          .if(sortingByAbsent, q => q.orderBy('status', 'desc'))
+          .orderBy("class_id")
         .orderBy("created_at")
         .if(classId, (c) => c.where("classId", classId))
       } else {

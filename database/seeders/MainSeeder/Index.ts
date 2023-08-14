@@ -37,5 +37,6 @@ export default class IndexSeeder extends BaseSeeder {
     // await this.runSeeder(await import('PPDB/Database/Seeders/EntranceExamSchedulesSeeder'))
     // await this.runSeeder(await import('../TemplateExcel'))
     // await this.runSeeder(await import('Finance/Database/Seeder/MasterBillingSeeder'))
+    // await this.runSeeder(await import('Finance/Database/Seeder/BillingSeeder'))
   }
 }

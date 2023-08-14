@@ -9,3 +9,10 @@ export enum BillingType {
     BWT = 'bwt',
     BP = 'bp'
 }
+
+export enum BillingStatus {
+    UNPAID = 'unpaid',
+    PAID_PARTIAL = 'paid_partial',
+    PAID_FULL = 'paid_full',
+    APPROVED = 'approved'
+}

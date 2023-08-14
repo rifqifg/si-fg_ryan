@@ -59,7 +59,12 @@ export default class LessonAttendancesController {
           )
         )
         .whereBetween("date", [formattedStartDate, formattedEndDate])
-        .preload('student', st => st.select('name'))
+        .preload('student', st => (st.select('name'), st.if(
+          isExtracurricular,
+          (q) => (
+            q.select("classId"), q.preload("class", (c) => c.select("name"))
+          )
+        )))
         .preload("class", (c) => c.select("name").withCount("students"))
         .preload("subject", (s) => s.select("name"))
         .groupBy("class_id", "subject_id", "student_id")

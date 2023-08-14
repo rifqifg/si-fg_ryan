@@ -47,8 +47,8 @@ export default class CreateTeacherAttendanceValidator {
     subjectId: schema.string({}, [
       rules.exists({ table: 'academic.subjects', column: 'id' })
     ]),
+    programSemesterDetailId: schema.string.optional(([rules.exists({table: 'academic.program_semester_details', column: 'id'})]))
   })
-
   /**
    * Custom messages for validation failures. You can make use of dot notation `(.)`
    * for targeting nested fields and array expressions `(*)` for targeting all

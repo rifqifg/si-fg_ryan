@@ -4,6 +4,7 @@ import Activity from 'App/Models/Activity';
 import CreateActivityValidator from 'App/Validators/CreateActivityValidator'
 import UpdateActivityValidator from 'App/Validators/UpdateActivityValidator';
 import { DateTime } from 'luxon';
+import { validate as uuidValidation } from "uuid";
 
 export default class ActivitiesController {
   public async index({ request, response, auth }: HttpContextContract) {
@@ -28,6 +29,30 @@ export default class ActivitiesController {
     }
 
     response.ok({ message: "Data Berhasil Didapatkan", data })
+  }
+
+  public async show({ params, response }: HttpContextContract) {
+    const { id } = params;
+    if (!uuidValidation(id)) {
+      return response.badRequest({ message: "Activity ID tidak valid" });
+    }
+
+    try {
+      const data = await Activity.query()
+        .where("id", id)
+        .preload('division', division => division.select('id', 'name'))
+        .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
+        .firstOrFail();
+      response.ok({ message: "Berhasil mengambil data", data });
+    } catch (error) {
+      const message = "HRDAC-SHOW: " + error.message || error;
+      console.log(error);
+      response.badRequest({
+        message: "Gagal mengambil data",
+        error: message,
+        error_data: error,
+      });
+    }
   }
 
   public async getActivity({ request, response, auth }: HttpContextContract) {

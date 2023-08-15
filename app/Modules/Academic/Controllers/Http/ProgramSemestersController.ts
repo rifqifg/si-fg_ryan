@@ -37,7 +37,7 @@ export default class ProgramSemestersController {
       } else if (mode === "list") {
         data = await ProgramSemester.query()
           .select("*")
-          .withCount('programSemesterDetail')
+          .withCount('programSemesterDetail', q => q.as('total_pertemuan'))
           .preload("teachers", (t) =>
             t.preload("employee", (e) => e.select("name"))
           )

@@ -24,6 +24,7 @@ export default class ProgramSemestersController {
       if (mode === "page") {
         data = await ProgramSemester.query()
           .select("*")
+          .withCount('programSemesterDetail', q => q.as('total_pertemuan'))
           .preload("teachers", (t) =>
             t.preload("employee", (e) => e.select("name"))
           )
@@ -36,6 +37,7 @@ export default class ProgramSemestersController {
       } else if (mode === "list") {
         data = await ProgramSemester.query()
           .select("*")
+          .withCount('programSemesterDetail')
           .preload("teachers", (t) =>
             t.preload("employee", (e) => e.select("name"))
           )
@@ -81,8 +83,14 @@ export default class ProgramSemestersController {
             },
           }),
         ]),
-        totalPertemuan: schema.number(),
-        subjectId: schema.string([rules.uuid({ version: 4 })]),
+        subjectId: schema.string([
+          rules.uuid({ version: 4 }),
+          rules.exists({ table: "academic.subjects", column: "id" }),
+        ]),
+        classId: schema.string([
+          rules.uuid({ version: 4 }),
+          rules.exists({ table: "academic.classes", column: "id" }),
+        ]),
       });
       try {
         payload = await request.validate({ schema: newProsemNonAdminSchema });
@@ -94,9 +102,17 @@ export default class ProgramSemestersController {
       }
     } else {
       const newProsemAdminSchema = schema.create({
-        teacherId: schema.string([rules.uuid({ version: 4 })]),
-        subjectId: schema.string([rules.uuid({ version: 4 })]),
-        totalPertemuan: schema.number(),
+        teacherId: schema.string([
+          rules.uuid({ version: 4 }),
+          rules.exists({ table: "academic.teachers", column: "id" }),
+        ]),
+        subjectId: schema.string([
+          rules.uuid({ version: 4 }),
+          rules.exists({ table: "academic.subjects", column: "id" }),
+        ]),
+        classId: schema.string([
+          rules.exists({ table: "academic.classes", column: "id" }),
+        ]),
       });
       payload = await request.validate({ schema: newProsemAdminSchema });
     }
@@ -153,28 +169,20 @@ export default class ProgramSemestersController {
     }
 
     const user = await auth.user!;
-    const teacherId = await User.query()
-      .where("id", user ? user.id : "")
-      .preload("employee", (e) => e.preload("teacher", (t) => t.select("id")))
-      .firstOrFail();
+    // const teacherId = await User.query()
+    //   .where("id", user ? user.id : "")
+    //   .preload("employee", (e) => e.preload("teacher", (t) => t.select("id")))
+    //   .firstOrFail();
 
     let payload;
 
     if (user.role !== "super_admin") {
       const newProsemNonAdminSchema = schema.create({
-        teacherId: schema.string.optional([
+        subjectId: schema.string.optional([rules.uuid({ version: 4 }), rules.exists({ table: "academic.subjects", column: "id" })]),
+        classId: schema.string.optional([
           rules.uuid({ version: 4 }),
-          rules.trim(),
-          rules.exists({
-            table: "academic.teachers",
-            column: "id",
-            where: {
-              id: teacherId.employee.teacher.id,
-            },
-          }),
+          rules.exists({ table: "academic.classes", column: "id" }),
         ]),
-        totalPertemuan: schema.number.optional(),
-        subjectId: schema.string.optional([rules.uuid({ version: 4 })]),
       });
       try {
         payload = await request.validate({ schema: newProsemNonAdminSchema });
@@ -186,9 +194,13 @@ export default class ProgramSemestersController {
       }
     } else {
       const newProsemAdminSchema = schema.create({
-        teacherId: schema.string.optional([rules.uuid({ version: 4 })]),
-        subjectId: schema.string.optional([rules.uuid({ version: 4 })]),
-        totalPertemuan: schema.number.optional(),
+        teacherId: schema.string.optional([rules.uuid({ version: 4 }), rules.exists({table: 'academic.teachers', column: 'id'})]),
+        subjectId: schema.string.optional([rules.uuid({ version: 4 }), rules.exists({ table: "academic.subjects", column: "id" })]),
+        
+        classId: schema.string.optional([
+          rules.uuid({ version: 4 }),
+          rules.exists({ table: "academic.classes", column: "id" }),
+        ]),
       });
       payload = await request.validate({ schema: newProsemAdminSchema });
     }

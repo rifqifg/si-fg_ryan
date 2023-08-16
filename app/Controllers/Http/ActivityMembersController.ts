@@ -101,8 +101,6 @@ export default class ActivityMembersController {
     const data = await Employee.query()
       .select('id', 'name')
       .whereNotIn('id', employeeIds)
-      .paginate(1, 10)
-
 
     response.ok({ message: "Data Berhasil Didapatkan", data })
   }

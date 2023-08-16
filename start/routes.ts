@@ -85,3 +85,4 @@ Route.group(() => {
 Route.shallowResource('template-excels', 'TemplateExcelsController').apiOnly().only(['index']).middleware({ '*': ['auth', 'checkRole:admin'] })
 Route.shallowResource('category-activities', 'CategoryActivitiesController').apiOnly().only(['index']).middleware({ '*': ['auth', 'checkRole:admin'] })
 Route.shallowResource('activity-members', 'ActivityMembersController').apiOnly().middleware({ '*': ['auth', 'checkRole:admin'] })
+Route.get('/get-employees/:activityId', 'ActivityMembersController.getEmployee').middleware(['auth', 'checkRole:admin'])

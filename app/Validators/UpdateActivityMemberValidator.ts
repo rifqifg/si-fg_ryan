@@ -25,17 +25,13 @@ export default class UpdateActivityMemberValidator {
    *    ```
    */
   public schema = schema.create({
-    activityMembers: schema.array().members(
-      schema.object().members({
-        role: schema.enum.optional(Object.values(RoleActivityMember)),
-        activityId: schema.string.optional({}, [
-          rules.exists({ table: 'activities', column: 'id' })
-        ]),
-        employeeId: schema.string.optional({}, [
-          rules.exists({ table: 'employees', column: 'id' })
-        ]),
-      })
-    )
+    role: schema.enum.optional(Object.values(RoleActivityMember)),
+    activityId: schema.string.optional({}, [
+      rules.exists({ table: 'activities', column: 'id' })
+    ]),
+    employeeId: schema.string.optional({}, [
+      rules.exists({ table: 'employees', column: 'id' })
+    ]),
   })
 
   /**

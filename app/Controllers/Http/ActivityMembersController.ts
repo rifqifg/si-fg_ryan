@@ -1,7 +1,9 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import ActivityMember from 'App/Models/ActivityMember';
+import Employee from 'App/Models/Employee';
 import CreateActivityMemberValidator from 'App/Validators/CreateActivityMemberValidator';
 import UpdateActivityMemberValidator from 'App/Validators/UpdateActivityMemberValidator';
+import { validate as uuidValidation } from "uuid";
 
 export default class ActivityMembersController {
   public async index({ request, response }: HttpContextContract) {
@@ -42,22 +44,28 @@ export default class ActivityMembersController {
     }
   }
 
-  public async update({ request, response }: HttpContextContract) {
-    const payload = await request.validate(UpdateActivityMemberValidator);
+  public async update({ request, response, params }: HttpContextContract) {
+    const { id } = params
+    if (!uuidValidation(id)) {
+      return response.badRequest({ message: "Subject ID tidak valid" });
+    }
+
+    const payload = await request.validate(UpdateActivityMemberValidator)
     if (JSON.stringify(payload) === "{}") {
       console.log("data update kosong");
       return response.badRequest({ message: "Data tidak boleh kosong" });
     }
 
-    const rawBody = request.raw();
-    const datas = JSON.parse(rawBody!);
+    try {
+      const data = await ActivityMember.findOrFail(id)
+      await data.merge(payload).save()
 
-    datas.activityMembers.map(async (value, index) => {
-      const data = await ActivityMember.findOrFail(value.id)
-      await data.merge(payload.activityMembers[index]).save()
-    })
-
-    response.ok({ message: "Update data success", datas })
+      response.ok({ message: "Update data success", data })
+    } catch (error) {
+      return response.badRequest({
+        message: "Gagal mengubah data"
+      })
+    }
   }
 
   public async destroy({ request, response }: HttpContextContract) {
@@ -76,5 +84,26 @@ export default class ActivityMembersController {
     })
 
     response.ok({ message: "Delete data success" })
+  }
+
+  public async getEmployee({ response, params }: HttpContextContract) {
+    const { activityId } = params
+    const activityMembers = await ActivityMember.query()
+      .select('id', 'employee_id')
+      .where('activity_id', '=', activityId)
+
+    const employeeIds: any = []
+
+    activityMembers.map(value => {
+      employeeIds.push(value.$attributes.employeeId)
+    })
+
+    const data = await Employee.query()
+      .select('id', 'name')
+      .whereNotIn('id', employeeIds)
+      .paginate(1, 10)
+
+
+    response.ok({ message: "Data Berhasil Didapatkan", data })
   }
 }

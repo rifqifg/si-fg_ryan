@@ -1,6 +1,7 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import ActivityMember from 'App/Models/ActivityMember';
 import CreateActivityMemberValidator from 'App/Validators/CreateActivityMemberValidator';
+import UpdateActivityMemberValidator from 'App/Validators/UpdateActivityMemberValidator';
 
 export default class ActivityMembersController {
   public async index({ request, response }: HttpContextContract) {
@@ -41,7 +42,23 @@ export default class ActivityMembersController {
     }
   }
 
-  public async update({ }: HttpContextContract) { }
+  public async update({ request, response }: HttpContextContract) {
+    const payload = await request.validate(UpdateActivityMemberValidator);
+    if (JSON.stringify(payload) === "{}") {
+      console.log("data update kosong");
+      return response.badRequest({ message: "Data tidak boleh kosong" });
+    }
+
+    const rawBody = request.raw();
+    const datas = JSON.parse(rawBody!);
+
+    datas.activityMembers.map(async (value, index) => {
+      const data = await ActivityMember.findOrFail(value.id)
+      await data.merge(payload.activityMembers[index]).save()
+    })
+
+    response.ok({ message: "Update data success", datas })
+  }
 
   public async destroy({ request, response }: HttpContextContract) {
     const rawBody = request.raw();

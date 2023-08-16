@@ -3,9 +3,9 @@ import CreateDailyAttendanceValidator from "../../Validators/CreateDailyAttendan
 import DailyAttendance from "../../Models/DailyAttendance";
 import { DateTime } from "luxon";
 import { validate as uuidValidation } from "uuid";
-import UpdateDailyAttendanceValidator from '../../Validators/UpdateDailyAttendanceValidator';
-import Database from '@ioc:Adonis/Lucid/Database';
-import Student from '../../Models/Student';
+import UpdateDailyAttendanceValidator from "../../Validators/UpdateDailyAttendanceValidator";
+import Database from "@ioc:Adonis/Lucid/Database";
+import Student from "../../Models/Student";
 
 export default class DailyAttendancesController {
   public async index({ request, response }: HttpContextContract) {
@@ -19,12 +19,12 @@ export default class DailyAttendancesController {
       fromDate = hariIni,
       toDate = hariIni,
       recap = false,
-      sortingByAbsent = false
+      sortingByAbsent = false,
     } = request.qs();
 
-if(classId && !uuidValidation(classId)) {
-  return response.badRequest({ message: "class ID tidak valid" })
-}
+    if (classId && !uuidValidation(classId)) {
+      return response.badRequest({ message: "class ID tidak valid" });
+    }
 
     // karena ada kemungkinan input fromDate & toDate formatnya 'yyyy-MM-dd 00:00:00', maka diambil value yg sebelum whitespace
     const splittedFromDate = fromDate.split(" ")[0];
@@ -53,7 +53,22 @@ if(classId && !uuidValidation(classId)) {
 
         if (recap === "kelas") {
           data = await DailyAttendance.query()
-            .select("class_id")
+            // .select("academic.daily_attendances.student_id")
+            // .select(
+            //   Database.raw(
+            //     `select c.name, c.id as class_id from academic.daily_attendances da 
+            //     left join academic.students s on s.id = da.student_id
+            //     left join  academic.classes c on c.id = s.class_id
+            //    group  by c.name, c.id `
+            //   )
+            // )
+            .select('c.name', 'c.id')
+            .leftJoin(
+              "academic.students as s",
+              "s.id",
+              "academic.daily_attendances.student_id"
+            )
+            .leftJoin("academic.classes as c", "c.id", "s.class_id")
             .select(
               Database.raw(
                 `sum(case when status = 'present' then 1 else 0 end) as present`
@@ -84,13 +99,19 @@ if(classId && !uuidValidation(classId)) {
               )
             )
             .whereBetween("date_in", [formattedStartDate, formattedEndDate])
-            .if(classId, (q) => q.where("class_id", `${classId}`))
-            .preload("class", (c) => c.select("name").withCount("students"))
-            .groupBy("class_id")
+            // .preload("student", (st) => st.select("name", "class_id", "id"))
+            .whereHas("student", (st) =>
+              st.preload("class", (c) => c.select("id", "name"))
+            )
+            .if(classId, (q) =>
+              q.whereHas("student", (st) => st.where("class_id", classId))
+            )
+            // .preload("class", (c) => c.select("name").withCount("students"))
+            .groupBy("c.id", "c.name")
             .paginate(page, limit);
         } else if (recap === "siswa") {
           data = await DailyAttendance.query()
-            .select("student_id", "class_id")
+            .select("student_id")
             .select(
               Database.raw(
                 `sum(case when status = 'present' then 1 else 0 end) as present`
@@ -127,7 +148,7 @@ if(classId && !uuidValidation(classId)) {
                 .select("name", "classId", "nis")
                 .preload("class", (kelas) => kelas.select("name"))
             )
-            .groupBy("student_id", "class_id")
+            .groupBy("student_id")
             .paginate(page, limit);
         } else {
           return response.badRequest({
@@ -141,28 +162,52 @@ if(classId && !uuidValidation(classId)) {
       if (mode === "page") {
         data = await DailyAttendance.query()
           .select("academic.daily_attendances.*")
-          .preload("student", (s) => s.select("name", "nis"))
-          .preload("class", (s) => s.select("name"))
+          .leftJoin(
+            "academic.students as s",
+            "s.id",
+            "academic.daily_attendances.student_id"
+          )
+          .preload(
+            "student",
+            (s) => (
+              s.select("name", "nis", "class_id"),
+              s.preload("class", (c) => c.select("name"))
+            )
+          )
           .whereBetween("date_in", [formattedStartDate, formattedEndDate])
+          .if(sortingByAbsent, (q) => q.orderBy("status", "desc"))
           .whereHas("student", (s) => s.whereILike("name", `%${keyword}%`))
-          .whereHas("student", (s) => s.orderBy("name"))
-          .if(sortingByAbsent, q => q.orderBy('status', 'desc'))
-          .orderBy("class_id")
-          .orderBy("created_at")
-          .if(classId, (c) => c.where("classId", classId))
+          .orderBy("s.class_id")
+          .orderBy("academic.daily_attendances.created_at")
+          .orderBy("s.name")
+          .if(classId, (c) =>
+            c.whereHas("student", (st) => st.where("class_id", classId))
+          )
           .paginate(page, limit);
       } else if (mode === "list") {
         data = await DailyAttendance.query()
-        .select("*")
-        .preload("student", (s) => s.select("name", "nis"))
-        .preload("class", (s) => s.select("name"))
-        .whereBetween("date_in", [formattedStartDate, formattedEndDate])
-        .whereHas("student", (s) => s.whereILike("name", `%${keyword}%`))
-        .whereHas("student", (s) => s.orderBy("name"))
-          .if(sortingByAbsent, q => q.orderBy('status', 'desc'))
-          .orderBy("class_id")
-        .orderBy("created_at")
-        .if(classId, (c) => c.where("classId", classId))
+          .select("academic.daily_attendances.*")
+          .leftJoin(
+            "academic.students as s",
+            "s.id",
+            "academic.daily_attendances.student_id"
+          )
+          .preload(
+            "student",
+            (s) => (
+              s.select("name", "nis", "class_id"),
+              s.preload("class", (c) => c.select("name"))
+            )
+          )
+          .whereBetween("date_in", [formattedStartDate, formattedEndDate])
+          .if(sortingByAbsent, (q) => q.orderBy("status", "desc"))
+          .whereHas("student", (s) => s.whereILike("name", `%${keyword}%`))
+          .orderBy("s.class_id")
+          .orderBy("academic.daily_attendances.created_at")
+          .orderBy("s.name")
+          .if(classId, (c) =>
+            c.whereHas("student", (st) => st.where("class_id", classId))
+          );
       } else {
         return response.badRequest({
           message: "Mode tidak dikenali, (pilih: page / list)",
@@ -191,9 +236,11 @@ if(classId && !uuidValidation(classId)) {
       }
 
       const dateInDateOnly = payload.dailyAttendance[0].date_in.toSQLDate()!;
-      const existingAttendance = await DailyAttendance.query()
-        .whereRaw("date_in::timestamp::date = ?", [dateInDateOnly])
-        .andWhere("class_id", payload.dailyAttendance[0].classId);
+      const existingAttendance = await DailyAttendance.query().whereRaw(
+        "date_in::timestamp::date = ?",
+        [dateInDateOnly]
+      );
+      // .andWhere("class_id", payload.dailyAttendance[0].classId);
 
       if (existingAttendance.length > 0) {
         throw new Error(
@@ -213,13 +260,18 @@ if(classId && !uuidValidation(classId)) {
         }
       }
 
-      const studentCount = await Student.query().where('class_id', payload.dailyAttendance[0].classId)
-      if(studentCount.length !== payload.dailyAttendance.length) {
-        throw new Error("Jumlah data absen tidak sesuai dengan jumlah siswa di kelas")
+      const studentCount = await Student.query().where(
+        "class_id",
+        payload.dailyAttendance[0].classId
+      );
+      if (studentCount.length !== payload.dailyAttendance.length) {
+        throw new Error(
+          "Jumlah data absen tidak sesuai dengan jumlah siswa di kelas"
+        );
       }
 
-      const data = await DailyAttendance.createMany(payload.dailyAttendance)
-      response.created({ message: "Berhasil menyimpan data", data })
+      const data = await DailyAttendance.createMany(payload.dailyAttendance);
+      response.created({ message: "Berhasil menyimpan data", data });
     } catch (error) {
       const message = "ACDA-store: " + error.message || error;
       console.log(error);
@@ -239,8 +291,13 @@ if(classId && !uuidValidation(classId)) {
 
     try {
       const data = await DailyAttendance.query()
-        .preload("student", (s) => s.select("name"))
-        .preload("class", (s) => s.select("name"))
+        .preload(
+          "student",
+          (s) => (
+            s.select("name", "class_id"),
+            s.preload("class", (c) => c.select("name"))
+          )
+        )
         .where("id", id)
         .firstOrFail();
       response.ok({ message: "Berhasil mengambil data", data });
@@ -323,18 +380,18 @@ if(classId && !uuidValidation(classId)) {
         ) {
           const existingRecord = await DailyAttendance.query()
             .whereNot("id", attendance.id)
-            .where("class_id", attendance.classId)
+            // .where("class_id", attendance.classId)
             .where("student_id", attendance.studentId)
             .whereRaw("date_in::timestamp::date = ?", [waktuAwal.toSQLDate()!])
-            .preload("class")
+            // .preload("class")
             .preload("student")
             .first();
 
           if (existingRecord) {
             throw new Error(
-              `Abensi siswa dengan nama ${existingRecord.student.name}, kelas ${
-                existingRecord.class.name
-              }, untuk tanggal ${waktuAwal.toSQLDate()} sudah ada`
+              `Abensi siswa dengan nama ${
+                existingRecord.student.name
+              }, kelas , untuk tanggal ${waktuAwal.toSQLDate()} sudah ada`
             );
           }
         }

@@ -24,7 +24,7 @@ export default class ProgramSemestersController {
       if (mode === "page") {
         data = await ProgramSemester.query()
           .select("*")
-          .withCount('programSemesterDetail', q => q.as('total_pertemuan'))
+          .withCount("programSemesterDetail", (q) => q.as("total_pertemuan"))
           .preload("teachers", (t) =>
             t.preload("employee", (e) => e.select("name"))
           )
@@ -37,7 +37,7 @@ export default class ProgramSemestersController {
       } else if (mode === "list") {
         data = await ProgramSemester.query()
           .select("*")
-          .withCount('programSemesterDetail', q => q.as('total_pertemuan'))
+          .withCount("programSemesterDetail", (q) => q.as("total_pertemuan"))
           .preload("teachers", (t) =>
             t.preload("employee", (e) => e.select("name"))
           )
@@ -178,7 +178,10 @@ export default class ProgramSemestersController {
 
     if (user.role !== "super_admin") {
       const newProsemNonAdminSchema = schema.create({
-        subjectId: schema.string.optional([rules.uuid({ version: 4 }), rules.exists({ table: "academic.subjects", column: "id" })]),
+        subjectId: schema.string.optional([
+          rules.uuid({ version: 4 }),
+          rules.exists({ table: "academic.subjects", column: "id" }),
+        ]),
         classId: schema.string.optional([
           rules.uuid({ version: 4 }),
           rules.exists({ table: "academic.classes", column: "id" }),
@@ -194,9 +197,15 @@ export default class ProgramSemestersController {
       }
     } else {
       const newProsemAdminSchema = schema.create({
-        teacherId: schema.string.optional([rules.uuid({ version: 4 }), rules.exists({table: 'academic.teachers', column: 'id'})]),
-        subjectId: schema.string.optional([rules.uuid({ version: 4 }), rules.exists({ table: "academic.subjects", column: "id" })]),
-        
+        teacherId: schema.string.optional([
+          rules.uuid({ version: 4 }),
+          rules.exists({ table: "academic.teachers", column: "id" }),
+        ]),
+        subjectId: schema.string.optional([
+          rules.uuid({ version: 4 }),
+          rules.exists({ table: "academic.subjects", column: "id" }),
+        ]),
+
         classId: schema.string.optional([
           rules.uuid({ version: 4 }),
           rules.exists({ table: "academic.classes", column: "id" }),

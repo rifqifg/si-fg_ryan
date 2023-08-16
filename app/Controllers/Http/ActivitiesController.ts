@@ -42,6 +42,7 @@ export default class ActivitiesController {
         .where("id", id)
         .preload('division', division => division.select('id', 'name'))
         .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
+        .preload('activityMembers', activityMembers => activityMembers.select('id', 'role', 'employee_id').preload('employee', employee => employee.select('name')))
         .firstOrFail();
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {

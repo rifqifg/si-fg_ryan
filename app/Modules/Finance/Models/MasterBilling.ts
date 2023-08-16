@@ -23,7 +23,7 @@ export default class MasterBilling extends BaseModel {
   @column()
   public type: BillingType
 
-  @column.date()
+  @column.dateTime()
   public dueDate: DateTime
 
   @column()

@@ -5,6 +5,7 @@ import Presence from './Presence'
 import Division from './Division'
 import { ActivityType } from 'App/lib/enum'
 import CategoryActivity from './CategoryActivity'
+import ActivityMember from './ActivityMember'
 let newId = ""
 export default class Activity extends BaseModel {
   @column({ isPrimary: true })
@@ -72,6 +73,12 @@ export default class Activity extends BaseModel {
 
   @belongsTo(() => CategoryActivity)
   public categoryActivity: BelongsTo<typeof CategoryActivity>
+
+  @column()
+  public activityMemberId: string
+
+  @hasMany(() => ActivityMember)
+  public activityMembers: HasMany<typeof ActivityMember>
 
   @column.dateTime({ autoCreate: true, serializeAs: null })
   public createdAt: DateTime

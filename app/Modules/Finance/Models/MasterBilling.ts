@@ -1,6 +1,9 @@
 import { DateTime } from 'luxon'
-import { BaseModel, column } from '@ioc:Adonis/Lucid/Orm'
+import { BaseModel, afterCreate, beforeCreate, column } from '@ioc:Adonis/Lucid/Orm'
 import { BillingPeriod, BillingType } from '../lib/enums';
+import { v4 as uuidv4 } from 'uuid'
+
+let newId = ""
 
 export default class MasterBilling extends BaseModel {
   public static table = 'finance.master_billings';
@@ -31,4 +34,15 @@ export default class MasterBilling extends BaseModel {
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   public updatedAt: DateTime
+
+  @beforeCreate()
+  public static assignUuid(masterBilling: MasterBilling) {
+    newId = uuidv4()
+    masterBilling.id = newId
+  }
+
+  @afterCreate()
+  public static setNewId(masterBilling: MasterBilling) {
+    masterBilling.id = newId
+  }
 }

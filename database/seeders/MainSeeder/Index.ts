@@ -39,6 +39,9 @@ export default class IndexSeeder extends BaseSeeder {
     // await this.runSeeder(await import('Finance/Database/Seeder/MasterBillingSeeder'))
     // await this.runSeeder(await import('Finance/Database/Seeder/BillingSeeder'))
     // await this.runSeeder(await import('Finance/Database/Seeder/CoaSeeder'))
-    await this.runSeeder(await import('../CategoryActivity'))
+    // await this.runSeeder(await import('../CategoryActivity'))
+    // await this.runSeeder(await import('Finance/Database/Seeder/MasterBillingSeeder'))
+    // await this.runSeeder(await import('Finance/Database/Seeder/BillingSeeder'))
+    // await this.runSeeder(await import('Finance/Database/Seeder/CoaSeeder'))
   }
 }

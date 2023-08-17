@@ -51,105 +51,87 @@ export default class DailyAttendancesController {
           start.setDate(start.getDate() + 1);
         }
 
+        const whereClassId = classId ? `and c.id = '${classId}'` : "";
         if (recap === "kelas") {
-          data = await DailyAttendance.query()
-            // .select("academic.daily_attendances.student_id")
-            // .select(
-            //   Database.raw(
-            //     `select c.name, c.id as class_id from academic.daily_attendances da 
-            //     left join academic.students s on s.id = da.student_id
-            //     left join  academic.classes c on c.id = s.class_id
-            //    group  by c.name, c.id `
-            //   )
-            // )
-            .select('c.name', 'c.id')
-            .leftJoin(
-              "academic.students as s",
-              "s.id",
-              "academic.daily_attendances.student_id"
-            )
-            .leftJoin("academic.classes as c", "c.id", "s.class_id")
-            .select(
-              Database.raw(
-                `sum(case when status = 'present' then 1 else 0 end) as present`
-              ),
-              Database.raw(
-                `sum(case when status = 'permission' then 1 else 0 end) as permission`
-              ),
-              Database.raw(
-                `sum(case when status = 'sick' then 1 else 0 end) as sick`
-              ),
-              Database.raw(
-                `sum(case when status = 'absent' then 1 else 0 end) as absent`
-              ),
-              Database.raw(
-                `round(cast(sum(case when status = 'present' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as present_precentage`
-              ),
-              Database.raw(
-                `round(cast(sum(case when status = 'permission' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as permission_precentage`
-              ),
-              Database.raw(
-                `round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as sick_precentage`
-              ),
-              Database.raw(
-                `round(cast(sum(case when status = 'absent' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as absent_precentage`
-              ),
-              Database.raw(
-                `round(cast(sum(case when status = 'present' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) + round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as present_accumulation`
-              )
-            )
-            .whereBetween("date_in", [formattedStartDate, formattedEndDate])
-            // .preload("student", (st) => st.select("name", "class_id", "id"))
-            .whereHas("student", (st) =>
-              st.preload("class", (c) => c.select("id", "name"))
-            )
-            .if(classId, (q) =>
-              q.whereHas("student", (st) => st.where("class_id", classId))
-            )
-            // .preload("class", (c) => c.select("name").withCount("students"))
-            .groupBy("c.id", "c.name")
-            .paginate(page, limit);
+          const { rows, ...meta } = await Database.rawQuery(`
+          select
+	            c.name,
+	            c.id as class_id,
+	            sum(case when da.status = 'present' then 1 else 0 end) as present,
+	            sum(case when da.status = 'permission' then 1 else 0 end) as permission,
+	            sum(case when da.status = 'sick' then 1 else 0 end) as sick,
+	            sum(case when da.status = 'absent' then 1 else 0 end) as absent,
+              round(cast(sum(case when da.status = 'present' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as present_precentage,
+              round(cast(sum(case when da.status = 'permission' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as permission_precentage,
+              round(cast(sum(case when da.status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as sick_precentage,
+              round(cast(sum(case when da.status = 'absent' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as absent_precentage,
+              round(cast(sum(case when da.status = 'present' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) + round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as present_accumulation
+          from
+	            academic.daily_attendances da
+          left join academic.students s 
+                    on
+	            da.student_id = s.id
+          left join academic.classes c 
+                    on
+	            c.id = s.class_id
+          where
+              date_in between '${formattedStartDate}' AND '${formattedEndDate}'
+              AND c.is_graduated = false
+              ${whereClassId}
+          group by
+	            c.name,
+	            c.id
+          limit ${limit}
+                    offset ${limit} * (${page}-1)
+          `);
+
+          data = {
+            meta: {
+              total: meta.rowCount,
+              per_page: +limit,
+              current_page: +page,
+            },
+            data: rows,
+          };
         } else if (recap === "siswa") {
-          data = await DailyAttendance.query()
-            .select("student_id")
-            .select(
-              Database.raw(
-                `sum(case when status = 'present' then 1 else 0 end) as present`
-              ),
-              Database.raw(
-                `sum(case when status = 'permission' then 1 else 0 end) as permission`
-              ),
-              Database.raw(
-                `sum(case when status = 'sick' then 1 else 0 end) as sick`
-              ),
-              Database.raw(
-                `sum(case when status = 'absent' then 1 else 0 end) as absent`
-              ),
-              Database.raw(
-                `round(cast(sum(case when status = 'present' then 1 else 0 end) * 100.0 / ${totalDays} as decimal(10,2)),0) as present_precentage`
-              ),
-              Database.raw(
-                `round(cast(sum(case when status = 'permission' then 1 else 0 end) * 100.0 / ${totalDays} as decimal(10,2)),0) as permission_precentage`
-              ),
-              Database.raw(
-                `round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / ${totalDays} as decimal(10,2)),0) as sick_precentage`
-              ),
-              Database.raw(
-                `round(cast(sum(case when status = 'absent' then 1 else 0 end) * 100.0 / ${totalDays} as decimal(10,2)),0) as absent_precentage`
-              ),
-              Database.raw(
-                `round(cast(sum(case when status = 'present' then 1 else 0 end) * 100.0 / ${totalDays} as decimal(10,2)),0) + round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / ${totalDays} as decimal(10,2)),0) as present_accumulation`
-              )
-            )
-            .whereBetween("date_in", [formattedStartDate, formattedEndDate])
-            .whereHas("student", (s) => s.whereILike("name", `%${keyword}%`))
-            .preload("student", (student) =>
-              student
-                .select("name", "classId", "nis")
-                .preload("class", (kelas) => kelas.select("name"))
-            )
-            .groupBy("student_id")
-            .paginate(page, limit);
+          const { rows, ...meta } = await Database.rawQuery(`
+        select
+          s."name" as student_name ,
+          c.name as class_name,
+          sum(case when da.status = 'present' then 1 else 0 end) as present,
+          sum(case when da.status = 'permission' then 1 else 0 end) as permission,
+          sum(case when da.status = 'sick' then 1 else 0 end) as sick,
+          sum(case when da.status = 'absent' then 1 else 0 end) as absent,
+          round(cast(sum(case when da.status = 'present' then 1 else 0 end) * 100.0 / (count(distinct student_id) * 30)as decimal(10,
+          2)),
+          0) as present_precentage
+       from
+         academic.daily_attendances da
+       left join academic.students s 
+                 on
+         da.student_id = s.id
+       left join academic.classes c 
+                 on
+         c.id = s.class_id
+       where
+         date_in between '2023-07-17' and '2023-08-17'
+         and c.is_graduated = false
+         and s.name ilike '%${keyword}%'
+       group by
+         s.name,
+         c.name
+       limit ${limit}
+                 offset ${limit} * (${page}-1)
+        
+          `);
+          data = {
+            meta: {
+              total: meta.rowCount,
+              per_page: +limit,
+              current_page: +page,
+            },
+            data: rows,
+          };
         } else {
           return response.badRequest({
             message:
@@ -260,15 +242,7 @@ export default class DailyAttendancesController {
         }
       }
 
-      const studentCount = await Student.query().where(
-        "class_id",
-        payload.dailyAttendance[0].classId
-      );
-      if (studentCount.length !== payload.dailyAttendance.length) {
-        throw new Error(
-          "Jumlah data absen tidak sesuai dengan jumlah siswa di kelas"
-        );
-      }
+      
 
       const data = await DailyAttendance.createMany(payload.dailyAttendance);
       response.created({ message: "Berhasil menyimpan data", data });

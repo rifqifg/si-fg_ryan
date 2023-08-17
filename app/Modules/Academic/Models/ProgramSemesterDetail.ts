@@ -1,5 +1,5 @@
 import { DateTime } from 'luxon'
-import { BaseModel, column, belongsTo, BelongsTo, beforeCreate, hasMany, HasMany } from '@ioc:Adonis/Lucid/Orm'
+import { BaseModel, column, belongsTo, BelongsTo, beforeCreate, hasMany, HasMany, HasOne, hasOne } from '@ioc:Adonis/Lucid/Orm'
 import { v4 as uuidv4 } from 'uuid'
 import ProgramSemester from './ProgramSemester'
 import KompetensiInti from './KompetensiInti'
@@ -51,8 +51,8 @@ export default class ProgramSemesterDetail extends BaseModel {
   @hasMany(() => RencanaPengambilanNilai)
   public rpn: HasMany<typeof RencanaPengambilanNilai>
 
-  @hasMany(() => TeacherAttendance)
-  public teachingJournal: HasMany<typeof TeacherAttendance>
+  @hasOne(() => TeacherAttendance)
+  public teachingJournal: HasOne<typeof TeacherAttendance>
 
   @beforeCreate()
   public static assignUuid(prosemDetail: ProgramSemesterDetail) {

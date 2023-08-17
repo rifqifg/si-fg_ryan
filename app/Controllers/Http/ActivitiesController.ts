@@ -4,6 +4,7 @@ import Activity from 'App/Models/Activity';
 import CreateActivityValidator from 'App/Validators/CreateActivityValidator'
 import UpdateActivityValidator from 'App/Validators/UpdateActivityValidator';
 import { DateTime } from 'luxon';
+import { validate as uuidValidation } from "uuid";
 
 export default class ActivitiesController {
   public async index({ request, response, auth }: HttpContextContract) {
@@ -13,12 +14,14 @@ export default class ActivitiesController {
     if (auth.use('api').user!.role == 'super_admin') {
       data = await Activity.query()
         .preload('division', division => division.select('id', 'name'))
+        .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
         .whereILike('name', `%${keyword}%`)
         .orderBy(orderBy, orderDirection)
         .paginate(page, limit)
     } else {
       data = await Activity.query()
         .preload('division', division => division.select('id', 'name'))
+        .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
         .whereILike('name', `%${keyword}%`)
         .andWhere('division_id', auth.use('api').user!.divisionId)
         .orderBy(orderBy, orderDirection)
@@ -28,6 +31,31 @@ export default class ActivitiesController {
     response.ok({ message: "Data Berhasil Didapatkan", data })
   }
 
+  public async show({ params, response }: HttpContextContract) {
+    const { id } = params;
+    if (!uuidValidation(id)) {
+      return response.badRequest({ message: "Activity ID tidak valid" });
+    }
+
+    try {
+      const data = await Activity.query()
+        .where("id", id)
+        .preload('division', division => division.select('id', 'name'))
+        .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
+        .preload('activityMembers', activityMembers => activityMembers.select('id', 'role', 'employee_id').preload('employee', employee => employee.select('name')))
+        .firstOrFail();
+      response.ok({ message: "Berhasil mengambil data", data });
+    } catch (error) {
+      const message = "HRDAC-SHOW: " + error.message || error;
+      console.log(error);
+      response.badRequest({
+        message: "Gagal mengambil data",
+        error: message,
+        error_data: error,
+      });
+    }
+  }
+
   public async getActivity({ request, response, auth }: HttpContextContract) {
     const { keyword = "", orderBy = "name", orderDirection = 'ASC' } = request.qs()
     let data: object
@@ -35,15 +63,16 @@ export default class ActivitiesController {
     if (auth.use('api').user!.role == 'super_admin') {
       data = await Activity.query()
         .preload('division', division => division.select('id', 'name'))
+        .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
         .whereILike('name', `%${keyword}%`)
         .orderBy(orderBy, orderDirection)
     } else {
       data = await Activity.query()
         .preload('division', division => division.select('id', 'name'))
+        .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
         .whereILike('name', `%${keyword}%`)
         .andWhere('owner', auth.user!.id)
         .orderBy(orderBy, orderDirection)
-
     }
     response.ok({ message: "Data Berhasil Didapatkan", data })
   }
@@ -55,18 +84,22 @@ export default class ActivitiesController {
       const formattedPayload = {
         name: payload.name,
         description: payload.description,
-        timeInStart: payload.timeInStart.toFormat('HH:mm:ss'),
-        timeLateStart: payload.timeLateStart.toFormat('HH:mm:ss'),
-        timeInEnd: payload.timeInEnd.toFormat('HH:mm:ss'),
-        timeOutStart: payload.timeOutStart.toFormat('HH:mm:ss'),
-        timeOutEnd: payload.timeOutEnd.toFormat('HH:mm:ss'),
+        timeInStart: payload.timeInStart?.toFormat('HH:mm:ss'),
+        timeLateStart: payload.timeLateStart?.toFormat('HH:mm:ss'),
+        timeInEnd: payload.timeInEnd?.toFormat('HH:mm:ss'),
+        timeOutStart: payload.timeOutStart?.toFormat('HH:mm:ss'),
+        timeOutEnd: payload.timeOutEnd?.toFormat('HH:mm:ss'),
         timeOutDefault: payload.timeOutDefault?.toFormat('HH:mm:ss'),
         maxWorkingDuration: payload.maxWorkingDuration?.toFormat('HH:mm:ss'),
         type: payload.type,
         scheduleActive: payload.scheduleActive,
         days: payload.days,
         owner: auth.user!.id,
-        division_id: payload.division_id || auth.use('api').user!.divisionId
+        division_id: payload.division_id || auth.use('api').user!.divisionId,
+        assessment: payload.assessment,
+        default: payload.default,
+        activityType: payload.activityType,
+        categoryActivityId: payload.categoryActivityId
       }
       const data = await Activity.create(formattedPayload)
 
@@ -169,6 +202,9 @@ export default class ActivitiesController {
       payload.scheduleActive ? formattedPayload['scheduleActive'] = payload.scheduleActive : ''
       payload.days ? formattedPayload['days'] = payload.days : ""
       formattedPayload['division_id'] = payload.division_id
+      formattedPayload['categoryActivityId'] = payload.categoryActivityId
+      payload.assessment ? formattedPayload['assessment'] = payload.assessment : ""
+      payload.activityType ? formattedPayload['activityType'] = payload.activityType : ""
 
       const findData = await Activity.findOrFail(id)
       const data = await findData.merge(formattedPayload).save()

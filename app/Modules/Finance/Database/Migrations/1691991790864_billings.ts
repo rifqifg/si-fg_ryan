@@ -9,8 +9,8 @@ export default class extends BaseSchema {
       .withSchema('finance')
       .createTable(this.tableName, (table) => {
         table.uuid('id').primary().notNullable().unique()
-        table.uuid('student_id').references('id').inTable('academic.students').onDelete('no action').onUpdate('cascade')
-        table.uuid('master_billing_id').references('id').inTable('finance.master_billings').onDelete('no action').onUpdate('cascade')
+        table.uuid('student_id').references('id').inTable('academic.students').onDelete('set null').onUpdate('cascade')
+        table.uuid('master_billing_id').references('id').inTable('finance.master_billings').onDelete('set null').onUpdate('cascade')
         table.string('name').notNullable()
         table.string('amount').notNullable()
         table.string('description')

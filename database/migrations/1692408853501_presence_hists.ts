@@ -14,6 +14,8 @@ export default class extends BaseSchema {
       table.datetime('time_out', { useTz: false })
       table.string('description')
       table.uuid('server_user_id').references('id').inTable('users').onDelete('no action')
+      table.string('server_ip')
+      table.string('server_hostname')
 
       /**
        * Uses timestamptz for PostgreSQL and DATETIME2 for MSSQL
@@ -25,8 +27,8 @@ export default class extends BaseSchema {
       ------ FUNCTIONS ------
       CREATE OR REPLACE FUNCTION log_presences_insert() RETURNS TRIGGER AS $$
       BEGIN
-          INSERT INTO public.presence_hists (presence_id, activity_id, employee_id, action_type, time_in, time_out, description, server_user_id)
-          VALUES (new.id, NEW.activity_id, NEW.employee_id, 'INSERT', NEW.time_in, NEW.time_out, NEW.description, new.client_user_id);
+          INSERT INTO public.presence_hists (presence_id, activity_id, employee_id, action_type, time_in, time_out, description, server_user_id, server_ip, server_hostname)
+          VALUES (new.id, NEW.activity_id, NEW.employee_id, 'INSERT', NEW.time_in, NEW.time_out, NEW.description, NEW.client_user_id, NEW.client_ip, NEW.client_hostname);
           RETURN NEW;
       END;
       $$ LANGUAGE plpgsql;
@@ -39,6 +41,7 @@ export default class extends BaseSchema {
 
   public async down() {
     this.schema.dropTable(this.tableName)
+
     // jangan lupa drop trigger & function
     this.schema.raw("DROP TRIGGER IF EXISTS presences_history_insert ON public.presences;")
     this.schema.raw("DROP FUNCTION IF EXISTS log_presences_insert() CASCADE;")

@@ -25,15 +25,14 @@ export default class CreateSubActivityValidator {
    */
   public schema = schema.create({
     name: schema.string([
-      rules.alpha({ allow: ['underscore', 'dash', 'space'] }),
       rules.minLength(3)
     ]),
-    images: schema.array
-      .nullableAndOptional()
-      .members(schema.string()),
+    images: schema.array.nullableAndOptional().members(schema.file({
+      size: '2mb',
+      extnames: ['png', 'jpg', 'jpeg']
+    })),
     date: schema.date({ format: 'yyyy-MM-dd HH:mm:ss' }),
     note: schema.string.nullableAndOptional([
-      rules.alpha({ allow: ['underscore', 'dash', 'space'] }),
       rules.minLength(3)
     ]),
     activityId: schema.string({}, [

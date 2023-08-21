@@ -7,7 +7,7 @@ export default class extends BaseSchema {
     this.schema.createTable(this.tableName, (table) => {
       table.uuid('id').unique().notNullable().primary()
       table.string('name').notNullable()
-      table.json('images').nullable()
+      table.specificType('images', 'varchar[]').nullable()
       table.dateTime('date')
       table.string('note').nullable()
       table.uuid('activity_id').references('activities.id').onUpdate('cascade').onDelete('restrict')

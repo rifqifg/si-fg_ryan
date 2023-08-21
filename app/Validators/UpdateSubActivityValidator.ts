@@ -28,15 +28,17 @@ export default class UpdateSubActivityValidator {
       rules.alpha({ allow: ['underscore', 'dash', 'space'] }),
       rules.minLength(3)
     ]),
-    images: schema.array
-      .nullableAndOptional()
-      .members(schema.string()),
+    images: schema.array.nullableAndOptional().members(schema.file({
+      size: '2mb',
+      extnames: ['png', 'jpg', 'jpeg']
+    })),
+    deleteImages: schema.string.nullableAndOptional(),
     date: schema.date.optional({ format: 'yyyy-MM-dd HH:mm:ss' }),
     note: schema.string.nullableAndOptional([
       rules.alpha({ allow: ['underscore', 'dash', 'space'] }),
       rules.minLength(3)
     ]),
-    activityId: schema.string({}, [
+    activityId: schema.string.optional({}, [
       rules.exists({ table: 'activities', column: 'id' })
     ])
   })

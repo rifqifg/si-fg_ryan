@@ -11,7 +11,12 @@ export default class ProgramSemestersController {
       limit = 10,
       mode = "page",
       subjectId = "",
+      classId = "",
     } = request.qs();
+
+    if ((subjectId && !uuidValidation(subjectId)) || (classId && !uuidValidation(classId))) {
+      return response.badRequest({ message: "Subject ID atau Class ID tidak valid" });
+    }
 
     try {
       let data = {};
@@ -30,9 +35,11 @@ export default class ProgramSemestersController {
           )
           .preload("mapel", (m) => m.select("name"))
           .if(subjectId, (q) => q.where("subjectId", subjectId))
+          .if(classId, q => q.where('classId', classId))
           .if(user.role !== "super_admin", (q) =>
             q.where("teacherId", teacherId.employee.teacher.id)
           )
+          
           .paginate(page, limit);
       } else if (mode === "list") {
         data = await ProgramSemester.query()
@@ -45,6 +52,7 @@ export default class ProgramSemestersController {
           .if(user.role !== "super_admin", (q) =>
             q.where("teacherId", teacherId.employee.teacher.id)
           )
+          .if(classId, q => q.where('classId', classId))
           .preload("mapel", (m) => m.select("name"));
       } else {
         return response.badRequest({

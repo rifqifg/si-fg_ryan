@@ -1,8 +1,9 @@
 import { DateTime, Duration } from 'luxon'
-import { afterCreate, afterFetch, afterFind, BaseModel, beforeCreate, BelongsTo, belongsTo, column } from '@ioc:Adonis/Lucid/Orm'
+import { afterCreate, afterFetch, afterFind, BaseModel, beforeCreate, beforeSave, BelongsTo, belongsTo, column } from '@ioc:Adonis/Lucid/Orm'
 import { v4 as uuidv4 } from 'uuid'
 import Activity from './Activity'
 import Employee from './Employee'
+import HttpContext from '@ioc:Adonis/Core/HttpContext'
 
 let newId = ""
 export default class Presence extends BaseModel {
@@ -35,6 +36,15 @@ export default class Presence extends BaseModel {
 
   @column()
   public description: string
+
+  @column()
+  public clientUserId: string
+  
+  @beforeSave()
+  public static async addClientUserId(presence: Presence) {
+    const auth = HttpContext.get()!.auth
+    presence.clientUserId = auth.user!.id
+  }
 
   @afterFetch()
   public static async createWorkingDuration(presences: Presence[]) {

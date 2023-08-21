@@ -39,11 +39,19 @@ export default class Presence extends BaseModel {
 
   @column()
   public clientUserId: string
+
+  @column()
+  public clientIp: string | null
+
+  @column()
+  public clientHostname: string | null
   
   @beforeSave()
   public static async addClientUserId(presence: Presence) {
-    const auth = HttpContext.get()!.auth
+    const { auth, request } = HttpContext.get()!
     presence.clientUserId = auth.user!.id
+    presence.clientHostname = request.hostname()
+    presence.clientIp = request.ip()
   }
 
   @afterFetch()

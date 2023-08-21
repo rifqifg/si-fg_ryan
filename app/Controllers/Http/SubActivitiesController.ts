@@ -54,7 +54,7 @@ export default class SubActivitiesController {
 
     let nameFileImage: string[] = [] //buat nampung nama file image
 
-    if (payload.images!.length > 0) {
+    if (payload.images) {
       for (let i = 0; i < payload.images!.length; i++) {
         const imageName = Math.floor(Math.random() * 1000) + DateTime.now().toUnixInteger().toString() + "." + payload.images![i].extname
 

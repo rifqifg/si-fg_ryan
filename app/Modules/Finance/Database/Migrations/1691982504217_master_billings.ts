@@ -12,7 +12,7 @@ export default class extends BaseSchema {
         table.string('name').notNullable()
         table.enum('period', Object.values(BillingPeriod)).notNullable()
         table.string('amount').notNullable()
-        table.enum('type', Object.values(BillingType)).notNullable()
+        table.enum('type', Object.values(BillingType))
         table.timestamp('due_date').notNullable()
         table.string('description')
 

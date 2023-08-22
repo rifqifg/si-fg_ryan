@@ -14,7 +14,7 @@ export default class extends BaseSchema {
         table.string('name').notNullable()
         table.string('amount').notNullable()
         table.string('description')
-        table.enum('status', Object.values(BillingStatus)).notNullable()
+        table.enum('status', Object.values(BillingStatus)).notNullable().defaultTo(BillingStatus.UNPAID)
         table.enum('type', Object.values(BillingType))
 
         /**

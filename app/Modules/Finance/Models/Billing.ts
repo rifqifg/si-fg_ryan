@@ -1,8 +1,11 @@
 import { DateTime } from 'luxon'
-import { BaseModel, BelongsTo, belongsTo, column } from '@ioc:Adonis/Lucid/Orm'
+import { BaseModel, BelongsTo, afterCreate, beforeCreate, belongsTo, column } from '@ioc:Adonis/Lucid/Orm'
 import { BillingStatus, BillingType } from '../lib/enums';
-import Student from 'App/Modules/Academic/Models/Student';
 import MasterBilling from './MasterBilling';
+import Account from './Account';
+import { v4 as uuidv4 } from 'uuid'
+
+let newId = ""
 
 export default class Billing extends BaseModel {
   public static table = 'finance.billings';
@@ -11,7 +14,7 @@ export default class Billing extends BaseModel {
   public id: string
 
   @column()
-  public studentId: string | null
+  public accountId: string | null
 
   @column()
   public masterBillingId: string | null
@@ -29,10 +32,10 @@ export default class Billing extends BaseModel {
   public status: BillingStatus
 
   @column()
-  public type: BillingType
+  public type: BillingType | null
 
-  @belongsTo(() => Student)
-  public student: BelongsTo<typeof Student>
+  @belongsTo(() => Account)
+  public account: BelongsTo<typeof Account>
 
   @belongsTo(() => MasterBilling)
   public masterBilling: BelongsTo<typeof MasterBilling>
@@ -42,4 +45,15 @@ export default class Billing extends BaseModel {
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   public updatedAt: DateTime
+
+  @beforeCreate()
+  public static assignUuid(billing: Billing) {
+    newId = uuidv4()
+    billing.id = newId
+  }
+
+  @afterCreate()
+  public static setNewId(billing: Billing) {
+    billing.id = newId
+  }
 }

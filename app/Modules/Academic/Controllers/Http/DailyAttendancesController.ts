@@ -5,7 +5,6 @@ import { DateTime } from "luxon";
 import { validate as uuidValidation } from "uuid";
 import UpdateDailyAttendanceValidator from "../../Validators/UpdateDailyAttendanceValidator";
 import Database from "@ioc:Adonis/Lucid/Database";
-import Student from "../../Models/Student";
 
 export default class DailyAttendancesController {
   public async index({ request, response }: HttpContextContract) {
@@ -57,32 +56,46 @@ export default class DailyAttendancesController {
           select
 	            c.name,
 	            c.id as class_id,
+	            count(distinct  da.student_id) as total_student,
 	            sum(case when da.status = 'present' then 1 else 0 end) as present,
 	            sum(case when da.status = 'permission' then 1 else 0 end) as permission,
 	            sum(case when da.status = 'sick' then 1 else 0 end) as sick,
 	            sum(case when da.status = 'absent' then 1 else 0 end) as absent,
-              round(cast(sum(case when da.status = 'present' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as present_precentage,
-              round(cast(sum(case when da.status = 'permission' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as permission_precentage,
-              round(cast(sum(case when da.status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as sick_precentage,
-              round(cast(sum(case when da.status = 'absent' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as absent_precentage,
-              round(cast(sum(case when da.status = 'present' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) + round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as present_accumulation
-          from
-	            academic.daily_attendances da
-          left join academic.students s 
-                    on
-	            da.student_id = s.id
-          left join academic.classes c 
-                    on
-	            c.id = s.class_id
-          where
-              date_in between '${formattedStartDate}' AND '${formattedEndDate}'
-              AND c.is_graduated = false
-              ${whereClassId}
-          group by
-	            c.name,
-	            c.id
-          limit ${limit}
-                    offset ${limit} * (${page}-1)
+	            round(cast(sum(case when da.status = 'present' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,
+	            2)),
+	            0) as present_precentage,
+	            round(cast(sum(case when da.status = 'permission' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,
+	            2)),
+	            0) as permission_precentage,
+	            round(cast(sum(case when da.status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,
+	            2)),
+	            0) as sick_precentage,
+	            round(cast(sum(case when da.status = 'absent' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,
+	            2)),
+	            0) as absent_precentage,
+	            round(cast(sum(case when da.status = 'present' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,
+	            2)),
+	            0) + round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,
+	            2)),
+	            0) as present_accumulation
+              from
+	              academic.daily_attendances da
+              left join academic.students s 
+                      on
+	                  da.student_id = s.id
+              left join academic.classes c 
+                      on
+	                  c.id = s.class_id
+              where
+	                  date_in between '${formattedStartDate}' AND '${formattedEndDate}'
+	                  and c.is_graduated = false
+                    ${whereClassId}
+              group by
+              	c.name,
+              	c.id
+              limit ${limit}
+                        offset ${limit} * (${page}-1)
+
           `);
 
           data = {
@@ -102,9 +115,13 @@ export default class DailyAttendancesController {
           sum(case when da.status = 'permission' then 1 else 0 end) as permission,
           sum(case when da.status = 'sick' then 1 else 0 end) as sick,
           sum(case when da.status = 'absent' then 1 else 0 end) as absent,
-          round(cast(sum(case when da.status = 'present' then 1 else 0 end) * 100.0 / (count(distinct student_id) * 30)as decimal(10,
+          round(cast(sum(case when da.status = 'present' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,
           2)),
-          0) as present_precentage
+          0) as present_precentage,
+          round(cast(sum(case when status = 'permission' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as permission_precentage,
+          round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as sick_precentage,
+          round(cast(sum(case when status = 'absent' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as absent_precentage,
+          round(cast(sum(case when status = 'present' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) + round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as present_accumulation
        from
          academic.daily_attendances da
        left join academic.students s 
@@ -241,8 +258,6 @@ export default class DailyAttendancesController {
           throw new Error("Waktu mulai tidak boleh dibelakang waktu berakhir");
         }
       }
-
-      
 
       const data = await DailyAttendance.createMany(payload.dailyAttendance);
       response.created({ message: "Berhasil menyimpan data", data });

@@ -14,8 +14,13 @@ export default class ProgramSemestersController {
       classId = "",
     } = request.qs();
 
-    if ((subjectId && !uuidValidation(subjectId)) || (classId && !uuidValidation(classId))) {
-      return response.badRequest({ message: "Subject ID atau Class ID tidak valid" });
+    if (
+      (subjectId && !uuidValidation(subjectId)) ||
+      (classId && !uuidValidation(classId))
+    ) {
+      return response.badRequest({
+        message: "Subject ID atau Class ID tidak valid",
+      });
     }
 
     try {
@@ -35,11 +40,11 @@ export default class ProgramSemestersController {
           )
           .preload("mapel", (m) => m.select("name"))
           .if(subjectId, (q) => q.where("subjectId", subjectId))
-          .if(classId, q => q.where('classId', classId))
+          .if(classId, (q) => q.where("classId", classId))
           .if(user.role !== "super_admin", (q) =>
             q.where("teacherId", teacherId.employee.teacher.id)
           )
-          
+
           .paginate(page, limit);
       } else if (mode === "list") {
         data = await ProgramSemester.query()
@@ -52,7 +57,7 @@ export default class ProgramSemestersController {
           .if(user.role !== "super_admin", (q) =>
             q.where("teacherId", teacherId.employee.teacher.id)
           )
-          .if(classId, q => q.where('classId', classId))
+          .if(classId, (q) => q.where("classId", classId))
           .preload("mapel", (m) => m.select("name"));
       } else {
         return response.badRequest({
@@ -83,6 +88,14 @@ export default class ProgramSemestersController {
         teacherId: schema.string([
           rules.uuid({ version: 4 }),
           rules.trim(),
+          rules.unique({
+            table: "academic.program_semesters",
+            column: "teacher_id",
+            where: {
+              subject_id: request.body().subjectId,
+              class_id: request.body().classId,
+            },
+          }),
           rules.exists({
             table: "academic.teachers",
             column: "id",
@@ -94,10 +107,26 @@ export default class ProgramSemestersController {
         subjectId: schema.string([
           rules.uuid({ version: 4 }),
           rules.exists({ table: "academic.subjects", column: "id" }),
+          rules.unique({
+            table: "academic.program_semesters",
+            column: "teacher_id",
+            where: {
+              teacher_id: request.body().teacherId,
+              class_id: request.body().classId,
+            },
+          }),
         ]),
         classId: schema.string([
           rules.uuid({ version: 4 }),
           rules.exists({ table: "academic.classes", column: "id" }),
+          rules.unique({
+            table: "academic.program_semesters",
+            column: "teacher_id",
+            where: {
+              subject_id: request.body().subjectId,
+              teacher_id: request.body().teacherId,
+            },
+          }),
         ]),
       });
       try {
@@ -113,13 +142,38 @@ export default class ProgramSemestersController {
         teacherId: schema.string([
           rules.uuid({ version: 4 }),
           rules.exists({ table: "academic.teachers", column: "id" }),
+          rules.unique({
+            table: "academic.program_semesters",
+            column: "teacher_id",
+            where: {
+              subject_id: request.body().subjectId,
+              class_id: request.body().classId,
+            },
+          }),
         ]),
         subjectId: schema.string([
           rules.uuid({ version: 4 }),
           rules.exists({ table: "academic.subjects", column: "id" }),
+          rules.unique({
+            table: "academic.program_semesters",
+            column: "teacher_id",
+            where: {
+              teacher_id: request.body().teacherId,
+              class_id: request.body().classId,
+            },
+          }),
         ]),
         classId: schema.string([
+          rules.uuid({ version: 4 }),
           rules.exists({ table: "academic.classes", column: "id" }),
+          rules.unique({
+            table: "academic.program_semesters",
+            column: "teacher_id",
+            where: {
+              subject_id: request.body().subjectId,
+              teacher_id: request.body().teacherId,
+            },
+          }),
         ]),
       });
       payload = await request.validate({ schema: newProsemAdminSchema });

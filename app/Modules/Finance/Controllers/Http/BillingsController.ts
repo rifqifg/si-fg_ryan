@@ -6,13 +6,14 @@ import UpdateBillingValidator from '../../Validators/UpdateBillingValidator';
 
 export default class BillingsController {
   public async index({ request, response }: HttpContextContract) {
-    const { page = 1, limit = 10, keyword = "", mode = "page" } = request.qs();
+    const { page = 1, limit = 10, keyword = "", mode = "page", student_id } = request.qs();
 
     try {
       let data = {}
       if (mode === 'page') {
         data = await Billing.query()
           .whereILike("name", `%${keyword}%`)
+          .if(student_id, q => q.whereHas('account', qAccount => qAccount.where('student_id', student_id)))
           .preload('account', qAccount => qAccount.select('account_name'))
           .paginate(page, limit);
       } else {

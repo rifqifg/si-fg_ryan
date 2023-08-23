@@ -14,6 +14,7 @@ export default class TeachingsController {
 
             data = await Teaching
                 .query()
+                .whereHas('class', c => c.where('is_graduated', false))
                 .preload('class', c => c.select('id', 'name'))
                 .preload('subject', s => s.select('id', 'name', 'is_extracurricular'))
                 .where('teacher_id', '=', teacher_id)

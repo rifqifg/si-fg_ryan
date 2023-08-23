@@ -50,26 +50,29 @@ export default class SubActivitiesController {
   }
 
   public async store({ request, response }: HttpContextContract) {
+    const images = request.files('images', {
+      size: '2mb',
+      extnames: ['png', 'jpg', 'jpeg']
+    })
     const payload = await request.validate(CreateSubActivityValidator)
 
     let nameFileImage: string[] = [] //buat nampung nama file image
 
-    if (payload.images) {
-      for (let i = 0; i < payload.images!.length; i++) {
-        const imageName = Math.floor(Math.random() * 1000) + DateTime.now().toUnixInteger().toString() + "." + payload.images![i].extname
+    if (images.length > 0) {
+      for (let i = 0; i < images!.length; i++) {
+        const imageName = Math.floor(Math.random() * 1000) + DateTime.now().toUnixInteger().toString() + "." + images![i].extname
 
         nameFileImage.push(imageName)
 
-        await payload.images![i].moveToDisk(
+        await images![i].moveToDisk(
           'subActivities',
           { name: imageName, overwrite: true },
           'hrd'
         )
-
       }
     }
-    //@ts-ignore
-    payload.images = nameFileImage
+
+    payload["images"] = nameFileImage
 
     try {
       const data = await SubActivity.create(payload);
@@ -84,6 +87,42 @@ export default class SubActivitiesController {
       });
     }
   }
+
+  // public async store({ request, response }: HttpContextContract) {
+  //   const payload = await request.validate(CreateSubActivityValidator)
+
+  //   let nameFileImage: string[] = [] //buat nampung nama file image
+
+  //   if (payload.images) {
+  //     for (let i = 0; i < payload.images!.length; i++) {
+  //       const imageName = Math.floor(Math.random() * 1000) + DateTime.now().toUnixInteger().toString() + "." + payload.images![i].extname
+
+  //       nameFileImage.push(imageName)
+
+  //       await payload.images![i].moveToDisk(
+  //         'subActivities',
+  //         { name: imageName, overwrite: true },
+  //         'hrd'
+  //       )
+
+  //     }
+  //   }
+  //   //@ts-ignore
+  //   payload.images = nameFileImage
+
+  //   try {
+  //     const data = await SubActivity.create(payload);
+  //     for (let i = 0; i < data.images.length; i++) {
+  //       data.images[i] = await getSignedUrl(data.images[i]);
+  //     }
+  //     response.created({ message: "Berhasil menyimpan data", data });
+  //   } catch (error) {
+  //     response.badRequest({
+  //       message: "Gagal menyimpan data",
+  //       error: error.message,
+  //     });
+  //   }
+  // }
 
   public async show({ params, response }: HttpContextContract) {
     const { id } = params
@@ -142,7 +181,7 @@ export default class SubActivitiesController {
       let updateSubActivityImages = subActivities.images.filter(image => !payload.deleteImages!.includes(image));
       //@ts-ignore
       payload["images"] = nameFileImage.concat(updateSubActivityImages)
-    }else {
+    } else {
       //@ts-ignore
       payload["images"] = nameFileImage.concat(subActivities.images)
     }

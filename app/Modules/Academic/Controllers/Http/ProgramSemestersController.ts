@@ -38,6 +38,7 @@ export default class ProgramSemestersController {
           .preload("teachers", (t) =>
             t.preload("employee", (e) => e.select("name"))
           )
+          .preload("class", (c) => c.select("name", "id"))
           .preload("mapel", (m) => m.select("name"))
           .if(subjectId, (q) => q.where("subjectId", subjectId))
           .if(classId, (q) => q.where("classId", classId))
@@ -53,6 +54,7 @@ export default class ProgramSemestersController {
           .preload("teachers", (t) =>
             t.preload("employee", (e) => e.select("name"))
           )
+          .preload("class", (c) => c.select("name", "id"))
           .if(subjectId, (q) => q.where("subjectId", subjectId))
           .if(user.role !== "super_admin", (q) =>
             q.where("teacherId", teacherId.employee.teacher.id)

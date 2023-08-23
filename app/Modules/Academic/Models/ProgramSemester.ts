@@ -3,12 +3,10 @@ import {
   BaseModel,
   BelongsTo,
   HasMany,
-  HasOne,
   beforeCreate,
   belongsTo,
   column,
   hasMany,
-  hasOne,
 } from "@ioc:Adonis/Lucid/Orm";
 import { v4 as uuidv4 } from "uuid";
 import Teacher from "./Teacher";
@@ -43,8 +41,8 @@ export default class ProgramSemester extends BaseModel {
   @belongsTo(() => Subject)
   public mapel: BelongsTo<typeof Subject>;
 
-  @hasOne(() => Class)
-  public class: HasOne<typeof Class>;
+  @belongsTo(() => Class)
+  public class: BelongsTo<typeof Class>;
 
   @hasMany(() => ProgramSemesterDetail)
   public programSemesterDetail: HasMany<typeof ProgramSemesterDetail>;

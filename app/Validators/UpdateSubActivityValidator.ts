@@ -25,7 +25,6 @@ export default class UpdateSubActivityValidator {
    */
   public schema = schema.create({
     name: schema.string.optional([
-      rules.alpha({ allow: ['underscore', 'dash', 'space'] }),
       rules.minLength(3)
     ]),
     images: schema.array.nullableAndOptional().members(schema.file({
@@ -35,7 +34,6 @@ export default class UpdateSubActivityValidator {
     deleteImages: schema.string.nullableAndOptional(),
     date: schema.date.optional({ format: 'yyyy-MM-dd HH:mm:ss' }),
     note: schema.string.nullableAndOptional([
-      rules.alpha({ allow: ['underscore', 'dash', 'space'] }),
       rules.minLength(3)
     ]),
     activityId: schema.string.optional({}, [

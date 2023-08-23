@@ -14,19 +14,19 @@ export default class Account extends BaseModel {
   public id: string
 
   @column()
-  public coa_id: string | null
+  public coaId: string | null
 
   @column()
-  public student_id: string | null
+  public studentId: string | null
 
   @column()
-  public employee_id: string | null
+  public employeeId: string | null
 
   @column()
   public owner: string | null
 
   @column()
-  account_name: string
+  accountName: string
 
   @column()
   balance: string

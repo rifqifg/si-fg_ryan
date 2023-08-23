@@ -11,7 +11,7 @@ export default class CreateBillingValidator {
         account_id: schema.string({}, [
           rules.exists({ table: 'finance.accounts', column: 'id' })
         ]),
-        master_billing_id: schema.string({}, [
+        master_billing_id: schema.string.optional({}, [
           rules.exists({ table: 'finance.master_billings', column: 'id' })
         ]),
         name: schema.string(),

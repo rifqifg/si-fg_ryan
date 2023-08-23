@@ -32,7 +32,7 @@ export default class CreateTeacherAttendanceValidator {
       format: 'yyyy-MM-dd HH:mm:ss'
     }),
     status: schema.enum(Object.values(TeacherAttendanceStatus)),
-    material: schema.string({}, [rules.alphaNum({ allow: ['space'] })]),
+    material: schema.string.optional({}, [rules.alphaNum({ allow: ['space'] })]),
     reason_not_teach: schema.string.optional({}, [rules.alphaNum({ allow: ['space'] })]),
     post_test: schema.boolean.optional(),
     classId: schema.string.optional({}, [

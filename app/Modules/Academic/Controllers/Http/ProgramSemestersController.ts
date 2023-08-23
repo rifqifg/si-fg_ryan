@@ -209,6 +209,8 @@ export default class ProgramSemestersController {
         .preload("programSemesterDetail", (prosemDetail) =>
           prosemDetail.select("*")
         )
+        .preload("class", (c) => c.select("name", "id"))
+
         .firstOrFail();
 
       response.ok({ message: "Berhasil mengambil data", data });

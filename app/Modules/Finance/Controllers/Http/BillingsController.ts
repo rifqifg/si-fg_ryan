@@ -13,6 +13,7 @@ export default class BillingsController {
       if (mode === 'page') {
         data = await Billing.query()
           .whereILike("name", `%${keyword}%`)
+          .preload('account', qAccount => qAccount.select('account_name'))
           .paginate(page, limit);
       } else {
         data = await Billing.query().whereILike('name', `%${keyword}%`)

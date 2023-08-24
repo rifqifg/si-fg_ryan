@@ -26,3 +26,19 @@ export enum CoaTypes {
     GAINS = 'gains',
     LOSSES = 'losses'
 }
+
+export enum TransactionMethods {
+    VIRTUAL_ACCOUNT = 'virtual_account',
+    CASH = 'cash'
+}
+
+export enum TransactionTypes {
+    DEBIT = 'debit',
+    CREDIT = 'credit'
+}
+
+export enum TransactionStatus {
+    WAITING = 'waiting',
+    APPROVED = 'approved',
+    REJECTED = 'rejected'
+}

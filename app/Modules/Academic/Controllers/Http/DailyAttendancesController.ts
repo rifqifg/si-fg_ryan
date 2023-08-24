@@ -54,7 +54,7 @@ export default class DailyAttendancesController {
         if (recap === "kelas") {
           const { rows, ...meta } = await Database.rawQuery(`
           select
-	            c.name,
+	            c.name as class_name,
 	            c.id as class_id,
 	            count(distinct  da.student_id) as total_student,
 	            sum(case when da.status = 'present' then 1 else 0 end) as present,
@@ -111,6 +111,7 @@ export default class DailyAttendancesController {
         select
           s."name" as student_name ,
           c.name as class_name,
+          s.nis as nis,
           sum(case when da.status = 'present' then 1 else 0 end) as present,
           sum(case when da.status = 'permission' then 1 else 0 end) as permission,
           sum(case when da.status = 'sick' then 1 else 0 end) as sick,
@@ -136,7 +137,8 @@ export default class DailyAttendancesController {
          and s.name ilike '%${keyword}%'
        group by
          s.name,
-         c.name
+         c.name,
+         s.nis
        limit ${limit}
                  offset ${limit} * (${page}-1)
         

@@ -3,6 +3,8 @@ import { schema, rules } from "@ioc:Adonis/Core/Validator";
 import ProgramSemester from "../../Models/ProgramSemester";
 import { validate as uuidValidation } from "uuid";
 import User from "App/Models/User";
+import DuplicateProsemValidator from "../../Validators/DuplicateProsemValidator";
+import ProgramSemesterDetail from "../../Models/ProgramSemesterDetail";
 
 export default class ProgramSemestersController {
   public async index({ request, response, auth }: HttpContextContract) {
@@ -314,6 +316,55 @@ export default class ProgramSemestersController {
       response.badRequest({
         message: "Gagal menghapus data",
         error: error.message,
+      });
+    }
+  }
+
+  public async duplicate({ request, response }: HttpContextContract) {
+    const payload = await request.validate(DuplicateProsemValidator);
+    const prosem = await ProgramSemester.findByOrFail("id", payload.prosemId);
+    const prosemDetailPayload = await ProgramSemesterDetail.query()
+      .select("*")
+      .where("programSemesterId", payload.prosemId);
+
+    try {
+      const prosemData = await ProgramSemester.create({
+        subjectId: prosem.subjectId,
+        classId: payload.classId,
+        teacherId: prosem.teacherId,
+      });
+
+      const prosemDetail = prosemDetailPayload.map(
+        (data: ProgramSemesterDetail) => {
+          return {
+            programSemesterId: prosemData.id,
+            kompetensiIntiId: data.kompetensiIntiId,
+            kompetensiDasar: data.kompetensiDasar,
+            kompetensiDasarIndex: data.kompetensiDasarIndex,
+            pertemuan: data.pertemuan,
+            materi: data.materi,
+            metode: data.metode,
+            kategori1: data.kategori1,
+            kategori2: data.kategori2,
+            kategori3: data.kategori3,
+          };
+        }
+      );
+
+      const prosemDetailData = await ProgramSemesterDetail.createMany(
+        prosemDetail
+      );
+      return response.ok({
+        message: "Berhasil menduplikat data prosem",
+        data: {
+          program_semester: prosemData,
+          program_semester_detail: prosemDetailData,
+        },
+      });
+    } catch (error) {
+      response.badRequest({
+        message: "Gagal menduplikat data program semester",
+        error: error,
       });
     }
   }

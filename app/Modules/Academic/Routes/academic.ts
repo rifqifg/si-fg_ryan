@@ -17,6 +17,7 @@ Route.group(() => {
     Route.shallowResource('kompetensi-inti', 'KompetensiIntisController').apiOnly().middleware({ '*': ['auth'] })
     Route.shallowResource('metode-pengambilain-nilai', 'MetodePengambilanNilaisController').apiOnly().middleware({ '*': ['auth'] })
     Route.shallowResource('program-semester', 'ProgramSemestersController').apiOnly().middleware({ '*': ['auth'] })
+    Route.post('program-semester/duplicate', 'ProgramSemestersController.duplicate').middleware('auth')
     Route.shallowResource('program-semester.program-semester-detail', 'ProgramSemesterDetailsController').apiOnly().middleware({ '*': ['auth'] })
     Route.shallowResource('rencana-pengambilan-nilai', 'RencanaPengambilanNilaisController').apiOnly().middleware({ '*': ['auth'] })
     Route.shallowResource('buku-nilai', 'BukuNilaisController').apiOnly().middleware({ '*': ['auth'] })

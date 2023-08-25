@@ -322,16 +322,15 @@ export default class ProgramSemestersController {
 
   public async duplicate({ request, response }: HttpContextContract) {
     const payload = await request.validate(DuplicateProsemValidator);
-    const prosem = await ProgramSemester.findByOrFail("id", payload.prosemId);
     const prosemDetailPayload = await ProgramSemesterDetail.query()
       .select("*")
       .where("programSemesterId", payload.prosemId);
 
     try {
       const prosemData = await ProgramSemester.create({
-        subjectId: prosem.subjectId,
+        subjectId: payload.subjectId,
         classId: payload.classId,
-        teacherId: prosem.teacherId,
+        teacherId: payload.teacherId,
       });
 
       const prosemDetail = prosemDetailPayload.map(

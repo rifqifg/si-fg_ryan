@@ -31,6 +31,36 @@ export default class DuplicateProsemValidator {
     classId: schema.string([
       rules.uuid(),
       rules.exists({ table: "academic.classes", column: "id" }),
+      rules.unique({
+        table: "academic.program_semesters",
+        column: "id",
+        where: {
+          subject_id: this.ctx.request.body().subjectId,
+          teacher_id: this.ctx.request.body().teacherId,
+        },
+      }),
+    ]),
+    teacherId: schema.string([
+      rules.uuid({ version: 4 }),
+      rules.unique({
+        table: "academic.program_semesters",
+        column: "id",
+        where: {
+          subject_id: this.ctx.request.body().subjectId,
+          class_id: this.ctx.request.body().classId,
+        },
+      }),
+    ]),
+    subjectId: schema.string([
+      rules.uuid({ version: 4 }),
+      rules.unique({
+        table: "academic.program_semesters",
+        column: "id",
+        where: {
+          teacher_id: this.ctx.request.body().teacherId,
+          class_id: this.ctx.request.body().classId,
+        },
+      }),
     ]),
   });
 

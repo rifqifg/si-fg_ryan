@@ -32,7 +32,7 @@ export default class CreateTeacherAttendanceValidator {
       format: 'yyyy-MM-dd HH:mm:ss'
     }),
     status: schema.enum(Object.values(TeacherAttendanceStatus)),
-    material: schema.string({}, [rules.alphaNum({ allow: ['space'] })]),
+    material: schema.string.optional({}, [rules.alphaNum({ allow: ['space'] })]),
     reason_not_teach: schema.string.optional({}, [rules.alphaNum({ allow: ['space'] })]),
     post_test: schema.boolean.optional(),
     classId: schema.string.optional({}, [
@@ -47,8 +47,8 @@ export default class CreateTeacherAttendanceValidator {
     subjectId: schema.string({}, [
       rules.exists({ table: 'academic.subjects', column: 'id' })
     ]),
+    programSemesterDetailId: schema.string.optional(([rules.exists({table: 'academic.program_semester_details', column: 'id'})]))
   })
-
   /**
    * Custom messages for validation failures. You can make use of dot notation `(.)`
    * for targeting nested fields and array expressions `(*)` for targeting all

@@ -12,9 +12,16 @@ import { v4 as uuidv4 } from "uuid";
 import Teacher from "./Teacher";
 import Subject from "./Subject";
 import ProgramSemesterDetail from "./ProgramSemesterDetail";
+import Class from "./Class";
 
 export default class ProgramSemester extends BaseModel {
   public static table = "academic.program_semesters";
+
+  public serializeExtras() {
+    return {
+      total_pertemuan: this.$extras.total_pertemuan,
+    };
+  }
 
   @column({ isPrimary: true })
   public id: string;
@@ -26,13 +33,16 @@ export default class ProgramSemester extends BaseModel {
   public subjectId: string | null;
 
   @column()
-  public totalPertemuan: number;
+  public classId: string;
 
   @belongsTo(() => Teacher)
   public teachers: BelongsTo<typeof Teacher>;
 
   @belongsTo(() => Subject)
   public mapel: BelongsTo<typeof Subject>;
+
+  @belongsTo(() => Class)
+  public class: BelongsTo<typeof Class>;
 
   @hasMany(() => ProgramSemesterDetail)
   public programSemesterDetail: HasMany<typeof ProgramSemesterDetail>;

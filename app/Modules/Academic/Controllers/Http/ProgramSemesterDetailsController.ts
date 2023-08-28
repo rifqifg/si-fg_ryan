@@ -14,7 +14,8 @@ export default class ProgramSemesterDetailsController {
       const data = await ProgramSemesterDetail.query()
         .select("*")
         .where("programSemesterId", programSemesterId)
-        .preload("kompetensiInti", (ki) => ki.select("nama"));
+        .preload("kompetensiInti", (ki) => ki.select("nama"))
+        .preload('teachingJournal', tj => tj.select('date_in'))
 
       const kelas = await await ProgramSemester.query()
         .where("id", programSemesterId)

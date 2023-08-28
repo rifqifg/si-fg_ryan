@@ -61,11 +61,12 @@ export default class TransactionsController {
         .where('id', id)
         .preload('billing', qBilling => {
           qBilling
-            .select('account_id')
+            .select('name', 'account_id')
             .preload('account', qAccount => {
-            qAccount.select('account_name', 'number')
-          })
+              qAccount.select('account_name', 'number')
+            })
         })
+        .preload('teller', qEmployee => qEmployee.select('name'))
         .firstOrFail()
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {

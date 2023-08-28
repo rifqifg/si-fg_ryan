@@ -8,6 +8,13 @@ import Env from "@ioc:Adonis/Core/Env"
 import Presence from './Presence';
 
 export default class SubActivity extends BaseModel {
+
+  public serializeExtras() {
+    return {
+      presence_count: this.$extras.presence_count,
+    }
+  }
+
   @column({ isPrimary: true })
   public id: string
 

@@ -55,11 +55,13 @@ export default class SubActivitiesController {
         .where('activity_id', '=', activityId)
         .whereILike('name', `%${keyword}%`)
         .whereBetween("date", [formattedStartDate, formattedEndDate])
+        .withCount('presence')
         .paginate(page, limit)
     } else {
       data = await SubActivity.query()
         .where('activity_id', '=', activityId)
         .whereILike('name', `%${keyword}%`)
+        .withCount('presence')
         .paginate(page, limit)
     }
 
@@ -243,10 +245,10 @@ export default class SubActivitiesController {
         return response.badRequest({ message: "Permission Denied" })
       }
     } catch (error) {
-      const message = "HRDSA06-presences: " + error.message || error;
+      const message = "HRDPSA01-presences: " + error.message || error;
       console.log(error);
       response.badRequest({
-        message: "Gagal mengambil data",
+        message: "Gagal Menambah Data",
         error: message,
       });
     }

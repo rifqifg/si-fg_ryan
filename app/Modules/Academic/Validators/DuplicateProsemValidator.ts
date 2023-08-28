@@ -46,7 +46,7 @@ export default class DuplicateProsemValidator {
         where: {
           subject_id: this.ctx.request.body().subjectId,
           teacher_id: this.ctx.request.body().teacherId,
-          id: this.ctx.request.body().prosemId
+          id: this.ctx.request.body().prosemId,
         },
       }),
     ]),
@@ -58,7 +58,7 @@ export default class DuplicateProsemValidator {
         where: {
           subject_id: this.ctx.request.body().subjectId,
           class_id: this.ctx.request.body().classId,
-          id: this.ctx.request.body().prosemId
+          id: this.ctx.request.body().prosemId,
         },
       }),
     ]),
@@ -70,7 +70,7 @@ export default class DuplicateProsemValidator {
         where: {
           teacher_id: this.ctx.request.body().teacherId,
           class_id: this.ctx.request.body().classId,
-          id: this.ctx.request.body().prosemId
+          id: this.ctx.request.body().prosemId,
         },
       }),
     ]),

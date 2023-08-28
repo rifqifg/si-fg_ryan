@@ -3,6 +3,7 @@ import { validate as uuidValidation } from "uuid";
 import SubjectMember from "../../Models/SubjectMember";
 import CreateSubjectMemberValidator from "../../Validators/CreateSubjectMemberValidator";
 import UpdateSubjectMemberValidator from "App/Validators/UpdateSubjectMemberValidator";
+import DeleteManySubjectMemberValidator from "../../Validators/DeleteManySubjectMemberValidator";
 
 export default class SubjectMembersController {
   public async index({ request, response, params }: HttpContextContract) {
@@ -135,6 +136,7 @@ export default class SubjectMembersController {
       return response.badRequest({ message: "Subject Member ID tidak valid" });
     }
 
+
     try {
       const data = await SubjectMember.findOrFail(id);
       await data.delete();
@@ -147,5 +149,20 @@ export default class SubjectMembersController {
         error_data: error,
       });
     }
+  }
+
+  public async deleteMany({request, response}: HttpContextContract) {
+    const payload = await request.validate(DeleteManySubjectMemberValidator)
+    
+    try {
+      
+      const subjectMemberIds = payload.subjectMember.map(sm => sm.id)
+      const subjectMembers = await SubjectMember.query().whereIn("id", subjectMemberIds).delete()
+
+      response.ok({message: 'Berhasil menghapus banyak data'})
+    } catch (error) {
+      response.badRequest({message: "Gagal menghapus banyak data"})
+    }
+    
   }
 }

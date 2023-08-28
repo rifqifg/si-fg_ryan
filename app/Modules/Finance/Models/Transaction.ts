@@ -51,10 +51,13 @@ export default class Transaction extends BaseModel {
   public billing: BelongsTo<typeof Billing>
 
   @belongsTo(() => TransactionDocument)
-  public masterBilling: BelongsTo<typeof TransactionDocument>
+  public document: BelongsTo<typeof TransactionDocument>
 
-  @belongsTo(() => Employee)
-  public employee: BelongsTo<typeof Employee>
+  @belongsTo(() => Employee, {
+    foreignKey: 'tellerId',
+    localKey: 'id'
+  })
+  public teller: BelongsTo<typeof Employee>
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime

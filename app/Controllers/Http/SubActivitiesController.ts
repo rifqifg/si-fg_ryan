@@ -6,12 +6,29 @@ import { validate as uuidValidation } from "uuid";
 import Drive from '@ioc:Adonis/Core/Drive'
 import UpdateSubActivityValidator from 'App/Validators/UpdateSubActivityValidator';
 import Env from "@ioc:Adonis/Core/Env"
+import CreatePresenceSubActivityValidator from 'App/Validators/CreatePresenceSubActivityValidator';
+import ActivityMember from 'App/Models/ActivityMember';
+import { RoleActivityMember } from 'App/lib/enum';
+import Presence from 'App/Models/Presence';
 
 const getSignedUrl = async (filename: string) => {
   const beHost = Env.get('BE_URL')
   const hrdDrive = Drive.use('hrd')
   const signedUrl = beHost + await hrdDrive.getSignedUrl('subActivities/' + filename, { expiresIn: '30mins' })
   return [filename, signedUrl]
+}
+
+const hasDuplicateEmployeeId = (presences) => {
+  const employeeIdMap = {};
+
+  for (const presence of presences) {
+    if (employeeIdMap[presence.employeeId]) {
+      return true; // Found a duplicate
+    }
+    employeeIdMap[presence.employeeId] = true;
+  }
+
+  return false; // No duplicates found
 }
 
 export default class SubActivitiesController {
@@ -90,7 +107,11 @@ export default class SubActivitiesController {
     if (!uuidValidation(id)) { return response.badRequest({ message: "SubActivity ID tidak valid" }) }
 
     try {
-      const data = await SubActivity.query().where('id', id).firstOrFail()
+      const data = await SubActivity.query().where('id', id)
+        .preload('presence', p =>
+          p.select('*').where('sub_activity_id', '=', id)
+            .preload('employee', e => e.select('name')))
+        .firstOrFail()
 
       for (let i = 0; i < data.images.length; i++) {
         data.images[i] = await getSignedUrl(data.images[i]);
@@ -142,7 +163,7 @@ export default class SubActivitiesController {
       let updateSubActivityImages = subActivities.images.filter(image => !payload.deleteImages!.includes(image));
       //@ts-ignore
       payload["images"] = nameFileImage.concat(updateSubActivityImages)
-    }else {
+    } else {
       //@ts-ignore
       payload["images"] = nameFileImage.concat(subActivities.images)
     }
@@ -181,5 +202,54 @@ export default class SubActivitiesController {
       console.log(error);
       response.badRequest({ message: "Gagal menghapus data", error: error.message })
     }
+  }
+
+  public async presence({ request, params, response, auth }: HttpContextContract) {
+    const { activityId, subActivityId } = params
+    if (!uuidValidation(activityId)) { return response.badRequest({ message: "Activity ID tidak valid" }) }
+
+    const payload = await request.validate(CreatePresenceSubActivityValidator)
+    const authRole = auth.user?.role
+    const getActivityMember = await ActivityMember.query()
+      .where('activity_id', '=', activityId)
+    let memberManager: string[] = [] // buat menampun employeeId dengan member role manager
+
+    getActivityMember.map(value => {
+      if (value.role == RoleActivityMember.MANAGER) {
+        memberManager.push(value.employeeId)
+      }
+    })
+
+    try {
+      const existingPresenceSubActivity = await Presence.query()
+        .where('sub_activity_id', subActivityId)
+      // buat ngecek apabila employee sudah absen
+      if (existingPresenceSubActivity.length > 0) {
+        existingPresenceSubActivity.forEach(obj1 => {
+          const match = payload.presences.find(obj2 => obj1.employeeId === obj2.employeeId);
+          if (match) {
+            throw new Error(
+              "Abensi Karyawan pada kegiatan ini sudah ada"
+            );
+          }
+        });
+      }
+
+      if (authRole == 'super_admin' || memberManager.length > 0) { // buat ngecek yang berwenang absen membernya
+        if (payload.presences.length > 0 && hasDuplicateEmployeeId(payload.presences)) { return response.badRequest({ message: "Employee_ID Duplicated" }); }
+        const data = await Presence.createMany(payload.presences)
+        response.created({ message: "Create data success", data })
+      } else {
+        return response.badRequest({ message: "Permission Denied" })
+      }
+    } catch (error) {
+      const message = "HRDSA06-presences: " + error.message || error;
+      console.log(error);
+      response.badRequest({
+        message: "Gagal mengambil data",
+        error: message,
+      });
+    }
+
   }
 }

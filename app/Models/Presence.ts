@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid'
 import Activity from './Activity'
 import Employee from './Employee'
 import HttpContext from '@ioc:Adonis/Core/HttpContext'
+import SubActivity from './SubActivity'
 
 let newId = ""
 export default class Presence extends BaseModel {
@@ -45,7 +46,13 @@ export default class Presence extends BaseModel {
 
   @column()
   public clientHostname: string | null
-  
+
+  @column()
+  public subActivityId: string | null
+
+  @belongsTo(() => SubActivity)
+  public subActivity: BelongsTo<typeof SubActivity>
+
   @beforeSave()
   public static async addClientUserId(presence: Presence) {
     const { auth, request } = HttpContext.get()!

@@ -1,10 +1,11 @@
 import { DateTime } from 'luxon'
-import { BaseModel, BelongsTo, afterCreate, beforeCreate, belongsTo, column, afterFetch } from '@ioc:Adonis/Lucid/Orm'
+import { BaseModel, BelongsTo, afterCreate, beforeCreate, belongsTo, column, afterFetch, hasMany, HasMany } from '@ioc:Adonis/Lucid/Orm'
 import Activity from './Activity';
 import { v4 as uuidv4 } from 'uuid'
 let newId = ""
 import Drive from '@ioc:Adonis/Core/Drive'
 import Env from "@ioc:Adonis/Core/Env"
+import Presence from './Presence';
 
 export default class SubActivity extends BaseModel {
   @column({ isPrimary: true })
@@ -27,6 +28,12 @@ export default class SubActivity extends BaseModel {
 
   @column()
   public activityId: string;
+
+  @hasMany(() => Presence)
+  public presence: HasMany<typeof Presence>;
+
+  @column()
+  public presenceId: string | null;
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime

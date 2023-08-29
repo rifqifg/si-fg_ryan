@@ -10,6 +10,7 @@ import CreatePresenceSubActivityValidator from 'App/Validators/CreatePresenceSub
 import ActivityMember from 'App/Models/ActivityMember';
 import { RoleActivityMember } from 'App/lib/enum';
 import Presence from 'App/Models/Presence';
+import DeleteManyPresenceValidator from 'App/Validators/DeleteManyPresenceValidator';
 
 const getSignedUrl = async (filename: string) => {
   const beHost = Env.get('BE_URL')
@@ -253,5 +254,20 @@ export default class SubActivitiesController {
       });
     }
 
+  }
+
+  public async destroyPresences({ request, response }: HttpContextContract) {
+
+    const payload = await request.validate(DeleteManyPresenceValidator)
+
+    try {
+      const presenceIds = payload.presences.map(sm => sm)
+
+      await Presence.query().whereIn("id", presenceIds).delete()
+
+      response.ok({message: 'Berhasil menghapus banyak data'})
+    } catch (error) {
+      response.badRequest({message: "Gagal menghapus banyak data"})
+    }
   }
 }

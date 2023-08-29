@@ -3,9 +3,8 @@ import CreateDailyAttendanceValidator from "../../Validators/CreateDailyAttendan
 import DailyAttendance from "../../Models/DailyAttendance";
 import { DateTime } from "luxon";
 import { validate as uuidValidation } from "uuid";
-import UpdateDailyAttendanceValidator from '../../Validators/UpdateDailyAttendanceValidator';
-import Database from '@ioc:Adonis/Lucid/Database';
-import Student from '../../Models/Student';
+import UpdateDailyAttendanceValidator from "../../Validators/UpdateDailyAttendanceValidator";
+import Database from "@ioc:Adonis/Lucid/Database";
 
 export default class DailyAttendancesController {
   public async index({ request, response }: HttpContextContract) {
@@ -19,11 +18,12 @@ export default class DailyAttendancesController {
       fromDate = hariIni,
       toDate = hariIni,
       recap = false,
+      sortingByAbsent = false,
     } = request.qs();
 
-if(classId && !uuidValidation(classId)) {
-  return response.badRequest({ message: "class ID tidak valid" })
-}
+    if (classId && !uuidValidation(classId)) {
+      return response.badRequest({ message: "class ID tidak valid" });
+    }
 
     // karena ada kemungkinan input fromDate & toDate formatnya 'yyyy-MM-dd 00:00:00', maka diambil value yg sebelum whitespace
     const splittedFromDate = fromDate.split(" ")[0];
@@ -50,84 +50,107 @@ if(classId && !uuidValidation(classId)) {
           start.setDate(start.getDate() + 1);
         }
 
+        const whereClassId = classId ? `and c.id = '${classId}'` : "";
         if (recap === "kelas") {
-          data = await DailyAttendance.query()
-            .select("class_id")
-            .select(
-              Database.raw(
-                `sum(case when status = 'present' then 1 else 0 end) as present`
-              ),
-              Database.raw(
-                `sum(case when status = 'permission' then 1 else 0 end) as permission`
-              ),
-              Database.raw(
-                `sum(case when status = 'sick' then 1 else 0 end) as sick`
-              ),
-              Database.raw(
-                `sum(case when status = 'absent' then 1 else 0 end) as absent`
-              ),
-              Database.raw(
-                `round(cast(sum(case when status = 'present' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as present_precentage`
-              ),
-              Database.raw(
-                `round(cast(sum(case when status = 'permission' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as permission_precentage`
-              ),
-              Database.raw(
-                `round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as sick_precentage`
-              ),
-              Database.raw(
-                `round(cast(sum(case when status = 'absent' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as absent_precentage`
-              ),
-              Database.raw(
-                `round(cast(sum(case when status = 'present' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) + round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as present_accumulation`
-              )
-            )
-            .whereBetween("date_in", [formattedStartDate, formattedEndDate])
-            .if(classId, (q) => q.where("class_id", `${classId}`))
-            .preload("class", (c) => c.select("name").withCount("students"))
-            .groupBy("class_id")
-            .paginate(page, limit);
+          const { rows, ...meta } = await Database.rawQuery(`
+          select
+	            c.name as class_name,
+	            c.id as class_id,
+	            count(distinct  da.student_id) as total_student,
+	            sum(case when da.status = 'present' then 1 else 0 end) as present,
+	            sum(case when da.status = 'permission' then 1 else 0 end) as permission,
+	            sum(case when da.status = 'sick' then 1 else 0 end) as sick,
+	            sum(case when da.status = 'absent' then 1 else 0 end) as absent,
+	            round(cast(sum(case when da.status = 'present' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,
+	            2)),
+	            0) as present_precentage,
+	            round(cast(sum(case when da.status = 'permission' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,
+	            2)),
+	            0) as permission_precentage,
+	            round(cast(sum(case when da.status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,
+	            2)),
+	            0) as sick_precentage,
+	            round(cast(sum(case when da.status = 'absent' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,
+	            2)),
+	            0) as absent_precentage,
+	            round(cast(sum(case when da.status = 'present' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,
+	            2)),
+	            0) + round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,
+	            2)),
+	            0) as present_accumulation
+              from
+	              academic.daily_attendances da
+              left join academic.students s 
+                      on
+	                  da.student_id = s.id
+              left join academic.classes c 
+                      on
+	                  c.id = s.class_id
+              where
+	                  date_in between '${formattedStartDate}' AND '${formattedEndDate}'
+	                  and c.is_graduated = false
+                    ${whereClassId}
+              group by
+              	c.name,
+              	c.id
+              limit ${limit}
+                        offset ${limit} * (${page}-1)
+
+          `);
+
+          data = {
+            meta: {
+              total: meta.rowCount,
+              per_page: +limit,
+              current_page: +page,
+            },
+            data: rows,
+          };
         } else if (recap === "siswa") {
-          data = await DailyAttendance.query()
-            .select("student_id", "class_id")
-            .select(
-              Database.raw(
-                `sum(case when status = 'present' then 1 else 0 end) as present`
-              ),
-              Database.raw(
-                `sum(case when status = 'permission' then 1 else 0 end) as permission`
-              ),
-              Database.raw(
-                `sum(case when status = 'sick' then 1 else 0 end) as sick`
-              ),
-              Database.raw(
-                `sum(case when status = 'absent' then 1 else 0 end) as absent`
-              ),
-              Database.raw(
-                `round(cast(sum(case when status = 'present' then 1 else 0 end) * 100.0 / ${totalDays} as decimal(10,2)),0) as present_precentage`
-              ),
-              Database.raw(
-                `round(cast(sum(case when status = 'permission' then 1 else 0 end) * 100.0 / ${totalDays} as decimal(10,2)),0) as permission_precentage`
-              ),
-              Database.raw(
-                `round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / ${totalDays} as decimal(10,2)),0) as sick_precentage`
-              ),
-              Database.raw(
-                `round(cast(sum(case when status = 'absent' then 1 else 0 end) * 100.0 / ${totalDays} as decimal(10,2)),0) as absent_precentage`
-              ),
-              Database.raw(
-                `round(cast(sum(case when status = 'present' then 1 else 0 end) * 100.0 / ${totalDays} as decimal(10,2)),0) + round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / ${totalDays} as decimal(10,2)),0) as present_accumulation`
-              )
-            )
-            .whereBetween("date_in", [formattedStartDate, formattedEndDate])
-            .whereHas("student", (s) => s.whereILike("name", `%${keyword}%`))
-            .preload("student", (student) =>
-              student
-                .select("name", "classId", "nis")
-                .preload("class", (kelas) => kelas.select("name"))
-            )
-            .groupBy("student_id", "class_id")
-            .paginate(page, limit);
+          const { rows, ...meta } = await Database.rawQuery(`
+        select
+          s."name" as student_name ,
+          c.name as class_name,
+          s.nis as nis,
+          sum(case when da.status = 'present' then 1 else 0 end) as present,
+          sum(case when da.status = 'permission' then 1 else 0 end) as permission,
+          sum(case when da.status = 'sick' then 1 else 0 end) as sick,
+          sum(case when da.status = 'absent' then 1 else 0 end) as absent,
+          round(cast(sum(case when da.status = 'present' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,
+          2)),
+          0) as present_precentage,
+          round(cast(sum(case when status = 'permission' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as permission_precentage,
+          round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as sick_precentage,
+          round(cast(sum(case when status = 'absent' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as absent_precentage,
+          round(cast(sum(case when status = 'present' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) + round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as present_accumulation
+       from
+         academic.daily_attendances da
+       left join academic.students s 
+                 on
+         da.student_id = s.id
+       left join academic.classes c 
+                 on
+         c.id = s.class_id
+       where
+         date_in between '2023-07-17' and '2023-08-17'
+         and c.is_graduated = false
+         and s.name ilike '%${keyword}%'
+       group by
+         s.name,
+         c.name,
+         s.nis
+       limit ${limit}
+                 offset ${limit} * (${page}-1)
+        
+          `);
+          data = {
+            meta: {
+              total: meta.rowCount,
+              per_page: +limit,
+              current_page: +page,
+            },
+            data: rows,
+          };
         } else {
           return response.badRequest({
             message:
@@ -139,27 +162,53 @@ if(classId && !uuidValidation(classId)) {
       }
       if (mode === "page") {
         data = await DailyAttendance.query()
-          .select("*")
-          .preload("student", (s) => s.select("name", "nis"))
-          .preload("class", (s) => s.select("name"))
+          .select("academic.daily_attendances.*")
+          .leftJoin(
+            "academic.students as s",
+            "s.id",
+            "academic.daily_attendances.student_id"
+          )
+          .preload(
+            "student",
+            (s) => (
+              s.select("name", "nis", "class_id"),
+              s.preload("class", (c) => c.select("name"))
+            )
+          )
           .whereBetween("date_in", [formattedStartDate, formattedEndDate])
+          .if(sortingByAbsent, (q) => q.orderBy("status", "desc"))
           .whereHas("student", (s) => s.whereILike("name", `%${keyword}%`))
-          .whereHas("student", (s) => s.orderBy("name"))
-          .orderBy("class_id")
-          .orderBy("created_at")
-          .if(classId, (c) => c.where("classId", classId))
+          .orderBy("s.class_id")
+          .orderBy("academic.daily_attendances.created_at")
+          .orderBy("s.name")
+          .if(classId, (c) =>
+            c.whereHas("student", (st) => st.where("class_id", classId))
+          )
           .paginate(page, limit);
       } else if (mode === "list") {
         data = await DailyAttendance.query()
-        .select("*")
-        .preload("student", (s) => s.select("name", "nis"))
-        .preload("class", (s) => s.select("name"))
-        .whereBetween("date_in", [formattedStartDate, formattedEndDate])
-        .whereHas("student", (s) => s.whereILike("name", `%${keyword}%`))
-        .whereHas("student", (s) => s.orderBy("name"))
-        .orderBy("class_id")
-        .orderBy("created_at")
-        .if(classId, (c) => c.where("classId", classId))
+          .select("academic.daily_attendances.*")
+          .leftJoin(
+            "academic.students as s",
+            "s.id",
+            "academic.daily_attendances.student_id"
+          )
+          .preload(
+            "student",
+            (s) => (
+              s.select("name", "nis", "class_id"),
+              s.preload("class", (c) => c.select("name"))
+            )
+          )
+          .whereBetween("date_in", [formattedStartDate, formattedEndDate])
+          .if(sortingByAbsent, (q) => q.orderBy("status", "desc"))
+          .whereHas("student", (s) => s.whereILike("name", `%${keyword}%`))
+          .orderBy("s.class_id")
+          .orderBy("academic.daily_attendances.created_at")
+          .orderBy("s.name")
+          .if(classId, (c) =>
+            c.whereHas("student", (st) => st.where("class_id", classId))
+          );
       } else {
         return response.badRequest({
           message: "Mode tidak dikenali, (pilih: page / list)",
@@ -188,9 +237,11 @@ if(classId && !uuidValidation(classId)) {
       }
 
       const dateInDateOnly = payload.dailyAttendance[0].date_in.toSQLDate()!;
-      const existingAttendance = await DailyAttendance.query()
-        .whereRaw("date_in::timestamp::date = ?", [dateInDateOnly])
-        .andWhere("class_id", payload.dailyAttendance[0].classId);
+      const existingAttendance = await DailyAttendance.query().whereRaw(
+        "date_in::timestamp::date = ?",
+        [dateInDateOnly]
+      );
+      // .andWhere("class_id", payload.dailyAttendance[0].classId);
 
       if (existingAttendance.length > 0) {
         throw new Error(
@@ -210,13 +261,8 @@ if(classId && !uuidValidation(classId)) {
         }
       }
 
-      const studentCount = await Student.query().where('class_id', payload.dailyAttendance[0].classId)
-      if(studentCount.length !== payload.dailyAttendance.length) {
-        throw new Error("Jumlah data absen tidak sesuai dengan jumlah siswa di kelas")
-      }
-
-      const data = await DailyAttendance.createMany(payload.dailyAttendance)
-      response.created({ message: "Berhasil menyimpan data", data })
+      const data = await DailyAttendance.createMany(payload.dailyAttendance);
+      response.created({ message: "Berhasil menyimpan data", data });
     } catch (error) {
       const message = "ACDA-store: " + error.message || error;
       console.log(error);
@@ -236,8 +282,13 @@ if(classId && !uuidValidation(classId)) {
 
     try {
       const data = await DailyAttendance.query()
-        .preload("student", (s) => s.select("name"))
-        .preload("class", (s) => s.select("name"))
+        .preload(
+          "student",
+          (s) => (
+            s.select("name", "class_id"),
+            s.preload("class", (c) => c.select("name"))
+          )
+        )
         .where("id", id)
         .firstOrFail();
       response.ok({ message: "Berhasil mengambil data", data });
@@ -320,18 +371,18 @@ if(classId && !uuidValidation(classId)) {
         ) {
           const existingRecord = await DailyAttendance.query()
             .whereNot("id", attendance.id)
-            .where("class_id", attendance.classId)
+            // .where("class_id", attendance.classId)
             .where("student_id", attendance.studentId)
             .whereRaw("date_in::timestamp::date = ?", [waktuAwal.toSQLDate()!])
-            .preload("class")
+            // .preload("class")
             .preload("student")
             .first();
 
           if (existingRecord) {
             throw new Error(
-              `Abensi siswa dengan nama ${existingRecord.student.name}, kelas ${
-                existingRecord.class.name
-              }, untuk tanggal ${waktuAwal.toSQLDate()} sudah ada`
+              `Abensi siswa dengan nama ${
+                existingRecord.student.name
+              }, kelas , untuk tanggal ${waktuAwal.toSQLDate()} sudah ada`
             );
           }
         }

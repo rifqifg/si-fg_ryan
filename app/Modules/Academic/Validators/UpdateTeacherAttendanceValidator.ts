@@ -47,6 +47,7 @@ export default class UpdateTeacherAttendanceValidator {
     subjectId: schema.string.optional({}, [
       rules.exists({ table: 'academic.subjects', column: 'id' })
     ]),
+    programSemesterDetailId: schema.string.optional(([rules.exists({table: 'academic.program_semester_details', column: 'id'})]))
   })
 
   /**

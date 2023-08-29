@@ -84,12 +84,34 @@ export default class BukuNilaisController {
       const schemaForTeacher = schema.create({
         bukuNilai: schema.array().members(
           schema.object().members({
-            subjectId: schema.string([rules.uuid({ version: 4 })]),
-            programSemesterDetailId: schema.string([
+            subjectId: schema.string([
               rules.uuid({ version: 4 }),
+              rules.exists({
+                table: "academic.subjects",
+                column: "id",
+              }),
             ]),
-            studentId: schema.string([rules.uuid({ version: 4 })]),
-            classId: schema.string([rules.uuid({ version: 4 })]),
+            programSemesterDetailId: schema.string.optional([
+              rules.uuid({ version: 4 }),
+              rules.exists({
+                table: "academic.program_semester_details",
+                column: "id",
+              }),
+            ]),
+            studentId: schema.string([
+              rules.uuid({ version: 4 }),
+              rules.exists({
+                table: "academic.students",
+                column: "id",
+              }),
+            ]),
+            classId: schema.string([
+              rules.uuid({ version: 4 }),
+              rules.exists({
+                table: "academic.classes",
+                column: "id",
+              }),
+            ]),
             teacherId: schema.string([
               rules.uuid({ version: 4 }),
               rules.exists({
@@ -100,6 +122,7 @@ export default class BukuNilaisController {
                 },
               }),
             ]),
+            material: schema.string.optional([rules.trim()]),
             nilai: schema.number(),
             type: schema.enum(["HARIAN", "UTS", "UAS"]),
           })
@@ -117,15 +140,44 @@ export default class BukuNilaisController {
       const schemaForAdmin = schema.create({
         bukuNilai: schema.array().members(
           schema.object().members({
-            subjectId: schema.string([rules.uuid({ version: 4 })]),
-            programSemesterDetailId: schema.string([
+            subjectId: schema.string([
               rules.uuid({ version: 4 }),
+              rules.exists({
+                table: "academic.subjects",
+                column: "id",
+              }),
             ]),
-            studentId: schema.string([rules.uuid({ version: 4 })]),
-            classId: schema.string([rules.uuid({ version: 4 })]),
-            teacherId: schema.string([rules.uuid({ version: 4 })]),
+            programSemesterDetailId: schema.string.optional([
+              rules.uuid({ version: 4 }),
+              rules.exists({
+                table: "academic.program_semester_details",
+                column: "id",
+              }),
+            ]),
+            studentId: schema.string([
+              rules.uuid({ version: 4 }),
+              rules.exists({
+                table: "academic.students",
+                column: "id",
+              }),
+            ]),
+            classId: schema.string([
+              rules.uuid({ version: 4 }),
+              rules.exists({
+                table: "academic.classes",
+                column: "id",
+              }),
+            ]),
+            teacherId: schema.string([
+              rules.uuid({ version: 4 }),
+              rules.exists({
+                table: "academic.teachers",
+                column: "id",
+              }),
+            ]),
             nilai: schema.number(),
             type: schema.enum(["HARIAN", "UTS", "UAS"]),
+            material: schema.string.optional([rules.trim()]),
           })
         ),
       });
@@ -191,12 +243,34 @@ export default class BukuNilaisController {
           .firstOrFail();
 
         const schemaForTeacher = schema.create({
-          subjectId: schema.string.optional([rules.uuid({ version: 4 })]),
+          subjectId: schema.string.optional([
+            rules.uuid({ version: 4 }),
+            rules.exists({
+              table: "academic.subjects",
+              column: "id",
+            }),
+          ]),
           programSemesterDetailId: schema.string.optional([
             rules.uuid({ version: 4 }),
+            rules.exists({
+              table: "academic.program_semester_details",
+              column: "id",
+            }),
           ]),
-          studentId: schema.string.optional([rules.uuid({ version: 4 })]),
-          classId: schema.string.optional([rules.uuid({ version: 4 })]),
+          studentId: schema.string.optional([
+            rules.uuid({ version: 4 }),
+            rules.exists({
+              table: "academic.students",
+              column: "id",
+            }),
+          ]),
+          classId: schema.string.optional([
+            rules.uuid({ version: 4 }),
+            rules.exists({
+              table: "academic.classes",
+              column: "id",
+            }),
+          ]),
           teacherId: schema.string.optional([
             rules.uuid({ version: 4 }),
             rules.exists({
@@ -207,6 +281,7 @@ export default class BukuNilaisController {
               },
             }),
           ]),
+          material: schema.string.optional([rules.trim()]),
           nilai: schema.number.optional(),
           type: schema.enum.optional(["HARIAN", "UTS", "UAS"]),
         });
@@ -219,14 +294,43 @@ export default class BukuNilaisController {
       }
     } else {
       const schemaForAdmin = schema.create({
-        subjectId: schema.string.optional([rules.uuid({ version: 4 })]),
+        subjectId: schema.string.optional([
+          rules.uuid({ version: 4 }),
+          rules.exists({
+            table: "academic.subjects",
+            column: "id",
+          }),
+        ]),
         programSemesterDetailId: schema.string.optional([
           rules.uuid({ version: 4 }),
+          rules.exists({
+            table: "academic.program_semester_details",
+            column: "id",
+          }),
         ]),
-        studentId: schema.string.optional([rules.uuid({ version: 4 })]),
-        teacherId: schema.string.optional([rules.uuid({ version: 4 })]),
-        classId: schema.string.optional([rules.uuid({ version: 4 })]),
+        studentId: schema.string.optional([
+          rules.uuid({ version: 4 }),
+          rules.exists({
+            table: "academic.students",
+            column: "id",
+          }),
+        ]),
+        teacherId: schema.string.optional([
+          rules.uuid({ version: 4 }),
+          rules.exists({
+            table: "academic.teachers",
+            column: "id",
+          }),
+        ]),
+        classId: schema.string.optional([
+          rules.uuid({ version: 4 }),
+          rules.exists({
+            table: "academic.classes",
+            column: "id",
+          }),
+        ]),
         nilai: schema.number.optional(),
+        material: schema.string.optional([rules.trim()]),
         type: schema.enum.optional(["HARIAN", "UTS", "UAS"]),
       });
       payload = await request.validate({ schema: schemaForAdmin });

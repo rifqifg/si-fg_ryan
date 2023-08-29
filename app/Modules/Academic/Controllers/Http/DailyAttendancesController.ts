@@ -135,6 +135,7 @@ export default class DailyAttendancesController {
          date_in between '2023-07-17' and '2023-08-17'
          and c.is_graduated = false
          and s.name ilike '%${keyword}%'
+         ${whereClassId}
        group by
          s.name,
          c.name,

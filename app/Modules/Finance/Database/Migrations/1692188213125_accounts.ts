@@ -14,7 +14,7 @@ export default class extends BaseSchema {
         table.string('owner')
         table.string('account_name').notNullable()
         table.string('balance').notNullable()
-        table.string('number').notNullable()
+        table.string('number').notNullable().unique()
 
         /**
          * Uses timestamptz for PostgreSQL and DATETIME2 for MSSQL

@@ -32,7 +32,7 @@ export default class CreatePresenceSubActivityValidator {
         employeeId: schema.string({}, [
           rules.exists({ table: 'employees', column: 'id' })
         ]),
-        timeIn: schema.date({ format: 'yyyy-MM-dd HH:mm:ss' }),
+        timeIn: schema.date.optional({ format: 'yyyy-MM-dd HH:mm:ss' }),
         timeOut: schema.date.optional({ format: 'yyyy-MM-dd HH:mm:ss' }),
         description: schema.string.optional(),
         subActivityId: schema.string({}, [

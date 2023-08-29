@@ -2,7 +2,6 @@ import { DateTime } from 'luxon'
 import { BaseModel, BelongsTo, afterCreate, beforeCreate, belongsTo, column } from '@ioc:Adonis/Lucid/Orm'
 import { AttendanceStatus } from '../lib/enums';
 import { v4 as uuidv4 } from 'uuid'
-import Class from './Class';
 import Student from './Student';
 let newId = ""
 
@@ -38,12 +37,6 @@ export default class DailyAttendance extends BaseModel {
 
   @column()
   public description: string | null
-
-  @column()
-  public classId: string
-
-  @belongsTo(() => Class)
-  public class: BelongsTo<typeof Class>
 
   @column()
   public studentId: string

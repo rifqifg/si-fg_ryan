@@ -1,9 +1,8 @@
 import { schema, CustomMessages, rules } from '@ioc:Adonis/Core/Validator'
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import { AttendanceStatus } from '../lib/enums'
 
-export default class UpdateLessonAttendanceValidator {
-  constructor(protected ctx: HttpContextContract) {}
+export default class CreatePresenceSubActivityValidator {
+  constructor(protected ctx: HttpContextContract) { }
 
   /*
    * Define schema to validate the "shape", "type", "formatting" and "integrity" of data.
@@ -25,20 +24,22 @@ export default class UpdateLessonAttendanceValidator {
    *    ```
    */
   public schema = schema.create({
-    date: schema.date.optional({
-      format: 'yyyy-MM-dd HH:mm:ss'
-    }),
-    status: schema.enum.optional(Object.values(AttendanceStatus)),
-    description: schema.string.optional({}, [rules.alphaNum({ allow: ['space'] })]),
-    studentId: schema.string.optional({}, [
-      rules.exists({ table: 'academic.students', column: 'id' })
-    ]),
-    sessionId: schema.string.optional({}, [
-      rules.exists({ table: 'academic.sessions', column: 'id' })
-    ]),
-    subjectId: schema.string.optional({}, [
-      rules.exists({ table: 'academic.subjects', column: 'id' })
-    ]),
+    presences: schema.array().members(
+      schema.object().members({
+        activityId: schema.string({}, [
+          rules.exists({ table: 'activities', column: 'id' })
+        ]),
+        employeeId: schema.string({}, [
+          rules.exists({ table: 'employees', column: 'id' })
+        ]),
+        timeIn: schema.date.optional({ format: 'yyyy-MM-dd HH:mm:ss' }),
+        timeOut: schema.date.optional({ format: 'yyyy-MM-dd HH:mm:ss' }),
+        description: schema.string.optional(),
+        subActivityId: schema.string({}, [
+          rules.exists({ table: 'sub_activities', column: 'id' })
+        ]),
+      })
+    )
   })
 
   /**
@@ -52,8 +53,5 @@ export default class UpdateLessonAttendanceValidator {
    * }
    *
    */
-  public messages: CustomMessages = {
-    'date.date': "Mohon maaf, format date harus 'yyyy-MM-dd HH:mm:ss'",
-    'status.enum': "Mohon maaf, status harus berisi ('present', 'absent', 'permission', 'sick')"
-  }
+  public messages: CustomMessages = {}
 }

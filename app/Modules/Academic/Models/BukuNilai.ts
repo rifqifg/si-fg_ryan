@@ -40,6 +40,9 @@ export default class BukuNilai extends BaseModel {
   @column()
   public type: string;
 
+  @column()
+  public material: string | null;
+
   @belongsTo(() => ProgramSemesterDetail)
   public programSemesterDetail: BelongsTo<typeof ProgramSemesterDetail>;
 

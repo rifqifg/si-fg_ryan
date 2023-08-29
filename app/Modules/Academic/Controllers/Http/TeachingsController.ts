@@ -1,7 +1,7 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import CreateTeachingValidator from '../../Validators/CreateTeachingValidator'
 import Teaching from '../../Models/Teaching'
-import { validate as uuidValidation } from "uuid";
+import { validate as uuidValidation } from 'uuid';
 import UpdateTeachingValidator from '../../Validators/UpdateTeachingValidator';
 
 export default class TeachingsController {
@@ -14,8 +14,9 @@ export default class TeachingsController {
 
             data = await Teaching
                 .query()
+                .whereHas('class', c => c.where('is_graduated', false))
                 .preload('class', c => c.select('id', 'name'))
-                .preload('subject', s => s.select('id', 'name'))
+                .preload('subject', s => s.select('id', 'name', 'is_extracurricular'))
                 .where('teacher_id', '=', teacher_id)
 
             response.ok({ message: "Berhasil mengambil data", data })

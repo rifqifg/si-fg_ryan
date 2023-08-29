@@ -1,8 +1,7 @@
 import { schema, CustomMessages, rules } from '@ioc:Adonis/Core/Validator'
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import { AttendanceStatus } from '../lib/enums'
 
-export default class UpdateLessonAttendanceValidator {
+export default class DeleteManySubjectMemberValidator {
   constructor(protected ctx: HttpContextContract) {}
 
   /*
@@ -25,20 +24,11 @@ export default class UpdateLessonAttendanceValidator {
    *    ```
    */
   public schema = schema.create({
-    date: schema.date.optional({
-      format: 'yyyy-MM-dd HH:mm:ss'
-    }),
-    status: schema.enum.optional(Object.values(AttendanceStatus)),
-    description: schema.string.optional({}, [rules.alphaNum({ allow: ['space'] })]),
-    studentId: schema.string.optional({}, [
-      rules.exists({ table: 'academic.students', column: 'id' })
-    ]),
-    sessionId: schema.string.optional({}, [
-      rules.exists({ table: 'academic.sessions', column: 'id' })
-    ]),
-    subjectId: schema.string.optional({}, [
-      rules.exists({ table: 'academic.subjects', column: 'id' })
-    ]),
+    subjectMember: schema.array().members(
+      schema.object().members({
+        id: schema.string([rules.exists({table: 'academic.subject_members', column: 'id'})])
+      })
+    )
   })
 
   /**
@@ -52,8 +42,5 @@ export default class UpdateLessonAttendanceValidator {
    * }
    *
    */
-  public messages: CustomMessages = {
-    'date.date': "Mohon maaf, format date harus 'yyyy-MM-dd HH:mm:ss'",
-    'status.enum': "Mohon maaf, status harus berisi ('present', 'absent', 'permission', 'sick')"
-  }
+  public messages: CustomMessages = {}
 }

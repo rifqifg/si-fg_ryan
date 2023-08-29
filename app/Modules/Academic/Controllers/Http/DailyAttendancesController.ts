@@ -235,13 +235,12 @@ export default class DailyAttendancesController {
       if (weekdayNumber === 6 || weekdayNumber === 7) {
         throw new Error("Tidak dapat melakukan absen di hari sabtu / minggu");
       }
+      const stuedentIds = payload.dailyAttendance.map((st) => st.studentId);
 
       const dateInDateOnly = payload.dailyAttendance[0].date_in.toSQLDate()!;
-      const existingAttendance = await DailyAttendance.query().whereRaw(
-        "date_in::timestamp::date = ?",
-        [dateInDateOnly]
-      );
-      // .andWhere("class_id", payload.dailyAttendance[0].classId);
+      const existingAttendance = await DailyAttendance.query()
+        .whereRaw("date_in::timestamp::date = ?", [dateInDateOnly])
+        .andWhereIn("student_id", stuedentIds);
 
       if (existingAttendance.length > 0) {
         throw new Error(

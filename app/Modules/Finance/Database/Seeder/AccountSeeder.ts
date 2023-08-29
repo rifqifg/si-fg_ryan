@@ -8,7 +8,7 @@ export default class extends BaseSeeder {
     const accountsToCreate = [
       {
         id: "2f5e0d47-7a9b-4c18-b017-990558e5e49e",
-        student_id: "8cdc7765-3707-49fa-9588-2451d29083cc",
+        student_id: "c57be98a-70da-4514-a94e-050dadc7eda5",
         // owner: "Anon",
         account_name: "Rekening Rahasisa",
         balance: "100",
@@ -36,7 +36,7 @@ export default class extends BaseSeeder {
         owner: "Anonym",
         account_name: "Rekening Rahasisa",
         balance: "100",
-        number: "12121212"
+        number: "1212121244"
       },
       {
         id: "d8a517ef-20a7-42e8-a5d6-b8c5e6d9a0c6",
@@ -44,7 +44,7 @@ export default class extends BaseSeeder {
         owner: "Anon",
         account_name: "Rekening Rahasya",
         balance: "100",
-        number: "12121212"
+        number: "1212121255"
       }
     ]
 

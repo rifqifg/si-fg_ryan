@@ -5,7 +5,7 @@ Route.group(() => {
     })
 
     Route.resource('master-billings', 'MasterBillingsController').apiOnly().middleware({ '*': ['auth'] })
-    Route.resource('billings', 'BillingsController').apiOnly().except(['update']).middleware({ '*': ['auth'] })
+    Route.resource('billings', 'BillingsController').apiOnly().except(['update']).middleware({ '*': ['auth:api,parent_api'] })
     Route.put('billings', 'BillingsController.update').middleware(['auth'])
     Route.resource('accounts', 'AccountsController').apiOnly().middleware({ '*': ['auth'] })
     Route.resource('transactions', 'TransactionsController').apiOnly().middleware({ '*': ['auth'] })

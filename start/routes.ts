@@ -25,6 +25,7 @@ import 'Academic/Routes/academic'
 import 'PPDB/Routes/ppdb'
 import 'Finance/Routes/finance'
 import UserStudentCandidate from 'App/Modules/PPDB/Models/UserStudentCandidate'
+import Account from 'App/Modules/Finance/Models/Account'
 
 Route.get('/', async ({ auth, response }) => {
   if (auth.use('api').isLoggedIn) {
@@ -36,8 +37,13 @@ Route.get('/', async ({ auth, response }) => {
       .preload('studentCandidate')
       .where('id', auth.user!.id)
     response.ok({ message: 'you are logged in as student candidate', data })
+  } else if (auth.use('parent_api').isLoggedIn) {
+    const data = await Account.query()
+      .preload('student', qStudent => qStudent.select('name'))
+      .where('id', auth.user!.id)
+    response.ok({ message: 'you are logged in as parent', data })
   }
-}).middleware("auth:api,ppdb_api")
+}).middleware("auth:api,ppdb_api,parent_api")
 
 Route.group(() => {
   Route.get('pendaftar-baru', 'PPDBChartsController.pendaftarBaru')
@@ -53,8 +59,10 @@ Route.get('/wilayah-all/:keyword', 'System/WilayahsController.getAllByKel')
 
 Route.post('/password-encrypt', 'System/UsersController.password_encrypt').as('passwordEncrypt')
 Route.post('/auth/login', 'System/UsersController.login').as('auth.login')
+Route.post('/auth/login-parent', 'System/UsersController.loginParent').as('auth.loginParent')
 Route.post('/auth/google', 'System/UsersController.googleCallback').as('auth.googleSignIn')
 Route.post('/auth/logout', 'System/UsersController.logout').as('auth.logout').middleware('auth')
+Route.post('/auth/logout-parent', 'System/UsersController.logoutParent').as('auth.logoutParent').middleware('auth:parent_api')
 Route.post('/auth/register', 'System/UsersController.register').as('auth.register')
 Route.get('/auth/verify-email', 'System/UsersController.verify').as('auth.verify')
 Route.post('/auth/reset-password', 'System/UsersController.resetUserPassword').as('auth.resetUserPassword').middleware(['auth'])

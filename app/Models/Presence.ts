@@ -64,7 +64,9 @@ export default class Presence extends BaseModel {
   @afterFetch()
   public static async createWorkingDuration(presences: Presence[]) {
     for (const presence of presences) {
-      presence.$extras.timeDiff = await calculateWorkingTime(presence)
+      if (presence.timeIn) {
+        presence.$extras.timeDiff = await calculateWorkingTime(presence)
+      }
     }
   }
 

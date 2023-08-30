@@ -111,6 +111,7 @@ export default class DailyAttendancesController {
         select
           s."name" as student_name ,
           c.name as class_name,
+          c.id as class_id,
           s.nis as nis,
           sum(case when da.status = 'present' then 1 else 0 end) as present,
           sum(case when da.status = 'permission' then 1 else 0 end) as permission,
@@ -139,7 +140,8 @@ export default class DailyAttendancesController {
        group by
          s.name,
          c.name,
-         s.nis
+         s.nis,
+         c.id
        limit ${limit}
                  offset ${limit} * (${page}-1)
         

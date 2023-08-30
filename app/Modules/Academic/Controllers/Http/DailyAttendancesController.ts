@@ -133,7 +133,7 @@ export default class DailyAttendancesController {
                  on
          c.id = s.class_id
        where
-         date_in between '2023-07-17' and '2023-08-17'
+         date_in between '${formattedStartDate}' AND '${formattedEndDate}'
          and c.is_graduated = false
          and s.name ilike '%${keyword}%'
          ${whereClassId}

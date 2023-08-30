@@ -7,12 +7,18 @@ import { validate as uuidValidation } from "uuid";
 
 export default class ActivityMembersController {
   public async index({ request, response }: HttpContextContract) {
-    const { activityId = "" } = request.qs()
+    const { activityId = "", keyword = "" } = request.qs()
 
     const data = await ActivityMember.query()
       .where('activity_id', '=', activityId)
       .preload('employee', e => e.select('id', 'name'))
       .preload('activity', a => a.select('id', 'name'))
+      .andWhere(query => {
+        query.orWhereHas('employee', query => {
+          query.whereILike('name', `%${keyword}%`)
+        })
+      })
+
 
     response.ok({ message: "Data Berhasil Didapatkan", data })
   }
@@ -86,8 +92,10 @@ export default class ActivityMembersController {
     response.ok({ message: "Delete data success" })
   }
 
-  public async getEmployee({ response, params }: HttpContextContract) {
+  public async getEmployee({ response, params, request }: HttpContextContract) {
     const { activityId } = params
+    const {keyword = ""} = request.qs()
+
     const activityMembers = await ActivityMember.query()
       .select('id', 'employee_id')
       .where('activity_id', '=', activityId)
@@ -101,6 +109,7 @@ export default class ActivityMembersController {
     const data = await Employee.query()
       .select('id', 'name')
       .whereNotIn('id', employeeIds)
+      .whereILike('name', `%${keyword}%`)
 
     response.ok({ message: "Data Berhasil Didapatkan", data })
   }

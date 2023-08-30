@@ -213,13 +213,17 @@ export default class SubActivitiesController {
 
     const payload = await request.validate(CreatePresenceSubActivityValidator)
     const authRole = auth.user?.role
+    const authEmployeeId = auth.user?.$original.employeeId
+
     const getActivityMember = await ActivityMember.query()
       .where('activity_id', '=', activityId)
     let memberManager: string[] = [] // buat menampun employeeId dengan member role manager
 
-    getActivityMember.map(value => {
+    getActivityMember.map(value => { // mencari member dengan role manager
       if (value.role == RoleActivityMember.MANAGER) {
-        memberManager.push(value.employeeId)
+        if (authEmployeeId == value.employeeId) { // mengecek apakah user yg login itu sama dengan member dgn role manager
+          memberManager.push(value.employeeId)
+        }
       }
     })
 
@@ -253,7 +257,6 @@ export default class SubActivitiesController {
         error: message,
       });
     }
-
   }
 
   public async destroyPresences({ request, response }: HttpContextContract) {

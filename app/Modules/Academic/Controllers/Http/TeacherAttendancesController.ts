@@ -90,6 +90,7 @@ export default class TeacherAttendancesController {
       .preload("class", (c) => c.select("name"))
       .preload("session", (s) => s.select("session"))
       .preload("subject", (s) => s.select("name"))
+      .preload('prosemDetail', pd => pd.select('materi', 'kompetensiDasar'))
       .orderBy("date_in", "desc")
       .paginate(page, limit);
 

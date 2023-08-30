@@ -12,6 +12,7 @@ export default class AccountsController {
       let data = {}
       if (mode === 'page') {
         data = await Account.query()
+          .preload('student', qStudent => qStudent.select('name'))
           .whereILike("account_name", `%${keyword}%`)
           .paginate(page, limit);
       } else {

@@ -10,6 +10,12 @@ let newId = ""
 export default class Account extends BaseModel {
   public static table = 'finance.accounts';
 
+  public serializeExtras() {
+    return {
+      roles: this.$extras.roles,
+    }
+  }
+
   @column({ isPrimary: true })
   public id: string
 

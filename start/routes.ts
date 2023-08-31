@@ -26,6 +26,7 @@ import 'PPDB/Routes/ppdb'
 import 'Finance/Routes/finance'
 import UserStudentCandidate from 'App/Modules/PPDB/Models/UserStudentCandidate'
 import Account from 'App/Modules/Finance/Models/Account'
+import Database from '@ioc:Adonis/Lucid/Database'
 
 Route.get('/', async ({ auth, response }) => {
   if (auth.use('api').isLoggedIn) {
@@ -38,9 +39,17 @@ Route.get('/', async ({ auth, response }) => {
       .where('id', auth.user!.id)
     response.ok({ message: 'you are logged in as student candidate', data })
   } else if (auth.use('parent_api').isLoggedIn) {
+    // todo: coba query pakai Database full dari awal (bukan Account)
     const data = await Account.query()
+      .select('*')
+      .select(Database.rawQuery(`(select json_build_object(
+          'name', name,
+          'description', description,
+          'permissions', permissions 
+        ) from public.roles r where name = 'parent') as roles`))
       .preload('student', qStudent => qStudent.select('name'))
       .where('id', auth.user!.id)
+      // .toQuery()
     response.ok({ message: 'you are logged in as parent', data })
   }
 }).middleware("auth:api,ppdb_api,parent_api")

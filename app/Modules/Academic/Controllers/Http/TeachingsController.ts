@@ -3,13 +3,21 @@ import CreateTeachingValidator from "../../Validators/CreateTeachingValidator";
 import Teaching from "../../Models/Teaching";
 import { validate as uuidValidation } from "uuid";
 import UpdateTeachingValidator from "../../Validators/UpdateTeachingValidator";
-import Admin from "Database/seeders/Admin";
 
 export default class TeachingsController {
-  public async index({ response, params }: HttpContextContract) {
+  public async index({request, response, params }: HttpContextContract) {
     const { teacher_id } = params;
+    const {subjectId = "", classId = ""} = request.qs()
     if (!uuidValidation(teacher_id)) {
       return response.badRequest({ message: "Teacher ID tidak valid" });
+    }
+
+    if (subjectId && !uuidValidation(subjectId)) {
+      return response.badRequest({ message: "Subject ID tidak valid" });
+    }
+
+    if (classId && !uuidValidation(classId)) {
+      return response.badRequest({ message: "Class ID tidak valid" });
     }
 
     try {
@@ -17,20 +25,10 @@ export default class TeachingsController {
 
       data = await Teaching.query()
         .select("academic.teachings.*")
-        // .leftJoin("academic.classes c ", "c.id", "academic.teachings.id")
         .preload("class", (c) => c.select("id", "name"))
         .preload("subject", (s) => s.select("id", "name", "is_extracurricular"))
-        // .whereHas('class', c => c.where('is_graduated', false))
-        // .whereRaw(
-        //   `select t.* from academic.teachings t
-        //     left join academic.classes c
-        //             on
-        //     c.id = t.class_id
-        //     left join academic.subjects s
-        //             on
-        //     s.id = t.subject_id
-        //         `
-        // )
+        .if(subjectId, q => q.whereNot('subject_id', subjectId))
+        .if(classId, q => q.whereNot('class_id', classId))
         .andWhere((q) => {
           q.andWhereHas("class", (c) => c.where("is_graduated", false));
           q.orWhereHas("subject", (s) => s.where("is_extracurricular", true));

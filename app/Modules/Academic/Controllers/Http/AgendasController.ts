@@ -1,4 +1,5 @@
 import type { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
+import { validate as uuidValidation } from "uuid";
 import Agenda from "../../Models/Agenda";
 import CreateAgendumValidator from "../../Validators/CreateAgendumValidator";
 import UpdateAgendumValidator from "../../Validators/UpdateAgendumValidator";
@@ -6,7 +7,9 @@ import UpdateAgendumValidator from "../../Validators/UpdateAgendumValidator";
 export default class AgendasController {
   public async index({ response }: HttpContextContract) {
     try {
-      const data = await Agenda.query().select("*");
+      const data = await Agenda.query()
+        .select("*")
+        .preload("user", (s) => s.select("id", "name"));
 
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
@@ -14,11 +17,11 @@ export default class AgendasController {
     }
   }
 
-  public async store({ request, response }: HttpContextContract) {
+  public async store({ request, response, auth }: HttpContextContract) {
     const payload = await request.validate(CreateAgendumValidator);
 
     try {
-      const data = await Agenda.create(payload);
+      const data = await Agenda.create({ userId: auth?.user?.id, ...payload });
 
       response.ok({ message: "Berhasil menyimpan data", data });
     } catch (error) {
@@ -30,7 +33,9 @@ export default class AgendasController {
     const { id } = params;
 
     try {
-      const data = await Agenda.findByOrFail("id", id);
+      const data = await Agenda.query()
+        .preload("user", (s) => s.select("id", "name"))
+        .where("id", id);
 
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
@@ -40,6 +45,10 @@ export default class AgendasController {
 
   public async update({ request, response, params }: HttpContextContract) {
     const { id } = params;
+
+    if (!uuidValidation(id)) {
+      return response.badRequest({ message: "Agenda ID tidak valid" });
+    }
 
     const payload = await request.validate(UpdateAgendumValidator);
 
@@ -58,6 +67,10 @@ export default class AgendasController {
 
   public async destroy({ response, params }: HttpContextContract) {
     const { id } = params;
+
+    if (!uuidValidation(id)) {
+      return response.badRequest({ message: "Agenda ID tidak valid" });
+    }
 
     try {
       const data = await Agenda.findByOrFail("id", id);

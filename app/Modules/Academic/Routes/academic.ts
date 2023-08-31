@@ -25,4 +25,5 @@ Route.group(() => {
     Route.shallowResource('mutating-many-students', 'MutatingManyStudentsController').only(['update']).apiOnly().middleware({ '*': ['auth'] })
     Route.shallowResource('subjects.members', 'SubjectMembersController').apiOnly().middleware({ '*': ['auth'] })
     Route.delete('multi-delete-subject-members', 'SubjectMembersController.deleteMany').middleware('auth')
+    Route.shallowResource('agendas', 'AgendasController').middleware({ '*': ['auth'] }).apiOnly()
 }).prefix('academics').namespace('AcademicControllers')

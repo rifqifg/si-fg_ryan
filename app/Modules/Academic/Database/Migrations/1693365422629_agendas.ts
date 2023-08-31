@@ -1,11 +1,11 @@
 import BaseSchema from '@ioc:Adonis/Lucid/Schema'
 
 export default class extends BaseSchema {
-  protected tableName = 'academic.agendas'
+  protected tableName = 'agendas'
 
   public async up () {
-    this.schema.createTable(this.tableName, (table) => {
-      table.uuid('id').unique().notNullable().primary()
+    this.schema.withSchema('academic').createTable(this.tableName, (table) => {
+      table.uuid('id').primary().unique().notNullable()
       table.string('name').notNullable()
       table.boolean('count_presence').defaultTo(false)
       table.string('description').nullable()

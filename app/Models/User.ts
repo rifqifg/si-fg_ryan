@@ -8,13 +8,16 @@ import {
   afterCreate,
   belongsTo,
   BelongsTo,
+  hasMany,
+  HasMany,
 } from "@ioc:Adonis/Lucid/Orm";
 import { v4 as uuidv4 } from "uuid";
-import Role from "./Role";
+// import Role from "./Role";
 import Employee from "./Employee";
 import Division from "./Division";
 import Student from "App/Modules/Academic/Models/Student";
 import StudentParent from "App/Modules/Academic/Models/StudentParent";
+import UserRole from "./UserRole";
 let newId = "";
 
 export default class User extends BaseModel {
@@ -24,15 +27,18 @@ export default class User extends BaseModel {
   @column()
   public name: string;
 
-  @column({ serializeAs: "role_name" })
-  public role: string | null | undefined;
+  // @column({ serializeAs: "role_name" })
+  // public role: string | null | undefined;
 
-  @belongsTo(() => Role, {
-    foreignKey: "role",
-    localKey: "name",
-    serializeAs: "role",
-  })
-  public roles: BelongsTo<typeof Role>;
+  // @belongsTo(() => Role, {
+  //   foreignKey: "role",
+  //   localKey: "name",
+  //   serializeAs: "role",
+  // })
+  // public roles: BelongsTo<typeof Role>;
+
+  @hasMany(() => UserRole)
+  public roles: HasMany<typeof UserRole>
 
   @column()
   public employeeId: string;

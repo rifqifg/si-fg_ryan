@@ -27,7 +27,7 @@ import UserStudentCandidate from 'App/Modules/PPDB/Models/UserStudentCandidate'
 
 Route.get('/', async ({ auth, response }) => {
   if (auth.use('api').isLoggedIn) {
-    const data = await User.query().preload('roles').where('id', auth.user!.id)
+    const data = await User.query().preload('roles', r => r.select('role_name').preload('role', r => r.select('name', 'permissions'))).where('id', auth.user!.id)
     response.ok({ message: 'you are logged in', data })
   } else if (auth.use('ppdb_api').isLoggedIn) {
     const data = await UserStudentCandidate.query()

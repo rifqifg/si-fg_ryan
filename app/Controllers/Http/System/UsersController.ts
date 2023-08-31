@@ -34,14 +34,14 @@ export default class UsersController {
     });
 
     const payload = await request.validate({ schema: loginSchema });
-   
+
     try {
       const token = await auth
         .use("api")
         .attempt(payload.email, payload.password);
       const user = await User.query()
         .where("id", auth.user!.id)
-        .preload("roles", (query) => query.select("name", "permissions"))
+        .preload("roles", (query) => query.select("role_name").preload('role', r => r.select('name', 'permissions')))
         .preload("employee", (e) => {
           e.select("name");
           e.preload("teacher", (t) => t.select("id"));
@@ -213,7 +213,7 @@ export default class UsersController {
     try {
       const user = await User.query().where("verifyToken", token).firstOrFail();
 
-      await user.merge({verifyToken: "", verified: true,}).save();
+      await user.merge({ verifyToken: "", verified: true, }).save();
 
       const LOGIN_URL = Env.get("FE_URL")
       return view.render('user_verification_success', { LOGIN_URL })

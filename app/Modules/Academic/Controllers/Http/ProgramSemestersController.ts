@@ -120,7 +120,7 @@ export default class ProgramSemestersController {
             },
           }),
         ]),
-        classId: schema.string([
+        classId: schema.string.optional([
           rules.uuid({ version: 4 }),
           rules.exists({ table: "academic.classes", column: "id" }),
           rules.unique({
@@ -167,7 +167,7 @@ export default class ProgramSemestersController {
             },
           }),
         ]),
-        classId: schema.string([
+        classId: schema.string.optional([
           rules.uuid({ version: 4 }),
           rules.exists({ table: "academic.classes", column: "id" }),
           rules.unique({

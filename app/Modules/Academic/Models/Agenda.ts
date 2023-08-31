@@ -9,13 +9,16 @@ export default class Agenda extends BaseModel {
   public nama: string;
 
   @column()
-  public count_presence: boolean
+  public countPresence: boolean
 
   @column()
   public description: string
 
   @column()
   public type: string
+
+  @column()
+  public userId: string
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime;

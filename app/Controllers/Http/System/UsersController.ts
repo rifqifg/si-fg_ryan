@@ -11,6 +11,7 @@ import Hash from "@ioc:Adonis/Core/Hash";
 import Database from "@ioc:Adonis/Lucid/Database";
 import Employee from "App/Models/Employee";
 import Student from "App/Modules/Academic/Models/Student";
+import UserRole from "App/Models/UserRole";
 
 enum ROLE {
   EMPLOYEE = "employee",
@@ -164,9 +165,13 @@ export default class UsersController {
         email: payload.email,
         verifyToken,
         employeeId: employee.id,
-        role: ROLE.EMPLOYEE,
         password: payload.password,
       });
+      const userObject = JSON.parse(JSON.stringify(user))
+      await UserRole.create({
+        userId: userObject.id,
+        roleName: ROLE.EMPLOYEE
+      })
     } else {
       try {
         student = await Student.findByOrFail("nisn", payload.nisn);
@@ -180,24 +185,36 @@ export default class UsersController {
           studentId: student.id,
           email: payload.email,
           verifyToken,
-          role: ROLE.STUDENT,
         });
+        const userObject = JSON.parse(JSON.stringify(user))
+        await UserRole.create({
+          userId: userObject.id,
+          roleName: ROLE.STUDENT
+        })
       } else if (student && payload.role === ROLE.PARENT) {
         user = await User.create({
           name: payload.name,
           password: payload.password,
           email: payload.email,
           verifyToken,
-          role: ROLE.PARENT,
         });
+        const userObject = JSON.parse(JSON.stringify(user))
+        await UserRole.create({
+          userId: userObject.id,
+          roleName: ROLE.PARENT
+        })
       } else {
         user = await User.create({
           name: payload.name,
           password: payload.password,
           email: payload.email,
           verifyToken,
-          role: ROLE.ALUMNI,
         });
+        const userObject = JSON.parse(JSON.stringify(user))
+        await UserRole.create({
+          userId: userObject.id,
+          roleName: ROLE.ALUMNI
+        })
       }
     }
 

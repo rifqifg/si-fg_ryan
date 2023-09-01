@@ -28,7 +28,27 @@ import UserStudentCandidate from 'App/Modules/PPDB/Models/UserStudentCandidate'
 Route.get('/', async ({ auth, response }) => {
   if (auth.use('api').isLoggedIn) {
     const data = await User.query().preload('roles', r => r.select('role_name').preload('role', r => r.select('name', 'permissions'))).where('id', auth.user!.id)
-    response.ok({ message: 'you are logged in', data })
+    const dataObject = JSON.parse(JSON.stringify(data))
+    const roles =  dataObject[0].roles
+    const name:any = []
+    const descriptions:any = []
+    const modules = roles.reduce((prev, v) => {
+      name.push(v.role_name)
+      descriptions.push(v.descriptions)
+      return [...prev, v.role.permissions.modules]
+    }, [])
+    const modulesMerge:any = []
+    modules.map(value => {
+      value.map(m => {
+        modulesMerge.push(m)
+      })
+    })
+
+    dataObject[0]["role_name"] = name.toString()
+    dataObject[0]["role"] = {name: name.toString(), descriptions: descriptions.toString(), permissions: {modules: modulesMerge}}
+    delete dataObject[0]["roles"]
+
+    response.ok({ message: 'you are logged in', data: dataObject })
   } else if (auth.use('ppdb_api').isLoggedIn) {
     const data = await UserStudentCandidate.query()
       .preload('roles')

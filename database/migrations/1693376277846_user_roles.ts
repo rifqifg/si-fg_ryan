@@ -5,7 +5,7 @@ export default class extends BaseSchema {
 
   public async up () {
     this.schema.createTable(this.tableName, (table) => {
-      table.uuid('user_id').references('id').inTable('users').onDelete('no action')
+      table.uuid('user_id').references('id').inTable('users').onDelete('cascade')
       table.string('role_name').references('name').inTable('roles').onDelete('no action')
       table.primary(['user_id', 'role_name'])
 

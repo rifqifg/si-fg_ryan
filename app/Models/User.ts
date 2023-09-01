@@ -27,7 +27,7 @@ export default class User extends BaseModel {
   @column()
   public name: string;
 
-  // @column({ serializeAs: "role_name" })
+  // @column()
   // public role: string | null | undefined;
 
   // @belongsTo(() => Role, {

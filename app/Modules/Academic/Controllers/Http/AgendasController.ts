@@ -5,10 +5,14 @@ import CreateAgendumValidator from "../../Validators/CreateAgendumValidator";
 import UpdateAgendumValidator from "../../Validators/UpdateAgendumValidator";
 
 export default class AgendasController {
-  public async index({ response }: HttpContextContract) {
+  public async index({ request, response }: HttpContextContract) {
+    const { keyword = "", date = "" } = request.qs();
+
     try {
       const data = await Agenda.query()
         .select("*")
+        .whereILike("name", `%${keyword}%`)
+        .if(date, (q) => q.where("date", date))
         .preload("user", (s) => s.select("id", "name"));
 
       response.ok({ message: "Berhasil mengambil data", data });

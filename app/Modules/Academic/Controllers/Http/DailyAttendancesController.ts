@@ -77,7 +77,7 @@ export default class DailyAttendancesController {
 	            2)),
 	            0) + round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,
 	            2)),
-	            0) as present_accumulation
+	            0) as present_accumulation,
               from
 	              academic.daily_attendances da
               left join academic.students s 
@@ -95,10 +95,10 @@ export default class DailyAttendancesController {
               	c.id
               order by c.name
               limit ${limit}
-                        offset ${limit * (page - 1)}
+              offset ${(page - 1) * limit}
 
           `);
-
+          // data = meta
           data = {
             meta: {
               total: meta.rowCount,

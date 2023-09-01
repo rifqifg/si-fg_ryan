@@ -5,9 +5,9 @@ import { validate as uuidValidation } from "uuid";
 import UpdateTeachingValidator from "../../Validators/UpdateTeachingValidator";
 
 export default class TeachingsController {
-  public async index({request, response, params }: HttpContextContract) {
+  public async index({ request, response, params }: HttpContextContract) {
     const { teacher_id } = params;
-    const {subjectId = "", classId = ""} = request.qs()
+    const { subjectId = "", classId = "" } = request.qs();
     if (!uuidValidation(teacher_id)) {
       return response.badRequest({ message: "Teacher ID tidak valid" });
     }
@@ -27,7 +27,12 @@ export default class TeachingsController {
         .select("academic.teachings.*")
         .preload("class", (c) => c.select("id", "name"))
         .preload("subject", (s) => s.select("id", "name", "is_extracurricular"))
-        .if(subjectId, q => q.whereNot('subject_id', subjectId))
+        .if(subjectId && classId, (q) =>
+          q.andWhere((q) => {
+            q.where("subject_id", subjectId);
+            q.whereNot("class_id", classId);
+          })
+        )
         .if(classId, q => q.whereNot('class_id', classId))
         .andWhere((q) => {
           q.andWhereHas("class", (c) => c.where("is_graduated", false));

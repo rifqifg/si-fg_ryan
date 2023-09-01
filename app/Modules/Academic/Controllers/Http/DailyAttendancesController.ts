@@ -142,8 +142,8 @@ export default class DailyAttendancesController {
          s.name,
          c.name,
          s.nis,
-         c.id,
-        order by da.status, c.name
+         c.id
+        order by c.name
        limit ${limit}
                  offset ${limit * (page - 1)}
         

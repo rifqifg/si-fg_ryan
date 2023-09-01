@@ -12,6 +12,7 @@ import Database from "@ioc:Adonis/Lucid/Database";
 import Employee from "App/Models/Employee";
 import Student from "App/Modules/Academic/Models/Student";
 import UserRole from "App/Models/UserRole";
+import Account from "App/Modules/Finance/Models/Account";
 
 enum ROLE {
   EMPLOYEE = "employee",
@@ -61,6 +62,41 @@ export default class UsersController {
     }
   }
 
+  public async loginParent({ request, response, auth }: HttpContextContract) {
+    const loginParentValidator = schema.create({
+      va_number: schema.string({ trim: true }, [
+        rules.exists({ table: "finance.accounts", column: "number" }),
+      ]),
+      birthdate: schema.date({ format: "yyyy-MM-dd" }, [
+        rules.exists({ table: "academic.students", column: "birth_day" }),
+      ]),
+    })
+
+    const payload = await request.validate({ schema: loginParentValidator });
+    const birthdate = payload.birthdate.toSQLDate()!
+
+    try {
+      const account = await Account.query()
+        .preload('student', qStudent => qStudent.select('name'))
+        .whereHas('student', qStudent => {
+          qStudent.where('birth_day', birthdate)
+        })
+        .andWhere('number', payload.va_number)
+        .firstOrFail()
+
+      const token = await auth.use('parent_api').login(account)
+
+      response.ok({
+        message: "login succesfull",
+        token,
+        data: account,
+      });
+    } catch (error) {
+      // console.log(error);
+      return response.badRequest({ message: "Invalid credentials", error });
+    }
+  }
+
   public async googleCallback({
     request,
     response,
@@ -102,6 +138,12 @@ export default class UsersController {
     await auth.use("api").logout();
     await Database.manager.close("pg");
     response.ok({ message: "logged out" });
+  }
+
+  public async logoutParent({ auth, response }: HttpContextContract) {
+    await auth.use('parent_api').revoke();
+    await Database.manager.close("pg");
+    response.ok({ message: "logged out (parent)" });
   }
 
   public async register({ request, response }: HttpContextContract) {
@@ -263,7 +305,7 @@ export default class UsersController {
     try {
       const verifyPassword = await auth
         .use("api")
-        .verifyCredentials(auth.user!.email, payload.old_password);
+        .verifyCredentials(auth.use('api').user!.email, payload.old_password);
       console.log("password verified", verifyPassword);
     } catch (error) {
       response.unprocessableEntity({

@@ -93,8 +93,9 @@ export default class DailyAttendancesController {
               group by
               	c.name,
               	c.id
+              order by c.name
               limit ${limit}
-                        offset ${limit} * (${page}-1)
+                        offset ${limit * (page - 1)}
 
           `);
 
@@ -141,9 +142,10 @@ export default class DailyAttendancesController {
          s.name,
          c.name,
          s.nis,
-         c.id
+         c.id,
+        order by da.status, c.name
        limit ${limit}
-                 offset ${limit} * (${page}-1)
+                 offset ${limit * (page - 1)}
         
           `);
           data = {
@@ -171,6 +173,7 @@ export default class DailyAttendancesController {
             "s.id",
             "academic.daily_attendances.student_id"
           )
+          .joinRaw("left join academic.classes c on c.id = s.class_id")
           .preload(
             "student",
             (s) => (
@@ -181,7 +184,7 @@ export default class DailyAttendancesController {
           .whereBetween("date_in", [formattedStartDate, formattedEndDate])
           .if(sortingByAbsent, (q) => q.orderBy("status", "desc"))
           .whereHas("student", (s) => s.whereILike("name", `%${keyword}%`))
-          .orderBy("s.class_id")
+          .orderBy("c.name")
           .orderBy("academic.daily_attendances.created_at")
           .orderBy("s.name")
           .if(classId, (c) =>

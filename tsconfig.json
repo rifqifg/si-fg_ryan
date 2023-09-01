@@ -32,7 +32,10 @@
       ],
       "PPDB/*": [
         "./app/Modules/PPDB/*"
-      ]
+      ],
+      "Finance/*": [
+        "./app/Modules/Finance/*"
+      ],
     },
     "types": [
       "@adonisjs/core",

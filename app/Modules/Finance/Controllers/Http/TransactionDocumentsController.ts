@@ -58,10 +58,11 @@ export default class TransactionDocumentsController {
       const imageUrl = await financeDrive.getSignedUrl('transaction-documents/' + imageName, { expiresIn: '30mins' })
       const signedUrl = beHost + imageUrl
 
+      data.file = signedUrl
+
       response.ok({
         message: "Upload Success",
-        data,
-        image_url: signedUrl
+        data
       })
     } catch (error) {
       response.badRequest({

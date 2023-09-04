@@ -50,8 +50,8 @@ export default class DailyAttendancesController {
           }
           start.setDate(start.getDate() + 1);
         }
-        const agenda = await Agenda.query().select("date")
-        const agendaDate = agenda.map((agenda: Agenda) => agenda.date.toFormat("yyyy-MM-dd") + '00:00:00.000 +0700') 
+        // const agenda = await Agenda.query().select("date").where()
+        // const agendaDate = agenda.map((agenda: Agenda) => agenda.date.toFormat("yyyy-MM-dd").toString())
         // return agendaDate
         const whereClassId = classId ? `and c.id = '${classId}'` : "";
         if (recap === "kelas") {
@@ -99,7 +99,7 @@ export default class DailyAttendancesController {
 	                  date_in between '${formattedStartDate}' AND '${formattedEndDate}'
 	                  and c.is_graduated = false
                     ${whereClassId}
-                    
+                    and date_in not in  (select date from academic.agendas where count_presence = false)
               group by
               	c.name,
               	c.id
@@ -108,6 +108,7 @@ export default class DailyAttendancesController {
               offset ${(page - 1) * limit}
 
           `);
+          // return rows
           // const {total_data, ...rawData} = rows
           data = {
             meta: {
@@ -135,7 +136,7 @@ export default class DailyAttendancesController {
           round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as sick_precentage,
           round(cast(sum(case when status = 'absent' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as absent_precentage,
           round(cast(sum(case when status = 'present' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) + round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as present_accumulation,
-          (select count(distinc) from academic.daily_attendances) as total_data
+          (select count(*) from academic.daily_attendances) as total_data
        from
          academic.daily_attendances da
        left join academic.students s 
@@ -149,6 +150,7 @@ export default class DailyAttendancesController {
          and c.is_graduated = false
          and s.name ilike '%${keyword}%'
          ${whereClassId}
+         and date_in not in  (select date from academic.agendas where count_presence = false)
        group by
          s.name,
          c.name,
@@ -159,6 +161,7 @@ export default class DailyAttendancesController {
                  offset ${limit * (page - 1)}
         
           `);
+          
           data = {
             meta: {
               total: rows[0].total_data,

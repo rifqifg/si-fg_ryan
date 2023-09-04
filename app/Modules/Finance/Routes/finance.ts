@@ -10,6 +10,7 @@ Route.group(() => {
     Route.resource('accounts', 'AccountsController').apiOnly().middleware({ '*': ['auth'] })
     Route.resource('transactions', 'TransactionsController').apiOnly().middleware({ '*': ['auth'] })
     Route.resource('transaction-documents', 'TransactionDocumentsController').apiOnly().middleware({
+        'index': ['auth:api,parent_api'],
         'store': ['auth:parent_api']
     })
 

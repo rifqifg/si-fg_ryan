@@ -9,5 +9,8 @@ Route.group(() => {
     Route.put('billings', 'BillingsController.update').middleware(['auth'])
     Route.resource('accounts', 'AccountsController').apiOnly().middleware({ '*': ['auth'] })
     Route.resource('transactions', 'TransactionsController').apiOnly().middleware({ '*': ['auth'] })
+    Route.resource('transaction-documents', 'TransactionDocumentsController').apiOnly().middleware({
+        'store': ['auth:parent_api']
+    })
 
 }).prefix('finance').namespace('FinanceControllers')

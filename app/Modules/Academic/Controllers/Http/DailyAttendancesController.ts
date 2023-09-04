@@ -5,6 +5,7 @@ import { DateTime } from "luxon";
 import { validate as uuidValidation } from "uuid";
 import UpdateDailyAttendanceValidator from "../../Validators/UpdateDailyAttendanceValidator";
 import Database from "@ioc:Adonis/Lucid/Database";
+import Agenda from "../../Models/Agenda";
 
 export default class DailyAttendancesController {
   public async index({ request, response }: HttpContextContract) {
@@ -49,10 +50,12 @@ export default class DailyAttendancesController {
           }
           start.setDate(start.getDate() + 1);
         }
-
+        const agenda = await Agenda.query().select("date")
+        const agendaDate = agenda.map((agenda: Agenda) => agenda.date.toFormat("yyyy-MM-dd") + '00:00:00.000 +0700') 
+        // return agendaDate
         const whereClassId = classId ? `and c.id = '${classId}'` : "";
         if (recap === "kelas") {
-          const { rows, ...meta } = await Database.rawQuery(`
+          const { rows } = await Database.rawQuery(`
           select
 	            c.name as class_name,
 	            c.id as class_id,
@@ -78,6 +81,12 @@ export default class DailyAttendancesController {
 	            0) + round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,
 	            2)),
 	            0) as present_accumulation,
+              (select count(distinct  c.id) 
+              from academic.daily_attendances da
+              left join academic.students s
+                  on s.id = da.student_id
+              left join academic.classes c
+                  on s.class_id = c.id) as total_data
               from
 	              academic.daily_attendances da
               left join academic.students s 
@@ -90,6 +99,7 @@ export default class DailyAttendancesController {
 	                  date_in between '${formattedStartDate}' AND '${formattedEndDate}'
 	                  and c.is_graduated = false
                     ${whereClassId}
+                    
               group by
               	c.name,
               	c.id
@@ -98,17 +108,17 @@ export default class DailyAttendancesController {
               offset ${(page - 1) * limit}
 
           `);
-          // data = meta
+          // const {total_data, ...rawData} = rows
           data = {
             meta: {
-              total: meta.rowCount,
+              total: rows[0].total_data,
               per_page: +limit,
               current_page: +page,
             },
             data: rows,
           };
         } else if (recap === "siswa") {
-          const { rows, ...meta } = await Database.rawQuery(`
+          const { rows } = await Database.rawQuery(`
         select
           s."name" as student_name ,
           c.name as class_name,
@@ -124,7 +134,8 @@ export default class DailyAttendancesController {
           round(cast(sum(case when status = 'permission' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as permission_precentage,
           round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as sick_precentage,
           round(cast(sum(case when status = 'absent' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as absent_precentage,
-          round(cast(sum(case when status = 'present' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) + round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as present_accumulation
+          round(cast(sum(case when status = 'present' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) + round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as present_accumulation,
+          (select count(distinc) from academic.daily_attendances) as total_data
        from
          academic.daily_attendances da
        left join academic.students s 
@@ -150,7 +161,7 @@ export default class DailyAttendancesController {
           `);
           data = {
             meta: {
-              total: meta.rowCount,
+              total: rows[0].total_data,
               per_page: +limit,
               current_page: +page,
             },

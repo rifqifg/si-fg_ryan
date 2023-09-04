@@ -1,6 +1,9 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Database from '@ioc:Adonis/Lucid/Database';
 import Activity from 'App/Models/Activity';
+import ActivityMember from 'App/Models/ActivityMember';
+import Presence from 'App/Models/Presence';
+import SubActivity from 'App/Models/SubActivity';
 import User from 'App/Models/User';
 import CreateActivityValidator from 'App/Validators/CreateActivityValidator'
 import UpdateActivityValidator from 'App/Validators/UpdateActivityValidator';
@@ -128,6 +131,20 @@ export default class ActivitiesController {
   public async update({ request, response, params }: HttpContextContract) {
     const { id } = params
     const payload = await request.validate(UpdateActivityValidator)
+
+    // jika data yg di update ada activityType nya, maka perlu pengecekan
+    if (payload.activityType == "fixed_time") {
+      const cekSubActivity = await SubActivity.query().where('activity_id', id).first()
+      const cekMemberActivity = await ActivityMember.query().where('activity_id', id).first()
+      if (cekSubActivity || cekMemberActivity) {
+        return response.badRequest({ message: "Update data gagal, silahkan kosongkan data detailnya terlebih dahulu" })
+      }
+    } else {
+      const cek = await Presence.query().where('activity_id', id).first()
+      if (cek) {
+        return response.badRequest({ message: "Update data gagal, silahkan kosongkan data detailnya terlebih dahulu" })
+      }
+    }
 
     // validasi waktu agar tidak tabrakan dengan waktu pada activity dengan schedule aktif
     if (payload.type == 'scheduled') {

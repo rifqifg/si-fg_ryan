@@ -5,7 +5,6 @@ import { DateTime } from "luxon";
 import { validate as uuidValidation } from "uuid";
 import UpdateDailyAttendanceValidator from "../../Validators/UpdateDailyAttendanceValidator";
 import Database from "@ioc:Adonis/Lucid/Database";
-import Agenda from "../../Models/Agenda";
 
 export default class DailyAttendancesController {
   public async index({ request, response }: HttpContextContract) {
@@ -50,10 +49,9 @@ export default class DailyAttendancesController {
           }
           start.setDate(start.getDate() + 1);
         }
-        // const agenda = await Agenda.query().select("date").where()
-        // const agendaDate = agenda.map((agenda: Agenda) => agenda.date.toFormat("yyyy-MM-dd").toString())
-        // return agendaDate
+
         const whereClassId = classId ? `and c.id = '${classId}'` : "";
+
         if (recap === "kelas") {
           const { rows } = await Database.rawQuery(`
           select
@@ -108,11 +106,10 @@ export default class DailyAttendancesController {
               offset ${(page - 1) * limit}
 
           `);
-          // return rows
-          // const {total_data, ...rawData} = rows
+
           data = {
             meta: {
-              total: rows[0].total_data,
+              total: rows[0]?.total_data,
               per_page: +limit,
               current_page: +page,
             },
@@ -161,10 +158,10 @@ export default class DailyAttendancesController {
                  offset ${limit * (page - 1)}
         
           `);
-          
+
           data = {
             meta: {
-              total: rows[0].total_data,
+              total: rows[0]?.total_data,
               per_page: +limit,
               current_page: +page,
             },

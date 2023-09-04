@@ -43,7 +43,7 @@ export default class UpdateActivityValidator {
       rules.requiredWhen('activityType', '=', ActivityType.FIXED_TIME)
     ]),
     timeOutDefault: schema.date.nullableAndOptional({ format: 'HH:mm:ss' }),
-    maxWorkingDuration: schema.date.optional({ format: 'HH:mm:ss' }),
+    maxWorkingDuration: schema.date.nullableAndOptional({ format: 'HH:mm:ss' }),
     type: schema.enum.optional(['scheduled', 'standalone']),
     scheduleActive: schema.boolean.optional(),
     days: schema.string.optional(),

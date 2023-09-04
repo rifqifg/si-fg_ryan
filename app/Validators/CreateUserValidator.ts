@@ -32,9 +32,9 @@ export default class CreateUserValidator {
       rules.email(),
       rules.unique({ table: 'users', column: 'email' })
     ]),
-    role: schema.string({}, [
+    role: schema.array().members(schema.string({}, [
       rules.exists({ table: 'roles', column: 'name' })
-    ]),
+    ])),
     employee_id: schema.string.optional({}, [
       rules.exists({ table: 'employees', column: 'id' })
     ]),

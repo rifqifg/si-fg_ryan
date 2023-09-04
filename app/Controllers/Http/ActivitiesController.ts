@@ -1,6 +1,7 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Database from '@ioc:Adonis/Lucid/Database';
 import Activity from 'App/Models/Activity';
+import User from 'App/Models/User';
 import CreateActivityValidator from 'App/Validators/CreateActivityValidator'
 import UpdateActivityValidator from 'App/Validators/UpdateActivityValidator';
 import { DateTime } from 'luxon';
@@ -10,8 +11,11 @@ export default class ActivitiesController {
   public async index({ request, response, auth }: HttpContextContract) {
     const { page = 1, limit = 10, keyword = "", orderBy = "name", orderDirection = 'ASC' } = request.qs()
 
+    const user = await User.query().preload('roles', r => r.preload('role')).where('id', auth.use('api').user!.id).firstOrFail()
+    const userObject = JSON.parse(JSON.stringify(user))
+
     let data: object
-    if (auth.use('api').user!.role == 'super_admin') {
+    if (userObject.roles[0].role_name == 'super_admin') {
       data = await Activity.query()
         .preload('division', division => division.select('id', 'name'))
         .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
@@ -58,15 +62,22 @@ export default class ActivitiesController {
 
   public async getActivity({ request, response, auth }: HttpContextContract) {
     const { keyword = "", orderBy = "name", orderDirection = 'ASC' } = request.qs()
+
+    const user = await User.query().preload('roles', r => r.preload('role')).where('id', auth.use('api').user!.id).firstOrFail()
+    const userObject = JSON.parse(JSON.stringify(user))
     let data: object
 
-    if (auth.use('api').user!.role == 'super_admin') {
+    if (userObject.roles[0].role_name == 'super_admin') {
+      console.log('masuk sinikah?');
+
       data = await Activity.query()
         .preload('division', division => division.select('id', 'name'))
         .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
         .whereILike('name', `%${keyword}%`)
         .orderBy(orderBy, orderDirection)
     } else {
+      console.log('masuk sini ya');
+
       data = await Activity.query()
         .preload('division', division => division.select('id', 'name'))
         .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))

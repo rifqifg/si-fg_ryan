@@ -7,7 +7,7 @@ import Student from 'App/Modules/Academic/Models/Student';
 let newId = ""
 
 export default class TransactionDocument extends BaseModel {
-  public static table = 'finance.transactions';
+  public static table = 'finance.transaction_documents';
 
   @column({ isPrimary: true })
   public id: string

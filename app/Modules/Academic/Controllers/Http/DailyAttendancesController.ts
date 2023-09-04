@@ -109,7 +109,7 @@ export default class DailyAttendancesController {
 
           data = {
             meta: {
-              total: rows[0]?.total_data,
+              total: +rows[0]?.total_data,
               per_page: +limit,
               current_page: +page,
             },
@@ -161,7 +161,7 @@ export default class DailyAttendancesController {
 
           data = {
             meta: {
-              total: rows[0]?.total_data,
+              total: +rows[0]?.total_data,
               per_page: +limit,
               current_page: +page,
             },

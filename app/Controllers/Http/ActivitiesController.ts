@@ -210,7 +210,7 @@ export default class ActivitiesController {
       payload.timeOutStart ? formattedPayload['timeOutStart'] = payload.timeOutStart!.toFormat('HH:mm:ss') : payload.timeOutStart == null ? formattedPayload['timeOutStart'] = payload.timeOutStart : ''
       payload.timeOutEnd ? formattedPayload['timeOutEnd'] = payload.timeOutEnd!.toFormat('HH:mm:ss') : payload.timeOutEnd == null ? formattedPayload['timeOutEnd'] = payload.timeOutEnd : ''
       payload.timeOutDefault ? formattedPayload['timeOutDefault'] = payload.timeOutDefault!.toFormat('HH:mm:ss') : payload.timeOutDefault == null ? formattedPayload['timeOutDefault'] = payload.timeOutDefault : ''
-      payload.maxWorkingDuration ? formattedPayload['maxWorkingDuration'] = payload.maxWorkingDuration?.toFormat('HH:mm:00') : ''
+      payload.maxWorkingDuration ? formattedPayload['maxWorkingDuration'] = payload.maxWorkingDuration?.toFormat('HH:mm:00') : payload.maxWorkingDuration == null ? formattedPayload['maxWorkingDuration'] = payload.maxWorkingDuration : ''
       payload.type ? formattedPayload['type'] = payload.type : ''
       payload.scheduleActive ? formattedPayload['scheduleActive'] = payload.scheduleActive : ''
       payload.days ? formattedPayload['days'] = payload.days : ""

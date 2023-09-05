@@ -24,12 +24,9 @@ export default class CreateUserRoleValidator {
    *    ```
    */
   public schema = schema.create({
-    userId: schema.string({}, [
-      rules.exists({ table: 'users', column: 'id' })
-    ]),
-    roleName: schema.string({}, [
+    userRoles: schema.array().members(schema.string({}, [
       rules.exists({ table: 'roles', column: 'name' })
-    ]),
+    ]))
   })
 
   /**

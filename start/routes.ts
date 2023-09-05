@@ -70,7 +70,7 @@ Route.group(() => {
   Route.resource('roles.modules', 'System/RolesModulesController').only(['store', 'destroy', 'update']).middleware({ '*': ['auth', 'checkRole:admin'] }).as('roles.modules')
   Route.resource('roles.menus', 'System/RolesMenusController').only(['store', 'destroy', 'update']).middleware({ '*': ['auth', 'checkRole:admin'] }).as('roles.menus')
   Route.resource('roles.functions', 'System/RolesFunctionsController').only(['store', 'destroy', 'update']).middleware({ '*': ['auth', 'checkRole:admin'] }).as('roles.functions')
-  Route.post('user-roles', 'System/UserRolesController.store').middleware(['auth', 'checkRole:admin'])
+  Route.post('user-roles/:userId', 'System/UserRolesController.store').middleware(['auth', 'checkRole:admin'])
   Route.delete('user-roles/:userId/:roleName', 'System/UserRolesController.destroy').middleware(['auth', 'checkRole:admin'])
 }).prefix('/system')
 

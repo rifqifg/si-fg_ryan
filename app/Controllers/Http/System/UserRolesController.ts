@@ -3,11 +3,21 @@ import UserRole from 'App/Models/UserRole';
 import CreateUserRoleValidator from 'App/Validators/CreateUserRoleValidator'
 
 export default class UserRolesController {
-  public async store({ request, response }: HttpContextContract) {
+  public async store({ request, response, params }: HttpContextContract) {
+    const { userId } = params
+
     const payload = await request.validate(CreateUserRoleValidator)
+    const datas: any = []
+
+    payload.userRoles.map(role => {
+      datas.push({
+        userId: userId,
+        roleName: role
+      })
+    })
 
     try {
-      const data = await UserRole.create(payload)
+      const data = await UserRole.createMany(datas)
 
       response.ok({ message: "Role created successfully", data })
     } catch (error) {

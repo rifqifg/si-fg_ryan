@@ -12,6 +12,7 @@ export default class extends BaseSchema {
         table.uuid('student_id').references('id').inTable('academic.students').onDelete('set null').onUpdate('cascade')
         table.string('file').notNullable()
         table.string('description')
+        table.string('amount')
         table.enum('status', Object.values(TransactionStatus)).defaultTo(TransactionStatus.WAITING)
 
         /**

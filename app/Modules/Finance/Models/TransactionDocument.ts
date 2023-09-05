@@ -19,6 +19,9 @@ export default class TransactionDocument extends BaseModel {
   file: string
 
   @column()
+  amount: string
+
+  @column()
   description: string
 
   @column()

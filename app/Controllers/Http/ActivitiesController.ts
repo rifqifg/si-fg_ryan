@@ -139,7 +139,7 @@ export default class ActivitiesController {
       if (cekSubActivity || cekMemberActivity) {
         return response.badRequest({ message: "Update data gagal, silahkan kosongkan data detailnya terlebih dahulu" })
       }
-    } else {
+    } else if (payload.activityType == "not_fixed_time") {
       const cek = await Presence.query().where('activity_id', id).first()
       if (cek) {
         return response.badRequest({ message: "Update data gagal, silahkan kosongkan data detailnya terlebih dahulu" })

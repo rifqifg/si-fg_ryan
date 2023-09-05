@@ -15,6 +15,7 @@ export default class TransactionDocumentsController {
     try {
       const data = await TransactionDocument.query()
         .if(student_id, query => query.where('student_id', student_id))
+        .preload('student', qStudent => qStudent.select('nisn', 'name'))
         .paginate(page, limit)
 
       await Promise.all(data.map(async (tDoc) => {

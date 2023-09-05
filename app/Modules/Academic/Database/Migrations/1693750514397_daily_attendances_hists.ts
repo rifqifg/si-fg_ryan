@@ -48,7 +48,7 @@ export default class extends BaseSchema {
           old_data academic.daily_attendances_hists;
       BEGIN
           old_data := OLD;
-          UPDATE academic.daily_attendances_hists action_type = 'DELETE' WHERE id = old_data.id;
+          UPDATE academic.daily_attendances_hists SET action_type = 'DELETE' WHERE id = old_data.id;
           RETURN OLD;
       END;
       $$ LANGUAGE plpgsql;

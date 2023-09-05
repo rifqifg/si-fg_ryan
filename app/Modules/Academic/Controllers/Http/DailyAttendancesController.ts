@@ -84,7 +84,13 @@ export default class DailyAttendancesController {
               left join academic.students s
                   on s.id = da.student_id
               left join academic.classes c
-                  on s.class_id = c.id) as total_data
+                  on s.class_id = c.id
+              where
+                  date_in between '${formattedStartDate}' AND '${formattedEndDate}'
+                  and c.is_graduated = false
+                  ${whereClassId}
+                  and date_in not in  (select date from academic.agendas where count_presence = false)
+              ) as total_data
               from
 	              academic.daily_attendances da
               left join academic.students s 
@@ -133,7 +139,17 @@ export default class DailyAttendancesController {
           round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as sick_precentage,
           round(cast(sum(case when status = 'absent' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as absent_precentage,
           round(cast(sum(case when status = 'present' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) + round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as present_accumulation,
-          (select count(*) from academic.daily_attendances) as total_data
+          (select count(distinct da.student_id) from academic.daily_attendances da
+          left join academic.students s
+                  on s.id = da.student_id
+          left join academic.classes c
+                  on s.class_id = c.id
+          where
+                  date_in between '${formattedStartDate}' AND '${formattedEndDate}'
+                  and c.is_graduated = false
+                  ${whereClassId}
+                  and date_in not in  (select date from academic.agendas where count_presence = false)
+          ) as total_data
        from
          academic.daily_attendances da
        left join academic.students s 

@@ -98,4 +98,25 @@ export default class TransactionDocumentsController {
       })
     }
   }
+
+  public async destroy({ params, response }: HttpContextContract) {
+    const { id } = params;
+    if (!uuidValidation(id)) {
+      return response.badRequest({ message: "ID tidak valid" });
+    }
+
+    try {
+      const data = await TransactionDocument.findOrFail(id);
+      await data.delete();
+      response.ok({ message: "Berhasil menghapus data" });
+    } catch (error) {
+      const message = "TDOC-DES: " + error.message || error;
+      console.log(error);
+      response.badRequest({
+        message: "Gagal menghapus data",
+        error: message,
+        error_data: error,
+      });
+    }
+  }
 }

@@ -1,5 +1,5 @@
 import { DateTime } from 'luxon'
-import {BaseModel, BelongsTo, afterCreate, beforeCreate, belongsTo, column, hasOne, HasOne} from '@ioc:Adonis/Lucid/Orm'
+import {BaseModel, BelongsTo, afterCreate, beforeCreate, belongsTo, column} from '@ioc:Adonis/Lucid/Orm'
 import Session from './Session'
 import Class from './Class'
 import Subject from './Subject'
@@ -73,8 +73,8 @@ export default class TeacherAttendance extends BaseModel {
   @column()
   public programSemesterDetailId: string | null
 
-  @hasOne(() => ProgramSemesterDetail)
-  public prosemDetail: HasOne<typeof ProgramSemesterDetail>
+  @belongsTo(() => ProgramSemesterDetail)
+  public prosemDetail: BelongsTo<typeof ProgramSemesterDetail>
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime

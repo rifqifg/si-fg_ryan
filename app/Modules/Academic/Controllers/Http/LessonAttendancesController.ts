@@ -29,7 +29,10 @@ export default class LessonAttendancesController {
 
     if (recap && recap !== "false") {
       data = await LessonAttendance.query()
-        .select("academic.lesson_attendances.subject_id", "lesson_attendances.student_id")
+        .select(
+          "academic.lesson_attendances.subject_id",
+          "lesson_attendances.student_id"
+        )
         .leftJoin("academic.students as s", "s.id", "student_id")
         .leftJoin("academic.classes as c", "c.id", "s.class_id")
         .select(
@@ -59,7 +62,10 @@ export default class LessonAttendancesController {
             `round(cast(sum(case when status = 'absent' then 1 else 0 end) * 100.0 / (count(status))as decimal(10,2)),0) as absent_precentage`
           )
         )
-        .whereBetween("lesson_attendances.date", [formattedStartDate, formattedEndDate])
+        .whereBetween("lesson_attendances.date", [
+          formattedStartDate,
+          formattedEndDate,
+        ])
         .if(keyword, (k) =>
           k.whereHas("student", (s) => s.whereILike("name", `%${keyword}%`))
         )
@@ -79,7 +85,10 @@ export default class LessonAttendancesController {
         )
         // .preload("class", (c) => c.select("name").withCount("students"))
         .preload("subject", (s) => s.select("name"))
-        .groupBy("lesson_attendances.subject_id", "lesson_attendances.student_id")
+        .groupBy(
+          "lesson_attendances.subject_id",
+          "lesson_attendances.student_id"
+        )
         .paginate(page, limit);
 
       return response.ok({ message: "Berhasil mengambil data", data });
@@ -137,8 +146,13 @@ export default class LessonAttendancesController {
     }
 
     const data = await LessonAttendance.query()
-      .preload("student", (s) => s.select("name"))
-      .preload("class", (c) => c.select("name"))
+      .preload(
+        "student",
+        (s) => (
+          s.select("name", "classId"),
+          s.preload("class", (c) => c.select("name"))
+        )
+      )
       .preload("session", (s) => s.select("session"))
       .preload("subject", (s) => s.select("name"))
       .where("id", id)

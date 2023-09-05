@@ -50,10 +50,30 @@ export default class UsersController {
         })
         .firstOrFail();
 
+      const userObject = JSON.parse(JSON.stringify(user))
+      const roles = userObject.roles
+      const name: any = []
+      const descriptions: any = []
+      const modules = roles.reduce((prev, v) => {
+        name.push(v.role_name)
+        descriptions.push(v.descriptions)
+        return [...prev, v.role.permissions.modules]
+      }, [])
+      const modulesMerge: any = []
+      modules.map(value => {
+        value.map(m => {
+          modulesMerge.push(m)
+        })
+      })
+
+      userObject["role_name"] = name.toString()
+      userObject["role"] = { name: name.toString(), descriptions: descriptions.toString(), permissions: { modules: modulesMerge } }
+      delete userObject["roles"]
+
       response.ok({
         message: "login succesfull",
         token,
-        data: user,
+        data: userObject,
       });
     } catch (error) {
       console.log(error);
@@ -120,12 +140,33 @@ export default class UsersController {
     try {
       const user = await User.query()
         .where("email", "=", userGoogle.email)
-        .preload("roles", (r) => r.select("name", "permissions"))
+        .preload("roles", (query) => query.select("role_name").preload('role', r => r.select('name', 'permissions')))
         .preload("employee", (e) => e.preload("teacher", (t) => t.select("id")))
         .firstOrFail();
+
+      const userObject = JSON.parse(JSON.stringify(user))
+      const roles = userObject.roles
+      const name: any = []
+      const descriptions: any = []
+      const modules = roles.reduce((prev, v) => {
+        name.push(v.role_name)
+        descriptions.push(v.descriptions)
+        return [...prev, v.role.permissions.modules]
+      }, [])
+      const modulesMerge: any = []
+      modules.map(value => {
+        value.map(m => {
+          modulesMerge.push(m)
+        })
+      })
+
+      userObject["role_name"] = name.toString()
+      userObject["role"] = { name: name.toString(), descriptions: descriptions.toString(), permissions: { modules: modulesMerge } }
+      delete userObject["roles"]
+
       const tokenAuth = await auth.use("api").login(user);
 
-      response.ok({ message: "login berhasil", token: tokenAuth, data: user });
+      response.ok({ message: "login berhasil", token: tokenAuth, data: userObject });
     } catch (error) {
       return response.send({
         message: "Anda belum memiliki akun",

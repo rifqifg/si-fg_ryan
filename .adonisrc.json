@@ -60,7 +60,9 @@
     "Academic": "app/Modules/Academic",
     "AcademicControllers": "app/Modules/Academic/Controllers/Http",
     "PPDB": "app/Modules/PPDB",
-    "PPDBControllers": "app/Modules/PPDB/Controllers/Http"
+    "PPDBControllers": "app/Modules/PPDB/Controllers/Http",
+    "Finance": "app/Modules/Finance",
+    "FinanceControllers": "app/Modules/Finance/Controllers/Http"
   },
   "metaFiles": [
     {

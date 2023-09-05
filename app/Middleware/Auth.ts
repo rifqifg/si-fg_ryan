@@ -78,7 +78,7 @@ export default class AuthMiddleware {
       return response.unauthorized({ code: 'TOKEN', message: error.message || error })
     }
 
-    if (!auth.user!.verified) {
+    if (!auth.use('parent_api').isLoggedIn && !auth.use('api').user!.verified) {
       console.log("user belum verifikasi");
       return response.unauthorized({ code: "UNVERIFIED", message: "Email belum di verifikasi" })
     }

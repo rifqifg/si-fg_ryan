@@ -5,6 +5,8 @@ import Account from '../../Models/Account'
 import TransactionDocument from '../../Models/TransactionDocument'
 import Env from "@ioc:Adonis/Core/Env"
 import Drive from '@ioc:Adonis/Core/Drive'
+import { validate as uuidValidation } from "uuid"
+import UpdateTransactionDocumentValidator from '../../Validators/UpdateTransactionDocumentValidator'
 
 export default class TransactionDocumentsController {
   public async index({ request, response }: HttpContextContract) {
@@ -69,6 +71,31 @@ export default class TransactionDocumentsController {
         message: "TDOC-STO: Gagal menyimpan data",
         error: error.message,
       });
+    }
+  }
+
+  public async update({ request, response, params }: HttpContextContract) {
+    const { id } = params
+
+    if (!uuidValidation(id)) {
+      return response.badRequest({ message: "Activity ID tidak valid" })
+    }
+
+    const payload = await request.validate(UpdateTransactionDocumentValidator)
+
+    try {
+      const transactionDoc = await TransactionDocument.findOrFail(id)
+      const data = await transactionDoc.merge(payload).save()
+
+      response.ok({ message: "Berhasil mengubah data", data });      
+    } catch (error) {
+      const message = "TDOC-UPD: " + error.message || error;
+      console.log(error);
+      response.badRequest({
+        message: "Gagal mengubah data",
+        error: message,
+        error_data: error,
+      })
     }
   }
 }

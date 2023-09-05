@@ -11,7 +11,8 @@ Route.group(() => {
     Route.resource('transactions', 'TransactionsController').apiOnly().middleware({ '*': ['auth'] })
     Route.resource('transaction-documents', 'TransactionDocumentsController').apiOnly().middleware({
         'index': ['auth:api,parent_api'],
-        'store': ['auth:parent_api']
+        'store': ['auth:parent_api'],
+        'update': ['auth:api,parent_api']
     })
 
 }).prefix('finance').namespace('FinanceControllers')

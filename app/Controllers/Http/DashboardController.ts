@@ -24,8 +24,63 @@ export default class DashboardController {
         })
       })
 
+      const simplifiedModules = {};
+
+      modulesMerge.forEach(module => {
+        if (!simplifiedModules[module.id]) {
+          simplifiedModules[module.id] = { id: module.id, type: [], menus: [] };
+        }
+
+        if (module.type === "show" && !simplifiedModules[module.id].type.includes("show")) {
+          simplifiedModules[module.id].type.push("show");
+        } else if (module.type === "disabled" && !simplifiedModules[module.id].type.includes("disabled")) {
+          simplifiedModules[module.id].type.push("disabled");
+        }
+
+        if (module.menus) {
+          module.menus.forEach(menu => {
+            const existingMenu = simplifiedModules[module.id].menus.find(existing => existing.id === menu.id);
+            if (!existingMenu) {
+              const simplifiedMenu: any = { id: menu.id, type: [] };
+              if (menu.type === "show" && !simplifiedMenu.type.includes("show")) {
+                simplifiedMenu.type.push("show");
+              } else if (menu.type === "disabled" && !simplifiedMenu.type.includes("disabled")) {
+                simplifiedMenu.type.push("disabled");
+              }
+
+              if (menu.functions) {
+                simplifiedMenu.functions = menu.functions.reduce((acc, func) => {
+                  if (func.type !== "disabled" && !acc.find(f => f.id === func.id)) {
+                    acc.push({ id: func.id, type: func.type });
+                  }
+                  return acc;
+                }, []);
+              }
+
+              simplifiedModules[module.id].menus.push(simplifiedMenu);
+            } else {
+              if (menu.type === "show" && !existingMenu.type.includes("show")) {
+                existingMenu.type.push("show");
+              } else if (menu.type === "disabled" && !existingMenu.type.includes("disabled")) {
+                existingMenu.type.push("disabled");
+              }
+
+              if (menu.functions) {
+                menu.functions.forEach(func => {
+                  if (func.type !== "disabled" && !existingMenu.functions.find(f => f.id === func.id)) {
+                    existingMenu.functions.push({ id: func.id, type: func.type });
+                  }
+                });
+              }
+            }
+          });
+        }
+      });
+
+      const modulesSimple = Object.values(simplifiedModules);
+
       dataObject[0]["role_name"] = name.toString()
-      dataObject[0]["role"] = {name: name.toString(), descriptions: descriptions.toString(), permissions: {modules: modulesMerge}}
+      dataObject[0]["role"] = {name: name.toString(), descriptions: descriptions.toString(), permissions: {modules: modulesSimple}}
       delete dataObject[0]["roles"]
 
       response.ok({ message: 'you are logged in', data: dataObject })

@@ -59,6 +59,7 @@ export default class UsersController {
         descriptions.push(v.descriptions)
         return [...prev, v.role.permissions.modules]
       }, [])
+
       const modulesMerge: any = []
       modules.map(value => {
         value.map(m => {
@@ -66,8 +67,63 @@ export default class UsersController {
         })
       })
 
+      const simplifiedModules = {};
+
+      modulesMerge.forEach(module => {
+        if (!simplifiedModules[module.id]) {
+          simplifiedModules[module.id] = { id: module.id, type: [], menus: [] };
+        }
+
+        if (module.type === "show" && !simplifiedModules[module.id].type.includes("show")) {
+          simplifiedModules[module.id].type.push("show");
+        } else if (module.type === "disabled" && !simplifiedModules[module.id].type.includes("disabled")) {
+          simplifiedModules[module.id].type.push("disabled");
+        }
+
+        if (module.menus) {
+          module.menus.forEach(menu => {
+            const existingMenu = simplifiedModules[module.id].menus.find(existing => existing.id === menu.id);
+            if (!existingMenu) {
+              const simplifiedMenu: any = { id: menu.id, type: [] };
+              if (menu.type === "show" && !simplifiedMenu.type.includes("show")) {
+                simplifiedMenu.type.push("show");
+              } else if (menu.type === "disabled" && !simplifiedMenu.type.includes("disabled")) {
+                simplifiedMenu.type.push("disabled");
+              }
+
+              if (menu.functions) {
+                simplifiedMenu.functions = menu.functions.reduce((acc, func) => {
+                  if (func.type !== "disabled" && !acc.find(f => f.id === func.id)) {
+                    acc.push({ id: func.id, type: func.type });
+                  }
+                  return acc;
+                }, []);
+              }
+
+              simplifiedModules[module.id].menus.push(simplifiedMenu);
+            } else {
+              if (menu.type === "show" && !existingMenu.type.includes("show")) {
+                existingMenu.type.push("show");
+              } else if (menu.type === "disabled" && !existingMenu.type.includes("disabled")) {
+                existingMenu.type.push("disabled");
+              }
+
+              if (menu.functions) {
+                menu.functions.forEach(func => {
+                  if (func.type !== "disabled" && !existingMenu.functions.find(f => f.id === func.id)) {
+                    existingMenu.functions.push({ id: func.id, type: func.type });
+                  }
+                });
+              }
+            }
+          });
+        }
+      });
+
+      const modulesSimple = Object.values(simplifiedModules);
+
       userObject["role_name"] = name.toString()
-      userObject["role"] = { name: name.toString(), descriptions: descriptions.toString(), permissions: { modules: modulesMerge } }
+      userObject["role"] = { name: name.toString(), descriptions: descriptions.toString(), permissions: { modules: modulesSimple } }
       delete userObject["roles"]
 
       response.ok({
@@ -153,6 +209,7 @@ export default class UsersController {
         descriptions.push(v.descriptions)
         return [...prev, v.role.permissions.modules]
       }, [])
+
       const modulesMerge: any = []
       modules.map(value => {
         value.map(m => {
@@ -160,13 +217,68 @@ export default class UsersController {
         })
       })
 
+      const simplifiedModules = {};
+
+      modulesMerge.forEach(module => {
+        if (!simplifiedModules[module.id]) {
+          simplifiedModules[module.id] = { id: module.id, type: [], menus: [] };
+        }
+
+        if (module.type === "show" && !simplifiedModules[module.id].type.includes("show")) {
+          simplifiedModules[module.id].type.push("show");
+        } else if (module.type === "disabled" && !simplifiedModules[module.id].type.includes("disabled")) {
+          simplifiedModules[module.id].type.push("disabled");
+        }
+
+        if (module.menus) {
+          module.menus.forEach(menu => {
+            const existingMenu = simplifiedModules[module.id].menus.find(existing => existing.id === menu.id);
+            if (!existingMenu) {
+              const simplifiedMenu: any = { id: menu.id, type: [] };
+              if (menu.type === "show" && !simplifiedMenu.type.includes("show")) {
+                simplifiedMenu.type.push("show");
+              } else if (menu.type === "disabled" && !simplifiedMenu.type.includes("disabled")) {
+                simplifiedMenu.type.push("disabled");
+              }
+
+              if (menu.functions) {
+                simplifiedMenu.functions = menu.functions.reduce((acc, func) => {
+                  if (func.type !== "disabled" && !acc.find(f => f.id === func.id)) {
+                    acc.push({ id: func.id, type: func.type });
+                  }
+                  return acc;
+                }, []);
+              }
+
+              simplifiedModules[module.id].menus.push(simplifiedMenu);
+            } else {
+              if (menu.type === "show" && !existingMenu.type.includes("show")) {
+                existingMenu.type.push("show");
+              } else if (menu.type === "disabled" && !existingMenu.type.includes("disabled")) {
+                existingMenu.type.push("disabled");
+              }
+
+              if (menu.functions) {
+                menu.functions.forEach(func => {
+                  if (func.type !== "disabled" && !existingMenu.functions.find(f => f.id === func.id)) {
+                    existingMenu.functions.push({ id: func.id, type: func.type });
+                  }
+                });
+              }
+            }
+          });
+        }
+      });
+
+      const modulesSimple = Object.values(simplifiedModules);
+
       userObject["role_name"] = name.toString()
-      userObject["role"] = { name: name.toString(), descriptions: descriptions.toString(), permissions: { modules: modulesMerge } }
+      userObject["role"] = { name: name.toString(), descriptions: descriptions.toString(), permissions: { modules: modulesSimple } }
       delete userObject["roles"]
 
       const tokenAuth = await auth.use("api").login(user);
 
-      response.ok({ message: "login berhasil", token: tokenAuth, data: userObject });
+      response.ok({ message: "login berhasil", token: tokenAuth, data: modulesSimple });
     } catch (error) {
       return response.send({
         message: "Anda belum memiliki akun",

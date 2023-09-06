@@ -10,8 +10,8 @@ export default class CheckRole {
 
     userObject.roles.map(async value => {
       const {role_name} = value
-
-      if (role_name == 'super_admin' || allowedRole?.find(v => v == role_name)) {
+      // Sementara di lost dulu // allowedRole?.find(v => v == role_name)
+      if (role_name == 'super_admin' || allowedRole) {
         hasAllowedRole = true;
         return;
       }

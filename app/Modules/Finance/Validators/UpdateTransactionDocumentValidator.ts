@@ -9,7 +9,7 @@ export default class UpdateTransactionDocumentValidator {
     description: schema.string.optional({ trim: true }),
     status: schema.enum.optional(Object.values(TransactionStatus)),
     amount: schema.string.optional([
-      rules.requiredWhen('status', '=', 'approved'),
+      // rules.requiredWhen('status', '=', 'approved'),
       rules.regex(new RegExp("^[1-9][0-9]*$")),
     ]),
   })

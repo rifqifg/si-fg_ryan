@@ -51,8 +51,9 @@ export default class DailyAttendancesController {
         }
 
         const whereClassId = classId ? `and c.id = '${classId}'` : "";
+
         if (recap === "kelas") {
-          const { rows, ...meta } = await Database.rawQuery(`
+          const { rows } = await Database.rawQuery(`
           select
 	            c.name as class_name,
 	            c.id as class_id,
@@ -77,7 +78,19 @@ export default class DailyAttendancesController {
 	            2)),
 	            0) + round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,
 	            2)),
-	            0) as present_accumulation
+	            0) as present_accumulation,
+              (select count(distinct  c.id) 
+              from academic.daily_attendances da
+              left join academic.students s
+                  on s.id = da.student_id
+              left join academic.classes c
+                  on s.class_id = c.id
+              where
+                  date_in between '${formattedStartDate}' AND '${formattedEndDate}'
+                  and c.is_graduated = false
+                  ${whereClassId}
+                  and date_in not in  (select date from academic.agendas where count_presence = false)
+              ) as total_data
               from
 	              academic.daily_attendances da
               left join academic.students s 
@@ -90,27 +103,30 @@ export default class DailyAttendancesController {
 	                  date_in between '${formattedStartDate}' AND '${formattedEndDate}'
 	                  and c.is_graduated = false
                     ${whereClassId}
+                    and date_in not in  (select date from academic.agendas where count_presence = false)
               group by
               	c.name,
               	c.id
+              order by c.name
               limit ${limit}
-                        offset ${limit} * (${page}-1)
+              offset ${(page - 1) * limit}
 
           `);
 
           data = {
             meta: {
-              total: meta.rowCount,
+              total: +rows[0]?.total_data,
               per_page: +limit,
               current_page: +page,
             },
             data: rows,
           };
         } else if (recap === "siswa") {
-          const { rows, ...meta } = await Database.rawQuery(`
+          const { rows } = await Database.rawQuery(`
         select
           s."name" as student_name ,
           c.name as class_name,
+          c.id as class_id,
           s.nis as nis,
           sum(case when da.status = 'present' then 1 else 0 end) as present,
           sum(case when da.status = 'permission' then 1 else 0 end) as permission,
@@ -122,7 +138,18 @@ export default class DailyAttendancesController {
           round(cast(sum(case when status = 'permission' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as permission_precentage,
           round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as sick_precentage,
           round(cast(sum(case when status = 'absent' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as absent_precentage,
-          round(cast(sum(case when status = 'present' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) + round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as present_accumulation
+          round(cast(sum(case when status = 'present' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) + round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,2)),0) as present_accumulation,
+          (select count(distinct da.student_id) from academic.daily_attendances da
+          left join academic.students s
+                  on s.id = da.student_id
+          left join academic.classes c
+                  on s.class_id = c.id
+          where
+                  date_in between '${formattedStartDate}' AND '${formattedEndDate}'
+                  and c.is_graduated = false
+                  ${whereClassId}
+                  and date_in not in  (select date from academic.agendas where count_presence = false)
+          ) as total_data
        from
          academic.daily_attendances da
        left join academic.students s 
@@ -132,20 +159,25 @@ export default class DailyAttendancesController {
                  on
          c.id = s.class_id
        where
-         date_in between '2023-07-17' and '2023-08-17'
+         date_in between '${formattedStartDate}' AND '${formattedEndDate}'
          and c.is_graduated = false
          and s.name ilike '%${keyword}%'
+         ${whereClassId}
+         and date_in not in  (select date from academic.agendas where count_presence = false)
        group by
          s.name,
          c.name,
-         s.nis
+         s.nis,
+         c.id
+        order by c.name
        limit ${limit}
-                 offset ${limit} * (${page}-1)
+                 offset ${limit * (page - 1)}
         
           `);
+
           data = {
             meta: {
-              total: meta.rowCount,
+              total: +rows[0]?.total_data,
               per_page: +limit,
               current_page: +page,
             },
@@ -168,6 +200,7 @@ export default class DailyAttendancesController {
             "s.id",
             "academic.daily_attendances.student_id"
           )
+          .joinRaw("left join academic.classes c on c.id = s.class_id")
           .preload(
             "student",
             (s) => (
@@ -178,7 +211,7 @@ export default class DailyAttendancesController {
           .whereBetween("date_in", [formattedStartDate, formattedEndDate])
           .if(sortingByAbsent, (q) => q.orderBy("status", "desc"))
           .whereHas("student", (s) => s.whereILike("name", `%${keyword}%`))
-          .orderBy("s.class_id")
+          .orderBy("c.name")
           .orderBy("academic.daily_attendances.created_at")
           .orderBy("s.name")
           .if(classId, (c) =>

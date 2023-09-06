@@ -8,6 +8,7 @@ import UpdateTeacherAttendanceValidator from "../../Validators/UpdateTeacherAtte
 import Database from "@ioc:Adonis/Lucid/Database";
 import Teacher from "../../Models/Teacher";
 import User from "App/Models/User";
+import LessonAttendance from "../../Models/LessonAttendance";
 
 export default class TeacherAttendancesController {
   public async index({ request, response }: HttpContextContract) {
@@ -90,6 +91,7 @@ export default class TeacherAttendancesController {
       .preload("class", (c) => c.select("name"))
       .preload("session", (s) => s.select("session"))
       .preload("subject", (s) => s.select("name"))
+      .preload("prosemDetail", (pd) => pd.select("materi", "kompetensiDasar"))
       .orderBy("date_in", "desc")
       .paginate(page, limit);
 
@@ -128,7 +130,22 @@ export default class TeacherAttendancesController {
       .where("id", id)
       .firstOrFail();
 
-    response.ok({ message: "Berhasil mengambil data", data });
+    const student = await LessonAttendance.query()
+      .select("*")
+      .preload(
+        "student",
+        (s) => (
+          s.select("name", "classId"),
+          s.preload("class", (c) => c.select("name"))
+        )
+      )
+      .where("session_id", data.sessionId)
+      .where("subject_id", data.subjectId)
+      .where("date", `'${data.date_in}'`);
+    response.ok({
+      message: "Berhasil mengambil data",
+      data: { data, student },
+    });
   }
 
   public async update({

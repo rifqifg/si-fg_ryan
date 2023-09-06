@@ -71,24 +71,24 @@ export default class UsersController {
 
       modulesMerge.forEach(module => {
         if (!simplifiedModules[module.id]) {
-          simplifiedModules[module.id] = { id: module.id, type: [], menus: [] };
+          simplifiedModules[module.id] = { id: module.id, type: "", menus: [] };
         }
 
-        if (module.type === "show" && !simplifiedModules[module.id].type.includes("show")) {
-          simplifiedModules[module.id].type.push("show");
-        } else if (module.type === "disabled" && !simplifiedModules[module.id].type.includes("disabled")) {
-          simplifiedModules[module.id].type.push("disabled");
+        if (module.type === "show" && simplifiedModules[module.id].type !== "disabled") {
+          simplifiedModules[module.id].type = "show";
+        } else if (module.type === "disabled" && simplifiedModules[module.id].type !== "show") {
+          simplifiedModules[module.id].type = "disabled";
         }
 
         if (module.menus) {
           module.menus.forEach(menu => {
             const existingMenu = simplifiedModules[module.id].menus.find(existing => existing.id === menu.id);
             if (!existingMenu) {
-              const simplifiedMenu: any = { id: menu.id, type: [] };
-              if (menu.type === "show" && !simplifiedMenu.type.includes("show")) {
-                simplifiedMenu.type.push("show");
-              } else if (menu.type === "disabled" && !simplifiedMenu.type.includes("disabled")) {
-                simplifiedMenu.type.push("disabled");
+              const simplifiedMenu: any = { id: menu.id, type: "" };
+              if (menu.type === "show" && simplifiedMenu.type !== "disabled") {
+                simplifiedMenu.type = "show";
+              } else if (menu.type === "disabled" && simplifiedMenu.type !== "show") {
+                simplifiedMenu.type = "disabled";
               }
 
               if (menu.functions) {
@@ -102,10 +102,10 @@ export default class UsersController {
 
               simplifiedModules[module.id].menus.push(simplifiedMenu);
             } else {
-              if (menu.type === "show" && !existingMenu.type.includes("show")) {
-                existingMenu.type.push("show");
-              } else if (menu.type === "disabled" && !existingMenu.type.includes("disabled")) {
-                existingMenu.type.push("disabled");
+              if (menu.type === "show" && existingMenu.type !== "disabled") {
+                existingMenu.type = "show";
+              } else if (menu.type === "disabled" && existingMenu.type !== "show") {
+                existingMenu.type = "disabled";
               }
 
               if (menu.functions) {
@@ -221,24 +221,24 @@ export default class UsersController {
 
       modulesMerge.forEach(module => {
         if (!simplifiedModules[module.id]) {
-          simplifiedModules[module.id] = { id: module.id, type: [], menus: [] };
+          simplifiedModules[module.id] = { id: module.id, type: "", menus: [] };
         }
 
-        if (module.type === "show" && !simplifiedModules[module.id].type.includes("show")) {
-          simplifiedModules[module.id].type.push("show");
-        } else if (module.type === "disabled" && !simplifiedModules[module.id].type.includes("disabled")) {
-          simplifiedModules[module.id].type.push("disabled");
+        if (module.type === "show" && simplifiedModules[module.id].type !== "disabled") {
+          simplifiedModules[module.id].type = "show";
+        } else if (module.type === "disabled" && simplifiedModules[module.id].type !== "show") {
+          simplifiedModules[module.id].type = "disabled";
         }
 
         if (module.menus) {
           module.menus.forEach(menu => {
             const existingMenu = simplifiedModules[module.id].menus.find(existing => existing.id === menu.id);
             if (!existingMenu) {
-              const simplifiedMenu: any = { id: menu.id, type: [] };
-              if (menu.type === "show" && !simplifiedMenu.type.includes("show")) {
-                simplifiedMenu.type.push("show");
-              } else if (menu.type === "disabled" && !simplifiedMenu.type.includes("disabled")) {
-                simplifiedMenu.type.push("disabled");
+              const simplifiedMenu: any = { id: menu.id, type: "" };
+              if (menu.type === "show" && simplifiedMenu.type !== "disabled") {
+                simplifiedMenu.type = "show";
+              } else if (menu.type === "disabled" && simplifiedMenu.type !== "show") {
+                simplifiedMenu.type = "disabled";
               }
 
               if (menu.functions) {
@@ -252,10 +252,10 @@ export default class UsersController {
 
               simplifiedModules[module.id].menus.push(simplifiedMenu);
             } else {
-              if (menu.type === "show" && !existingMenu.type.includes("show")) {
-                existingMenu.type.push("show");
-              } else if (menu.type === "disabled" && !existingMenu.type.includes("disabled")) {
-                existingMenu.type.push("disabled");
+              if (menu.type === "show" && existingMenu.type !== "disabled") {
+                existingMenu.type = "show";
+              } else if (menu.type === "disabled" && existingMenu.type !== "show") {
+                existingMenu.type = "disabled";
               }
 
               if (menu.functions) {

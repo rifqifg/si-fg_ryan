@@ -5,18 +5,19 @@ export default class extends BaseSchema {
 
   public async up () {
     this.schema.alterTable(this.tableName, (table) => {
-    this.schema.raw("DROP TRIGGER IF EXISTS daily_attendance_hist_insert ON academic.daily_attendances;")
-    this.schema.raw("DROP FUNCTION IF EXISTS log_daily_attendance_insert() CASCADE;")
-    this.schema.raw("DROP TRIGGER IF EXISTS daily_attendance_hist_update ON academic.daily_attendances;")
-    this.schema.raw("DROP FUNCTION IF EXISTS log_daily_attendance_update() CASCADE;")
-    this.schema.raw("DROP TRIGGER IF EXISTS daily_attendance_hist_delete ON academic.daily_attendances;")
-    this.schema.raw("DROP FUNCTION IF EXISTS log_daily_attendance_delete() CASCADE;")
-      
-    this.schema.raw(`
+      table.string('action_type').notNullable()
+      table.dropColumn('class_id')
+      this.schema.raw("DROP TRIGGER IF EXISTS daily_attendance_hist_insert ON academic.daily_attendances;")
+      this.schema.raw("DROP FUNCTION IF EXISTS log_daily_attendance_insert() CASCADE;")
+      this.schema.raw("DROP TRIGGER IF EXISTS daily_attendance_hist_update ON academic.daily_attendances;")
+      this.schema.raw("DROP FUNCTION IF EXISTS log_daily_attendance_update() CASCADE;")
+      this.schema.raw("DROP TRIGGER IF EXISTS daily_attendance_hist_delete ON academic.daily_attendances;")
+      this.schema.raw("DROP FUNCTION IF EXISTS log_daily_attendance_delete() CASCADE;")
+      this.schema.raw(`
       ------ FUNCTIONS ------
       CREATE OR REPLACE FUNCTION log_daily_attendance_insert() RETURNS TRIGGER AS $$
       BEGIN
-          INSERT INTO academic.daily_attendances_hists (daily_attendance_id, date_in, date_out, status, description, student_id)
+          INSERT INTO academic.daily_attendances_hists (daily_attendance_id, date_in, action_type, date_out, status, description, student_id)
           VALUES (new.id, NEW.date_in, 'INSERT', NEW.date_out, NEW.status, NEW.description, NEW.student_id);
           RETURN NEW;
       END;
@@ -29,8 +30,8 @@ export default class extends BaseSchema {
       ------ FUNCTIONS ------
       CREATE OR REPLACE FUNCTION log_daily_attendance_update() RETURNS TRIGGER AS $$
       BEGIN
-          INSERT INTO academic.daily_attendances_hists (daily_attendance_id, date_in, date_out, status, description,  student_id)
-          VALUES (new.id, NEW.daily_attendance_id, NEW.date_in, 'INSERT', NEW.date_out, NEW.status, NEW.description, NEW.student_id);
+          INSERT INTO academic.daily_attendances_hists (daily_attendance_id, date_in, action_type, date_out, status, description, student_id)
+          VALUES (new.id, NEW.date_in, 'UPDATE', NEW.date_out, NEW.status, NEW.description, NEW.student_id);
           RETURN NEW;
       END;
       $$ LANGUAGE plpgsql;
@@ -54,22 +55,19 @@ export default class extends BaseSchema {
       CREATE TRIGGER daily_attendance_hist_delete BEFORE DELETE ON academic.daily_attendances
       FOR EACH ROW EXECUTE FUNCTION log_daily_attendance_delete();
     `)
-  
-  })
-
-    
+    })
   }
 
   public async down () {
     this.schema.alterTable(this.tableName, (table) => {
+      table.dropColumn('action_type')
+      table.uuid('class_id').references('id').inTable('academic.classes').onDelete('cascade').onUpdate('cascade')
       this.schema.raw("DROP TRIGGER IF EXISTS daily_attendance_hist_insert ON academic.daily_attendances;")
       this.schema.raw("DROP FUNCTION IF EXISTS log_daily_attendance_insert() CASCADE;")
       this.schema.raw("DROP TRIGGER IF EXISTS daily_attendance_hist_update ON academic.daily_attendances;")
       this.schema.raw("DROP FUNCTION IF EXISTS log_daily_attendance_update() CASCADE;")
       this.schema.raw("DROP TRIGGER IF EXISTS daily_attendance_hist_delete ON academic.daily_attendances;")
       this.schema.raw("DROP FUNCTION IF EXISTS log_daily_attendance_delete() CASCADE;")
-       
     })
   }
 }
-

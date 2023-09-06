@@ -114,7 +114,7 @@ export default class extends BaseSchema {
   }
 
   public async down () {
-    this.schema.dropTable(this.tableName)
+    this.schema.withSchema('academic').dropTable(this.tableName)
     this.schema.raw("DROP TRIGGER IF EXISTS student_hist_insert ON academic.students;")
     this.schema.raw("DROP FUNCTION IF EXISTS log_student_insert() CASCADE;")
     this.schema.raw("DROP TRIGGER IF EXISTS student_hist_update ON academic.students;")

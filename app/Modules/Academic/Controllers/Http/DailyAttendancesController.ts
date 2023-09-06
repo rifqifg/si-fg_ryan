@@ -209,11 +209,11 @@ export default class DailyAttendancesController {
             )
           )
           .whereBetween("date_in", [formattedStartDate, formattedEndDate])
-          .if(sortingByAbsent, (q) => q.orderBy("status", "desc"))
           .whereHas("student", (s) => s.whereILike("name", `%${keyword}%`))
+          .if(sortingByAbsent, (q) => q.orderBy("status", "desc"))
           .orderBy("c.name")
-          .orderBy("academic.daily_attendances.created_at")
           .orderBy("s.name")
+          .orderBy("academic.daily_attendances.created_at")
           .if(classId, (c) =>
             c.whereHas("student", (st) => st.where("class_id", classId))
           )

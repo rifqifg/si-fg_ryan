@@ -7,8 +7,10 @@ export default class extends BaseSchema {
     this.schema.withSchema('academic')
     .createTable(this.tableName, (table) => {
       table.uuid('id').primary().notNullable().unique().defaultTo(this.raw("gen_random_uuid()"))
-      table.uuid('lesson_attendance').references('id').inTable('academic.lesson_attendances').notNullable().onDelete('no action')
+      table.uuid('lesson_attendance_id')
+      // table.uuid('lesson_attendance_id').references('id').inTable('academic.lesson_attendances').onDelete('set null')
       table.dateTime('date', { useTz: false }).notNullable()
+      table.string('action_type').notNullable()
       table.enum('status', ['present', 'permission', 'sick', 'absent']).notNullable()
       table.string('description')
 
@@ -20,7 +22,7 @@ export default class extends BaseSchema {
       ------ FUNCTIONS ------
       CREATE OR REPLACE FUNCTION log_lesson_attendance_insert() RETURNS TRIGGER AS $$
       BEGIN
-          INSERT INTO academic.lesson_attendances_hists (lesson_attendance_id, date, status, description, session_id, student_id, subject_id)
+          INSERT INTO academic.lesson_attendances_hists (lesson_attendance_id, date, action_type, status, description, session_id, student_id, subject_id)
           VALUES (new.id, NEW.date, 'INSERT', NEW.status, NEW.description, NEW.session_id, NEW.student_id, NEW.subject_id);
           RETURN NEW;
       END;
@@ -33,8 +35,8 @@ export default class extends BaseSchema {
       ------ FUNCTIONS ------
       CREATE OR REPLACE FUNCTION log_lesson_attendance_update() RETURNS TRIGGER AS $$
       BEGIN
-          INSERT INTO academic.lesson_attendances_hists (lesson_attendance_id, date, status, description, session_id, student_id, subject_id)
-          VALUES (new.id, NEW.lesson_attendance_id, NEW.date, 'INSERT', NEW.status, NEW.description, NEW.session_id, NEW.student_id, NEW.subject_id);
+          INSERT INTO academic.lesson_attendances_hists (lesson_attendance_id, date, action_type, status, description, session_id, student_id, subject_id)
+          VALUES (new.id, NEW.date, 'UPDATE', NEW.status, NEW.description, NEW.session_id, NEW.student_id, NEW.subject_id);
           RETURN NEW;
       END;
       $$ LANGUAGE plpgsql;
@@ -46,10 +48,11 @@ export default class extends BaseSchema {
       ------ FUNCTIONS ------
       CREATE OR REPLACE FUNCTION log_lesson_attendance_delete() RETURNS TRIGGER AS $$
       DECLARE
-          old_data academic.lesson_attendances_hists;
+          old_data academic.lesson_attendances;
       BEGIN
           old_data := OLD;
-          UPDATE academic.lesson_attendances_hists SET action_type = 'DELETE' WHERE id = old_data.id;
+          INSERT INTO academic.lesson_attendances_hists (lesson_attendance_id, date, action_type, status, description, session_id, student_id, subject_id)
+          VALUES (OLD.id, OLD.date, 'DELETE', OLD.status, OLD.description, OLD.session_id, OLD.student_id, OLD.subject_id);
           RETURN OLD;
       END;
       $$ LANGUAGE plpgsql;

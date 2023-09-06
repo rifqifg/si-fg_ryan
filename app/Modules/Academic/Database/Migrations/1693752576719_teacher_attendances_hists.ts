@@ -7,11 +7,13 @@ export default class extends BaseSchema {
     this.schema.withSchema('academic').
     createTable(this.tableName, (table) => {
       table.uuid('id').primary().notNullable().unique().defaultTo(this.raw("gen_random_uuid()"))
-      table.uuid('teacher_attendance_id').references('id').inTable('academic.teacher_attendances').notNullable().onDelete('no action')
+      table.uuid('teacher_attendance_id')
+      // table.uuid('teacher_attendance_id').references('id').inTable('academic.teacher_attendances').onDelete('no action')
       table.dateTime('date_in', { useTz: false }).notNullable()
       table.dateTime('date_out', { useTz: false }).notNullable()
       table.enum('status', ['teach', 'not_teach', 'exam', 'homework']).notNullable()
-      table.string('material').notNullable()
+      table.string('action_type').notNullable()
+      table.string('material')
       table.string('reason_not_teach')
       table.boolean('post_test').defaultTo(false)
       table.uuid('session_id').references('id').inTable('academic.sessions').onDelete('cascade').onUpdate('cascade')
@@ -23,7 +25,7 @@ export default class extends BaseSchema {
       ------ FUNCTIONS ------
       CREATE OR REPLACE FUNCTION log_teacher_attendance_insert() RETURNS TRIGGER AS $$
       BEGIN
-          INSERT INTO academic.teacher_attendances_hists (teacher_attendance_id, date_in, date_out, status, material, reason_not_teach, post_test, session_id, teacher_id, class_id, subject_id, program_semester_detail_id)
+          INSERT INTO academic.teacher_attendances_hists (teacher_attendance_id, date_in, action_type,  date_out, status, material, reason_not_teach, post_test, session_id, teacher_id, class_id, subject_id, program_semester_detail_id)
           VALUES (new.id, NEW.date_in, 'INSERT', NEW.date_out, NEW.status, NEW.material, NEW.reason_not_teach, NEW.post_test, NEW.session_id, NEW.teacher_id, NEW.class_id, NEW.subject_id, NEW.program_semester_detail_id);
           RETURN NEW;
       END;
@@ -36,8 +38,8 @@ export default class extends BaseSchema {
       ------ FUNCTIONS ------
       CREATE OR REPLACE FUNCTION log_teacher_attendance_update() RETURNS TRIGGER AS $$
       BEGIN
-          INSERT INTO academic.teacher_attendances_hists (teacher_attendance_id, date_in, date_out, status, material, reason_not_teach, post_test, session_id, teacher_id, class_id, subject_id, program_semester_detail_id)
-          VALUES (new.id, NEW.date_in, 'INSERT', NEW.date_out, NEW.status, NEW.material, NEW.reason_not_teach, NEW.post_test, NEW.session_id, NEW.teacher_id, NEW.class_id, NEW.subject_id, NEW.program_semester_detail_id);
+          INSERT INTO academic.teacher_attendances_hists (teacher_attendance_id, date_in, action_type, date_out, status, material, reason_not_teach, post_test, session_id, teacher_id, class_id, subject_id, program_semester_detail_id)
+          VALUES (new.id, NEW.date_in, 'UPDATE', NEW.date_out, NEW.status, NEW.material, NEW.reason_not_teach, NEW.post_test, NEW.session_id, NEW.teacher_id, NEW.class_id, NEW.subject_id, NEW.program_semester_detail_id);
           RETURN NEW;
       END;
       $$ LANGUAGE plpgsql;
@@ -49,10 +51,11 @@ export default class extends BaseSchema {
       ------ FUNCTIONS ------
       CREATE OR REPLACE FUNCTION log_teacher_attendance_delete() RETURNS TRIGGER AS $$
       DECLARE
-          old_data academic.teacher_attendances_hists;
+          old_data academic.teacher_attendances;
       BEGIN
           old_data := OLD;
-          UPDATE academic.teacher_attendances_hists SET action_type = 'DELETE' WHERE id = old_data.id;
+          INSERT INTO academic.teacher_attendances_hists (teacher_attendance_id, date_in, action_type, date_out, status, material, reason_not_teach, post_test, session_id, teacher_id, class_id, subject_id, program_semester_detail_id)
+          VALUES (OLD.id, OLD.date_in, 'DELETE', OLD.date_out, OLD.status, OLD.material, OLD.reason_not_teach, OLD.post_test, OLD.session_id, OLD.teacher_id, OLD.class_id, OLD.subject_id, OLD.program_semester_detail_id);
           RETURN OLD;
       END;
       $$ LANGUAGE plpgsql;

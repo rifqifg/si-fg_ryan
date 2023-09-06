@@ -87,7 +87,7 @@ export default class ActivitiesController {
         .preload('division', division => division.select('id', 'name'))
         .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
         .whereILike('name', `%${keyword}%`)
-        .andWhere('owner', auth.user!.id)
+        // .andWhere('owner', auth.user!.id)
         .orderBy(orderBy, orderDirection)
     }
     response.ok({ message: "Data Berhasil Didapatkan", data })

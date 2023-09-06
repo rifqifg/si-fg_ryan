@@ -43,7 +43,7 @@ export default class UsersController {
         .attempt(payload.email, payload.password);
       const user = await User.query()
         .where("id", auth.user!.id)
-        .preload("roles", (query) => query.select("role_name").preload('role', r => r.select('name', 'permissions')))
+        .preload("roles", (query) => query.select("role_name").orderBy('role_name', 'asc').preload('role', r => r.select('name', 'permissions')))
         .preload("employee", (e) => {
           e.select("name");
           e.preload("teacher", (t) => t.select("id"));
@@ -140,7 +140,7 @@ export default class UsersController {
     try {
       const user = await User.query()
         .where("email", "=", userGoogle.email)
-        .preload("roles", (query) => query.select("role_name").preload('role', r => r.select('name', 'permissions')))
+        .preload("roles", (query) => query.select("role_name").orderBy('role_name', 'asc').preload('role', r => r.select('name', 'permissions')))
         .preload("employee", (e) => e.preload("teacher", (t) => t.select("id")))
         .firstOrFail();
 

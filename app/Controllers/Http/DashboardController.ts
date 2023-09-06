@@ -7,7 +7,7 @@ import Database from '@ioc:Adonis/Lucid/Database'
 export default class DashboardController {
   public async index({ auth, response }: HttpContextContract) {
     if (auth.use('api').isLoggedIn) {
-      const data = await User.query().preload('roles', r => r.select('role_name').preload('role', r => r.select('name', 'permissions'))).where('id', auth.user!.id)
+      const data = await User.query().preload('roles', r => r.select('role_name').orderBy('role_name', 'asc').preload('role', r => r.select('name', 'permissions'))).where('id', auth.user!.id)
       const dataObject = JSON.parse(JSON.stringify(data))
       const roles =  dataObject[0].roles
       const name:any = []

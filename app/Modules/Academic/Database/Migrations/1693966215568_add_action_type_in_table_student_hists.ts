@@ -13,8 +13,6 @@ export default class extends BaseSchema {
     this.schema.raw("DROP FUNCTION IF EXISTS log_student_update() CASCADE;")
     this.schema.raw("DROP TRIGGER IF EXISTS student_hist_delete ON academic.students;")
     this.schema.raw("DROP FUNCTION IF EXISTS log_student_delete() CASCADE;")
-    })
-
     this.schema.raw(`
     ------ FUNCTIONS ------
     CREATE OR REPLACE FUNCTION log_student_insert() RETURNS TRIGGER AS $$
@@ -57,6 +55,9 @@ export default class extends BaseSchema {
     CREATE TRIGGER student_hist_delete BEFORE DELETE ON academic.students
     FOR EACH ROW EXECUTE FUNCTION log_student_delete();
   `)
+  })
+
+   
 
 
   }

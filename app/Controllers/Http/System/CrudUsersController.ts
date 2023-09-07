@@ -1,5 +1,6 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import User from 'App/Models/User'
+import UserRole from 'App/Models/UserRole'
 import CreateUserValidator from 'App/Validators/CreateUserValidator'
 import UpdateUserValidator from 'App/Validators/UpdateUserValidator'
 
@@ -10,7 +11,7 @@ export default class CrudUsersController {
     try {
       const data = await User
         .query()
-        .preload('roles', role => role.select("name"))
+        .preload('roles', role => role.select("role_name"))
         .preload('employee', employee => employee.preload('divisions'))
         .preload('division', division => division.select('id', 'name'))
         .whereILike('name', `%${keyword}%`)
@@ -27,7 +28,7 @@ export default class CrudUsersController {
     try {
       const data = await User.query()
         .preload('employee')
-        .preload('roles', roles => roles.select('name'))
+        .preload('roles', roles => roles.select('role_name'))
         .preload('division', division => division.select('id', 'name'))
         .where('id', id).firstOrFail()
       response.ok({ message: "Berhasil mengambil data", data })
@@ -39,8 +40,18 @@ export default class CrudUsersController {
 
   public async store({ request, response }: HttpContextContract) {
     const payload = await request.validate(CreateUserValidator)
+    const roles = payload.role
+    //@ts-ignore
+    delete payload.role
     try {
       const data = await User.create(payload)
+      const dataObject = JSON.parse(JSON.stringify(data))
+      roles.map(async role => {
+        await UserRole.create({
+          userId: dataObject.id,
+          roleName: role
+        })
+      })
       response.created({ message: "Berhasil menyimpan data", data })
     } catch (error) {
       response.badRequest({ message: "Gagal menyimpan data", error })
@@ -71,7 +82,7 @@ export default class CrudUsersController {
       const user = await User.findOrFail(id)
       await user.delete()
 
-      response.ok({ message: "Berhasil mengahpus data" })
+      response.ok({ message: "Berhasil mengahapus data" })
     } catch (error) {
       response.badRequest({ message: "Gagal menghapus data", error: error.message })
     }

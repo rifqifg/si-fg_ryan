@@ -209,6 +209,7 @@ export default class BukuNilaisController {
         .preload("programSemesterDetail", (prosemDetail) =>
           prosemDetail.select("kompetensiDasar", "materi")
         )
+        .preload("students", (s) => s.select("name", "nis", "nisn"))
         .preload("classes", (c) => c.select("name"))
         .firstOrFail();
       response.ok({ message: "Berhasil mengambil data", data });

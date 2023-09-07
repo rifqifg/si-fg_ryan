@@ -11,6 +11,8 @@ import Hash from "@ioc:Adonis/Core/Hash";
 import Database from "@ioc:Adonis/Lucid/Database";
 import Employee from "App/Models/Employee";
 import Student from "App/Modules/Academic/Models/Student";
+import UserRole from "App/Models/UserRole";
+import Account from "App/Modules/Finance/Models/Account";
 
 enum ROLE {
   EMPLOYEE = "employee",
@@ -34,28 +36,139 @@ export default class UsersController {
     });
 
     const payload = await request.validate({ schema: loginSchema });
-   
+
     try {
       const token = await auth
         .use("api")
         .attempt(payload.email, payload.password);
       const user = await User.query()
         .where("id", auth.user!.id)
-        .preload("roles", (query) => query.select("name", "permissions"))
+        .preload("roles", (query) => query.select("role_name").orderBy('role_name', 'asc').preload('role', r => r.select('name', 'permissions')))
         .preload("employee", (e) => {
           e.select("name");
           e.preload("teacher", (t) => t.select("id"));
         })
         .firstOrFail();
 
+      const userObject = JSON.parse(JSON.stringify(user))
+      const roles = userObject.roles
+      const name: any = []
+      const descriptions: any = []
+      const modules = roles.reduce((prev, v) => {
+        name.push(v.role_name)
+        descriptions.push(v.descriptions)
+        return [...prev, v.role.permissions.modules]
+      }, [])
+
+      const modulesMerge: any = []
+      modules.map(value => {
+        value.map(m => {
+          modulesMerge.push(m)
+        })
+      })
+
+      const simplifiedModules = {};
+
+      modulesMerge.forEach(module => {
+        if (!simplifiedModules[module.id]) {
+          simplifiedModules[module.id] = { id: module.id, type: "", menus: [] };
+        }
+
+        if (module.type === "show" && simplifiedModules[module.id].type !== "disabled") {
+          simplifiedModules[module.id].type = "show";
+        } else if (module.type === "disabled" && simplifiedModules[module.id].type !== "show") {
+          simplifiedModules[module.id].type = "disabled";
+        }
+
+        if (module.menus) {
+          module.menus.forEach(menu => {
+            const existingMenu = simplifiedModules[module.id].menus.find(existing => existing.id === menu.id);
+            if (!existingMenu) {
+              const simplifiedMenu: any = { id: menu.id, type: "" };
+              if (menu.type === "show" && simplifiedMenu.type !== "disabled") {
+                simplifiedMenu.type = "show";
+              } else if (menu.type === "disabled" && simplifiedMenu.type !== "show") {
+                simplifiedMenu.type = "disabled";
+              }
+
+              if (menu.functions) {
+                simplifiedMenu.functions = menu.functions.reduce((acc, func) => {
+                  if (func.type !== "disabled" && !acc.find(f => f.id === func.id)) {
+                    acc.push({ id: func.id, type: func.type });
+                  }
+                  return acc;
+                }, []);
+              }
+
+              simplifiedModules[module.id].menus.push(simplifiedMenu);
+            } else {
+              if (menu.type === "show" && existingMenu.type !== "disabled") {
+                existingMenu.type = "show";
+              } else if (menu.type === "disabled" && existingMenu.type !== "show") {
+                existingMenu.type = "disabled";
+              }
+
+              if (menu.functions) {
+                menu.functions.forEach(func => {
+                  if (func.type !== "disabled" && !existingMenu.functions.find(f => f.id === func.id)) {
+                    existingMenu.functions.push({ id: func.id, type: func.type });
+                  }
+                });
+              }
+            }
+          });
+        }
+      });
+
+      const modulesSimple = Object.values(simplifiedModules);
+
+      userObject["role_name"] = name.toString()
+      userObject["role"] = { name: name.toString(), descriptions: descriptions.toString(), permissions: { modules: modulesSimple } }
+      delete userObject["roles"]
+
       response.ok({
         message: "login succesfull",
         token,
-        data: user,
+        data: userObject,
       });
     } catch (error) {
       console.log(error);
 
+      return response.badRequest({ message: "Invalid credentials", error });
+    }
+  }
+
+  public async loginParent({ request, response, auth }: HttpContextContract) {
+    const loginParentValidator = schema.create({
+      va_number: schema.string({ trim: true }, [
+        rules.exists({ table: "finance.accounts", column: "number" }),
+      ]),
+      birthdate: schema.date({ format: "yyyy-MM-dd" }, [
+        rules.exists({ table: "academic.students", column: "birth_day" }),
+      ]),
+    })
+
+    const payload = await request.validate({ schema: loginParentValidator });
+    const birthdate = payload.birthdate.toSQLDate()!
+
+    try {
+      const account = await Account.query()
+        .preload('student', qStudent => qStudent.select('name'))
+        .whereHas('student', qStudent => {
+          qStudent.where('birth_day', birthdate)
+        })
+        .andWhere('number', payload.va_number)
+        .firstOrFail()
+
+      const token = await auth.use('parent_api').login(account)
+
+      response.ok({
+        message: "login succesfull",
+        token,
+        data: account,
+      });
+    } catch (error) {
+      // console.log(error);
       return response.badRequest({ message: "Invalid credentials", error });
     }
   }
@@ -83,12 +196,89 @@ export default class UsersController {
     try {
       const user = await User.query()
         .where("email", "=", userGoogle.email)
-        .preload("roles", (r) => r.select("name", "permissions"))
+        .preload("roles", (query) => query.select("role_name").orderBy('role_name', 'asc').preload('role', r => r.select('name', 'permissions')))
         .preload("employee", (e) => e.preload("teacher", (t) => t.select("id")))
         .firstOrFail();
+
+      const userObject = JSON.parse(JSON.stringify(user))
+      const roles = userObject.roles
+      const name: any = []
+      const descriptions: any = []
+      const modules = roles.reduce((prev, v) => {
+        name.push(v.role_name)
+        descriptions.push(v.descriptions)
+        return [...prev, v.role.permissions.modules]
+      }, [])
+
+      const modulesMerge: any = []
+      modules.map(value => {
+        value.map(m => {
+          modulesMerge.push(m)
+        })
+      })
+
+      const simplifiedModules = {};
+
+      modulesMerge.forEach(module => {
+        if (!simplifiedModules[module.id]) {
+          simplifiedModules[module.id] = { id: module.id, type: "", menus: [] };
+        }
+
+        if (module.type === "show" && simplifiedModules[module.id].type !== "disabled") {
+          simplifiedModules[module.id].type = "show";
+        } else if (module.type === "disabled" && simplifiedModules[module.id].type !== "show") {
+          simplifiedModules[module.id].type = "disabled";
+        }
+
+        if (module.menus) {
+          module.menus.forEach(menu => {
+            const existingMenu = simplifiedModules[module.id].menus.find(existing => existing.id === menu.id);
+            if (!existingMenu) {
+              const simplifiedMenu: any = { id: menu.id, type: "" };
+              if (menu.type === "show" && simplifiedMenu.type !== "disabled") {
+                simplifiedMenu.type = "show";
+              } else if (menu.type === "disabled" && simplifiedMenu.type !== "show") {
+                simplifiedMenu.type = "disabled";
+              }
+
+              if (menu.functions) {
+                simplifiedMenu.functions = menu.functions.reduce((acc, func) => {
+                  if (func.type !== "disabled" && !acc.find(f => f.id === func.id)) {
+                    acc.push({ id: func.id, type: func.type });
+                  }
+                  return acc;
+                }, []);
+              }
+
+              simplifiedModules[module.id].menus.push(simplifiedMenu);
+            } else {
+              if (menu.type === "show" && existingMenu.type !== "disabled") {
+                existingMenu.type = "show";
+              } else if (menu.type === "disabled" && existingMenu.type !== "show") {
+                existingMenu.type = "disabled";
+              }
+
+              if (menu.functions) {
+                menu.functions.forEach(func => {
+                  if (func.type !== "disabled" && !existingMenu.functions.find(f => f.id === func.id)) {
+                    existingMenu.functions.push({ id: func.id, type: func.type });
+                  }
+                });
+              }
+            }
+          });
+        }
+      });
+
+      const modulesSimple = Object.values(simplifiedModules);
+
+      userObject["role_name"] = name.toString()
+      userObject["role"] = { name: name.toString(), descriptions: descriptions.toString(), permissions: { modules: modulesSimple } }
+      delete userObject["roles"]
+
       const tokenAuth = await auth.use("api").login(user);
 
-      response.ok({ message: "login berhasil", token: tokenAuth, data: user });
+      response.ok({ message: "login berhasil", token: tokenAuth, data: modulesSimple });
     } catch (error) {
       return response.send({
         message: "Anda belum memiliki akun",
@@ -101,6 +291,12 @@ export default class UsersController {
     await auth.use("api").logout();
     await Database.manager.close("pg");
     response.ok({ message: "logged out" });
+  }
+
+  public async logoutParent({ auth, response }: HttpContextContract) {
+    await auth.use('parent_api').revoke();
+    await Database.manager.close("pg");
+    response.ok({ message: "logged out (parent)" });
   }
 
   public async register({ request, response }: HttpContextContract) {
@@ -164,9 +360,13 @@ export default class UsersController {
         email: payload.email,
         verifyToken,
         employeeId: employee.id,
-        role: ROLE.EMPLOYEE,
         password: payload.password,
       });
+      const userObject = JSON.parse(JSON.stringify(user))
+      await UserRole.create({
+        userId: userObject.id,
+        roleName: ROLE.EMPLOYEE
+      })
     } else {
       try {
         student = await Student.findByOrFail("nisn", payload.nisn);
@@ -180,24 +380,36 @@ export default class UsersController {
           studentId: student.id,
           email: payload.email,
           verifyToken,
-          role: ROLE.STUDENT,
         });
+        const userObject = JSON.parse(JSON.stringify(user))
+        await UserRole.create({
+          userId: userObject.id,
+          roleName: ROLE.STUDENT
+        })
       } else if (student && payload.role === ROLE.PARENT) {
         user = await User.create({
           name: payload.name,
           password: payload.password,
           email: payload.email,
           verifyToken,
-          role: ROLE.PARENT,
         });
+        const userObject = JSON.parse(JSON.stringify(user))
+        await UserRole.create({
+          userId: userObject.id,
+          roleName: ROLE.PARENT
+        })
       } else {
         user = await User.create({
           name: payload.name,
           password: payload.password,
           email: payload.email,
           verifyToken,
-          role: ROLE.ALUMNI,
         });
+        const userObject = JSON.parse(JSON.stringify(user))
+        await UserRole.create({
+          userId: userObject.id,
+          roleName: ROLE.ALUMNI
+        })
       }
     }
 
@@ -213,7 +425,7 @@ export default class UsersController {
     try {
       const user = await User.query().where("verifyToken", token).firstOrFail();
 
-      await user.merge({verifyToken: "", verified: true,}).save();
+      await user.merge({ verifyToken: "", verified: true, }).save();
 
       const LOGIN_URL = Env.get("FE_URL")
       return view.render('user_verification_success', { LOGIN_URL })
@@ -246,7 +458,7 @@ export default class UsersController {
     try {
       const verifyPassword = await auth
         .use("api")
-        .verifyCredentials(auth.user!.email, payload.old_password);
+        .verifyCredentials(auth.use('api').user!.email, payload.old_password);
       console.log("password verified", verifyPassword);
     } catch (error) {
       response.unprocessableEntity({

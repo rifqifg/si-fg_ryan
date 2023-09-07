@@ -14,9 +14,9 @@ export default class BukuNilaisController {
       classId = "",
     } = request.qs();
     try {
-      const user = await auth.user!;
-      const userId = await User.query()
-        .where("id", user.id)
+      
+      const user = await User.query()
+        .where("id", auth.user!.id)
         .preload("employee", (e) => (e.select("id"), e.preload("teacher")))
         .preload(
           "studentParents",
@@ -26,16 +26,16 @@ export default class BukuNilaisController {
           )
         )
         .firstOrFail();
-
-      if (user.role === "teacher" && teacherId !== userId.employee.teacher.id)
+    
+      if (user.role === "teacher" && teacherId !== user.employee.teacher.id)
         return response.badRequest({
           message: "Anda tidak bisa melihat data pengguna lain",
         });
 
       if (
-        (user.role === "student" && studentId !== userId.studentId) ||
+        (user.role === "student" && studentId !== user.studentId) ||
         (user.role === "parent" &&
-          studentId !== userId.studentParents.studentId)
+          studentId !== user.studentParents.studentId)
       )
         return response.badRequest({
           message: "Anda tidak bisa melihat data pengguna lain",
@@ -71,9 +71,8 @@ export default class BukuNilaisController {
   }
 
   public async store({ request, response, auth }: HttpContextContract) {
-    const user = await auth.user!;
-    const teacherId = await User.query()
-      .where("id", user.id)
+    const user = await User.query()
+      .where("id", auth.user!.id)
       .preload("employee", (e) => e.preload("teacher", (t) => t.select("id")))
       .firstOrFail();
     // return teacherId.employee
@@ -118,7 +117,7 @@ export default class BukuNilaisController {
                 table: "academic.teachers",
                 column: "id",
                 where: {
-                  id: teacherId.employee.teacher.id,
+                  id: user.employee.teacher.id,
                 },
               }),
             ]),
@@ -231,7 +230,10 @@ export default class BukuNilaisController {
     if (!uuidValidation(id))
       return response.badRequest({ message: "Buku Nilai ID tidak valid" });
 
-    const user = auth.user!;
+      const user = await User.query()
+      .where("id", auth.user!.id)
+      .preload("employee", (e) => e.preload("teacher", (t) => t.select("id")))
+      .firstOrFail();
 
     let payload;
     if (user.role !== "super_admin") {

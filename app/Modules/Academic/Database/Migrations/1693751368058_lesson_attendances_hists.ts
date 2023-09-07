@@ -14,9 +14,9 @@ export default class extends BaseSchema {
       table.enum('status', ['present', 'permission', 'sick', 'absent']).notNullable()
       table.string('description')
 
-      table.uuid('session_id').references('id').inTable('academic.sessions').onDelete('cascade').onUpdate('cascade')
-      table.uuid('student_id').references('id').inTable('academic.students').onDelete('cascade').onUpdate('cascade')
-      table.uuid('subject_id').references('id').inTable('academic.subjects').onDelete('cascade').onUpdate('cascade')
+      table.uuid('session_id')
+      table.uuid('student_id')
+      table.uuid('subject_id')
 
       this.schema.raw(`
       ------ FUNCTIONS ------

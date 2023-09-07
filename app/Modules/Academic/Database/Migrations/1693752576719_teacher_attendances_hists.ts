@@ -16,11 +16,11 @@ export default class extends BaseSchema {
       table.string('material')
       table.string('reason_not_teach')
       table.boolean('post_test').defaultTo(false)
-      table.uuid('session_id').references('id').inTable('academic.sessions').onDelete('cascade').onUpdate('cascade')
-      table.uuid('teacher_id').references('id').inTable('academic.teachers').onDelete('cascade').onUpdate('cascade')
-      table.uuid('class_id').references('id').inTable('academic.classes').onDelete('cascade').onUpdate('cascade')
-      table.uuid('subject_id').references('id').inTable('academic.subjects').onDelete('cascade').onUpdate('cascade')
-      table.uuid('program_semester_detail_id').references('id').inTable('academic.program_semester_details').onDelete('no action').onUpdate('cascade').nullable()
+      table.uuid('session_id')
+      table.uuid('teacher_id')
+      table.uuid('class_id')
+      table.uuid('subject_id')
+      table.uuid('program_semester_detail_id')
       this.schema.raw(`
       ------ FUNCTIONS ------
       CREATE OR REPLACE FUNCTION log_teacher_attendance_insert() RETURNS TRIGGER AS $$

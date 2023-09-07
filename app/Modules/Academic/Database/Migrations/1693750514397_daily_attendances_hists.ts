@@ -15,7 +15,7 @@ export default class extends BaseSchema {
       table.enum('status', ['present', 'permission', 'sick', 'absent']).notNullable()
       table.string('description')
 
-      table.uuid('student_id').references('id').inTable('academic.students').onDelete('cascade').onUpdate('cascade')
+      table.uuid('student_id')
       this.schema.raw(`
       ------ FUNCTIONS ------
       CREATE OR REPLACE FUNCTION log_daily_attendance_insert() RETURNS TRIGGER AS $$

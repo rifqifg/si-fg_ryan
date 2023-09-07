@@ -7,20 +7,21 @@ export default class extends BaseSchema {
     this.schema.withSchema('academic')
     .createTable(this.tableName, (table) => {
       table.uuid('id').primary().notNullable().unique().defaultTo(this.raw("gen_random_uuid()"))
-      table.uuid('daily_attendance_id').references('id').inTable('academic.daily_attendances').notNullable().onDelete('no action')
+      table.uuid('daily_attendance_id')
+      // table.uuid('daily_attendance_id').references('id').inTable('academic.daily_attendances').onDelete('set null')
+      table.string('action_type').notNullable()
       table.dateTime('date_in', { useTz: false }).notNullable()
       table.dateTime('date_out', { useTz: false })
       table.enum('status', ['present', 'permission', 'sick', 'absent']).notNullable()
       table.string('description')
 
-      table.uuid('class_id').references('id').inTable('academic.classes').onDelete('cascade').onUpdate('cascade')
-      table.uuid('student_id').references('id').inTable('academic.students').onDelete('cascade').onUpdate('cascade')
+      table.uuid('student_id')
       this.schema.raw(`
       ------ FUNCTIONS ------
       CREATE OR REPLACE FUNCTION log_daily_attendance_insert() RETURNS TRIGGER AS $$
       BEGIN
-          INSERT INTO academic.daily_attendances_hists (daily_attendance_id, date_in, date_out, status, description, class_id, student_id)
-          VALUES (new.id, NEW.date_in, 'INSERT', NEW.date_out, NEW.status, NEW.description, NEW.class_id, NEW.student_id);
+      INSERT INTO academic.daily_attendances_hists (daily_attendance_id, date_in, action_type, date_out, status, description, student_id)
+          VALUES (new.id, NEW.date_in, 'INSERT', NEW.date_out, NEW.status, NEW.description, NEW.student_id);
           RETURN NEW;
       END;
       $$ LANGUAGE plpgsql;
@@ -32,8 +33,8 @@ export default class extends BaseSchema {
       ------ FUNCTIONS ------
       CREATE OR REPLACE FUNCTION log_daily_attendance_update() RETURNS TRIGGER AS $$
       BEGIN
-          INSERT INTO academic.daily_attendances_hists (daily_attendance_id, date_in, date_out, status, description, class_id, student_id)
-          VALUES (new.id, NEW.daily_attendance_id, NEW.date_in, 'INSERT', NEW.date_out, NEW.status, NEW.description, NEW.class_id, NEW.student_id);
+          INSERT INTO academic.daily_attendances_hists (daily_attendance_id, date_in, action_type, date_out, status, description, student_id)
+          VALUES (new.id, NEW.date_in, 'UPDATE', NEW.date_out, NEW.status, NEW.description, NEW.student_id);
           RETURN NEW;
       END;
       $$ LANGUAGE plpgsql;
@@ -45,10 +46,11 @@ export default class extends BaseSchema {
       ------ FUNCTIONS ------
       CREATE OR REPLACE FUNCTION log_daily_attendance_delete() RETURNS TRIGGER AS $$
       DECLARE
-          old_data academic.daily_attendances_hists;
+          old_data academic.daily_attendances;
       BEGIN
           old_data := OLD;
-          UPDATE academic.daily_attendances_hists SET action_type = 'DELETE' WHERE id = old_data.id;
+          INSERT INTO academic.daily_attendances_hists (daily_attendance_id, date_in, action_type, date_out, status, description, student_id)
+          VALUES (OLD.id, OLD.date_in, 'DELETE', OLD.date_out, OLD.status, OLD.description, OLD.student_id);
           RETURN OLD;
       END;
       $$ LANGUAGE plpgsql;
@@ -66,7 +68,7 @@ export default class extends BaseSchema {
   }
 
   public async down () {
-    this.schema.dropTable(this.tableName)
+    this.schema.withSchema('academic').dropTable(this.tableName)
     this.schema.raw("DROP TRIGGER IF EXISTS daily_attendance_hist_insert ON academic.daily_attendances;")
     this.schema.raw("DROP FUNCTION IF EXISTS log_daily_attendance_insert() CASCADE;")
     this.schema.raw("DROP TRIGGER IF EXISTS daily_attendance_hist_update ON academic.daily_attendances;")

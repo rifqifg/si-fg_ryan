@@ -24,8 +24,11 @@ export default class SubActivity extends BaseModel {
   @column()
   public images: string[] | null | any
 
-  @column.dateTime()
+  @column.date()
   public date: DateTime;
+
+  @column()
+  public time: string;
 
   @column()
   public note: string | null;

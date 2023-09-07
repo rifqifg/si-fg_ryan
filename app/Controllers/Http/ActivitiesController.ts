@@ -1,6 +1,10 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Database from '@ioc:Adonis/Lucid/Database';
 import Activity from 'App/Models/Activity';
+import ActivityMember from 'App/Models/ActivityMember';
+import Presence from 'App/Models/Presence';
+import SubActivity from 'App/Models/SubActivity';
+import User from 'App/Models/User';
 import CreateActivityValidator from 'App/Validators/CreateActivityValidator'
 import UpdateActivityValidator from 'App/Validators/UpdateActivityValidator';
 import { DateTime } from 'luxon';
@@ -10,11 +14,15 @@ export default class ActivitiesController {
   public async index({ request, response, auth }: HttpContextContract) {
     const { page = 1, limit = 10, keyword = "", orderBy = "name", orderDirection = 'ASC' } = request.qs()
 
+    const user = await User.query().preload('roles', r => r.preload('role')).where('id', auth.use('api').user!.id).firstOrFail()
+    const userObject = JSON.parse(JSON.stringify(user))
+
     let data: object
-    if (auth.use('api').user!.role == 'super_admin') {
+    if (userObject.roles[0].role_name == 'super_admin') {
       data = await Activity.query()
         .preload('division', division => division.select('id', 'name'))
         .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
+        .preload('activityMembers', activityMembers => activityMembers.select('id', 'role', 'employee_id').preload('employee', employee => employee.select('name')))
         .whereILike('name', `%${keyword}%`)
         .orderBy(orderBy, orderDirection)
         .paginate(page, limit)
@@ -22,6 +30,7 @@ export default class ActivitiesController {
       data = await Activity.query()
         .preload('division', division => division.select('id', 'name'))
         .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
+        .preload('activityMembers', activityMembers => activityMembers.select('id', 'role', 'employee_id').preload('employee', employee => employee.select('name')))
         .whereILike('name', `%${keyword}%`)
         .andWhere('division_id', auth.use('api').user!.divisionId)
         .orderBy(orderBy, orderDirection)
@@ -58,20 +67,27 @@ export default class ActivitiesController {
 
   public async getActivity({ request, response, auth }: HttpContextContract) {
     const { keyword = "", orderBy = "name", orderDirection = 'ASC' } = request.qs()
+
+    const user = await User.query().preload('roles', r => r.preload('role')).where('id', auth.use('api').user!.id).firstOrFail()
+    const userObject = JSON.parse(JSON.stringify(user))
     let data: object
 
-    if (auth.use('api').user!.role == 'super_admin') {
+    if (userObject.roles[0].role_name == 'super_admin') {
+      console.log('masuk sinikah?');
+
       data = await Activity.query()
         .preload('division', division => division.select('id', 'name'))
         .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
         .whereILike('name', `%${keyword}%`)
         .orderBy(orderBy, orderDirection)
     } else {
+      console.log('masuk sini ya');
+
       data = await Activity.query()
         .preload('division', division => division.select('id', 'name'))
         .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
         .whereILike('name', `%${keyword}%`)
-        .andWhere('owner', auth.user!.id)
+        // .andWhere('owner', auth.user!.id)
         .orderBy(orderBy, orderDirection)
     }
     response.ok({ message: "Data Berhasil Didapatkan", data })
@@ -115,6 +131,20 @@ export default class ActivitiesController {
   public async update({ request, response, params }: HttpContextContract) {
     const { id } = params
     const payload = await request.validate(UpdateActivityValidator)
+
+    // jika data yg di update ada activityType nya, maka perlu pengecekan
+    if (payload.activityType == "fixed_time") {
+      const cekSubActivity = await SubActivity.query().where('activity_id', id).first()
+      const cekMemberActivity = await ActivityMember.query().where('activity_id', id).first()
+      if (cekSubActivity || cekMemberActivity) {
+        return response.badRequest({ message: "Update data gagal, silahkan kosongkan data detailnya terlebih dahulu" })
+      }
+    } else if (payload.activityType == "not_fixed_time") {
+      const cek = await Presence.query().where('activity_id', id).first()
+      if (cek) {
+        return response.badRequest({ message: "Update data gagal, silahkan kosongkan data detailnya terlebih dahulu" })
+      }
+    }
 
     // validasi waktu agar tidak tabrakan dengan waktu pada activity dengan schedule aktif
     if (payload.type == 'scheduled') {
@@ -191,13 +221,13 @@ export default class ActivitiesController {
 
       payload.name ? formattedPayload['name'] = payload.name : ''
       payload.description ? formattedPayload['description'] = payload.description : ''
-      payload.timeInStart ? formattedPayload['timeInStart'] = payload.timeInStart!.toFormat('HH:mm:ss') : ''
-      payload.timeLateStart ? formattedPayload['timeLateStart'] = payload.timeLateStart!.toFormat('HH:mm:ss') : ''
-      payload.timeInEnd ? formattedPayload['timeInEnd'] = payload.timeInEnd!.toFormat('HH:mm:ss') : ''
-      payload.timeOutStart ? formattedPayload['timeOutStart'] = payload.timeOutStart!.toFormat('HH:mm:ss') : ''
-      payload.timeOutEnd ? formattedPayload['timeOutEnd'] = payload.timeOutEnd!.toFormat('HH:mm:ss') : ''
-      payload.timeOutDefault ? formattedPayload['timeOutDefault'] = payload.timeOutDefault!.toFormat('HH:mm:ss') : ''
-      payload.maxWorkingDuration ? formattedPayload['maxWorkingDuration'] = payload.maxWorkingDuration?.toFormat('HH:mm:00') : ''
+      payload.timeInStart ? formattedPayload['timeInStart'] = payload.timeInStart!.toFormat('HH:mm:ss') : payload.timeInStart == null ? formattedPayload['timeInStart'] = payload.timeInStart : ''
+      payload.timeLateStart ? formattedPayload['timeLateStart'] = payload.timeLateStart!.toFormat('HH:mm:ss') : payload.timeLateStart == null ? formattedPayload['timeLateStart'] = payload.timeLateStart : ''
+      payload.timeInEnd ? formattedPayload['timeInEnd'] = payload.timeInEnd!.toFormat('HH:mm:ss') : payload.timeInEnd == null ? formattedPayload['timeInEnd'] = payload.timeInEnd : ''
+      payload.timeOutStart ? formattedPayload['timeOutStart'] = payload.timeOutStart!.toFormat('HH:mm:ss') : payload.timeOutStart == null ? formattedPayload['timeOutStart'] = payload.timeOutStart : ''
+      payload.timeOutEnd ? formattedPayload['timeOutEnd'] = payload.timeOutEnd!.toFormat('HH:mm:ss') : payload.timeOutEnd == null ? formattedPayload['timeOutEnd'] = payload.timeOutEnd : ''
+      payload.timeOutDefault ? formattedPayload['timeOutDefault'] = payload.timeOutDefault!.toFormat('HH:mm:ss') : payload.timeOutDefault == null ? formattedPayload['timeOutDefault'] = payload.timeOutDefault : ''
+      payload.maxWorkingDuration ? formattedPayload['maxWorkingDuration'] = payload.maxWorkingDuration?.toFormat('HH:mm:00') : payload.maxWorkingDuration == null ? formattedPayload['maxWorkingDuration'] = payload.maxWorkingDuration : ''
       payload.type ? formattedPayload['type'] = payload.type : ''
       payload.scheduleActive ? formattedPayload['scheduleActive'] = payload.scheduleActive : ''
       payload.days ? formattedPayload['days'] = payload.days : ""

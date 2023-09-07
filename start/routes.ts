@@ -19,38 +19,12 @@
 */
 
 import Route from '@ioc:Adonis/Core/Route'
-import User from 'App/Models/User'
 import 'Inventory/Routes/inventory'
 import 'Academic/Routes/academic'
 import 'PPDB/Routes/ppdb'
 import 'Finance/Routes/finance'
-import UserStudentCandidate from 'App/Modules/PPDB/Models/UserStudentCandidate'
-import Account from 'App/Modules/Finance/Models/Account'
-import Database from '@ioc:Adonis/Lucid/Database'
 
-Route.get('/', async ({ auth, response }) => {
-  if (auth.use('api').isLoggedIn) {
-    const data = await User.query().preload('roles').where('id', auth.user!.id)
-    response.ok({ message: 'you are logged in', data })
-  } else if (auth.use('ppdb_api').isLoggedIn) {
-    const data = await UserStudentCandidate.query()
-      .preload('roles')
-      .preload('studentCandidate')
-      .where('id', auth.user!.id)
-    response.ok({ message: 'you are logged in as student candidate', data })
-  } else if (auth.use('parent_api').isLoggedIn) {
-    const data = await Account.query()
-      .select('*')
-      .select(Database.rawQuery(`(select json_build_object(
-          'name', name,
-          'description', description,
-          'permissions', permissions 
-        ) from public.roles r where name = 'parent') as roles`))
-      .preload('student', qStudent => qStudent.select('name'))
-      .where('id', auth.user!.id)
-    response.ok({ message: 'you are logged in as parent', data })
-  }
-}).middleware("auth:api,ppdb_api,parent_api")
+Route.get('/', 'DashboardController.index').middleware("auth:api,ppdb_api,parent_api")
 
 Route.group(() => {
   Route.get('pendaftar-baru', 'PPDBChartsController.pendaftarBaru')
@@ -96,6 +70,8 @@ Route.group(() => {
   Route.resource('roles.modules', 'System/RolesModulesController').only(['store', 'destroy', 'update']).middleware({ '*': ['auth', 'checkRole:admin'] }).as('roles.modules')
   Route.resource('roles.menus', 'System/RolesMenusController').only(['store', 'destroy', 'update']).middleware({ '*': ['auth', 'checkRole:admin'] }).as('roles.menus')
   Route.resource('roles.functions', 'System/RolesFunctionsController').only(['store', 'destroy', 'update']).middleware({ '*': ['auth', 'checkRole:admin'] }).as('roles.functions')
+  Route.post('user-roles/:userId', 'System/UserRolesController.store').middleware(['auth', 'checkRole:admin'])
+  Route.delete('user-roles/:userId/:roleName', 'System/UserRolesController.destroy').middleware(['auth', 'checkRole:admin'])
 }).prefix('/system')
 
 Route.shallowResource('template-excels', 'TemplateExcelsController').apiOnly().only(['index']).middleware({ '*': ['auth', 'checkRole:admin'] })
@@ -103,5 +79,6 @@ Route.shallowResource('category-activities', 'CategoryActivitiesController').api
 Route.shallowResource('activity-members', 'ActivityMembersController').apiOnly().middleware({ '*': ['auth', 'checkRole:admin'] })
 Route.get('/get-employees/:activityId', 'ActivityMembersController.getEmployee').middleware(['auth', 'checkRole:admin'])
 Route.shallowResource('sub-activities', 'SubActivitiesController').apiOnly().middleware({ '*': ['auth', 'checkRole:admin'] })
+Route.get('presences', 'SubActivitiesController.getPresenceSubActivity').middleware(['auth', 'checkRole:admin'])
 Route.post('presences/:activityId/:subActivityId', 'SubActivitiesController.presence').middleware(['auth', 'checkRole:admin'])
 Route.delete('multi-delete-presences', 'SubActivitiesController.destroyPresences').middleware(['auth', 'checkRole:admin'])

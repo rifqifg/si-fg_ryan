@@ -278,7 +278,7 @@ export default class UsersController {
 
       const tokenAuth = await auth.use("api").login(user);
 
-      response.ok({ message: "login berhasil", token: tokenAuth, data: modulesSimple });
+      response.ok({ message: "login berhasil", token: tokenAuth, data: userObject });
     } catch (error) {
       return response.send({
         message: "Anda belum memiliki akun",

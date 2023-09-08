@@ -27,7 +27,7 @@ export default class ProgramSemestersController {
 
     try {
       let data = {};
-      const user = await auth.user!;
+      const user = await User.findByOrFail('id', auth?.user!.id)
       const teacherId = await User.query()
         .where("id", user ? user.id : "")
         .preload("employee", (e) => e.preload("teacher", (t) => t.select("id")))
@@ -79,7 +79,7 @@ export default class ProgramSemestersController {
   }
 
   public async store({ request, response, auth }: HttpContextContract) {
-    const user = await auth.user!;
+    const user = await User.findByOrFail('id', auth.user!.id)
     const teacherId = await User.query()
       .where("id", user ? user.id : "")
       .preload("employee", (e) => e.preload("teacher", (t) => t.select("id")))
@@ -236,11 +236,7 @@ export default class ProgramSemestersController {
       return response.badRequest({ message: "Program Semeter ID tidak valid" });
     }
 
-    const user = await auth.user!;
-    // const teacherId = await User.query()
-    //   .where("id", user ? user.id : "")
-    //   .preload("employee", (e) => e.preload("teacher", (t) => t.select("id")))
-    //   .firstOrFail();
+    const user = await User.findByOrFail('id', auth.user!.id);
 
     let payload;
 

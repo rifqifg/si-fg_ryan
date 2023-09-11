@@ -79,8 +79,14 @@ export default class ActivitiesController {
       data = await Activity.query()
         .preload('division', division => division.select('id', 'name'))
         .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
-        .whereILike('name', `%${keyword}%`)
-        .andWhereILike('activity_type', `%${activity_type}%`)
+        .where(query => {
+          if (activity_type !== '') {
+            query.where('activity_type', activity_type);
+            query.andWhereILike('name', `%${keyword}%`);
+          }
+          query.andWhereILike('name', `%${keyword}%`);
+        })
+        // .andWhere('owner', auth.user!.id) // Jika perlu, aktifkan kembali ini
         .orderBy(orderBy, orderDirection)
     } else {
       console.log('masuk sini ya');
@@ -88,9 +94,14 @@ export default class ActivitiesController {
       data = await Activity.query()
         .preload('division', division => division.select('id', 'name'))
         .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
-        .whereILike('name', `%${keyword}%`)
-        .andWhereILike('activity_type', `%${activity_type}%`)
-        // .andWhere('owner', auth.user!.id)
+        .where(query => {
+          if (activity_type !== '') {
+            query.where('activity_type', activity_type);
+            query.andWhereILike('name', `%${keyword}%`);
+          }
+          query.andWhereILike('name', `%${keyword}%`);
+        })
+        // .andWhere('owner', auth.user!.id) // Jika perlu, aktifkan kembali ini
         .orderBy(orderBy, orderDirection)
     }
     response.ok({ message: "Data Berhasil Didapatkan", data })

@@ -22,7 +22,7 @@ export default class ActivitiesController {
       data = await Activity.query()
         .preload('division', division => division.select('id', 'name'))
         .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
-        .preload('activityMembers', activityMembers => activityMembers.select('id', 'role', 'employee_id').preload('employee', employee => employee.select('name')))
+        // .preload('activityMembers', activityMembers => activityMembers.select('id', 'role', 'employee_id').preload('employee', employee => employee.select('name')))
         .whereILike('name', `%${keyword}%`)
         .orderBy(orderBy, orderDirection)
         .paginate(page, limit)
@@ -30,9 +30,12 @@ export default class ActivitiesController {
       data = await Activity.query()
         .preload('division', division => division.select('id', 'name'))
         .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
-        .preload('activityMembers', activityMembers => activityMembers.select('id', 'role', 'employee_id').preload('employee', employee => employee.select('name')))
+        // .preload('activityMembers', activityMembers => activityMembers.select('id', 'role', 'employee_id').preload('employee', employee => employee.select('name')))
         .whereILike('name', `%${keyword}%`)
-        .andWhere('division_id', auth.use('api').user!.divisionId)
+        .andWhere(query => {
+          query.where('division_id', auth.use('api').user!.divisionId)
+          query.orWhereHas('activityMembers', am => (am.where('employee_id', user.employeeId), am.where('role', 'manager')))
+        })
         .orderBy(orderBy, orderDirection)
         .paginate(page, limit)
     }
@@ -66,7 +69,7 @@ export default class ActivitiesController {
   }
 
   public async getActivity({ request, response, auth }: HttpContextContract) {
-    const { keyword = "", orderBy = "name", orderDirection = 'ASC' } = request.qs()
+    const { keyword = "", orderBy = "name", orderDirection = 'ASC', activity_type = '' } = request.qs()
 
     const user = await User.query().preload('roles', r => r.preload('role')).where('id', auth.use('api').user!.id).firstOrFail()
     const userObject = JSON.parse(JSON.stringify(user))
@@ -79,6 +82,7 @@ export default class ActivitiesController {
         .preload('division', division => division.select('id', 'name'))
         .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
         .whereILike('name', `%${keyword}%`)
+        .andWhereILike('activity_type', `%${activity_type}%`)
         .orderBy(orderBy, orderDirection)
     } else {
       console.log('masuk sini ya');
@@ -87,6 +91,7 @@ export default class ActivitiesController {
         .preload('division', division => division.select('id', 'name'))
         .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
         .whereILike('name', `%${keyword}%`)
+        .andWhereILike('activity_type', `%${activity_type}%`)
         // .andWhere('owner', auth.user!.id)
         .orderBy(orderBy, orderDirection)
     }

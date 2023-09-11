@@ -174,7 +174,7 @@ export default class DailyAttendancesController {
                  offset ${limit * (page - 1)}
         
           `)
-// return rows
+
           data = {
             meta: {
               total: +rows[0]?.total_data,
@@ -210,7 +210,11 @@ export default class DailyAttendancesController {
           )
           .whereBetween("date_in", [formattedStartDate, formattedEndDate])
           .whereHas("student", (s) => s.whereILike("name", `%${keyword}%`))
-          .if(sortingByAbsent, (q) => q.orderBy("status", "desc"))
+          .if(sortingByAbsent, (q) => q.orderByRaw(`(case when academic.daily_attendances.status = 'sick' then concat('1-', academic.daily_attendances.status)
+          when academic.daily_attendances.status = 'permission' then concat('2-', academic.daily_attendances.status)
+          when academic.daily_attendances.status = 'absent' then concat('3-', academic.daily_attendances.status)
+          when academic.daily_attendances.status = 'present' then concat('4-', academic.daily_attendances.status)
+        end), academic.daily_attendances.description`))
           .orderBy("c.name")
           .orderBy("academic.daily_attendances.created_at")
           .orderBy("s.name")
@@ -234,7 +238,11 @@ export default class DailyAttendancesController {
             )
           ).joinRaw("left join academic.classes c on c.id = s.class_id")
           .whereBetween("date_in", [formattedStartDate, formattedEndDate])
-          .if(sortingByAbsent, (q) => q.orderBy("status", "desc"))
+          .if(sortingByAbsent, (q) => q.orderByRaw(`(case when academic.daily_attendances.status = 'sick' then concat('1-', academic.daily_attendances.status)
+          when academic.daily_attendances.status = 'permission' then concat('2-', academic.daily_attendances.status)
+          when academic.daily_attendances.status = 'absent' then concat('3-', academic.daily_attendances.status)
+          when academic.daily_attendances.status = 'present' then concat('4-', academic.daily_attendances.status)
+        end), academic.daily_attendances.description`))
           .whereHas("student", (s) => s.whereILike("name", `%${keyword}%`))
           .orderBy("c.name")
           .orderBy("academic.daily_attendances.created_at")

@@ -39,7 +39,8 @@ export default class BillingsController {
   }
 
   public async store({ request, response }: HttpContextContract) {
-    const payload = await request.validate(CreateBillingValidator)
+    const billingValidator = new CreateBillingValidator(HttpContext.get()!, request.body())
+    const payload = await request.validate(billingValidator)
 
     try {
       const data = await Billing.createMany(payload.billings)

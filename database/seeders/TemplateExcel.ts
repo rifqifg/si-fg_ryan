@@ -18,7 +18,13 @@ export default class extends BaseSeeder {
         name: "Template Import Data Rekening Siswa",
         link: "https://docs.google.com/spreadsheets/d/1-DhiSLzVzCzm72blxToVB9MQKmwdd0L8qjYPmB5u6-U/export",
         description: "Template untuk impor data rekening siswa"
-      }
+      },
+      {
+        id: "6f87a12c-9f94-41d3-a456-ae9c7e9efc7d",
+        name: "Template Import Data Billing",
+        link: "https://docs.google.com/spreadsheets/d/1VkfW5V0TqqlXf0Z-pW1y-uLgdBESrD86UtzcUHZe5sI/export",
+        description: "Template untuk impor data billing"
+      },
     ])
 
     console.log(">>> DONE seeding table: template_excels")

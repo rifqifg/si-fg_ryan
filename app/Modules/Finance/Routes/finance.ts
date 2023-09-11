@@ -8,6 +8,7 @@ Route.group(() => {
     Route.resource('billings', 'BillingsController').apiOnly().except(['update']).middleware({ '*': ['auth:api,parent_api'] })
     Route.put('billings', 'BillingsController.update').middleware(['auth'])
     Route.resource('accounts', 'AccountsController').apiOnly().middleware({ '*': ['auth'] })
+    Route.post('accounts/import', 'AccountsController.import').middleware(['auth:api'])
     Route.resource('transactions', 'TransactionsController').apiOnly().middleware({ '*': ['auth'] })
     Route.resource('transaction-documents', 'TransactionDocumentsController').apiOnly().middleware({
         'index': ['auth:api,parent_api'],

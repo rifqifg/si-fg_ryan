@@ -32,7 +32,8 @@ export default class UpdateSubActivityValidator {
       extnames: ['png', 'jpg', 'jpeg']
     })),
     deleteImages: schema.string.nullableAndOptional(),
-    date: schema.date.optional({ format: 'yyyy-MM-dd HH:mm:ss' }),
+    date: schema.date.optional({ format: 'yyyy-MM-dd' }),
+    time: schema.string.optional(),
     note: schema.string.nullableAndOptional([
       rules.minLength(3)
     ]),

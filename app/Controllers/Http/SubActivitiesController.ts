@@ -11,6 +11,7 @@ import ActivityMember from 'App/Models/ActivityMember';
 import { RoleActivityMember } from 'App/lib/enum';
 import Presence from 'App/Models/Presence';
 import DeleteManyPresenceValidator from 'App/Validators/DeleteManyPresenceValidator';
+import User from 'App/Models/User';
 
 const getSignedUrl = async (filename: string) => {
   const beHost = Env.get('BE_URL')
@@ -207,12 +208,43 @@ export default class SubActivitiesController {
     }
   }
 
+  public async getPresenceSubActivity({ request, response }: HttpContextContract) {
+    const { subActivityId = "", keyword = "", page = 1, limit = 10 } = request.qs()
+
+    try {
+      const data = await Presence.query()
+        .select('id', 'activity_id', 'sub_activity_id', 'employee_id')
+        .where('sub_activity_id', subActivityId)
+        .andWhere(query => {
+          query.orWhereHas('employee', query => {
+            query.whereILike('name', `%${keyword}%`)
+          })
+        })
+        .preload('employee', e => e.select('name'))
+        .paginate(page, limit)
+
+      response.ok({ message: "Data Berhasil Didapatkan", data })
+    } catch (error) {
+      const message = "HRDPSA03-presences: " + error.message || error;
+      console.log(error);
+      response.badRequest({
+        message: "Gagal Mengambil Data",
+        error: message,
+      });
+    }
+
+  }
+
   public async presence({ request, params, response, auth }: HttpContextContract) {
     const { activityId, subActivityId } = params
     if (!uuidValidation(activityId)) { return response.badRequest({ message: "Activity ID tidak valid" }) }
 
     const payload = await request.validate(CreatePresenceSubActivityValidator)
-    const authRole = auth.user?.role
+
+    const user = await User.query().preload('roles', r => r.preload('role')).where('id', auth.use('api').user!.id).firstOrFail()
+    const userObject = JSON.parse(JSON.stringify(user))
+
+    const authRole = userObject.roles[0].role_name
     const authEmployeeId = auth.user?.$original.employeeId
 
     const getActivityMember = await ActivityMember.query()
@@ -268,9 +300,9 @@ export default class SubActivitiesController {
 
       await Presence.query().whereIn("id", presenceIds).delete()
 
-      response.ok({message: 'Berhasil menghapus banyak data'})
+      response.ok({ message: 'Berhasil menghapus banyak data' })
     } catch (error) {
-      response.badRequest({message: "Gagal menghapus banyak data"})
+      response.badRequest({ message: "Gagal menghapus banyak data" })
     }
   }
 }

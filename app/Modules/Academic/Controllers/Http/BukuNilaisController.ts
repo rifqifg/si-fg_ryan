@@ -86,6 +86,7 @@ export default class BukuNilaisController {
   public async store({ request, response, auth }: HttpContextContract) {
     const user = await User.query()
       .where("id", auth.user!.id)
+      .preload("roles", (r) => r.preload("role"))
       .preload("employee", (e) => e.preload("teacher", (t) => t.select("id")))
       .firstOrFail();
     

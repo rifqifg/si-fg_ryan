@@ -27,7 +27,15 @@ export default class ProgramSemestersController {
 
     try {
       let data = {};
-      const user = await User.findByOrFail('id', auth?.user!.id)
+      const user = await User.query()
+        .where("id", auth?.user!.id)
+        .preload("roles", (r) => r.preload("role"))
+        .firstOrFail();
+      const userObject = JSON.parse(JSON.stringify(user));
+      const superAdmin = userObject.roles.find(
+        (role) => role.role_name === "super_admin"
+      );
+
       const teacherId = await User.query()
         .where("id", user ? user.id : "")
         .preload("employee", (e) => e.preload("teacher", (t) => t.select("id")))
@@ -44,7 +52,7 @@ export default class ProgramSemestersController {
           .preload("mapel", (m) => m.select("name"))
           .if(subjectId, (q) => q.where("subjectId", subjectId))
           .if(classId, (q) => q.where("classId", classId))
-          .if(user.role !== "super_admin", (q) =>
+          .if(!superAdmin, (q) =>
             q.where("teacherId", teacherId.employee.teacher.id)
           )
 
@@ -58,7 +66,7 @@ export default class ProgramSemestersController {
           )
           .preload("class", (c) => c.select("name", "id"))
           .if(subjectId, (q) => q.where("subjectId", subjectId))
-          .if(user.role !== "super_admin", (q) =>
+          .if(!superAdmin, (q) =>
             q.where("teacherId", teacherId.employee.teacher.id)
           )
           .if(classId, (q) => q.where("classId", classId))
@@ -79,7 +87,12 @@ export default class ProgramSemestersController {
   }
 
   public async store({ request, response, auth }: HttpContextContract) {
-    const user = await User.findByOrFail('id', auth.user!.id)
+    const user = await User.query()
+      .where("id", auth?.user!.id)
+      .preload("roles", (r) => r.preload("role"))
+      .firstOrFail();
+    const userObject = JSON.parse(JSON.stringify(user));
+
     const teacherId = await User.query()
       .where("id", user ? user.id : "")
       .preload("employee", (e) => e.preload("teacher", (t) => t.select("id")))
@@ -87,7 +100,7 @@ export default class ProgramSemestersController {
 
     let payload;
 
-    if (user.role !== "super_admin") {
+    if (userObject.roles[0].role_name !== "super_admin") {
       const newProsemNonAdminSchema = schema.create({
         teacherId: schema.string([
           rules.uuid({ version: 4 }),
@@ -235,12 +248,15 @@ export default class ProgramSemestersController {
     if (!uuidValidation(id)) {
       return response.badRequest({ message: "Program Semeter ID tidak valid" });
     }
-
-    const user = await User.findByOrFail('id', auth.user!.id);
+    const user = await User.query()
+      .where("id", auth?.user!.id)
+      .preload("roles", (r) => r.preload("role"))
+      .firstOrFail();
+    const userObject = JSON.parse(JSON.stringify(user));
 
     let payload;
 
-    if (user.role !== "super_admin") {
+    if (userObject.roles[0].role_name == "super_admin") {
       const newProsemNonAdminSchema = schema.create({
         subjectId: schema.string.optional([
           rules.uuid({ version: 4 }),

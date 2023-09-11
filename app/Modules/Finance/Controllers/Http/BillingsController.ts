@@ -3,6 +3,12 @@ import Billing from '../../Models/Billing';
 import CreateBillingValidator from '../../Validators/CreateBillingValidator';
 import { validate as uuidValidation } from "uuid";
 import UpdateBillingValidator from '../../Validators/UpdateBillingValidator';
+import UploadSpreadsheetBillingValidator from '../../Validators/UploadSpreadsheetBillingValidator';
+import XLSX from "xlsx";
+import fs from "fs";
+import Account from '../../Models/Account';
+import { validator } from '@ioc:Adonis/Core/Validator'
+import { HttpContext } from '@adonisjs/core/build/standalone';
 
 export default class BillingsController {
   public async index({ request, response }: HttpContextContract) {
@@ -74,7 +80,7 @@ export default class BillingsController {
     try {
       const payload = await request.validate(UpdateBillingValidator)
       const data = await Billing.updateOrCreateMany("id", payload.billings)
-      response.ok({ message: "Berhasil mengubah data", data });      
+      response.ok({ message: "Berhasil mengubah data", data });
     } catch (error) {
       const message = "FBIL-UPD: " + error.message || error;
       console.log(error);
@@ -105,5 +111,60 @@ export default class BillingsController {
         error_data: error,
       });
     }
+  }
+
+  public async import({ request, response }: HttpContextContract) {
+    let payload = await request.validate(UploadSpreadsheetBillingValidator)
+
+    const excelBuffer = fs.readFileSync(payload.upload.tmpPath?.toString()!);
+    const jsonData = await BillingsController.spreadsheetToJSON(excelBuffer)
+
+    if (jsonData == 0) response.badRequest({ message: "Data tidak boleh kosong" })
+
+    const manyBillingValidator = new CreateBillingValidator(HttpContext.get()!, jsonData)
+    const payloadBilling = await validator.validate(manyBillingValidator)
+    
+    try {
+      const data = await Billing.createMany(payloadBilling.billings)
+
+      response.created({ message: "Berhasil import data", data })
+    } catch (error) {
+      const message = "FBIL-IMP: " + error.message || error;
+      response.badRequest({
+        message: "Gagal import data",
+        error: message,
+      })
+    }
+  }
+
+  private static async spreadsheetToJSON(excelBuffer) {
+    let workbook = await XLSX.read(excelBuffer)
+
+    // Mendapatkan daftar nama sheet dalam workbook
+    const sheetNames = workbook.SheetNames
+
+    // membaca isi dari sheet pertama
+    const firstSheet = workbook.Sheets[sheetNames[0]]
+    const jsonData: Array<object> = XLSX.utils.sheet_to_json(firstSheet)
+
+    if (jsonData.length <= 1) return 0
+
+    const formattedJson = await Promise.all(jsonData.map(async data => {
+      const accountNo = data['Nomor Akun Tertagih'].toString()
+      const amount = data['Jumlah'].toString()
+      const type = data['Tipe'].toString().toLowerCase()
+
+      const account = await Account.findByOrFail('number', accountNo)
+
+      return {
+        account_id: account.id,
+        name: data['Nama Billing'],
+        amount: amount,
+        description: data['Deskripsi'],
+        type: type,
+      }
+    }))
+
+    return { "billings": formattedJson }
   }
 }

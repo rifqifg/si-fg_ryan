@@ -3,7 +3,7 @@ import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import { BillingType } from '../lib/enums'
 
 export default class CreateBillingValidator {
-  constructor(protected ctx: HttpContextContract) { }
+  constructor(protected ctx: HttpContextContract, public data: {}) { }
 
   public schema = schema.create({
     billings: schema.array().members(
@@ -24,5 +24,58 @@ export default class CreateBillingValidator {
     )
   })
 
-  public messages: CustomMessages = {}
+  public messages: CustomMessages = {
+    '*': (field, rule) => {
+      const numberPattern = /\d+/;
+      const match = field.match(numberPattern);
+      let number = match ? parseInt(match[0], 10) : null;
+      number! += 2;
+
+      const column = field.split('.');
+
+      let cekColumn;
+      switch (column[2]) {
+        case 'account_id':
+          cekColumn = 'ID Akun'
+          break
+        case 'master_billing_id':
+          cekColumn = 'ID Master Billing'
+          break
+        case 'name':
+          cekColumn = 'Nama Rekening'
+          break
+        case 'amount':
+          cekColumn = 'Jumlah'
+          break
+        case 'description':
+          cekColumn = 'Deskripsi'
+          break
+        case 'type':
+          cekColumn = 'Tipe'
+          break
+        default:
+          cekColumn = column
+      }
+
+      let cekRule;
+      switch (rule) {
+        case 'required':
+          cekRule = "Data tidak boleh kosong";
+          break;
+        case 'regex':
+          cekRule = "Data berupa angka 0 - 9";
+          break;
+        case 'unique':
+          cekRule = "Data tidak boleh sama";
+          break;
+        case 'exists':
+          cekRule = "Data harus ada di database";
+          break;
+        default:
+          cekRule = rule
+      }
+
+      return `${number}: ${cekColumn} - ${cekRule}`
+    }
+  }
 }

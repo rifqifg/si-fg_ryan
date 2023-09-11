@@ -22,7 +22,6 @@ export default class ActivitiesController {
       data = await Activity.query()
         .preload('division', division => division.select('id', 'name'))
         .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
-        // .preload('activityMembers', activityMembers => activityMembers.select('id', 'role', 'employee_id').preload('employee', employee => employee.select('name')))
         .whereILike('name', `%${keyword}%`)
         .orderBy(orderBy, orderDirection)
         .paginate(page, limit)
@@ -30,7 +29,6 @@ export default class ActivitiesController {
       data = await Activity.query()
         .preload('division', division => division.select('id', 'name'))
         .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
-        // .preload('activityMembers', activityMembers => activityMembers.select('id', 'role', 'employee_id').preload('employee', employee => employee.select('name')))
         .whereILike('name', `%${keyword}%`)
         .andWhere(query => {
           query.where('division_id', auth.use('api').user!.divisionId)

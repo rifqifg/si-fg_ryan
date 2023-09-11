@@ -23,6 +23,7 @@ export default class CreateManyAccountValidator {
         ]),
         number: schema.string([
           rules.regex(new RegExp("^[0-9]+$")),
+          rules.unique({table: 'finance.accounts', column: 'number'})
         ]),
       })
     )

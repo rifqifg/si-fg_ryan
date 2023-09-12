@@ -119,7 +119,7 @@ export default class AccountsController {
     const excelBuffer = fs.readFileSync(payload.upload.tmpPath?.toString()!);
     const jsonData = await AccountsController.spreadsheetToJSON(excelBuffer)
 
-    if (jsonData == 0) response.badRequest({ message: "Data tidak boleh kosong" })
+    if (jsonData == 0) return response.badRequest({ message: "Data tidak boleh kosong" })
 
     const wrappedJson = { "accounts": jsonData }
     const manyAccountValidator = new CreateManyAccountValidator(HttpContext.get()!, wrappedJson)
@@ -154,7 +154,7 @@ export default class AccountsController {
     // Warning: async call didalam loop (map)
     // might refactor later
     const formattedJson = await Promise.all(jsonData.map(async data => {
-      const nisSiswa = data["NIS"].toString()
+      const nisSiswa = data["NIS"]?.toString()
 
       const student = await Student.query()
         .where('nis', '=', nisSiswa)
@@ -163,11 +163,11 @@ export default class AccountsController {
       const balance = data["Saldo"] ? data["Saldo"].toString() : "0"
 
       return {
-        coa_id: data['Nomor COA'].toString(),
+        coa_id: data['Nomor COA']?.toString(),
         student_id: student.id,
         account_name: accountName,
         balance: balance,
-        number: data['Nomor Rekening'].toString()
+        number: data['Nomor Rekening']?.toString()
       }
     }))
 

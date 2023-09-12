@@ -54,7 +54,8 @@ export default class CreateBillingValidator {
           cekColumn = 'Tipe'
           break
         default:
-          cekColumn = column
+          cekColumn = column[2]
+          break
       }
 
       let cekRule;
@@ -73,6 +74,7 @@ export default class CreateBillingValidator {
           break;
         default:
           cekRule = rule
+          break
       }
 
       return `${number}: ${cekColumn} - ${cekRule}`

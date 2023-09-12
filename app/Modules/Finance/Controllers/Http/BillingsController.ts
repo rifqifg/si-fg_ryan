@@ -120,7 +120,7 @@ export default class BillingsController {
     const excelBuffer = fs.readFileSync(payload.upload.tmpPath?.toString()!);
     const jsonData = await BillingsController.spreadsheetToJSON(excelBuffer)
 
-    if (jsonData == 0) response.badRequest({ message: "Data tidak boleh kosong" })
+    if (jsonData == 0) return response.badRequest({ message: "Data tidak boleh kosong" })
 
     const manyBillingValidator = new CreateBillingValidator(HttpContext.get()!, jsonData)
     const payloadBilling = await validator.validate(manyBillingValidator)

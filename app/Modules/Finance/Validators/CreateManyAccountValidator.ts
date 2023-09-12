@@ -61,6 +61,9 @@ export default class CreateManyAccountValidator {
         case 'number':
           cekColumn = 'Nomor Rekening'
           break
+        default:
+          cekColumn = column[2]
+          break
       }
 
       let cekRule;
@@ -77,9 +80,12 @@ export default class CreateManyAccountValidator {
         case 'exists':
           cekRule = "Data harus ada di database";
           break;
+        default:
+          cekRule = rule
+          break
       }
 
-      return `${number}: ${cekColumn} - ${cekRule}`
+      return `Baris ${number}: ${cekColumn} - ${cekRule}`
     }
   }
 }

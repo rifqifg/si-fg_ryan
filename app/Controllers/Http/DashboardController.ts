@@ -9,15 +9,15 @@ export default class DashboardController {
     if (auth.use('api').isLoggedIn) {
       const data = await User.query().preload('roles', r => r.select('role_name').orderBy('role_name', 'asc').preload('role', r => r.select('name', 'permissions'))).where('id', auth.user!.id)
       const dataObject = JSON.parse(JSON.stringify(data))
-      const roles =  dataObject[0].roles
-      const name:any = []
-      const descriptions:any = []
+      const roles = dataObject[0].roles
+      const name: any = []
+      const descriptions: any = []
       const modules = roles.reduce((prev, v) => {
         name.push(v.role_name)
         descriptions.push(v.descriptions)
         return [...prev, v.role.permissions.modules]
       }, [])
-      const modulesMerge:any = []
+      const modulesMerge: any = []
       modules.map(value => {
         value.map(m => {
           modulesMerge.push(m)
@@ -52,6 +52,8 @@ export default class DashboardController {
                 simplifiedMenu.functions = menu.functions.reduce((acc, func) => {
                   if (func.type !== "disabled" && !acc.find(f => f.id === func.id)) {
                     acc.push({ id: func.id, type: func.type });
+                  } else if (func.type !== "show" && !acc.find(f => f.id === func.id)) {
+                    acc.push({ id: func.id, type: func.type });
                   }
                   return acc;
                 }, []);
@@ -69,6 +71,8 @@ export default class DashboardController {
                 menu.functions.forEach(func => {
                   if (func.type !== "disabled" && !existingMenu.functions.find(f => f.id === func.id)) {
                     existingMenu.functions.push({ id: func.id, type: func.type });
+                  } else if (func.type !== "show" && !existingMenu.functions.find(f => f.id === func.id)) {
+                    existingMenu.functions.push({ id: func.id, type: func.type });
                   }
                 });
               }
@@ -80,7 +84,7 @@ export default class DashboardController {
       const modulesSimple = Object.values(simplifiedModules);
 
       dataObject[0]["role_name"] = name.toString()
-      dataObject[0]["role"] = {name: name.toString(), descriptions: descriptions.toString(), permissions: {modules: modulesSimple}}
+      dataObject[0]["role"] = { name: name.toString(), descriptions: descriptions.toString(), permissions: { modules: modulesSimple } }
       delete dataObject[0]["roles"]
 
       response.ok({ message: 'you are logged in', data: dataObject })

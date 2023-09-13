@@ -95,6 +95,8 @@ export default class UsersController {
                 simplifiedMenu.functions = menu.functions.reduce((acc, func) => {
                   if (func.type !== "disabled" && !acc.find(f => f.id === func.id)) {
                     acc.push({ id: func.id, type: func.type });
+                  } else if (func.type !== "show" && !acc.find(f => f.id === func.id)) {
+                    acc.push({ id: func.id, type: func.type });
                   }
                   return acc;
                 }, []);
@@ -111,6 +113,8 @@ export default class UsersController {
               if (menu.functions) {
                 menu.functions.forEach(func => {
                   if (func.type !== "disabled" && !existingMenu.functions.find(f => f.id === func.id)) {
+                    existingMenu.functions.push({ id: func.id, type: func.type });
+                  } else if (func.type !== "show" && !existingMenu.functions.find(f => f.id === func.id)) {
                     existingMenu.functions.push({ id: func.id, type: func.type });
                   }
                 });
@@ -245,6 +249,8 @@ export default class UsersController {
                 simplifiedMenu.functions = menu.functions.reduce((acc, func) => {
                   if (func.type !== "disabled" && !acc.find(f => f.id === func.id)) {
                     acc.push({ id: func.id, type: func.type });
+                  } else if (func.type !== "show" && !acc.find(f => f.id === func.id)) {
+                    acc.push({ id: func.id, type: func.type });
                   }
                   return acc;
                 }, []);
@@ -261,6 +267,8 @@ export default class UsersController {
               if (menu.functions) {
                 menu.functions.forEach(func => {
                   if (func.type !== "disabled" && !existingMenu.functions.find(f => f.id === func.id)) {
+                    existingMenu.functions.push({ id: func.id, type: func.type });
+                  } else if (func.type !== "show" && !existingMenu.functions.find(f => f.id === func.id)) {
                     existingMenu.functions.push({ id: func.id, type: func.type });
                   }
                 });

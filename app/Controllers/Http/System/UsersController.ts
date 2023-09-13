@@ -95,12 +95,26 @@ export default class UsersController {
         if (module.menus) {
           module.menus.forEach(menu => {
             const existingMenu = simplifiedModules[module.id].menus.find(existing => existing.id === menu.id);
+
             if (!existingMenu) {
               const simplifiedMenu: any = { id: menu.id, type: "" };
-              if (menu.type === "show" && simplifiedMenu.type !== "disabled") {
-                simplifiedMenu.type = "show";
-              } else if (menu.type === "disabled" && simplifiedMenu.type !== "show") {
-                simplifiedMenu.type = "disabled";
+
+              if (menu.type === "show") {
+                if (simplifiedMenu.type === "") {
+                  simplifiedMenu.type = "show";
+                } else if (simplifiedMenu.type === "show") {
+                  simplifiedMenu.type = "show";
+                } else if (simplifiedMenu.type === "disabled") {
+                  simplifiedMenu.type = "show";
+                }
+              } else if (menu.type === "disabled") {
+                if (simplifiedMenu.type === "") {
+                  simplifiedMenu.type = "disabled";
+                } else if (simplifiedMenu.type === "show") {
+                  simplifiedMenu.type = "show";
+                } else if (simplifiedMenu.type === "disabled") {
+                  simplifiedMenu.type = "disabled";
+                }
               }
 
               if (menu.functions) {
@@ -116,10 +130,18 @@ export default class UsersController {
 
               simplifiedModules[module.id].menus.push(simplifiedMenu);
             } else {
-              if (menu.type === "show" && existingMenu.type !== "disabled") {
-                existingMenu.type = "show";
-              } else if (menu.type === "disabled" && existingMenu.type !== "show") {
-                existingMenu.type = "disabled";
+              if (menu.type === "show") {
+                if (existingMenu.type === "show") {
+                  existingMenu.type = "show";
+                } else if (existingMenu.type === "disabled") {
+                  existingMenu.type = "show";
+                }
+              } else if (menu.type === "disabled") {
+                if (existingMenu.type === "show") {
+                  existingMenu.type = "show";
+                } else if (existingMenu.type === "disabled") {
+                  existingMenu.type = "disabled";
+                }
               }
 
               if (menu.functions) {
@@ -261,12 +283,26 @@ export default class UsersController {
         if (module.menus) {
           module.menus.forEach(menu => {
             const existingMenu = simplifiedModules[module.id].menus.find(existing => existing.id === menu.id);
+
             if (!existingMenu) {
               const simplifiedMenu: any = { id: menu.id, type: "" };
-              if (menu.type === "show" && simplifiedMenu.type !== "disabled") {
-                simplifiedMenu.type = "show";
-              } else if (menu.type === "disabled" && simplifiedMenu.type !== "show") {
-                simplifiedMenu.type = "disabled";
+
+              if (menu.type === "show") {
+                if (simplifiedMenu.type === "") {
+                  simplifiedMenu.type = "show";
+                } else if (simplifiedMenu.type === "show") {
+                  simplifiedMenu.type = "show";
+                } else if (simplifiedMenu.type === "disabled") {
+                  simplifiedMenu.type = "show";
+                }
+              } else if (menu.type === "disabled") {
+                if (simplifiedMenu.type === "") {
+                  simplifiedMenu.type = "disabled";
+                } else if (simplifiedMenu.type === "show") {
+                  simplifiedMenu.type = "show";
+                } else if (simplifiedMenu.type === "disabled") {
+                  simplifiedMenu.type = "disabled";
+                }
               }
 
               if (menu.functions) {
@@ -282,10 +318,18 @@ export default class UsersController {
 
               simplifiedModules[module.id].menus.push(simplifiedMenu);
             } else {
-              if (menu.type === "show" && existingMenu.type !== "disabled") {
-                existingMenu.type = "show";
-              } else if (menu.type === "disabled" && existingMenu.type !== "show") {
-                existingMenu.type = "disabled";
+              if (menu.type === "show") {
+                if (existingMenu.type === "show") {
+                  existingMenu.type = "show";
+                } else if (existingMenu.type === "disabled") {
+                  existingMenu.type = "show";
+                }
+              } else if (menu.type === "disabled") {
+                if (existingMenu.type === "show") {
+                  existingMenu.type = "show";
+                } else if (existingMenu.type === "disabled") {
+                  existingMenu.type = "disabled";
+                }
               }
 
               if (menu.functions) {

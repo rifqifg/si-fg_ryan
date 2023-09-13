@@ -103,7 +103,7 @@ export default class DailyAttendancesController {
 	                  date_in between '${formattedStartDate}' AND '${formattedEndDate}'
 	                  and c.is_graduated = false
                     ${whereClassId}
-                    and date_in not in  (select date from academic.agendas where count_presence = false)
+                    and date_in::date not in  (select date from academic.agendas where count_presence = false)
               group by
               	c.name,
               	c.id
@@ -122,7 +122,7 @@ export default class DailyAttendancesController {
             data: rows,
           };
         } else if (recap === "siswa") {
-          const { rows } = await Database.rawQuery(`
+          const {rows}  = await Database.rawQuery(`
         select
           s."name" as student_name ,
           c.name as class_name,
@@ -163,7 +163,7 @@ export default class DailyAttendancesController {
          and c.is_graduated = false
          and s.name ilike '%${keyword}%'
          ${whereClassId}
-         and date_in not in  (select date from academic.agendas where count_presence = false)
+         and date_in::date not in  (select date from academic.agendas where count_presence = false)
        group by
          s.name,
          c.name,
@@ -173,7 +173,7 @@ export default class DailyAttendancesController {
        limit ${limit}
                  offset ${limit * (page - 1)}
         
-          `);
+          `)
 
           data = {
             meta: {
@@ -210,10 +210,14 @@ export default class DailyAttendancesController {
           )
           .whereBetween("date_in", [formattedStartDate, formattedEndDate])
           .whereHas("student", (s) => s.whereILike("name", `%${keyword}%`))
-          .if(sortingByAbsent, (q) => q.orderBy("status", "desc"))
+          .if(sortingByAbsent, (q) => q.orderByRaw(`(case when academic.daily_attendances.status = 'sick' then concat('1-', academic.daily_attendances.status)
+          when academic.daily_attendances.status = 'permission' then concat('2-', academic.daily_attendances.status)
+          when academic.daily_attendances.status = 'absent' then concat('3-', academic.daily_attendances.status)
+          when academic.daily_attendances.status = 'present' then concat('4-', academic.daily_attendances.status)
+        end), academic.daily_attendances.description`))
           .orderBy("c.name")
-          .orderBy("s.name")
           .orderBy("academic.daily_attendances.created_at")
+          .orderBy("s.name")
           .if(classId, (c) =>
             c.whereHas("student", (st) => st.where("class_id", classId))
           )
@@ -232,11 +236,15 @@ export default class DailyAttendancesController {
               s.select("name", "nis", "class_id"),
               s.preload("class", (c) => c.select("name"))
             )
-          )
+          ).joinRaw("left join academic.classes c on c.id = s.class_id")
           .whereBetween("date_in", [formattedStartDate, formattedEndDate])
-          .if(sortingByAbsent, (q) => q.orderBy("status", "desc"))
+          .if(sortingByAbsent, (q) => q.orderByRaw(`(case when academic.daily_attendances.status = 'sick' then concat('1-', academic.daily_attendances.status)
+          when academic.daily_attendances.status = 'permission' then concat('2-', academic.daily_attendances.status)
+          when academic.daily_attendances.status = 'absent' then concat('3-', academic.daily_attendances.status)
+          when academic.daily_attendances.status = 'present' then concat('4-', academic.daily_attendances.status)
+        end), academic.daily_attendances.description`))
           .whereHas("student", (s) => s.whereILike("name", `%${keyword}%`))
-          .orderBy("s.class_id")
+          .orderBy("c.name")
           .orderBy("academic.daily_attendances.created_at")
           .orderBy("s.name")
           .if(classId, (c) =>

@@ -96,7 +96,13 @@ export default class BukuNilaisController {
     );
     let payload;
 
-    if (superAdmin) {
+    const admin = userObject.roles?.find((role) => role.name == "admin");
+
+      const adminAcademic = userObject.roles?.find(
+        (role) => role.name == "admin_academic"
+      );
+
+    if (superAdmin || admin || adminAcademic) {
       const schemaForTeacher = schema.create({
         bukuNilai: schema.array().members(
           schema.object().members({
@@ -256,8 +262,14 @@ export default class BukuNilaisController {
         (role) => role.role_name === "super_admin"
       );
 
+      const admin = userObject.roles?.find((role) => role.name == "admin");
+
+      const adminAcademic = userObject.roles?.find(
+        (role) => role.name == "admin_academic"
+      );
+
     let payload;
-    if (superAdmin) {
+    if (superAdmin || admin || adminAcademic) {
       try {
         const teacherId = await User.query()
           .where("id", user ? user.id : "")

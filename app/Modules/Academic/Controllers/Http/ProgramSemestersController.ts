@@ -36,6 +36,14 @@ export default class ProgramSemestersController {
         (role) => role.role_name === "super_admin"
       );
 
+      const admin = userObject.roles?.find((role) => role.name == "admin");
+      
+      const teacher = userObject.roles?.find((role) => role.name == "teacher")
+
+      const adminAcademic = userObject.roles?.find(
+        (role) => role.name == "admin_academic"
+      );
+
       const teacherId = await User.query()
         .where("id", user ? user.id : "")
         .preload("employee", (e) => e.preload("teacher", (t) => t.select("id")))
@@ -52,7 +60,7 @@ export default class ProgramSemestersController {
           .preload("mapel", (m) => m.select("name"))
           .if(subjectId, (q) => q.where("subjectId", subjectId))
           .if(classId, (q) => q.where("classId", classId))
-          .if(!superAdmin, (q) =>
+          .if(teacher, (q) =>
             q.where("teacherId", teacherId.employee.teacher.id)
           )
 
@@ -66,7 +74,7 @@ export default class ProgramSemestersController {
           )
           .preload("class", (c) => c.select("name", "id"))
           .if(subjectId, (q) => q.where("subjectId", subjectId))
-          .if(!superAdmin, (q) =>
+          .if(teacher, (q) =>
             q.where("teacherId", teacherId.employee.teacher.id)
           )
           .if(classId, (q) => q.where("classId", classId))
@@ -93,6 +101,14 @@ export default class ProgramSemestersController {
       .firstOrFail();
     const userObject = JSON.parse(JSON.stringify(user));
 
+    const admin = userObject.roles?.find((role) => role.name == "admin");
+
+    const teacher = userObject.roles?.find((role) => role.name == "teacher")
+
+    const adminAcademic = userObject.roles?.find(
+      (role) => role.name == "admin_academic"
+    );
+
     const teacherId = await User.query()
       .where("id", user ? user.id : "")
       .preload("employee", (e) => e.preload("teacher", (t) => t.select("id")))
@@ -100,7 +116,7 @@ export default class ProgramSemestersController {
 
     let payload;
 
-    if (userObject.roles[0].role_name !== "super_admin") {
+    if (teacher) {
       const newProsemNonAdminSchema = schema.create({
         teacherId: schema.string([
           rules.uuid({ version: 4 }),
@@ -254,9 +270,18 @@ export default class ProgramSemestersController {
       .firstOrFail();
     const userObject = JSON.parse(JSON.stringify(user));
 
+    const admin = userObject.roles?.find((role) => role.name == "admin");
+
+    const teacher = userObject.roles?.find((role) => role.name == "teacher")
+
+
+    const adminAcademic = userObject.roles?.find(
+      (role) => role.name == "admin_academic"
+    );
+
     let payload;
 
-    if (userObject.roles[0].role_name == "super_admin") {
+    if (teacher) {
       const newProsemNonAdminSchema = schema.create({
         subjectId: schema.string.optional([
           rules.uuid({ version: 4 }),

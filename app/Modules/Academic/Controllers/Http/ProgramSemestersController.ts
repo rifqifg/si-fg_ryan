@@ -32,16 +32,9 @@ export default class ProgramSemestersController {
         .preload("roles", (r) => r.preload("role"))
         .firstOrFail();
       const userObject = JSON.parse(JSON.stringify(user));
-      const superAdmin = userObject.roles.find(
-        (role) => role.role_name === "super_admin"
-      );
 
-      const admin = userObject.roles?.find((role) => role.name == "admin");
-      
-      const teacher = userObject.roles?.find((role) => role.name == "teacher")
-
-      const adminAcademic = userObject.roles?.find(
-        (role) => role.name == "admin_academic"
+      const teacher = userObject.roles?.find(
+        (role) => role.role.name == "teacher"
       );
 
       const teacherId = await User.query()
@@ -101,12 +94,8 @@ export default class ProgramSemestersController {
       .firstOrFail();
     const userObject = JSON.parse(JSON.stringify(user));
 
-    const admin = userObject.roles?.find((role) => role.name == "admin");
-
-    const teacher = userObject.roles?.find((role) => role.name == "teacher")
-
-    const adminAcademic = userObject.roles?.find(
-      (role) => role.name == "admin_academic"
+    const teacher = userObject.roles?.find(
+      (role) => role.role.name == "teacher"
     );
 
     const teacherId = await User.query()
@@ -270,14 +259,7 @@ export default class ProgramSemestersController {
       .firstOrFail();
     const userObject = JSON.parse(JSON.stringify(user));
 
-    const admin = userObject.roles?.find((role) => role.name == "admin");
-
-    const teacher = userObject.roles?.find((role) => role.name == "teacher")
-
-
-    const adminAcademic = userObject.roles?.find(
-      (role) => role.name == "admin_academic"
-    );
+    const teacher = userObject.roles?.find((role) => role.role.name == "teacher");
 
     let payload;
 

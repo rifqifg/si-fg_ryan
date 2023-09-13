@@ -1,20 +1,17 @@
 import BaseSchema from '@ioc:Adonis/Lucid/Schema'
 
 export default class extends BaseSchema {
-  protected tableName = 'finance.transaction_documents'
+  protected tableName = 'finance.transactions'
 
   public async up () {
     this.schema.alterTable(this.tableName, (table) => {
-      table.string('file').notNullable().alter()
-      table.string('description')
-      table.float('amount')
+      table.float('amount').notNullable().alter()
     })
   }
 
   public async down () {
     this.schema.alterTable(this.tableName, (table) => {
-      table.string('file').nullable().alter()
-      table.dropColumns('description', 'amount')
+      table.string('amount').notNullable().alter()
     })
   }
 }

@@ -54,7 +54,7 @@ export default class DashboardController {
             const existingMenu = simplifiedModules[module.id].menus.find(existing => existing.id === menu.id);
 
             if (!existingMenu) {
-              const simplifiedMenu: any = { id: menu.id, type: "" };
+              const simplifiedMenu: any = { id: menu.id, type: "", functions: [] };
 
               if (menu.type === "show") {
                 if (simplifiedMenu.type === "") {
@@ -74,16 +74,35 @@ export default class DashboardController {
                 }
               }
 
-              if (menu.functions) {
-                simplifiedMenu.functions = menu.functions.reduce((acc, func) => {
-                  if (func.type !== "disabled" && !acc.find(f => f.id === func.id)) {
-                    acc.push({ id: func.id, type: func.type });
-                  } else if (func.type !== "show" && !acc.find(f => f.id === func.id)) {
-                    acc.push({ id: func.id, type: func.type });
+              menu.functions.forEach(func => {
+                const simplifiedFunction: any = { id: func.id, type: "" };
+
+                if (func.type === "show") {
+                  if (simplifiedFunction.type === "") {
+                    console.log("masuk 1");
+                    simplifiedFunction.type = "show";
+                  } else if (simplifiedFunction.type === "show") {
+                    console.log("masuk 2");
+                    simplifiedFunction.type = "show";
+                  } else if (simplifiedFunction.type === "disabled") {
+                    console.log("masuk 3");
+                    simplifiedFunction.type = "show";
                   }
-                  return acc;
-                }, []);
-              }
+                } else if (func.type === "disabled") {
+                  if (simplifiedFunction.type === "") {
+                    console.log("masuk 4");
+                    simplifiedFunction.type = "disabled";
+                  } else if (simplifiedFunction.type === "show") {
+                    console.log("masuk 5");
+                    simplifiedFunction.type = "show";
+                  } else if (simplifiedFunction.type === "disabled") {
+                    console.log("masuk 6");
+                    simplifiedFunction.type = "disabled";
+                  }
+                }
+
+                simplifiedMenu.functions.push(simplifiedFunction);
+              })
 
               simplifiedModules[module.id].menus.push(simplifiedMenu);
             } else {
@@ -102,11 +121,14 @@ export default class DashboardController {
               }
 
               if (menu.functions) {
+
                 menu.functions.forEach(func => {
-                  if (func.type !== "disabled" && !existingMenu.functions.find(f => f.id === func.id)) {
+                  const existingFunc = existingMenu.functions.find(f => f.id === func.id);
+
+                  if (!existingFunc) {
                     existingMenu.functions.push({ id: func.id, type: func.type });
-                  } else if (func.type !== "show" && !existingMenu.functions.find(f => f.id === func.id)) {
-                    existingMenu.functions.push({ id: func.id, type: func.type });
+                  } else if (func.type === "show") {
+                    existingFunc.type = "show";
                   }
                 });
               }

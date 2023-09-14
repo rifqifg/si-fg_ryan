@@ -5,6 +5,7 @@ Route.group(() => {
     })
 
     Route.resource('master-billings', 'MasterBillingsController').apiOnly().middleware({ '*': ['auth'] })
+    Route.resource('coas', 'CoasController').apiOnly().middleware({ '*': ['auth:api'] })
     Route.resource('billings', 'BillingsController').apiOnly().except(['update']).middleware({ '*': ['auth:api,parent_api'] })
     Route.put('billings', 'BillingsController.update').middleware(['auth'])
     Route.post('billings/import', 'BillingsController.import').middleware(['auth:api'])

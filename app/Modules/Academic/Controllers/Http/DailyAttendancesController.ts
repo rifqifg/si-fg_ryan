@@ -189,7 +189,7 @@ export default class DailyAttendancesController {
             data: rows,
           };
         } else if (recap == "chart") {
-          const  dataHarian  = await Database.rawQuery(`
+          const  {rows:dataHarian}  = await Database.rawQuery(`
                 select
                     distinct date_trunc('day',
                     cast(da.date_in::date as date)) as tanggal,
@@ -226,8 +226,8 @@ export default class DailyAttendancesController {
                   c.id        
                 order by
                 	tanggal
-          `).toQuery()
-                    return dataHarian
+          `)
+                    
           const { rows: dataBulanan } = await Database.rawQuery(`
           select
           	distinct date_trunc('month',
@@ -264,7 +264,7 @@ export default class DailyAttendancesController {
           // return rows
           data = {
             dataHarian,
-            // dataBulanan,
+            dataBulanan,
           };
         } else {
           return response.badRequest({

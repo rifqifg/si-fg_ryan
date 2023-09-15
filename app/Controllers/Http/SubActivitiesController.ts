@@ -13,6 +13,7 @@ import Presence from 'App/Models/Presence';
 import DeleteManyPresenceValidator from 'App/Validators/DeleteManyPresenceValidator';
 import User from 'App/Models/User';
 import Database from '@ioc:Adonis/Lucid/Database';
+import Activity from 'App/Models/Activity';
 
 const getSignedUrl = async (filename: string) => {
   const beHost = Env.get('BE_URL')
@@ -332,7 +333,12 @@ export default class SubActivitiesController {
         .groupBy('employee_id')
         .paginate(page, limit)
 
-      response.ok({ message: "Data Berhasil Didapatkan", data })
+      const activity = await Activity.query()
+            .where('id', activityId)
+            .preload('categoryActivity', ca => ca.select('name'))
+            .firstOrFail()
+
+      response.ok({ message: "Data Berhasil Didapatkan", data, activity })
     } catch (error) {
       const message = "HRDRSA01-recap-subActivities: " + error.message || error;
       console.log(error);

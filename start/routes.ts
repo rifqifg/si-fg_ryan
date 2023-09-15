@@ -78,6 +78,7 @@ Route.shallowResource('template-excels', 'TemplateExcelsController').apiOnly().o
 Route.shallowResource('category-activities', 'CategoryActivitiesController').apiOnly().only(['index']).middleware({ '*': ['auth', 'checkRole:admin'] })
 Route.shallowResource('activity-members', 'ActivityMembersController').apiOnly().middleware({ '*': ['auth', 'checkRole:admin'] })
 Route.get('/get-employees/:activityId', 'ActivityMembersController.getEmployee').middleware(['auth', 'checkRole:admin'])
+Route.get('/get-member-and-employees/:activityId', 'ActivityMembersController.getActivityMemberAndEmployee').middleware(['auth', 'checkRole:admin'])
 Route.shallowResource('sub-activities', 'SubActivitiesController').apiOnly().middleware({ '*': ['auth', 'checkRole:admin'] })
 Route.get('presences', 'SubActivitiesController.getPresenceSubActivity').middleware(['auth', 'checkRole:admin'])
 Route.post('presences/:activityId/:subActivityId', 'SubActivitiesController.presence').middleware(['auth', 'checkRole:admin'])

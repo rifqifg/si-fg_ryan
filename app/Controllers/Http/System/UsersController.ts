@@ -122,24 +122,18 @@ export default class UsersController {
 
                 if (func.type === "show") {
                   if (simplifiedFunction.type === "") {
-                    console.log("masuk 1");
                     simplifiedFunction.type = "show";
                   } else if (simplifiedFunction.type === "show") {
-                    console.log("masuk 2");
                     simplifiedFunction.type = "show";
                   } else if (simplifiedFunction.type === "disabled") {
-                    console.log("masuk 3");
                     simplifiedFunction.type = "show";
                   }
                 } else if (func.type === "disabled") {
                   if (simplifiedFunction.type === "") {
-                    console.log("masuk 4");
                     simplifiedFunction.type = "disabled";
                   } else if (simplifiedFunction.type === "show") {
-                    console.log("masuk 5");
                     simplifiedFunction.type = "show";
                   } else if (simplifiedFunction.type === "disabled") {
-                    console.log("masuk 6");
                     simplifiedFunction.type = "disabled";
                   }
                 }
@@ -332,24 +326,18 @@ export default class UsersController {
 
                 if (func.type === "show") {
                   if (simplifiedFunction.type === "") {
-                    console.log("masuk 1");
                     simplifiedFunction.type = "show";
                   } else if (simplifiedFunction.type === "show") {
-                    console.log("masuk 2");
                     simplifiedFunction.type = "show";
                   } else if (simplifiedFunction.type === "disabled") {
-                    console.log("masuk 3");
                     simplifiedFunction.type = "show";
                   }
                 } else if (func.type === "disabled") {
                   if (simplifiedFunction.type === "") {
-                    console.log("masuk 4");
                     simplifiedFunction.type = "disabled";
                   } else if (simplifiedFunction.type === "show") {
-                    console.log("masuk 5");
                     simplifiedFunction.type = "show";
                   } else if (simplifiedFunction.type === "disabled") {
-                    console.log("masuk 6");
                     simplifiedFunction.type = "disabled";
                   }
                 }

@@ -190,42 +190,40 @@ export default class DailyAttendancesController {
           };
         } else if (recap == "chart") {
           const  {rows:dataHarian}  = await Database.rawQuery(`
-                select
-                    distinct date_trunc('day',
-                    cast(da.date_in::date as date)) as tanggal,
-                    c.name as class_name,
-                    c.id as class_id,
-                    count(distinct da.student_id) as total_student,
-                    (sum(case when da.status = 'present' then 1 else 0 end) + sum(case when da.status = 'sick' then 1 else 0 end)) as total_presence,
-                    round(cast(sum(case when da.status = 'present' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,
-                    2)),
-                    0) + round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,
-                    2)),
-                    0) as present_accumulation
-                from
-	                  academic.daily_attendances da
-                left join academic.students s 
-                      on
-	                da.student_id = s.id
-                left join academic.classes c 
-                      on
-	                c.id = s.class_id
-                where
-                  date_in between '${formattedStartDate}' AND '${formattedEndDate}'
-                	and c.is_graduated = false
-                	and date_in::date not in (
-                	select
-                		date
-                	from
-                		academic.agendas
-                	where
-                		count_presence = false)
-                group by
-                  tanggal,
-                  c."name" ,
-                  c.id        
-                order by
-                	tanggal
+          select
+          distinct cast(date_in::date as varchar) tanggal,
+          (c.name) as class_name,
+          (c.id) as class_id,
+          count(distinct da.student_id) as total_student,
+          (sum(case when da.status = 'present' then 1 else 0 end) + sum(case when da.status = 'sick' then 1 else 0 end)) as total_presence,
+          round(cast(sum(case when da.status = 'present' then 1 else 0 end) * 100.0 / (count(distinct student_id) )as decimal(10,
+          2)),
+          0) + round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id))as decimal(10,
+          2)),
+          0) as present_accumulation
+        from
+          academic.daily_attendances da
+        left join academic.students s
+                           on
+          da.student_id = s.id
+        left join academic.classes c
+                           on
+          c.id = s.class_id
+        where
+          da.date_in::date not in (
+          select
+            date
+          from
+            academic.agendas a
+          where
+            a.count_presence = false)
+        group by
+          da.date_in,
+          c.name,
+          c.id
+        order by
+          cast(date_in::date as varchar) desc
+        
           `)
                     
           const { rows: dataBulanan } = await Database.rawQuery(`

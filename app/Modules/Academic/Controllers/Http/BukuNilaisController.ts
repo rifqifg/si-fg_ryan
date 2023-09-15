@@ -12,6 +12,7 @@ export default class BukuNilaisController {
       teacherId = "",
       studentId = "",
       classId = "",
+      type = ""
     } = request.qs();
     try {
       const user = await User.query()
@@ -59,6 +60,7 @@ export default class BukuNilaisController {
         .if(studentId, (s) => s.where("studentId", studentId))
         .if(subjectId, (sb) => sb.where("subjectId", subjectId))
         .if(classId, (c) => c.where("classId", classId))
+        .if(type, t => t.whereILike('type', `%${type}%`))
         .preload("students", (s) => s.select("name", "nisn", "nis"))
         .preload("teachers", (t) =>
           t.preload("employee", (e) => e.select("name", "nip", "nik"))

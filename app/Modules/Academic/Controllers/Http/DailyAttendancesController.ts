@@ -50,8 +50,13 @@ export default class DailyAttendancesController {
           start.setDate(start.getDate() + 1);
         }
 
+        // return totalDays
         const whereClassId = classId ? `and c.id = '${classId}'` : "";
 
+        const agenda = await Database.rawQuery(`(select count(*) from academic.agendas a where a.count_presence = false )`);
+        
+        totalDays = totalDays - Number(agenda.rows[0].count)
+        // return totalDays
         if (recap === "kelas") {
           const { rows } = await Database.rawQuery(`
           select
@@ -184,7 +189,7 @@ export default class DailyAttendancesController {
             data: rows,
           };
         } else if (recap == "chart") {
-          const {rows: dataHarian }= await Database.rawQuery(`
+          const  dataHarian  = await Database.rawQuery(`
                 select
                     distinct date_trunc('day',
                     cast(da.date_in::date as date)) as tanggal,
@@ -221,9 +226,9 @@ export default class DailyAttendancesController {
                   c.id        
                 order by
                 	tanggal
-          `)
-
-          const {rows: dataBulanan} = await Database.rawQuery(`
+          `).toQuery()
+                    return dataHarian
+          const { rows: dataBulanan } = await Database.rawQuery(`
           select
           	distinct date_trunc('month',
           	da.date_in::date) as bulan,
@@ -255,11 +260,11 @@ export default class DailyAttendancesController {
           	c.id
           order by
           	bulan
-  `)
+  `);
           // return rows
           data = {
             dataHarian,
-            dataBulanan
+            // dataBulanan,
           };
         } else {
           return response.badRequest({

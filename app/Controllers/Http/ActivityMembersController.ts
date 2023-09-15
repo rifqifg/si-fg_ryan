@@ -1,10 +1,25 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import ActivityMember from 'App/Models/ActivityMember';
 import Employee from 'App/Models/Employee';
+import Presence from 'App/Models/Presence';
 import CreateActivityMemberValidator from 'App/Validators/CreateActivityMemberValidator';
 import UpdateActivityMemberValidator from 'App/Validators/UpdateActivityMemberValidator';
 import { validate as uuidValidation } from "uuid";
 
+function filteredDataMembersAndEmployees(dataMembersOrEmployees, dataPresences) {
+  for (let i = 0; i < dataMembersOrEmployees.length; i++) {
+    const memberEmployeeId = dataMembersOrEmployees[i].employee_id;
+    for (let j = 0; j < dataPresences.length; j++) {
+      const presenceEmployeeId = dataPresences[j].employee_id;
+      if (memberEmployeeId === presenceEmployeeId) {
+        // Hapus elemen dari member jika employee_id-nya ada di presence
+        dataMembersOrEmployees.splice(i, 1);
+        i--; // Kurangi i karena elemen telah dihapus
+        break; // Keluar dari loop presence
+      }
+    }
+  }
+}
 export default class ActivityMembersController {
   public async index({ request, response }: HttpContextContract) {
     const { activityId = "", keyword = "" } = request.qs()
@@ -114,10 +129,20 @@ export default class ActivityMembersController {
     response.ok({ message: "Data Berhasil Didapatkan", data })
   }
 
-  public async getActivityMemberAndEmployee({ params, request, response }: HttpContextContract) {
+  public async getActivityMemberAndEmployee({ request, response }: HttpContextContract) {
     try {
-      const { activityId } = params
-      const { keyword = "" } = request.qs()
+      const { keyword = "", activityId, subActivityId = "" } = request.qs()
+
+      let dataPresences: any = []
+      if (subActivityId) {
+        // mengambil data presensi buat filter data ketika tambah absensi
+        dataPresences = await Presence.query()
+          .select('id', 'activity_id', 'sub_activity_id', 'employee_id')
+          .where('sub_activity_id', subActivityId)
+          .preload('employee', e => e.select('name'))
+
+        dataPresences = JSON.parse(JSON.stringify(dataPresences))
+      }
 
       const dataActivityMembers = await ActivityMember.query()
         .where('activity_id', '=', activityId)
@@ -129,10 +154,12 @@ export default class ActivityMembersController {
           })
         })
 
+      const dataActivityMembersObject = JSON.parse(JSON.stringify(dataActivityMembers))
+
       const employeeMemberIds: any = []
 
-      dataActivityMembers.map(value => {
-        employeeMemberIds.push(value.$attributes.employeeId)
+      dataActivityMembersObject.map(value => {
+        employeeMemberIds.push(value.employee_id)
       })
 
       const dataEmployees = await Employee.query()
@@ -154,7 +181,13 @@ export default class ActivityMembersController {
         delete value.name
       })
 
-      response.ok({ message: "Data Berhasil Didapatkan", data: [...dataActivityMembers, ...dataEmployeesObject] })
+      //disini filter, klo sudah presensi maka gak usah di tampilin
+      if (dataPresences.length != 0) {
+        filteredDataMembersAndEmployees(dataActivityMembersObject, dataPresences)
+        filteredDataMembersAndEmployees(dataEmployeesObject, dataPresences)
+      }
+
+      response.ok({ message: "Data Berhasil Didapatkan", data: [...dataActivityMembersObject, ...dataEmployeesObject] })
     } catch (error) {
       const message = "HRDAM06: " + error.message || error;
       console.log(error);

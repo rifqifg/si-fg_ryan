@@ -355,7 +355,7 @@ export default class DailyAttendancesController {
 
           // return rows
           data = {
-            // dataHarian,
+            dataHarian,
             dataBulanan,
           };
         } else {

@@ -19,6 +19,8 @@ export default class DailyAttendancesController {
       toDate = hariIni,
       recap = false,
       sortingByAbsent = false,
+      lastDays = 7,
+      lastMonths = 3
     } = request.qs();
 
     if (classId && !uuidValidation(classId)) {
@@ -50,14 +52,17 @@ export default class DailyAttendancesController {
           start.setDate(start.getDate() + 1);
         }
 
-        // return totalDays
+        
         const whereClassId = classId ? `and c.id = '${classId}'` : "";
 
-        const agenda = await Database.rawQuery(`(select count(*) from academic.agendas a where a.count_presence = false )`);
+        const agenda = await Database.rawQuery(
+          `(select count(*) from academic.agendas a where a.count_presence = false and date between '${formattedStartDate}'::date AND '${formattedEndDate}'::date)`
+        );
+
+        totalDays = totalDays - Number(agenda.rows[0].count);
         
-        totalDays = totalDays - Number(agenda.rows[0].count)
-        // return totalDays
         if (recap === "kelas") {
+          // const rows  =  Database.rawQuery(`
           const { rows } = await Database.rawQuery(`
           select
 	            c.name as class_name,
@@ -116,7 +121,9 @@ export default class DailyAttendancesController {
               limit ${limit}
               offset ${(page - 1) * limit}
 
-          `);
+          `)
+          // .toQuery()
+          // return rows
 
           data = {
             meta: {
@@ -189,76 +196,106 @@ export default class DailyAttendancesController {
             data: rows,
           };
         } else if (recap == "chart") {
-          const  {rows:dataHarian}  = await Database.rawQuery(`
-          select
-          distinct cast(date_in::date as varchar) tanggal,
-          (c.name) as class_name,
-          (c.id) as class_id,
-          count(distinct da.student_id) as total_student,
-          (sum(case when da.status = 'present' then 1 else 0 end) + sum(case when da.status = 'sick' then 1 else 0 end)) as total_presence,
-          round(cast(sum(case when da.status = 'present' then 1 else 0 end) * 100.0 / (count(distinct student_id) )as decimal(10,
-          2)),
-          0) + round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id))as decimal(10,
-          2)),
-          0) as present_accumulation
-        from
-          academic.daily_attendances da
-        left join academic.students s
-                           on
-          da.student_id = s.id
-        left join academic.classes c
-                           on
-          c.id = s.class_id
-        where
-          da.date_in::date not in (
-          select
-            date
-          from
-            academic.agendas a
-          where
-            a.count_presence = false)
-        group by
-          da.date_in,
-          c.name,
-          c.id
-        order by
-          cast(date_in::date as varchar) desc
-        
+          const { rows: getLastMonth } = await Database.rawQuery(`
+          select distinct substring(cast(date_in::date as varchar), 0, 8) tanggal
+          from academic.daily_attendances
+          where date_in is not null
+          order by substring(cast(date_in::date as varchar), 0, 8) desc
+          limit ${lastMonths}`);
+          
+          const {rows: getLastDays} = await Database.rawQuery(`
+          select distinct cast(date_in::date as varchar) tanggal
+          from academic.daily_attendances
+          where daily_attendances.date_in is not null
+          and EXTRACT(ISODOW FROM date_in::date) < 6
+          order by cast(date_in::date as varchar) desc
+          limit ${lastDays}
           `)
-                    
-          const { rows: dataBulanan } = await Database.rawQuery(`
+          // return getLastDays
+
+          const startDate = getLastDays[getLastDays.length - 1].tanggal
+          const endDate = getLastDays[0].tanggal
+
+          const startMonth = getLastMonth[getLastMonth.length - 1].tanggal
+          const endMonth = getLastMonth[0].tanggal
+           
+          const { rows: dataHarian } = await Database.rawQuery(`
           select
-          	distinct date_trunc('month',
-          	da.date_in::date) as bulan,
-          	c.name as class_name,
-          	c.id as class_id,
+          	distinct cast(date_in::date as varchar) tanggal,
+          	(c.name) as class_name,
+          	(c.id) as class_id,
           	count(distinct da.student_id) as total_student,
-          	(sum(case when da.status = 'present' then 1 else 0 end) + sum(case when da.status = 'sick' then 1 else 0 end)) as total_presence
+          	(sum(case when da.status = 'present' then 1 else 0 end) + sum(case when da.status = 'sick' then 1 else 0 end)) as total_presence,
+          	round(cast(sum(case when da.status = 'present' then 1 else 0 end) * 100.0 / (count(distinct student_id) )as decimal(10,
+          	2)),
+          	0) + round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id))as decimal(10,
+          	2)),
+          	0) as present_accumulation
           from
           	academic.daily_attendances da
-          left join academic.students s 
-                                on
-          	                  da.student_id = s.id
-          left join academic.classes c 
-                                on
-          	                  c.id = s.class_id
+          left join academic.students s
+                             on
+          	da.student_id = s.id
+          left join academic.classes c
+                             on
+          	c.id = s.class_id
           where
-            date_in between '${formattedStartDate}' AND '${formattedEndDate}'
-          	and c.is_graduated = false
-          	and date_in::date not in (
+            da.date_in::date between '${startDate}' and '${endDate}'
+          	and da.date_in::date not in (
           	select
           		date
           	from
-          		academic.agendas
+          		academic.agendas a
           	where
-          		count_presence = false)
+          		a.count_presence = false)
           group by
-          	bulan,
-          	c."name" ,
+          	da.date_in,
+          	c.name,
           	c.id
           order by
-          	bulan
-  `);
+          	cast(date_in::date as varchar) desc
+        
+          `);
+          // const rows = await Database.rawQuery(`
+          const { rows: dataBulanan } = await Database.rawQuery(`
+          select
+            distinct substring(cast(date_in::date as varchar),
+            0,
+            8) bulan,
+            (c.name) as class_name,
+            (c.id) as class_id,
+            count(distinct da.student_id) as total_student,
+            (sum(case when da.status = 'present' then 1 else 0 end) + sum(case when da.status = 'sick' then 1 else 0 end)) as total_presence,
+            round(cast(sum(case when da.status = 'present' then 1 else 0 end) * 100.0 / (count(distinct student_id))as decimal(10,
+            2)),
+            0) + round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id))as decimal(10,
+            2)),
+            0) as present_accumulation
+          from
+            academic.daily_attendances da
+          left join academic.students s
+                             on
+            da.student_id = s.id
+          left join academic.classes c
+                             on
+            c.id = s.class_id
+          where
+            substring(cast(da.date_in::date as varchar),0,8) between '${startMonth}' and '${endMonth}'
+            and da.date_in::date not in (
+            select
+              date
+            from
+              academic.agendas a
+            where
+              a.count_presence = false)
+          group by
+            bulan,
+            c."name",
+            c.id
+          order by
+            bulan desc
+  `)
+  // .toQuery()
           // return rows
           data = {
             dataHarian,

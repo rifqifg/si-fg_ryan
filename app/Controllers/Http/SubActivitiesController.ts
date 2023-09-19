@@ -336,6 +336,7 @@ export default class SubActivitiesController {
       const activity = await Activity.query()
             .where('id', activityId)
             .preload('categoryActivity', ca => ca.select('name'))
+            .preload('division', d => d.select('name'))
             .firstOrFail()
 
       response.ok({ message: "Data Berhasil Didapatkan", data, activity })

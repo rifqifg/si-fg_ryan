@@ -12,6 +12,7 @@ export default class BukuNilaisController {
       teacherId = "",
       studentId = "",
       classId = "",
+      type = ""
     } = request.qs();
     try {
       const user = await User.query()
@@ -59,6 +60,7 @@ export default class BukuNilaisController {
         .if(studentId, (s) => s.where("studentId", studentId))
         .if(subjectId, (sb) => sb.where("subjectId", subjectId))
         .if(classId, (c) => c.where("classId", classId))
+        .if(type, t => t.whereILike('type', `%${type}%`))
         .preload("students", (s) => s.select("name", "nisn", "nis"))
         .preload("teachers", (t) =>
           t.preload("employee", (e) => e.select("name", "nip", "nik"))
@@ -96,7 +98,13 @@ export default class BukuNilaisController {
     );
     let payload;
 
-    if (superAdmin) {
+    const admin = userObject.roles?.find((role) => role.name == "admin");
+
+      const adminAcademic = userObject.roles?.find(
+        (role) => role.name == "admin_academic"
+      );
+
+    if (superAdmin || admin || adminAcademic) {
       const schemaForTeacher = schema.create({
         bukuNilai: schema.array().members(
           schema.object().members({
@@ -256,8 +264,14 @@ export default class BukuNilaisController {
         (role) => role.role_name === "super_admin"
       );
 
+      const admin = userObject.roles?.find((role) => role.name == "admin");
+
+      const adminAcademic = userObject.roles?.find(
+        (role) => role.name == "admin_academic"
+      );
+
     let payload;
-    if (superAdmin) {
+    if (superAdmin || admin || adminAcademic) {
       try {
         const teacherId = await User.query()
           .where("id", user ? user.id : "")

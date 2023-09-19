@@ -41,7 +41,7 @@ export default class AccountsController {
   public async store({ request, response }: HttpContextContract) {
     const payload = await request.validate(CreateAccountValidator)
     try {
-      const data = await Account.create(payload)
+      const data = await Account.createMany(payload.accounts)
       response.created({ message: "Berhasil menyimpan data", data })
     } catch (error) {
       const message = "FAC-STO: " + error.message || error;

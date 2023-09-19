@@ -40,6 +40,9 @@ export default class Account extends BaseModel {
   @column()
   public number: string
 
+  @column()
+  public refAmount: number
+
   @belongsTo(() => Coa)
   public coa: BelongsTo<typeof Coa>
 

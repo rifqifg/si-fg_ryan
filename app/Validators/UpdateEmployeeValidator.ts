@@ -37,7 +37,7 @@ export default class UpdateEmployeeValidator {
     ]),
     dateIn: schema.date.optional({format: 'yyyy-MM-dd'}),
     dateOut: schema.date.optional(),
-    rfid: schema.string.optional(),
+    rfid: schema.string.nullableAndOptional(),
     lastEducationName: schema.string.optional([rules.trim()]),
     lastEducationMajor: schema.string.optional([rules.trim()]),
     lastEducationGraduate: schema.date.optional({format: 'yyyy-MM-dd'}),

@@ -275,7 +275,7 @@ export default class BukuNilaisController {
       );
 
     let payload;
-    if (superAdmin || admin || adminAcademic) {
+    if (teacher && !superAdmin || teacher && !admin || teacher && !adminAcademic) {
       try {
         const teacherId = await User.query()
           .where("id", user ? user.id : "")

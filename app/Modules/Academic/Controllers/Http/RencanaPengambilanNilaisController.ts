@@ -83,6 +83,7 @@ export default class RencanaPengambilanNilaisController {
         teacherId: schema.string([rules.uuid({ version: 4 }), rules.trim()]),
         topik: schema.string([rules.trim()]),
         presentase: schema.number(),
+        pertemuan: schema.number()
       }),
     });
 
@@ -159,6 +160,7 @@ export default class RencanaPengambilanNilaisController {
         teacherId: schema.string.optional([rules.uuid({ version: 4 }), rules.trim()]),
         topik: schema.string.optional([rules.trim()]),
         presentase: schema.number.optional(),
+        pertemuan: schema.number.optional()
       }),
     });
 

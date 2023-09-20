@@ -273,7 +273,10 @@ export default class BukuNilaisController {
       const adminAcademic = userObject.roles?.find(
         (role) => role.name == "admin_academic"
       );
-
+      
+      const teacher = userObject.roles.find(
+        (role) => role.role_name === "teacher"
+      );
     let payload;
     if (teacher && !superAdmin || teacher && !admin || teacher && !adminAcademic) {
       try {

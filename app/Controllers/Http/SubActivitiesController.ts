@@ -12,6 +12,8 @@ import { RoleActivityMember } from 'App/lib/enum';
 import Presence from 'App/Models/Presence';
 import DeleteManyPresenceValidator from 'App/Validators/DeleteManyPresenceValidator';
 import User from 'App/Models/User';
+import Database from '@ioc:Adonis/Lucid/Database';
+import Activity from 'App/Models/Activity';
 
 const getSignedUrl = async (filename: string) => {
   const beHost = Env.get('BE_URL')
@@ -303,6 +305,48 @@ export default class SubActivitiesController {
       response.ok({ message: 'Berhasil menghapus banyak data' })
     } catch (error) {
       response.badRequest({ message: "Gagal menghapus banyak data" })
+    }
+  }
+
+  public async recap({ params, request, response }: HttpContextContract) {
+    const hariIni = DateTime.now().toSQLDate()?.toString()
+    const { page = 1, limit = 10, fromDate = hariIni, toDate = hariIni } = request.qs()
+    const { activityId } = params
+
+    try {
+      const data = await Presence.query()
+        .select('employee_id')
+        .select(
+          Database.raw('COUNT(employee_id) as presence_count'),
+          Database.raw(
+            `(SELECT COUNT(DISTINCT sub_activity_id) FROM presences WHERE activity_id = ? AND created_at >= ? AND created_at <= ?) AS total_sessions`,
+            [activityId, fromDate + ' 00:00:00', toDate + ' 23:59:59']
+          ),
+          Database.raw(
+            '( COUNT(employee_id) * 100 ) / (SELECT COUNT(DISTINCT sub_activity_id) FROM presences WHERE activity_id = ? AND created_at >= ? AND created_at <= ? ) AS percentage',
+            [activityId, fromDate + ' 00:00:00', toDate + ' 23:59:59']
+          ),
+        )
+        .preload('employee', e => e.select('name'))
+        .where('activity_id', activityId)
+        .whereBetween("created_at", [fromDate + ' 00:00:00', toDate + ' 23:59:59'])
+        .groupBy('employee_id')
+        .paginate(page, limit)
+
+      const activity = await Activity.query()
+            .where('id', activityId)
+            .preload('categoryActivity', ca => ca.select('name'))
+            .preload('division', d => d.select('name'))
+            .firstOrFail()
+
+      response.ok({ message: "Data Berhasil Didapatkan", data, activity })
+    } catch (error) {
+      const message = "HRDRSA01-recap-subActivities: " + error.message || error;
+      console.log(error);
+      response.badRequest({
+        message: "Gagal Menambah Data",
+        error: message,
+      });
     }
   }
 }

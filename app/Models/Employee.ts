@@ -121,7 +121,7 @@ export default class Employee extends BaseModel {
   })
   kelurahan: BelongsTo<typeof Wilayah>;
 
-  @column({ serializeAs: null })
+  @column()
   public rfid: string | null;
 
   @column.dateTime({ autoCreate: true })

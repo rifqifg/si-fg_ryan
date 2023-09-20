@@ -1,6 +1,7 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Leave from 'App/Models/Leave'
 import CreateLeaveValidator from 'App/Validators/CreateLeaveValidator'
+import UpdateLeaveValidator from 'App/Validators/UpdateLeaveValidator'
 import { validate as uuidValidation } from "uuid"
 
 export default class LeavesController {
@@ -46,7 +47,7 @@ export default class LeavesController {
   public async show({ params, response }: HttpContextContract) {
     const { id } = params;
     if (!uuidValidation(id)) {
-      return response.badRequest({ message: "Subject ID tidak valid" });
+      return response.badRequest({ message: "Leave ID tidak valid" });
     }
 
     try {
@@ -57,6 +58,53 @@ export default class LeavesController {
       console.log(error);
       response.badRequest({
         message: "Gagal mengambil data",
+        error: message,
+        error_data: error,
+      });
+    }
+  }
+
+  public async update({ params, request, response }: HttpContextContract) {
+    const { id } = params;
+    if (!uuidValidation(id)) {
+      return response.badRequest({ message: "Leave ID tidak valid" });
+    }
+
+    const payload = await request.validate(UpdateLeaveValidator);
+    if (JSON.stringify(payload) === "{}") {
+      console.log("data update kosong");
+      return response.badRequest({ message: "Data tidak boleh kosong" });
+    }
+    try {
+      const leave = await Leave.findOrFail(id);
+      const data = await leave.merge(payload).save();
+      response.ok({ message: "Berhasil mengubah data", data });
+    } catch (error) {
+      const message = "HRDLE04: " + error.message || error;
+      console.log(error);
+      response.badRequest({
+        message: "Gagal mengubah data",
+        error: message,
+        error_data: error,
+      });
+    }
+  }
+
+  public async destroy({ params, response }: HttpContextContract) {
+    const { id } = params;
+    if (!uuidValidation(id)) {
+      return response.badRequest({ message: "Leave ID tidak valid" });
+    }
+
+    try {
+      const data = await Leave.findOrFail(id);
+      await data.delete();
+      response.ok({ message: "Berhasil menghapus data" });
+    } catch (error) {
+      const message = "HRDLE05: " + error.message || error;
+      console.log(error);
+      response.badRequest({
+        message: "Gagal menghapus data",
         error: message,
         error_data: error,
       });

@@ -29,6 +29,8 @@ export default class StudentsController {
       return response.badRequest(({message: "Subject ID tidak valid"}))
     }
 
+    const graduated = isGraduated == 'false'? false : true
+    
     try {
       let data: object = {};
       if (mode === "page") {
@@ -41,7 +43,7 @@ export default class StudentsController {
           .preload("provinsi")
           .if(subjectMember, sm => sm.whereHas('extracurricular', ex => ex.where('subjectId', subjectMember)))
           .if(notInSubject, q => q.whereDoesntHave('extracurricular', q => q.where('subjectId', notInSubject)))
-          .if(isGraduated, (g) => g.where("isGraduated", isGraduated))
+          .if(graduated, (g) => g.where("isGraduated", isGraduated))
           .andWhere((q) => {
             q.whereILike("name", `%${keyword}%`);
             q.orWhereILike("nis", `%${keyword}%`);
@@ -59,7 +61,7 @@ export default class StudentsController {
           .preload("provinsi")
           .if(subjectMember, sm => sm.whereHas('extracurricular', ex => ex.where('subjectId', subjectMember)))
           .if(notInSubject, q => q.whereDoesntHave('extracurricular', q => q.where('subjectId', notInSubject)))
-          .if(isGraduated, (g) => g.where("isGraduated", isGraduated))
+          .if(graduated, (g) => g.where("isGraduated", isGraduated))
           .andWhere((q) => {
             q.whereILike("name", `%${keyword}%`);
             q.orWhereILike("nis", `%${keyword}%`);

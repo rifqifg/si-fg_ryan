@@ -82,3 +82,4 @@ Route.shallowResource('sub-activities', 'SubActivitiesController').apiOnly().mid
 Route.get('presences', 'SubActivitiesController.getPresenceSubActivity').middleware(['auth', 'checkRole:admin'])
 Route.post('presences/:activityId/:subActivityId', 'SubActivitiesController.presence').middleware(['auth', 'checkRole:admin'])
 Route.delete('multi-delete-presences', 'SubActivitiesController.destroyPresences').middleware(['auth', 'checkRole:admin'])
+Route.shallowResource('leaves', 'LeavesController').apiOnly().middleware({ '*': ['auth', 'checkRole:admin'] })

@@ -7,17 +7,17 @@ import Database from '@ioc:Adonis/Lucid/Database'
 export default class DashboardController {
   public async index({ auth, response }: HttpContextContract) {
     if (auth.use('api').isLoggedIn) {
-      const data = await User.query().preload('roles', r => r.select('role_name').orderBy('role_name', 'asc').preload('role', r => r.select('name', 'permissions'))).where('id', auth.user!.id)
+      const data = await User.query().preload('roles', r => r.select('role_name').preload('role', r => r.select('name', 'permissions'))).where('id', auth.user!.id)
       const dataObject = JSON.parse(JSON.stringify(data))
-      const roles =  dataObject[0].roles
-      const name:any = []
-      const descriptions:any = []
+      const roles = dataObject[0].roles
+      const name: any = []
+      const descriptions: any = []
       const modules = roles.reduce((prev, v) => {
         name.push(v.role_name)
         descriptions.push(v.descriptions)
         return [...prev, v.role.permissions.modules]
       }, [])
-      const modulesMerge:any = []
+      const modulesMerge: any = []
       modules.map(value => {
         value.map(m => {
           modulesMerge.push(m)
@@ -31,44 +31,98 @@ export default class DashboardController {
           simplifiedModules[module.id] = { id: module.id, type: "", menus: [] };
         }
 
-        if (module.type === "show" && simplifiedModules[module.id].type !== "disabled") {
-          simplifiedModules[module.id].type = "show";
-        } else if (module.type === "disabled" && simplifiedModules[module.id].type !== "show") {
-          simplifiedModules[module.id].type = "disabled";
+        if (module.type === "show") {
+          if (simplifiedModules[module.id].type === "") {
+            simplifiedModules[module.id].type = "show";
+          } else if (simplifiedModules[module.id].type === "show") {
+            simplifiedModules[module.id].type = "show";
+          } else if (simplifiedModules[module.id].type === "disabled") {
+            simplifiedModules[module.id].type = "show";
+          }
+        } else if (module.type === "disabled") {
+          if (simplifiedModules[module.id].type === "") {
+            simplifiedModules[module.id].type = "disabled";
+          } else if (simplifiedModules[module.id].type === "show") {
+            simplifiedModules[module.id].type = "show";
+          } else if (simplifiedModules[module.id].type === "disabled") {
+            simplifiedModules[module.id].type = "disabled";
+          }
         }
 
         if (module.menus) {
           module.menus.forEach(menu => {
             const existingMenu = simplifiedModules[module.id].menus.find(existing => existing.id === menu.id);
+
             if (!existingMenu) {
-              const simplifiedMenu: any = { id: menu.id, type: "" };
-              if (menu.type === "show" && simplifiedMenu.type !== "disabled") {
-                simplifiedMenu.type = "show";
-              } else if (menu.type === "disabled" && simplifiedMenu.type !== "show") {
-                simplifiedMenu.type = "disabled";
+              const simplifiedMenu: any = { id: menu.id, type: "", functions: [] };
+
+              if (menu.type === "show") {
+                if (simplifiedMenu.type === "") {
+                  simplifiedMenu.type = "show";
+                } else if (simplifiedMenu.type === "show") {
+                  simplifiedMenu.type = "show";
+                } else if (simplifiedMenu.type === "disabled") {
+                  simplifiedMenu.type = "show";
+                }
+              } else if (menu.type === "disabled") {
+                if (simplifiedMenu.type === "") {
+                  simplifiedMenu.type = "disabled";
+                } else if (simplifiedMenu.type === "show") {
+                  simplifiedMenu.type = "show";
+                } else if (simplifiedMenu.type === "disabled") {
+                  simplifiedMenu.type = "disabled";
+                }
               }
 
-              if (menu.functions) {
-                simplifiedMenu.functions = menu.functions.reduce((acc, func) => {
-                  if (func.type !== "disabled" && !acc.find(f => f.id === func.id)) {
-                    acc.push({ id: func.id, type: func.type });
+              menu.functions.forEach(func => {
+                const simplifiedFunction: any = { id: func.id, type: "" };
+
+                if (func.type === "show") {
+                  if (simplifiedFunction.type === "") {
+                    simplifiedFunction.type = "show";
+                  } else if (simplifiedFunction.type === "show") {
+                    simplifiedFunction.type = "show";
+                  } else if (simplifiedFunction.type === "disabled") {
+                    simplifiedFunction.type = "show";
                   }
-                  return acc;
-                }, []);
-              }
+                } else if (func.type === "disabled") {
+                  if (simplifiedFunction.type === "") {
+                    simplifiedFunction.type = "disabled";
+                  } else if (simplifiedFunction.type === "show") {
+                    simplifiedFunction.type = "show";
+                  } else if (simplifiedFunction.type === "disabled") {
+                    simplifiedFunction.type = "disabled";
+                  }
+                }
+
+                simplifiedMenu.functions.push(simplifiedFunction);
+              })
 
               simplifiedModules[module.id].menus.push(simplifiedMenu);
             } else {
-              if (menu.type === "show" && existingMenu.type !== "disabled") {
-                existingMenu.type = "show";
-              } else if (menu.type === "disabled" && existingMenu.type !== "show") {
-                existingMenu.type = "disabled";
+              if (menu.type === "show") {
+                if (existingMenu.type === "show") {
+                  existingMenu.type = "show";
+                } else if (existingMenu.type === "disabled") {
+                  existingMenu.type = "show";
+                }
+              } else if (menu.type === "disabled") {
+                if (existingMenu.type === "show") {
+                  existingMenu.type = "show";
+                } else if (existingMenu.type === "disabled") {
+                  existingMenu.type = "disabled";
+                }
               }
 
               if (menu.functions) {
+
                 menu.functions.forEach(func => {
-                  if (func.type !== "disabled" && !existingMenu.functions.find(f => f.id === func.id)) {
+                  const existingFunc = existingMenu.functions.find(f => f.id === func.id);
+
+                  if (!existingFunc) {
                     existingMenu.functions.push({ id: func.id, type: func.type });
+                  } else if (func.type === "show") {
+                    existingFunc.type = "show";
                   }
                 });
               }
@@ -80,7 +134,7 @@ export default class DashboardController {
       const modulesSimple = Object.values(simplifiedModules);
 
       dataObject[0]["role_name"] = name.toString()
-      dataObject[0]["role"] = {name: name.toString(), descriptions: descriptions.toString(), permissions: {modules: modulesSimple}}
+      dataObject[0]["role"] = { name: name.toString(), descriptions: descriptions.toString(), permissions: { modules: modulesSimple } }
       delete dataObject[0]["roles"]
 
       response.ok({ message: 'you are logged in', data: dataObject })

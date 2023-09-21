@@ -16,7 +16,7 @@ export default class UpdateAccountValidator {
     ]),
     owner: schema.string.optional(),
     account_name: schema.string.optional(),
-    balance: schema.string.optional([
+    balance: schema.number.optional([
       rules.regex(new RegExp("^[1-9][0-9]*$")),
     ]),
     number: schema.string.optional([

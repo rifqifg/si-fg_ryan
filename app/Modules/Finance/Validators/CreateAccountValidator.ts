@@ -21,7 +21,7 @@ export default class CreateAccountValidator {
         balance: schema.string.optional([
           rules.regex(new RegExp("^[1-9][0-9]*$")),
         ]),
-        ref_amount: schema.number(),
+        ref_amount: schema.number.optional(),
         number: schema.string([
           rules.regex(new RegExp("^[0-9]+$")),
           rules.unique({table: 'finance.accounts', column: 'number'})

@@ -15,8 +15,10 @@ export default class LeavesController {
           .select('id', 'employee_id', 'status', 'reason', 'from_date', 'to_date', 'type')
           .preload('employee', em => em.select('name'))
           .whereHas('employee', e => e.whereILike('name', `%${keyword}%`))
-          .whereBetween('from_date', [fromDate, toDate])
-          .orWhereBetween('to_date', [fromDate, toDate])
+          .andWhere(query => {
+            query.whereBetween('from_date', [fromDate, toDate])
+            query.orWhereBetween('to_date', [fromDate, toDate])
+          })
           .paginate(page, limit)
       } else {
         data = await Leave.query()

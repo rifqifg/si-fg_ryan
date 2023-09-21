@@ -35,7 +35,7 @@ export default class Account extends BaseModel {
   public accountName: string
 
   @column()
-  public balance: string
+  public balance: number | null
 
   @column()
   public number: string

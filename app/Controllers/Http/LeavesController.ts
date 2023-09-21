@@ -6,14 +6,25 @@ import { validate as uuidValidation } from "uuid"
 
 export default class LeavesController {
   public async index({ request, response }: HttpContextContract) {
-    const { page = 1, limit = 10, keyword = "" } = request.qs()
+    const { page = 1, limit = 10, keyword = "", fromDate = "", toDate = "" } = request.qs()
 
     try {
-      const data = await Leave.query()
-        .select('id', 'employee_id', 'status', 'reason', 'from_date', 'to_date', 'type')
-        .preload('employee', em => em.select('name'))
-        .whereHas('employee', e => e.whereILike('name', `%${keyword}%`))
-        .paginate(page, limit)
+      let data
+      if (fromDate && toDate) {
+        data = await Leave.query()
+          .select('id', 'employee_id', 'status', 'reason', 'from_date', 'to_date', 'type')
+          .preload('employee', em => em.select('name'))
+          .whereHas('employee', e => e.whereILike('name', `%${keyword}%`))
+          .whereBetween('from_date', [fromDate, toDate])
+          .orWhereBetween('to_date', [fromDate, toDate])
+          .paginate(page, limit)
+      } else {
+        data = await Leave.query()
+          .select('id', 'employee_id', 'status', 'reason', 'from_date', 'to_date', 'type')
+          .preload('employee', em => em.select('name'))
+          .whereHas('employee', e => e.whereILike('name', `%${keyword}%`))
+          .paginate(page, limit)
+      }
 
       response.ok({ message: "Data Berhasil Didapatkan", data })
     } catch (error) {

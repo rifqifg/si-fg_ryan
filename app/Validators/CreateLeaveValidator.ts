@@ -29,7 +29,10 @@ export default class CreateLeaveValidator {
     reason: schema.string([
       rules.minLength(3)
     ]),
-    date: schema.date({
+    fromDate: schema.date({
+      format: 'yyyy-MM-dd'
+    }),
+    toDate: schema.date({
       format: 'yyyy-MM-dd'
     }),
     note: schema.string.optional([

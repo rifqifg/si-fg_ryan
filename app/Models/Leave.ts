@@ -16,7 +16,10 @@ export default class Leave extends BaseModel {
   public reason: string
 
   @column.date()
-  public date: DateTime
+  public fromDate: DateTime
+
+  @column.date()
+  public toDate: DateTime
 
   @column()
   public note: string

@@ -10,7 +10,7 @@ export default class LeavesController {
 
     try {
       const data = await Leave.query()
-        .select('id', 'employee_id', 'status', 'reason', 'date', 'type')
+        .select('id', 'employee_id', 'status', 'reason', 'from_date', 'to_date', 'type')
         .preload('employee', em => em.select('name'))
         .whereHas('employee', e => e.whereILike('name', `%${keyword}%`))
         .paginate(page, limit)

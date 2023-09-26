@@ -3,6 +3,7 @@ import { validate as uuidValidation } from "uuid";
 import { schema, rules } from "@ioc:Adonis/Core/Validator";
 import BukuNilai from "../../Models/BukuNilai";
 import User from "App/Models/User";
+import Database from "@ioc:Adonis/Lucid/Database";
 export default class BukuNilaisController {
   public async index({ request, response, auth }: HttpContextContract) {
     const {
@@ -12,7 +13,7 @@ export default class BukuNilaisController {
       teacherId = "",
       studentId = "",
       classId = "",
-      type = ""
+      type = "",
     } = request.qs();
     try {
       const user = await User.query()
@@ -33,15 +34,15 @@ export default class BukuNilaisController {
       const teacher = userObject.roles.find(
         (role) => role.role_name == "teacher"
       );
-      
+
       const student = userObject.roles.find(
         (role) => role.role_name == "student"
       );
-      
+
       const parent = userObject.roles.find(
         (role) => role.role_name == "parent"
       );
-      
+
       if (teacher && teacherId !== user.employee.teacher.id)
         return response.badRequest({
           message: "Anda tidak bisa melihat data pengguna lain",
@@ -55,28 +56,53 @@ export default class BukuNilaisController {
           message: "Anda tidak bisa melihat data pengguna lain",
         });
 
-      const data = await BukuNilai.query()
-        .if(teacherId, (t) => t.where("teacherId", teacherId))
-        .if(studentId, (s) => s.where("studentId", studentId))
-        .if(subjectId, (sb) => sb.where("subjectId", subjectId))
-        .if(classId, (c) => c.where("classId", classId))
-        .if(type, t => t.whereILike('type', `%${type}%`))
-        .preload("students", (s) => s.select("name", "nisn", "nis"))
-        .preload("teachers", (t) =>
-          t.preload("employee", (e) => e.select("name", "nip", "nik"))
-        )
-        .preload("mapels", (m) => m.select("name"))
-        .preload("programSemesterDetail", (prosemDetail) =>
-          prosemDetail.select(
-            "kompetensiDasar",
-            "kompetensiDasarIndex",
-            "pertemuan"
-          )
-        )
-        .preload("classes", (c) => c.select("name"))
-        .paginate(page, limit);
+      // const data = await BukuNilai.query()
+      //   .if(teacherId, (t) => t.where("teacherId", teacherId))
+      //   .if(studentId, (s) => s.where("studentId", studentId))
+      //   .if(subjectId, (sb) => sb.where("subjectId", subjectId))
+      //   .if(classId, (c) => c.where("classId", classId))
+      //   .if(type, t => t.whereILike('type', `%${type}%`))
+      //   .preload("students", (s) => s.select("name", "nisn", "nis"))
+      //   .preload("teachers", (t) =>
+      //     t.preload("employee", (e) => e.select("name", "nip", "nik"))
+      //   )
+      //   .preload("mapels", (m) => m.select("name"))
+      //   .preload("programSemesterDetail", (prosemDetail) =>
+      //     prosemDetail.select(
+      //       "kompetensiDasar",
+      //       "kompetensiDasarIndex",
+      //       "pertemuan"
+      //     )
+      //   )
+      //   .preload("classes", (c) => c.select("name"))
+      //   .paginate(page, limit);
 
-      response.ok({ message: "Berhasil mengambil data", data });
+      const data = await Database.rawQuery(`
+select * from (select json_build_object(
+  'id', bn.id,
+  'student', json_build_object('name', s.name, 'id', s.id, 'nis', s.nis),
+  'teacher', (select json_build_object('name', e.name, 'id', t.id)
+              from academic.teachers t
+                       left join public.employees e on e.id = t.employee_id
+              where t.id = bn.teacher_id),
+   'class', json_build_object('name', c.name, 'id', c.id),
+   'mapel', json_build_object('name', sb.name, 'id', sb.id),
+   'penilaian', json_agg(json_build_object('bab', psd.kompetensi_dasar_index, 'bab_name', psd.kompetensi_dasar, 'nilai', (select jsonb_agg(json_build_object('id', bn2.id, 'type', bn2."type", 'nilai', bn2.nilai))  from academic.buku_nilais bn2 where bn2.program_semester_detail_id  = psd.id  ) ))
+)
+from academic.buku_nilais bn
+left join academic.students s
+      on s.id = bn.student_id
+left join academic.classes c
+       on c.id = bn.class_id
+left join  academic.subjects sb
+       on sb.id = bn.subject_id
+left join academic.program_semester_details psd
+       on psd.id = bn.program_semester_detail_id
+group by bn.id, s.name, s.id, s.nis, c.name, c.id, sb.name, sb.id) b
+`);
+      return data;
+
+      response.ok({ message: "Berhasil mengambil data", data: data.rows });
     } catch (error) {
       response.badRequest({
         message: "Gagal mengambil data",
@@ -91,7 +117,7 @@ export default class BukuNilaisController {
       .preload("roles", (r) => r.preload("role"))
       .preload("employee", (e) => e.preload("teacher", (t) => t.select("id")))
       .firstOrFail();
-    
+
     const userObject = JSON.parse(JSON.stringify(user));
     const superAdmin = userObject.roles.find(
       (role) => role.role_name === "super_admin"
@@ -104,11 +130,15 @@ export default class BukuNilaisController {
 
     const admin = userObject.roles?.find((role) => role.name == "admin");
 
-      const adminAcademic = userObject.roles?.find(
-        (role) => role.name == "admin_academic"
-      );
+    const adminAcademic = userObject.roles?.find(
+      (role) => role.name == "admin_academic"
+    );
 
-    if (teacher && !superAdmin || teacher && !admin || teacher && !adminAcademic) {
+    if (
+      (teacher && !superAdmin) ||
+      (teacher && !admin) ||
+      (teacher && !adminAcademic)
+    ) {
       const schemaForTeacher = schema.create({
         bukuNilai: schema.array().members(
           schema.object().members({
@@ -263,22 +293,26 @@ export default class BukuNilaisController {
       .where("id", auth.user!.id)
       .preload("employee", (e) => e.preload("teacher", (t) => t.select("id")))
       .firstOrFail();
-      const userObject = JSON.parse(JSON.stringify(user));
-      const superAdmin = userObject.roles.find(
-        (role) => role.role_name === "super_admin"
-      );
+    const userObject = JSON.parse(JSON.stringify(user));
+    const superAdmin = userObject.roles.find(
+      (role) => role.role_name === "super_admin"
+    );
 
-      const admin = userObject.roles?.find((role) => role.name == "admin");
+    const admin = userObject.roles?.find((role) => role.name == "admin");
 
-      const adminAcademic = userObject.roles?.find(
-        (role) => role.name == "admin_academic"
-      );
-      
-      const teacher = userObject.roles.find(
-        (role) => role.role_name === "teacher"
-      );
+    const adminAcademic = userObject.roles?.find(
+      (role) => role.name == "admin_academic"
+    );
+
+    const teacher = userObject.roles.find(
+      (role) => role.role_name === "teacher"
+    );
     let payload;
-    if (teacher && !superAdmin || teacher && !admin || teacher && !adminAcademic) {
+    if (
+      (teacher && !superAdmin) ||
+      (teacher && !admin) ||
+      (teacher && !adminAcademic)
+    ) {
       try {
         const teacherId = await User.query()
           .where("id", user ? user.id : "")

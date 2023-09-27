@@ -6,7 +6,7 @@ import { validate as uuidValidation } from "uuid"
 
 export default class LeavesController {
   public async index({ request, response }: HttpContextContract) {
-    const { page = 1, limit = 10, keyword = "", fromDate = "", toDate = "" } = request.qs()
+    const { page = 1, limit = 10, keyword = "", fromDate = "", toDate = "", employeeId } = request.qs()
 
     try {
       let data
@@ -19,12 +19,22 @@ export default class LeavesController {
             query.whereBetween('from_date', [fromDate, toDate])
             query.orWhereBetween('to_date', [fromDate, toDate])
           })
+          .andWhere(query => {
+            if (employeeId) {
+              query.where('employee_id', employeeId)
+            }
+          })
           .paginate(page, limit)
       } else {
         data = await Leave.query()
           .select('id', 'employee_id', 'status', 'reason', 'from_date', 'to_date', 'type')
           .preload('employee', em => em.select('name'))
           .whereHas('employee', e => e.whereILike('name', `%${keyword}%`))
+          .andWhere(query => {
+            if (employeeId) {
+              query.where('employee_id', employeeId)
+            }
+          })
           .paginate(page, limit)
       }
 

@@ -65,8 +65,8 @@ export default class CreateEmployeeValidator {
       rules.requiredIfExists('kodeKelurahan')
     ]),
     nuptk: schema.string.optional([rules.regex(/^\d+$/)]),
-    employeeTypeId: schema.string([rules.exists({table: 'employee_types', column: 'id'})])
-
+    employeeTypeId: schema.string([rules.exists({table: 'employee_types', column: 'id'})]),
+    default_presence: schema.number.nullableAndOptional()
   })
 
   /**

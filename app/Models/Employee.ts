@@ -124,6 +124,9 @@ export default class Employee extends BaseModel {
   @column()
   public rfid: string | null;
 
+  @column()
+  default_presence: string | null;
+
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime;
 

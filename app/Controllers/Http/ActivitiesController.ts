@@ -249,7 +249,7 @@ export default class ActivitiesController {
       formattedPayload['categoryActivityId'] = payload.categoryActivityId
       payload.assessment ? formattedPayload['assessment'] = payload.assessment : ""
       payload.activityType ? formattedPayload['activityType'] = payload.activityType : ""
-      payload.default ? formattedPayload['default'] = payload.default : ""
+      payload.default ? formattedPayload['default'] = payload.default : formattedPayload['default'] = 0
       payload.activityType ? formattedPayload['activityType'] = payload.activityType : ""
       payload.categoryActivityId ? formattedPayload['categoryActivityId'] = payload.categoryActivityId : ""
 

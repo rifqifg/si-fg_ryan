@@ -249,6 +249,9 @@ export default class ActivitiesController {
       formattedPayload['categoryActivityId'] = payload.categoryActivityId
       payload.assessment ? formattedPayload['assessment'] = payload.assessment : ""
       payload.activityType ? formattedPayload['activityType'] = payload.activityType : ""
+      payload.default ? formattedPayload['default'] = payload.default : ""
+      payload.activityType ? formattedPayload['activityType'] = payload.activityType : ""
+      payload.categoryActivityId ? formattedPayload['categoryActivityId'] = payload.categoryActivityId : ""
 
       const findData = await Activity.findOrFail(id)
       const data = await findData.merge(formattedPayload).save()

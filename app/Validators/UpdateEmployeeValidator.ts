@@ -1,5 +1,6 @@
 import { schema, CustomMessages, rules } from "@ioc:Adonis/Core/Validator";
 import type { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
+import { StatusEmployees } from "App/lib/enum";
 
 export default class UpdateEmployeeValidator {
   constructor(protected ctx: HttpContextContract) {}
@@ -66,7 +67,8 @@ export default class UpdateEmployeeValidator {
     ]),
     nuptk: schema.string.optional([rules.regex(/^\d+$/)]),
     employeeTypeId: schema.string.optional([rules.exists({table: 'employee_types', column: 'id'})]),
-    default_presence: schema.number.nullableAndOptional()
+    default_presence: schema.number.nullableAndOptional(),
+    status: schema.enum.optional(Object.values(StatusEmployees)),
   });
 
   /**

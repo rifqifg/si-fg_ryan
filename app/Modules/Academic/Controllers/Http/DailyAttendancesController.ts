@@ -263,7 +263,7 @@ export default class DailyAttendancesController {
           	cast(date_in::date as varchar) desc
         
           `);
-          const { rows: akumulasiAbsenBulanan } = await Database.rawQuery(`
+          const { rows: akumulasiBulanan } = await Database.rawQuery(`
             with presence_calc as (
               select * from     
               (select c.id, c.name, count(s.id) total
@@ -307,7 +307,6 @@ export default class DailyAttendancesController {
           order by c.name
          `);
 
-          return akumulasiAbsenBulanan;
           const { rows: dataBulanan } = await Database.rawQuery(`
           with presence_calc as (
             select *, (total * days_count) total_days from     
@@ -363,6 +362,7 @@ export default class DailyAttendancesController {
           data = {
             dataHarian,
             dataBulanan,
+            akumulasiBulanan,
           };
         } else {
           return response.badRequest({

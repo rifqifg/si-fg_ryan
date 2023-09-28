@@ -126,7 +126,7 @@ export default class Employee extends BaseModel {
   public rfid: string | null;
 
   @column()
-  default_presence: number | null;
+  defaultPresence: number | null;
 
   @column()
   public status: StatusEmployees

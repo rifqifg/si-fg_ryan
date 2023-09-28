@@ -19,7 +19,7 @@ export default class AccountsController {
     const { page = 1, limit = 10, keyword = "", mode = "page", account_no } = request.qs();
 
     try {
-      let data = {}
+      let data: Account[]
       if (mode === 'page') {
         data = await Account.query()
           .preload('student', qStudent => qStudent.select('name'))
@@ -29,6 +29,13 @@ export default class AccountsController {
       } else {
         data = await Account.query().whereILike('account_name', `%${keyword}%`)
       }
+
+      data.map(account => {
+        if(account.student) { account.owner = account.student.name }
+        if(account.employee) { account.owner = account.employee.name }
+
+        return account
+      })
 
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
@@ -61,7 +68,15 @@ export default class AccountsController {
     if (!uuidValidation(id)) { return response.badRequest({ message: "ID tidak valid" }) }
 
     try {
-      const data = await Account.findOrFail(id)
+      const data: Account = await Account.query()
+        .where('id', id)
+        .preload('student', qStudent => qStudent.select('name'))
+        .preload('employee', qEmployee => qEmployee.select('name'))
+        .firstOrFail()
+
+      if(data.student) { data.owner = data.student.name }
+      if(data.employee) { data.owner = data.employee.name }
+
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
       const message = "FAC-SHO: " + error.message || error;

@@ -25,6 +25,9 @@ export default class TransactionDocument extends BaseModel {
   description: string
 
   @column()
+  adminNote: string | null
+
+  @column()
   status: TransactionStatus
 
   @column.dateTime({ autoCreate: true })

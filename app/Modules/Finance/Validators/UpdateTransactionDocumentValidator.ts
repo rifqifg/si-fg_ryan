@@ -12,6 +12,7 @@ export default class UpdateTransactionDocumentValidator {
       // rules.requiredWhen('status', '=', 'approved'),
       rules.regex(new RegExp("^[1-9][0-9]*$")),
     ]),
+    admin_note: schema.string.optional({ trim: true }),
   })
 
   public messages: CustomMessages = {}

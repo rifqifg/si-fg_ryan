@@ -67,7 +67,7 @@ export default class CreateEmployeeValidator {
     ]),
     nuptk: schema.string.optional([rules.regex(/^\d+$/)]),
     employeeTypeId: schema.string([rules.exists({table: 'employee_types', column: 'id'})]),
-    default_presence: schema.number(),
+    defaultPresence: schema.number(),
     status: schema.enum(Object.values(StatusEmployees)),
   })
 

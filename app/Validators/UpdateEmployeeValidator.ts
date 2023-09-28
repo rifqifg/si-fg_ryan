@@ -67,7 +67,7 @@ export default class UpdateEmployeeValidator {
     ]),
     nuptk: schema.string.optional([rules.regex(/^\d+$/)]),
     employeeTypeId: schema.string.optional([rules.exists({table: 'employee_types', column: 'id'})]),
-    default_presence: schema.number.nullableAndOptional(),
+    defaultPresence: schema.number.nullableAndOptional(),
     status: schema.enum.optional(Object.values(StatusEmployees)),
   });
 

@@ -6,7 +6,7 @@ export default class extends BaseSchema {
   public async up() {
     this.schema.createTable(this.tableName, (table) => {
       table.uuid('id').unique().notNullable().primary()
-      table.integer('skor').nullable()
+      table.integer('skor').defaultTo(0)
       table.string('note').nullable()
       table.uuid('monthly_report_employee_id').references('monthly_report_employees.id').onUpdate('cascade').onDelete('restrict')
       table.uuid('leave_id').references('leaves.id').onUpdate('cascade').onDelete('restrict').nullable()

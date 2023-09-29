@@ -19,6 +19,7 @@ import Wilayah from "./Wilayah";
 import EmployeeDivision from "./EmployeeDivision";
 import EmployeeType from "./EmployeeType";
 import Teacher from "App/Modules/Academic/Models/Teacher";
+import { StatusEmployees } from "App/lib/enum";
 let newId = "";
 
 export default class Employee extends BaseModel {
@@ -123,6 +124,12 @@ export default class Employee extends BaseModel {
 
   @column()
   public rfid: string | null;
+
+  @column()
+  defaultPresence: number | null;
+
+  @column()
+  public status: StatusEmployees
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime;

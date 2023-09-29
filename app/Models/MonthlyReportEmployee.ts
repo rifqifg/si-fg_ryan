@@ -3,6 +3,7 @@ import { BaseModel, BelongsTo, HasMany, afterCreate, beforeCreate, belongsTo, co
 import Employee from './Employee'
 import MonthlyReportEmployeeDetail from './MonthlyReportEmployeeDetail'
 import { v4 as uuidv4 } from 'uuid'
+import { HttpContext } from '@adonisjs/core/build/standalone'
 let newId = ""
 
 export default class MonthlyReportEmployee extends BaseModel {
@@ -48,5 +49,11 @@ export default class MonthlyReportEmployee extends BaseModel {
   @afterCreate()
   public static setNewId(monthlyReportEmployee: MonthlyReportEmployee) {
     monthlyReportEmployee.id = newId
+    const { request } = HttpContext.get()!
+    const {fromDate, toDate}: any = JSON.parse(request.raw()!)
+
+    console.log(monthlyReportEmployee.monthlyReportId);
+    console.log(fromDate, toDate);
+
   }
 }

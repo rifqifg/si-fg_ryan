@@ -2,6 +2,7 @@ import { DateTime } from 'luxon'
 import { BaseModel, HasMany, afterCreate, beforeCreate, column, hasMany } from '@ioc:Adonis/Lucid/Orm'
 import MonthlyReportEmployee from './MonthlyReportEmployee'
 import { v4 as uuidv4 } from 'uuid'
+import Employee from './Employee'
 let newId = ""
 
 export default class MonthlyReport extends BaseModel {
@@ -33,7 +34,17 @@ export default class MonthlyReport extends BaseModel {
   }
 
   @afterCreate()
-  public static setNewId(monthlyReport: MonthlyReport) {
+  public static async setNewId(monthlyReport: MonthlyReport) {
     monthlyReport.id = newId
+
+    const employeeIds = await Employee.query().select('id')
+    const dataObject = JSON.parse(JSON.stringify(employeeIds))
+
+    const modifiedData = dataObject.map((value) => ({
+      employee_id: value.id,
+      monthly_report_id: newId,
+    }));
+
+    await MonthlyReportEmployee.createMany(modifiedData)
   }
 }

@@ -85,6 +85,7 @@ Route.post('presences/:activityId/:subActivityId', 'SubActivitiesController.pres
 Route.delete('multi-delete-presences', 'SubActivitiesController.destroyPresences').middleware(['auth', 'checkRole:admin'])
 Route.shallowResource('leaves', 'LeavesController').apiOnly().middleware({ '*': ['auth', 'checkRole:admin'] })
 Route.get('recap-sub-activities/:activityId', 'SubActivitiesController.recap').middleware(['auth', 'checkRole:admin'])
+Route.shallowResource('monthly-reports', 'MonthlyReportsController').apiOnly().middleware({ '*': ['auth', 'checkRole:admin'] })
 
 Route.group(() => {
   Route.get('activities', 'UserBehaviorHrdsController.activity').middleware(['auth'])

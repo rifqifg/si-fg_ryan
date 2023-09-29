@@ -12,7 +12,7 @@ export default class LeavesController {
       let data
       if (fromDate && toDate) {
         data = await Leave.query()
-          .select('id', 'employee_id', 'status', 'reason', 'from_date', 'to_date', 'type')
+          .select('id', 'employee_id', 'status', 'reason', 'from_date', 'to_date', 'type', 'leaveStatus')
           .preload('employee', em => em.select('name'))
           .whereHas('employee', e => e.whereILike('name', `%${keyword}%`))
           .andWhere(query => {
@@ -27,7 +27,7 @@ export default class LeavesController {
           .paginate(page, limit)
       } else {
         data = await Leave.query()
-          .select('id', 'employee_id', 'status', 'reason', 'from_date', 'to_date', 'type')
+          .select('id', 'employee_id', 'status', 'reason', 'from_date', 'to_date', 'type', 'leaveStatus')
           .preload('employee', em => em.select('name'))
           .whereHas('employee', e => e.whereILike('name', `%${keyword}%`))
           .andWhere(query => {

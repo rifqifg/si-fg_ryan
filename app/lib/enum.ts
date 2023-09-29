@@ -23,3 +23,8 @@ export enum StatusEmployees {
   FULL_TIME = 'FULL_TIME',
   PART_TIME = 'PART_TIME',
 }
+
+export enum LeaveStatuses {
+  CUTI = 'cuti',
+  SAKIT = 'sakit'
+}

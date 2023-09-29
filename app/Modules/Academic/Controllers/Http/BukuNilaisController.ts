@@ -56,51 +56,37 @@ export default class BukuNilaisController {
           message: "Anda tidak bisa melihat data pengguna lain",
         });
 
-      // const data = await BukuNilai.query()
-      //   .if(teacherId, (t) => t.where("teacherId", teacherId))
-      //   .if(studentId, (s) => s.where("studentId", studentId))
-      //   .if(subjectId, (sb) => sb.where("subjectId", subjectId))
-      //   .if(classId, (c) => c.where("classId", classId))
-      //   .if(type, t => t.whereILike('type', `%${type}%`))
-      //   .preload("students", (s) => s.select("name", "nisn", "nis"))
-      //   .preload("teachers", (t) =>
-      //     t.preload("employee", (e) => e.select("name", "nip", "nik"))
-      //   )
-      //   .preload("mapels", (m) => m.select("name"))
-      //   .preload("programSemesterDetail", (prosemDetail) =>
-      //     prosemDetail.select(
-      //       "kompetensiDasar",
-      //       "kompetensiDasarIndex",
-      //       "pertemuan"
-      //     )
-      //   )
-      //   .preload("classes", (c) => c.select("name"))
-      //   .paginate(page, limit);
-
       const data = await Database.rawQuery(`
-select * from (select json_build_object(
-  'id', bn.id,
-  'student', json_build_object('name', s.name, 'id', s.id, 'nis', s.nis),
-  'teacher', (select json_build_object('name', e.name, 'id', t.id)
-              from academic.teachers t
-                       left join public.employees e on e.id = t.employee_id
-              where t.id = bn.teacher_id),
-   'class', json_build_object('name', c.name, 'id', c.id),
-   'mapel', json_build_object('name', sb.name, 'id', sb.id),
-   'penilaian', json_agg(json_build_object('bab', psd.kompetensi_dasar_index, 'bab_name', psd.kompetensi_dasar, 'nilai', (select jsonb_agg(json_build_object('id', bn2.id, 'type', bn2."type", 'nilai', bn2.nilai))  from academic.buku_nilais bn2 where bn2.program_semester_detail_id  = psd.id  ) ))
-)
-from academic.buku_nilais bn
-left join academic.students s
-      on s.id = bn.student_id
-left join academic.classes c
-       on c.id = bn.class_id
-left join  academic.subjects sb
-       on sb.id = bn.subject_id
-left join academic.program_semester_details psd
-       on psd.id = bn.program_semester_detail_id
-group by bn.id, s.name, s.id, s.nis, c.name, c.id, sb.name, sb.id) b
-`);
-      return data;
+            with results as (
+            	select program_semester_detail_id , json_build_object('name', bn."type", 'materi', bn.material, 'materi_prosem', psd.materi, 'nilai', jsonb_agg(json_build_object('id', bn.id, 'studentId', bn.student_id, 'value', bn.nilai))) types
+            	from academic.buku_nilais bn
+            	left join academic.program_semester_details psd 
+            		on psd.id = bn.program_semester_detail_id
+            	group by bn."type", bn.material , psd.materi, bn.nilai, bn.program_semester_detail_id 
+            ), bab as (
+            	select id,  jsonb_build_object('kompetensi_dasar_index', psd2.kompetensi_dasar_index, 'kompetensi_dasar', psd2.kompetensi_dasar, 'type', types  ) bab
+            	from academic.program_semester_details psd2 
+            	left join results r
+            		on r.program_semester_detail_id = psd2.id
+            )
+            
+            select json_build_object('students', jsonb_agg(json_build_object('name', s."name", 'studentId', s.id)), 'data', json_build_object('teacher_name', e."name", 'teacher_id', t.id, 'class_name', c."name", 'class_id', c.id, 'subject_name', s2."name", 'subject_id', s2.id), 'bab', b.bab) buku_nilai  
+            from academic.buku_nilais bn 
+            left join academic.students s 
+            	on s.id = bn.student_id 
+            left join bab b
+            	on b.id = bn.program_semester_detail_id 
+            left join academic.teachers t 
+            	on t.id = bn.teacher_id 
+            left join public.employees e 
+            	on e.id = t.employee_id 
+            left join academic.classes c 
+            	on c.id = bn.class_id 
+            left join academic.subjects s2 
+            	on s2.id = bn.subject_id 
+            group by e.name, t.id , c.name, c.id, s2."name" , s2.id, b.bab
+      `);
+      // return data;
 
       response.ok({ message: "Berhasil mengambil data", data: data.rows });
     } catch (error) {

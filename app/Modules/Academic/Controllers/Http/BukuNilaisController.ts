@@ -57,34 +57,35 @@ export default class BukuNilaisController {
         });
 
       const data = await Database.rawQuery(`
-            with results as (
-            	select program_semester_detail_id , json_build_object('name', bn."type", 'materi', bn.material, 'materi_prosem', psd.materi, 'nilai', jsonb_agg(json_build_object('id', bn.id, 'studentId', bn.student_id, 'value', bn.nilai))) types
-            	from academic.buku_nilais bn
-            	left join academic.program_semester_details psd 
-            		on psd.id = bn.program_semester_detail_id
-            	group by bn."type", bn.material , psd.materi, bn.nilai, bn.program_semester_detail_id 
-            ), bab as (
-            	select id,  jsonb_build_object('kompetensi_dasar_index', psd2.kompetensi_dasar_index, 'kompetensi_dasar', psd2.kompetensi_dasar, 'type', types  ) bab
-            	from academic.program_semester_details psd2 
-            	left join results r
-            		on r.program_semester_detail_id = psd2.id
-            )
-            
-            select json_build_object('students', jsonb_agg(json_build_object('name', s."name", 'studentId', s.id)), 'data', json_build_object('teacher_name', e."name", 'teacher_id', t.id, 'class_name', c."name", 'class_id', c.id, 'subject_name', s2."name", 'subject_id', s2.id), 'bab', b.bab) buku_nilai  
-            from academic.buku_nilais bn 
-            left join academic.students s 
-            	on s.id = bn.student_id 
-            left join bab b
-            	on b.id = bn.program_semester_detail_id 
-            left join academic.teachers t 
-            	on t.id = bn.teacher_id 
-            left join public.employees e 
-            	on e.id = t.employee_id 
-            left join academic.classes c 
-            	on c.id = bn.class_id 
-            left join academic.subjects s2 
-            	on s2.id = bn.subject_id 
-            group by e.name, t.id , c.name, c.id, s2."name" , s2.id, b.bab
+        with results as (
+        	select program_semester_detail_id , json_build_object('name', bn."type", 'materi', bn.material, 'materi_prosem', psd.materi, 'nilai', jsonb_agg(json_build_object('id', bn.id, 'studentId', bn.student_id, 'value', bn.nilai))) types
+        	from academic.buku_nilais bn
+        	left join academic.program_semester_details psd 
+        		on psd.id = bn.program_semester_detail_id
+        	group by bn."type", bn.material , psd.materi, bn.nilai, bn.program_semester_detail_id 
+        ), bab as (
+        	select id,  jsonb_build_object('kompetensi_dasar_index', psd2.kompetensi_dasar_index, 'kompetensi_dasar', psd2.kompetensi_dasar, 'type', jsonb_agg(types)  ) bab
+        	from academic.program_semester_details psd2 
+        	left join results r
+        		on r.program_semester_detail_id = psd2.id
+        	group by psd2.id, psd2.kompetensi_dasar_index, psd2.kompetensi_dasar
+        )
+        
+        select json_build_object('students', jsonb_agg(json_build_object('name', s."name", 'studentId', s.id)), 'data', json_build_object('teacher_name', e."name", 'teacher_id', t.id, 'class_name', c."name", 'class_id', c.id, 'subject_name', s2."name", 'subject_id', s2.id), 'bab', jsonb_agg(b.bab))  
+        from academic.buku_nilais bn 
+        left join academic.students s 
+        	on s.id = bn.student_id 
+        left join bab b
+        	on b.id = bn.program_semester_detail_id 
+        left join academic.teachers t 
+        	on t.id = bn.teacher_id 
+        left join public.employees e 
+        	on e.id = t.employee_id 
+        left join academic.classes c 
+        	on c.id = bn.class_id 
+        left join academic.subjects s2 
+        	on s2.id = bn.subject_id 
+        group by e.name, t.id , c.name, c.id, s2."name" , s2.id
       `);
       // return data;
 

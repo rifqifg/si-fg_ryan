@@ -7,13 +7,11 @@ import Database from "@ioc:Adonis/Lucid/Database";
 export default class BukuNilaisController {
   public async index({ request, response, auth }: HttpContextContract) {
     const {
-      page = 1,
-      limit = 10,
       subjectId = "",
       teacherId = "",
-      studentId = "",
       classId = "",
       type = "",
+      keyword = "",
     } = request.qs();
     try {
       const user = await User.query()
@@ -48,13 +46,13 @@ export default class BukuNilaisController {
           message: "Anda tidak bisa melihat data pengguna lain",
         });
 
-      if (
-        (student && studentId !== user.studentId) ||
-        (parent && studentId !== user.studentParents.studentId)
-      )
-        return response.badRequest({
-          message: "Anda tidak bisa melihat data pengguna lain",
-        });
+      // if (
+      //   (student && studentId !== user.studentId) ||
+      //   (parent && studentId !== user.studentParents.studentId)
+      // )
+      //   return response.badRequest({
+      //     message: "Anda tidak bisa melihat data pengguna lain",
+      //   });
 
       if (!teacherId || !classId || !subjectId) {
         return response.badRequest({
@@ -114,16 +112,11 @@ export default class BukuNilaisController {
       // `
       //       );
       const bukuNilaiData = await BukuNilai.query()
-        // .andWhere(
-        //   (q) => (
-        //     q.where("class_id", classId),
-        //     q.andWhere("subject_id", subjectId),
-        //     q.andWhere("teacher_id", teacherId)
-        //   )
-        // ).
+        .if(type, (q) => q.whereILike("type", `%${type}%`))
         .where("class_id", classId)
         .andWhere("subject_id", subjectId)
         .andWhere("teacher_id", teacherId)
+        .whereHas("students", (s) => s.whereILike("name", `%${keyword}%`))
         .preload("classes", (c) => c.select("id", "name"))
         .preload(
           "teachers",

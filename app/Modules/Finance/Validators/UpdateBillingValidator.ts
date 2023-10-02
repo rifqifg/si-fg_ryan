@@ -21,6 +21,7 @@ export default class UpdateBillingValidator {
         amount: schema.string.optional([
           rules.regex(new RegExp("^[1-9][0-9]*$")),
         ]),
+        remaining_amount: schema.number.optional(),
         description: schema.string.optional(),
         type: schema.enum.optional(Object.values(BillingType))
       })

@@ -75,6 +75,33 @@ export default class TransactionDocumentsController {
     }
   }
 
+  public async show({ params, response }: HttpContextContract) {
+    const { id } = params;
+
+    if (!uuidValidation(id)) {
+      return response.badRequest({ message: "ID tidak valid" });
+    }
+
+    try {
+      const data = await TransactionDocument.query()
+        .where('id', id)
+        .preload('student', qStudent => qStudent.select('nisn', 'name'))
+        .firstOrFail()
+
+      const beHost = Env.get('BE_URL')
+      const financeDrive = Drive.use('finance')
+      const signedUrl = await financeDrive.getSignedUrl('transaction-documents/' + data.file, { expiresIn: '30mins' })
+      data.file = beHost + signedUrl
+
+      response.ok({ message: "Data Berhasil Didapatkan", data })
+    } catch (error) {
+      response.badRequest({
+        message: "TDOC-IND: Gagal mengambil data",
+        error: error.message,
+      })
+    }
+  }
+
   public async update({ request, response, params }: HttpContextContract) {
     const { id } = params
 
@@ -88,7 +115,7 @@ export default class TransactionDocumentsController {
       const transactionDoc = await TransactionDocument.findOrFail(id)
       const data = await transactionDoc.merge(payload).save()
 
-      response.ok({ message: "Berhasil mengubah data", data });      
+      response.ok({ message: "Berhasil mengubah data", data });
     } catch (error) {
       const message = "TDOC-UPD: " + error.message || error;
       console.log(error);

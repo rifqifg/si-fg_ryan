@@ -3,7 +3,6 @@ import { validate as uuidValidation } from "uuid";
 import { schema, rules } from "@ioc:Adonis/Core/Validator";
 import BukuNilai from "../../Models/BukuNilai";
 import User from "App/Models/User";
-import Database from "@ioc:Adonis/Lucid/Database";
 export default class BukuNilaisController {
   public async index({ request, response, auth }: HttpContextContract) {
     const {
@@ -33,13 +32,13 @@ export default class BukuNilaisController {
         (role) => role.role_name == "teacher"
       );
 
-      const student = userObject.roles.find(
-        (role) => role.role_name == "student"
-      );
+      // const student = userObject.roles.find(
+      //   (role) => role.role_name == "student"
+      // );
 
-      const parent = userObject.roles.find(
-        (role) => role.role_name == "parent"
-      );
+      // const parent = userObject.roles.find(
+      //   (role) => role.role_name == "parent"
+      // );
 
       if (teacher && teacherId !== user.employee.teacher.id)
         return response.badRequest({
@@ -141,70 +140,37 @@ export default class BukuNilaisController {
         prosemDetailId: bn.programSemesterDetailId,
         materi: bn.material,
       }));
-      const students = bukuNilaiData.map((bn) => bn.students);
-      const prosemDetail = bukuNilaiData.map((bn) => bn.programSemesterDetail);
-      // @ts-ignore
+
+      const students = bukuNilaiData.map((bn) => bn.students); // ekstrak students
+
+      const prosemDetail = bukuNilaiData.map((bn) => bn.programSemesterDetail); // ekstrak prosemDetail
+
       const uniquesStudents = Array.from(
+        // menghilangkan data student yg duplikat
+        // @ts-ignore
         new Set(students?.map(JSON.stringify))
+        // @ts-ignore
       )?.map(JSON.parse);
       const uniqueProsemDetails = Array.from(
+        // @ts-ignore
         new Set(prosemDetail?.map(JSON.stringify))
+        // @ts-ignore
       )?.map(JSON.parse);
       const uniqueTypeOfBukuNilai = Array.from(
+        // @ts-ignore
         new Set(types?.map(JSON.stringify))
+        // @ts-ignore
       )?.map(JSON.parse);
-      // return uniqueTypeOfBukuNilai;
-      // const bab: {
-      //   kompetensi_dasar_index: number | string;
-      //   kompetensi_dasar: string;
-      //   // type: {
-      //   //   name: string
-      //   //   materi: string
-      //   //   materi_prosem: string | null
-      //   //   nilai: {
-      //   //     id: string
-      //   //     studentId: string
-      //   //     value: number
-      //   //   }[]
-      //   // }[]
-      // }[] = [];
 
-      // const groupingBukuNilai = uniqueProsemDetails.map((psd) => {
-      //   bukuNilai.map((bn) => {
-      //     if (bn?.programSemesterDetailId !== psd?.id) {
-      //       console.log({
-      //         kompetensi_dasar_index: psd?.kompetensi_dasar_index,
-      //         kompetensi_dasar: psd?.kompetensi_dasar,
-      //       });
-      //       bab.push({
-      //         kompetensi_dasar_index: psd?.kompetensi_dasar_index,
-      //         kompetensi_dasar: psd?.kompetensi_dasar,
-      //       });
-      //       // return ;
-      //     } else {
-      //       console.log({
-      //         kompetensi_dasar_index: "penilaian lainnya",
-      //         kompetensi_dasar: "",
-      //       });
-      //       bab.push({
-      //         kompetensi_dasar_index: "penilaian lainnya",
-      //         kompetensi_dasar: "",
-      //       });
-      //     }
-      //   });
-      // });
-
-      // return bab;
-      // return uniqueProsemDetails;
       const data = {
         students: uniquesStudents,
         data: {
-          teacher_name: bukuNilaiData[0].teachers.employee.name,
-          teacher_id: bukuNilaiData[0].teachers.id,
-          class_name: bukuNilaiData[0].classes.name,
-          class_id: bukuNilaiData[0].classId,
-          subject_id: bukuNilaiData[0].subjectId,
-          subject_name: bukuNilaiData[0].mapels.name,
+          teacher_name: bukuNilaiData[0]?.teachers.employee.name,
+          teacher_id: bukuNilaiData[0]?.teachers.id,
+          class_name: bukuNilaiData[0]?.classes.name,
+          class_id: bukuNilaiData[0]?.classId,
+          subject_id: bukuNilaiData[0]?.subjectId,
+          subject_name: bukuNilaiData[0]?.mapels.name,
         },
         bab: uniqueProsemDetails.map((b) => ({
           kompetensi_dasar_index: b?.kompetensi_dasar_index
@@ -229,19 +195,12 @@ export default class BukuNilaisController {
                   value: nilai?.value,
                 })),
             })),
-          // type: bukuNilaiData
-          //   .filter(
-          //     (bn) =>
-          //       bn?.programSemesterDetailId === b?.id ||
-          //       (bn.programSemesterDetailId === null && b === null)
-          //   )
-          //   .map((bn2) => ({
-          //     name: bn2.type,
-          //     materi: bn2.material,
-          //     materi_prosem: b?.kompetensi_dasar,
-          //   })),
         })),
       };
+
+      if (data.students.length === 0 || data.bab.length === 0 || !data.data) {
+        return response.ok({ message: "Behasil mengambil data", data: [] });
+      }
 
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
@@ -432,6 +391,7 @@ export default class BukuNilaisController {
 
     const user = await User.query()
       .where("id", auth.user!.id)
+      .preload("roles", (r) => r.select("*"))
       .preload("employee", (e) => e.preload("teacher", (t) => t.select("id")))
       .firstOrFail();
     const userObject = JSON.parse(JSON.stringify(user));
@@ -440,7 +400,6 @@ export default class BukuNilaisController {
     );
 
     const admin = userObject.roles?.find((role) => role.name == "admin");
-
     const adminAcademic = userObject.roles?.find(
       (role) => role.name == "admin_academic"
     );

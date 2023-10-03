@@ -36,15 +36,18 @@ export default class MonthlyReport extends BaseModel {
   @afterCreate()
   public static async setNewId(monthlyReport: MonthlyReport) {
     monthlyReport.id = newId
+  }
 
+  @afterCreate()
+  public static async insertMonthlyReportEmployee() {
     const employeeIds = await Employee.query().select('id')
     const dataObject = JSON.parse(JSON.stringify(employeeIds))
 
-    const modifiedData = dataObject.map((value) => ({
-      employee_id: value.id,
-      monthly_report_id: newId,
-    }));
-
-    await MonthlyReportEmployee.createMany(modifiedData)
+    dataObject.map(async (value) => (
+      await MonthlyReportEmployee.create({
+        employeeId: value.id,
+        monthlyReportId: newId,
+      })
+    ));
   }
 }

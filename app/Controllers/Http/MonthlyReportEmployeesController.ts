@@ -1,4 +1,5 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import Database from '@ioc:Adonis/Lucid/Database';
 import MonthlyReportEmployee from 'App/Models/MonthlyReportEmployee';
 import DeleteManyMonthlyReportEmployeeValidator from 'App/Validators/DeleteManyMonthlyReportEmployeeValidator';
 import UpdateMonthlyReportEmployeeValidator from 'App/Validators/UpdateMonthlyReportEmployeeValidator';
@@ -27,6 +28,36 @@ export default class MonthlyReportEmployeesController {
     }
   }
 
+  public async show({ params, response }: HttpContextContract) {
+    const { id } = params;
+    if (!uuidValidation(id)) {
+      return response.badRequest({ message: "MonthlyReportEmployee ID tidak valid" });
+    }
+
+    try {
+      const data = await MonthlyReportEmployee.query()
+        .where('id', id)
+        .preload('monthlyReport', mr => mr.select('name'))
+        .preload('employee', e => e
+          .select('name', 'nik', 'status')
+          .select(Database.raw(`EXTRACT(YEAR FROM AGE(NOW(), "date_in")) || ' tahun ' || EXTRACT(MONTH FROM AGE(NOW(), "date_in")) || ' bulan' AS period_of_work`))
+          .preload('divisi', d => d.select('name')))
+        .preload('monthlyReportEmployeesDetails', mred => mred
+          .preload('activity', a => a.select('id', 'name', 'category_activity_id')
+            .preload('categoryActivity', ca => ca.select('name'))))
+
+      response.ok({ message: "Berhasil mengambil data", data });
+    } catch (error) {
+      const message = "HRDMR03: " + error.message || error;
+      console.log(error);
+      response.badRequest({
+        message: "Gagal mengambil data",
+        error: message,
+        error_data: error,
+      });
+    }
+  }
+
   public async update({ params, request, response }: HttpContextContract) {
     const { id } = params;
     if (!uuidValidation(id)) {
@@ -43,7 +74,7 @@ export default class MonthlyReportEmployeesController {
       const data = await MRE.merge(payload).save();
       response.ok({ message: "Berhasil mengubah data", data });
     } catch (error) {
-      const message = "HRDLE04: " + error.message || error;
+      const message = "HRDLE03: " + error.message || error;
       console.log(error);
       response.badRequest({
         message: "Gagal mengubah data",
@@ -62,7 +93,7 @@ export default class MonthlyReportEmployeesController {
 
       response.ok({ message: 'Berhasil menghapus banyak data' })
     } catch (error) {
-      const message = "HRDMRE03: " + error.message || error;
+      const message = "HRDMRE04: " + error.message || error;
       console.log(error);
       response.badRequest({
         message: "Gagal menghapus data",

@@ -23,6 +23,12 @@ import { StatusEmployees } from "App/lib/enum";
 let newId = "";
 
 export default class Employee extends BaseModel {
+  public serializeExtras() {
+    return {
+      period_of_work: this.$extras.period_of_work
+    }
+  }
+
   @column({ isPrimary: true })
   public id: string;
 

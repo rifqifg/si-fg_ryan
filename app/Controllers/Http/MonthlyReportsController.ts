@@ -60,7 +60,10 @@ export default class MonthlyReportsController {
     }
 
     try {
-      const data = await MonthlyReport.query().where("id", id).firstOrFail();
+      const data = await MonthlyReport.query()
+      .where("id", id)
+      .preload('monthlyReportEmployees', mre => mre.preload('employee', e => e.select('name')))
+      .firstOrFail();
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
       const message = "HRDMR03: " + error.message || error;

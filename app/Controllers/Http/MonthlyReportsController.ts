@@ -53,7 +53,9 @@ export default class MonthlyReportsController {
     }
   }
 
-  public async show({ params, response }: HttpContextContract) {
+  public async show({ params, response, request }: HttpContextContract) {
+    const { keyword = "" } = request.qs()
+
     const { id } = params;
     if (!uuidValidation(id)) {
       return response.badRequest({ message: "MonthlyReport ID tidak valid" });
@@ -61,9 +63,11 @@ export default class MonthlyReportsController {
 
     try {
       const data = await MonthlyReport.query()
-      .where("id", id)
-      .preload('monthlyReportEmployees', mre => mre.preload('employee', e => e.select('name')))
-      .firstOrFail();
+        .where("id", id)
+        .preload('monthlyReportEmployees', mre => mre
+          .whereHas('employee', e => e.whereILike('name', `%${keyword}%`))
+          .preload('employee', e => e.select('name')))
+        .firstOrFail();
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
       const message = "HRDMR03: " + error.message || error;

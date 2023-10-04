@@ -7,6 +7,12 @@ import { v4 as uuidv4 } from 'uuid'
 let newId = ""
 
 export default class MonthlyReportEmployeeDetail extends BaseModel {
+  public serializeExtras() {
+    return {
+      percentage: this.$extras.percentage,
+    }
+  }
+
   @column({ isPrimary: true })
   public id: string
 

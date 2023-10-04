@@ -35,6 +35,12 @@ export default class MonthlyReportEmployeesController {
     }
 
     try {
+      const getEmployeeId = await MonthlyReportEmployee.query()
+        .select('employee_id')
+        .where('id', id)
+        .first()
+      const employeeId = JSON.parse(JSON.stringify(getEmployeeId)).employee_id
+
       const data = await MonthlyReportEmployee.query()
         .where('id', id)
         .preload('monthlyReport', mr => mr.select('name'))
@@ -42,7 +48,10 @@ export default class MonthlyReportEmployeesController {
           .select('name', 'nik', 'status')
           .select(Database.raw(`EXTRACT(YEAR FROM AGE(NOW(), "date_in")) || ' tahun ' || EXTRACT(MONTH FROM AGE(NOW(), "date_in")) || ' bulan' AS period_of_work`))
           .preload('divisi', d => d.select('name')))
-        .preload('monthlyReportEmployeesDetails', mred => mred
+        .preload('monthlyReportEmployeesFixedTime', mreft => mreft
+          .select('*')
+          .select(Database.raw(`skor * 100 / (select default_presence from public.employees where id='${employeeId}') as percentage`))
+          .whereHas('activity', ac => ac.where('activity_type', 'fixed_time').andWhere('assessment', true))
           .preload('activity', a => a.select('id', 'name', 'category_activity_id')
             .preload('categoryActivity', ca => ca.select('name'))))
 

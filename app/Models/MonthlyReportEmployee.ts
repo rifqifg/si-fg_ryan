@@ -33,7 +33,7 @@ export default class MonthlyReportEmployee extends BaseModel {
   public monthlyReport: BelongsTo<typeof Employee>
 
   @hasMany(() => MonthlyReportEmployeeDetail)
-  public monthlyReportEmployeesDetails: HasMany<typeof MonthlyReportEmployeeDetail>
+  public monthlyReportEmployeesFixedTime: HasMany<typeof MonthlyReportEmployeeDetail>
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime

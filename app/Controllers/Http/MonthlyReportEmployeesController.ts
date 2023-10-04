@@ -54,6 +54,12 @@ export default class MonthlyReportEmployeesController {
           .whereHas('activity', ac => ac.where('activity_type', 'fixed_time').andWhere('assessment', true))
           .preload('activity', a => a.select('id', 'name', 'category_activity_id')
             .preload('categoryActivity', ca => ca.select('name'))))
+        .preload('monthlyReportEmployeesNotFixedTime', mrenft => mrenft
+          .select('*')
+          .select(Database.raw(`skor * 100 / (select "default" from public.activities where id=activity_id) as percentage`))
+          .whereHas('activity', ac => ac.where('activity_type', 'not_fixed_time').andWhere('assessment', true))
+          .preload('activity', a => a.select('id', 'name', 'category_activity_id')
+            .preload('categoryActivity', ca => ca.select('name'))))
 
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {

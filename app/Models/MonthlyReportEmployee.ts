@@ -35,6 +35,9 @@ export default class MonthlyReportEmployee extends BaseModel {
   @hasMany(() => MonthlyReportEmployeeDetail)
   public monthlyReportEmployeesFixedTime: HasMany<typeof MonthlyReportEmployeeDetail>
 
+  @hasMany(() => MonthlyReportEmployeeDetail)
+  public monthlyReportEmployeesNotFixedTime: HasMany<typeof MonthlyReportEmployeeDetail>
+
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
 
@@ -63,6 +66,18 @@ export default class MonthlyReportEmployee extends BaseModel {
         monthlyReportEmployeeId: monthlyReportEmployee.id
       })
     }
+
+    // Menghitung Presensi employee Aktifitas yang tidak tetap
+    const presenceEmployeeNotFixedTime = await countPresenceEMployeeNotFixedTime(monthlyReportEmployee, fromDate, toDate)
+    if (presenceEmployeeNotFixedTime.length > 0) {
+      presenceEmployeeNotFixedTime.map(async value => {
+        await MonthlyReportEmployeeDetail.create({
+          skor: value.presence_count,
+          activityId: value.activity_id,
+          monthlyReportEmployeeId: monthlyReportEmployee.id
+        })
+      })
+    }
   }
 }
 
@@ -81,4 +96,20 @@ const countPresenceEMployeeFixedTime = async (monthlyReportEmployee, fromDate, t
   const dataPresenceEmployeeObject = JSON.parse(JSON.stringify(presenceEmployee))
 
   return dataPresenceEmployeeObject[0]
+}
+
+const countPresenceEMployeeNotFixedTime = async (monthlyReportEmployee, fromDate, toDate) => {
+  // mengambil presensi empoyee waktu tidak tetap
+  const presenceEmployee = await Presence.query()
+    .select('activity_id')
+    .whereBetween("created_at", [fromDate + ' 00:00:00', toDate + ' 23:59:59'])
+    .andWhere('employee_id', monthlyReportEmployee.employeeId)
+    .andWhereHas('activity', ac => ac.where('activity_type', 'not_fixed_time').andWhere('assessment', true))
+    .count('*', 'presence_count')
+    // .preload('activity', ac => ac.select('id', 'name'))
+    .groupBy('activity_id')
+
+  const dataPresenceEmployeeObject = JSON.parse(JSON.stringify(presenceEmployee))
+
+  return dataPresenceEmployeeObject
 }

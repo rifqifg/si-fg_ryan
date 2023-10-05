@@ -1,7 +1,7 @@
-import { schema, CustomMessages, rules } from "@ioc:Adonis/Core/Validator";
+import { schema, CustomMessages } from "@ioc:Adonis/Core/Validator";
 import type { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 
-export default class CreateTeacherValidator {
+export default class UpdateTeacherValidator {
   constructor(protected ctx: HttpContextContract) {}
 
   /*
@@ -24,11 +24,7 @@ export default class CreateTeacherValidator {
    *    ```
    */
   public schema = schema.create({
-    employeeId: schema.string({}, [
-      rules.exists({ table: "public.employees", column: "id" }),
-      rules.unique({ table: "academic.teachers", column: "employee_id" }),
-    ]),
-    totalMengajar: schema.number(),
+    totalMengajar: schema.number.optional(),
   });
 
   /**

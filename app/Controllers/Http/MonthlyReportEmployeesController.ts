@@ -43,7 +43,7 @@ export default class MonthlyReportEmployeesController {
 
       const data = await MonthlyReportEmployee.query()
         .where('id', id)
-        .preload('monthlyReport', mr => mr.select('name'))
+        .preload('monthlyReport', mr => mr.select('name', 'from_date', 'to_date'))
         .preload('employee', e => e
           .select('name', 'nik', 'status')
           .select(Database.raw(`EXTRACT(YEAR FROM AGE(NOW(), "date_in")) || ' tahun ' || EXTRACT(MONTH FROM AGE(NOW(), "date_in")) || ' bulan' AS period_of_work`))

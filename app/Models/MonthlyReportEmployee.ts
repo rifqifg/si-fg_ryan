@@ -5,6 +5,7 @@ import MonthlyReportEmployeeDetail from './MonthlyReportEmployeeDetail'
 import { v4 as uuidv4 } from 'uuid'
 import { HttpContext } from '@adonisjs/core/build/standalone'
 import Presence from './Presence'
+import MonthlyReport from './MonthlyReport'
 let newId = ""
 
 export default class MonthlyReportEmployee extends BaseModel {
@@ -29,8 +30,8 @@ export default class MonthlyReportEmployee extends BaseModel {
   @column()
   public monthlyReportId: string
 
-  @belongsTo(() => Employee)
-  public monthlyReport: BelongsTo<typeof Employee>
+  @belongsTo(() => MonthlyReport)
+  public monthlyReport: BelongsTo<typeof MonthlyReport>
 
   @hasMany(() => MonthlyReportEmployeeDetail)
   public monthlyReportEmployeesFixedTime: HasMany<typeof MonthlyReportEmployeeDetail>

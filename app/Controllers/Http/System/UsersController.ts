@@ -43,7 +43,7 @@ export default class UsersController {
         .attempt(payload.email, payload.password);
       const user = await User.query()
         .where("id", auth.user!.id)
-        .preload("roles", (query) => query.select("role_name").orderBy('role_name', 'asc').preload('role', r => r.select('name', 'permissions')))
+        .preload("roles", (query) => query.select("role_name").preload('role', r => r.select('name', 'permissions')))
         .preload("employee", (e) => {
           e.select("name");
           e.preload("teacher", (t) => t.select("id"));
@@ -74,44 +74,98 @@ export default class UsersController {
           simplifiedModules[module.id] = { id: module.id, type: "", menus: [] };
         }
 
-        if (module.type === "show" && simplifiedModules[module.id].type !== "disabled") {
-          simplifiedModules[module.id].type = "show";
-        } else if (module.type === "disabled" && simplifiedModules[module.id].type !== "show") {
-          simplifiedModules[module.id].type = "disabled";
+        if (module.type === "show") {
+          if (simplifiedModules[module.id].type === "") {
+            simplifiedModules[module.id].type = "show";
+          } else if (simplifiedModules[module.id].type === "show") {
+            simplifiedModules[module.id].type = "show";
+          } else if (simplifiedModules[module.id].type === "disabled") {
+            simplifiedModules[module.id].type = "show";
+          }
+        } else if (module.type === "disabled") {
+          if (simplifiedModules[module.id].type === "") {
+            simplifiedModules[module.id].type = "disabled";
+          } else if (simplifiedModules[module.id].type === "show") {
+            simplifiedModules[module.id].type = "show";
+          } else if (simplifiedModules[module.id].type === "disabled") {
+            simplifiedModules[module.id].type = "disabled";
+          }
         }
 
         if (module.menus) {
           module.menus.forEach(menu => {
             const existingMenu = simplifiedModules[module.id].menus.find(existing => existing.id === menu.id);
+
             if (!existingMenu) {
-              const simplifiedMenu: any = { id: menu.id, type: "" };
-              if (menu.type === "show" && simplifiedMenu.type !== "disabled") {
-                simplifiedMenu.type = "show";
-              } else if (menu.type === "disabled" && simplifiedMenu.type !== "show") {
-                simplifiedMenu.type = "disabled";
+              const simplifiedMenu: any = { id: menu.id, type: "", functions: [] };
+
+              if (menu.type === "show") {
+                if (simplifiedMenu.type === "") {
+                  simplifiedMenu.type = "show";
+                } else if (simplifiedMenu.type === "show") {
+                  simplifiedMenu.type = "show";
+                } else if (simplifiedMenu.type === "disabled") {
+                  simplifiedMenu.type = "show";
+                }
+              } else if (menu.type === "disabled") {
+                if (simplifiedMenu.type === "") {
+                  simplifiedMenu.type = "disabled";
+                } else if (simplifiedMenu.type === "show") {
+                  simplifiedMenu.type = "show";
+                } else if (simplifiedMenu.type === "disabled") {
+                  simplifiedMenu.type = "disabled";
+                }
               }
 
-              if (menu.functions) {
-                simplifiedMenu.functions = menu.functions.reduce((acc, func) => {
-                  if (func.type !== "disabled" && !acc.find(f => f.id === func.id)) {
-                    acc.push({ id: func.id, type: func.type });
+              menu.functions.forEach(func => {
+                const simplifiedFunction: any = { id: func.id, type: "" };
+
+                if (func.type === "show") {
+                  if (simplifiedFunction.type === "") {
+                    simplifiedFunction.type = "show";
+                  } else if (simplifiedFunction.type === "show") {
+                    simplifiedFunction.type = "show";
+                  } else if (simplifiedFunction.type === "disabled") {
+                    simplifiedFunction.type = "show";
                   }
-                  return acc;
-                }, []);
-              }
+                } else if (func.type === "disabled") {
+                  if (simplifiedFunction.type === "") {
+                    simplifiedFunction.type = "disabled";
+                  } else if (simplifiedFunction.type === "show") {
+                    simplifiedFunction.type = "show";
+                  } else if (simplifiedFunction.type === "disabled") {
+                    simplifiedFunction.type = "disabled";
+                  }
+                }
+
+                simplifiedMenu.functions.push(simplifiedFunction);
+              })
 
               simplifiedModules[module.id].menus.push(simplifiedMenu);
             } else {
-              if (menu.type === "show" && existingMenu.type !== "disabled") {
-                existingMenu.type = "show";
-              } else if (menu.type === "disabled" && existingMenu.type !== "show") {
-                existingMenu.type = "disabled";
+              if (menu.type === "show") {
+                if (existingMenu.type === "show") {
+                  existingMenu.type = "show";
+                } else if (existingMenu.type === "disabled") {
+                  existingMenu.type = "show";
+                }
+              } else if (menu.type === "disabled") {
+                if (existingMenu.type === "show") {
+                  existingMenu.type = "show";
+                } else if (existingMenu.type === "disabled") {
+                  existingMenu.type = "disabled";
+                }
               }
 
               if (menu.functions) {
+
                 menu.functions.forEach(func => {
-                  if (func.type !== "disabled" && !existingMenu.functions.find(f => f.id === func.id)) {
+                  const existingFunc = existingMenu.functions.find(f => f.id === func.id);
+
+                  if (!existingFunc) {
                     existingMenu.functions.push({ id: func.id, type: func.type });
+                  } else if (func.type === "show") {
+                    existingFunc.type = "show";
                   }
                 });
               }
@@ -196,7 +250,7 @@ export default class UsersController {
     try {
       const user = await User.query()
         .where("email", "=", userGoogle.email)
-        .preload("roles", (query) => query.select("role_name").orderBy('role_name', 'asc').preload('role', r => r.select('name', 'permissions')))
+        .preload("roles", (query) => query.select("role_name").preload('role', r => r.select('name', 'permissions')))
         .preload("employee", (e) => e.preload("teacher", (t) => t.select("id")))
         .firstOrFail();
 
@@ -224,44 +278,98 @@ export default class UsersController {
           simplifiedModules[module.id] = { id: module.id, type: "", menus: [] };
         }
 
-        if (module.type === "show" && simplifiedModules[module.id].type !== "disabled") {
-          simplifiedModules[module.id].type = "show";
-        } else if (module.type === "disabled" && simplifiedModules[module.id].type !== "show") {
-          simplifiedModules[module.id].type = "disabled";
+        if (module.type === "show") {
+          if (simplifiedModules[module.id].type === "") {
+            simplifiedModules[module.id].type = "show";
+          } else if (simplifiedModules[module.id].type === "show") {
+            simplifiedModules[module.id].type = "show";
+          } else if (simplifiedModules[module.id].type === "disabled") {
+            simplifiedModules[module.id].type = "show";
+          }
+        } else if (module.type === "disabled") {
+          if (simplifiedModules[module.id].type === "") {
+            simplifiedModules[module.id].type = "disabled";
+          } else if (simplifiedModules[module.id].type === "show") {
+            simplifiedModules[module.id].type = "show";
+          } else if (simplifiedModules[module.id].type === "disabled") {
+            simplifiedModules[module.id].type = "disabled";
+          }
         }
 
         if (module.menus) {
           module.menus.forEach(menu => {
             const existingMenu = simplifiedModules[module.id].menus.find(existing => existing.id === menu.id);
+
             if (!existingMenu) {
-              const simplifiedMenu: any = { id: menu.id, type: "" };
-              if (menu.type === "show" && simplifiedMenu.type !== "disabled") {
-                simplifiedMenu.type = "show";
-              } else if (menu.type === "disabled" && simplifiedMenu.type !== "show") {
-                simplifiedMenu.type = "disabled";
+              const simplifiedMenu: any = { id: menu.id, type: "", functions: [] };
+
+              if (menu.type === "show") {
+                if (simplifiedMenu.type === "") {
+                  simplifiedMenu.type = "show";
+                } else if (simplifiedMenu.type === "show") {
+                  simplifiedMenu.type = "show";
+                } else if (simplifiedMenu.type === "disabled") {
+                  simplifiedMenu.type = "show";
+                }
+              } else if (menu.type === "disabled") {
+                if (simplifiedMenu.type === "") {
+                  simplifiedMenu.type = "disabled";
+                } else if (simplifiedMenu.type === "show") {
+                  simplifiedMenu.type = "show";
+                } else if (simplifiedMenu.type === "disabled") {
+                  simplifiedMenu.type = "disabled";
+                }
               }
 
-              if (menu.functions) {
-                simplifiedMenu.functions = menu.functions.reduce((acc, func) => {
-                  if (func.type !== "disabled" && !acc.find(f => f.id === func.id)) {
-                    acc.push({ id: func.id, type: func.type });
+              menu.functions.forEach(func => {
+                const simplifiedFunction: any = { id: func.id, type: "" };
+
+                if (func.type === "show") {
+                  if (simplifiedFunction.type === "") {
+                    simplifiedFunction.type = "show";
+                  } else if (simplifiedFunction.type === "show") {
+                    simplifiedFunction.type = "show";
+                  } else if (simplifiedFunction.type === "disabled") {
+                    simplifiedFunction.type = "show";
                   }
-                  return acc;
-                }, []);
-              }
+                } else if (func.type === "disabled") {
+                  if (simplifiedFunction.type === "") {
+                    simplifiedFunction.type = "disabled";
+                  } else if (simplifiedFunction.type === "show") {
+                    simplifiedFunction.type = "show";
+                  } else if (simplifiedFunction.type === "disabled") {
+                    simplifiedFunction.type = "disabled";
+                  }
+                }
+
+                simplifiedMenu.functions.push(simplifiedFunction);
+              })
 
               simplifiedModules[module.id].menus.push(simplifiedMenu);
             } else {
-              if (menu.type === "show" && existingMenu.type !== "disabled") {
-                existingMenu.type = "show";
-              } else if (menu.type === "disabled" && existingMenu.type !== "show") {
-                existingMenu.type = "disabled";
+              if (menu.type === "show") {
+                if (existingMenu.type === "show") {
+                  existingMenu.type = "show";
+                } else if (existingMenu.type === "disabled") {
+                  existingMenu.type = "show";
+                }
+              } else if (menu.type === "disabled") {
+                if (existingMenu.type === "show") {
+                  existingMenu.type = "show";
+                } else if (existingMenu.type === "disabled") {
+                  existingMenu.type = "disabled";
+                }
               }
 
               if (menu.functions) {
+
                 menu.functions.forEach(func => {
-                  if (func.type !== "disabled" && !existingMenu.functions.find(f => f.id === func.id)) {
+                  const existingFunc = existingMenu.functions.find(f => f.id === func.id);
+
+                  if (!existingFunc) {
                     existingMenu.functions.push({ id: func.id, type: func.type });
+                  } else if (func.type === "show") {
+                    existingFunc.type = "show";
                   }
                 });
               }

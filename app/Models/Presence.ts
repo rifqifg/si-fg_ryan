@@ -10,7 +10,10 @@ let newId = ""
 export default class Presence extends BaseModel {
   public serializeExtras() {
     return {
-      workingTimeDiff: this.$extras.timeDiff
+      workingTimeDiff: this.$extras.timeDiff,
+      presence_count: this.$extras.presence_count,
+      total_sessions: this.$extras.total_sessions,
+      percentage: this.$extras.percentage,
     }
   }
 

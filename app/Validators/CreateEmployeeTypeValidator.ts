@@ -1,8 +1,8 @@
 import { schema, CustomMessages, rules } from '@ioc:Adonis/Core/Validator'
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 
-export default class UpdateSubActivityValidator {
-  constructor(protected ctx: HttpContextContract) { }
+export default class CreateEmployeeTypeValidator {
+  constructor(protected ctx: HttpContextContract) {}
 
   /*
    * Define schema to validate the "shape", "type", "formatting" and "integrity" of data.
@@ -24,19 +24,11 @@ export default class UpdateSubActivityValidator {
    *    ```
    */
   public schema = schema.create({
-    name: schema.string.optional([
-      rules.minLength(3)
+    id: schema.string([
+      rules.unique({ table: 'employee_types', column: 'id'})
     ]),
-    images: schema.array.nullableAndOptional().members(schema.file({
-      size: '2mb',
-      extnames: ['png', 'jpg', 'jpeg']
-    })),
-    deleteImages: schema.string.nullableAndOptional(),
-    date: schema.date.optional({ format: 'yyyy-MM-dd HH:mm:ss' }),
-    note: schema.object.nullableAndOptional().anyMembers(),
-    activityId: schema.string.optional({}, [
-      rules.exists({ table: 'activities', column: 'id' })
-    ])
+    name: schema.string(),
+    description: schema.string.nullableAndOptional()
   })
 
   /**

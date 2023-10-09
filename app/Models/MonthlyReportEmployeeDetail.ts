@@ -2,7 +2,7 @@ import { DateTime } from 'luxon'
 import { BaseModel, BelongsTo, afterCreate, beforeCreate, belongsTo, column } from '@ioc:Adonis/Lucid/Orm'
 import MonthlyReportEmployee from './MonthlyReportEmployee'
 import Activity from './Activity'
-import Leave from './Leave'
+// import Leave from './Leave'
 import { v4 as uuidv4 } from 'uuid'
 let newId = ""
 
@@ -23,6 +23,9 @@ export default class MonthlyReportEmployeeDetail extends BaseModel {
   public note: string | null
 
   @column()
+  public isLeave: boolean
+
+  @column()
   public monthlyReportEmployeeId: string
 
   @belongsTo(() => MonthlyReportEmployee)
@@ -34,11 +37,11 @@ export default class MonthlyReportEmployeeDetail extends BaseModel {
   @belongsTo(() => Activity)
   public activity: BelongsTo<typeof Activity>
 
-  @column()
-  public leaveId: string | null
+  // @column()
+  // public leaveId: string | null
 
-  @belongsTo(() => Leave)
-  public leave: BelongsTo<typeof Leave>
+  // @belongsTo(() => Leave)
+  // public leave: BelongsTo<typeof Leave>
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime

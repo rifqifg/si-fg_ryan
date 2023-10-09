@@ -6,6 +6,8 @@ import { v4 as uuidv4 } from 'uuid'
 import { HttpContext } from '@adonisjs/core/build/standalone'
 import Presence from './Presence'
 import MonthlyReport from './MonthlyReport'
+import Leave from './Leave'
+import Database from '@ioc:Adonis/Lucid/Database'
 let newId = ""
 
 export default class MonthlyReportEmployee extends BaseModel {
@@ -38,6 +40,9 @@ export default class MonthlyReportEmployee extends BaseModel {
 
   @hasMany(() => MonthlyReportEmployeeDetail)
   public monthlyReportEmployeesNotFixedTime: HasMany<typeof MonthlyReportEmployeeDetail>
+
+  @hasMany(() => MonthlyReportEmployeeDetail)
+  public monthlyReportEmployeesLeave: HasMany<typeof MonthlyReportEmployeeDetail>
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
@@ -79,6 +84,16 @@ export default class MonthlyReportEmployee extends BaseModel {
         })
       })
     }
+
+    //menghitung sisa jumlah cuti
+    const leaveEmployee = await countLeaveEmloyees(monthlyReportEmployee, fromDate)
+    if (leaveEmployee) {
+      await MonthlyReportEmployeeDetail.create({
+        skor: leaveEmployee.sisa_jatah_cuti,
+        isLeave: true,
+        monthlyReportEmployeeId: monthlyReportEmployee.id
+      })
+    }
   }
 }
 
@@ -113,4 +128,32 @@ const countPresenceEMployeeNotFixedTime = async (monthlyReportEmployee, fromDate
   const dataPresenceEmployeeObject = JSON.parse(JSON.stringify(presenceEmployee))
 
   return dataPresenceEmployeeObject
+}
+
+const countLeaveEmloyees = async (monthlyReportEmployee, fromDate) => {
+  const today = DateTime.fromISO(fromDate);
+  // Tahun ajaran baru dimulai pada bulan Juli (bulan 7)
+  const tahunAjaran = today.month >= 7 ? today.year : today.year - 1;
+  const fromDateTahunAjaran = `${tahunAjaran}-07-01`
+  const toDateTahunAjaran = `${tahunAjaran + 1}-06-30`
+
+  const leaveEmployees = await Leave.query()
+    .select('employee_id')
+    .select(Database.raw(`(case when (select status from employees where id = '${monthlyReportEmployee.employeeId}') = 'FULL_TIME' then 6 else 3 end) - (sum(to_date - from_date + 1)) as sisa_jatah_cuti`))
+    .where('employee_id', monthlyReportEmployee.employeeId)
+    .andWhere('leave_status', 'cuti')
+    .andWhere('status', 'aprove')
+    .andWhereBetween('to_date', [fromDateTahunAjaran, toDateTahunAjaran])
+    .groupBy('employee_id')
+
+  const dataLeaveEmployeeObject = JSON.parse(JSON.stringify(leaveEmployees))
+
+  const employee = await Employee.query()
+    .select('id')
+    .select(Database.raw(`(case when status = 'FULL_TIME' then 6 else 3 end) as sisa_jatah_cuti`))
+    .where('id', monthlyReportEmployee.employeeId)
+
+  const dataEmployeeObject = JSON.parse(JSON.stringify(employee))
+
+  return dataLeaveEmployeeObject.length != 0 ? dataLeaveEmployeeObject[0] : dataEmployeeObject[0]
 }

@@ -60,6 +60,9 @@ export default class MonthlyReportEmployeesController {
           .whereHas('activity', ac => ac.where('activity_type', 'not_fixed_time').andWhere('assessment', true))
           .preload('activity', a => a.select('id', 'name', 'category_activity_id')
             .preload('categoryActivity', ca => ca.select('name'))))
+        .preload('monthlyReportEmployeesLeave', mrel => mrel
+          .select('*')
+          .where('is_leave', true))
 
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {

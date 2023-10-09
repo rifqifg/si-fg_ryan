@@ -6,6 +6,12 @@ import { v4 as uuidv4 } from 'uuid'
 let newId = ""
 
 export default class Leave extends BaseModel {
+  public serializeExtras() {
+    return {
+      sisa_jatah_cuti: this.$extras.sisa_jatah_cuti,
+    }
+  }
+
   @column({ isPrimary: true })
   public id: string
 

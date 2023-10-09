@@ -17,7 +17,7 @@ export default class MonthlyReportEmployeeDetail extends BaseModel {
   public id: string
 
   @column()
-  public skor: number
+  public skor: number | null
 
   @column()
   public note: string | null

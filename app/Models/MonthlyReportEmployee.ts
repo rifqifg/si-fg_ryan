@@ -91,7 +91,8 @@ export default class MonthlyReportEmployee extends BaseModel {
       await MonthlyReportEmployeeDetail.create({
         skor: leaveEmployee.sisa_jatah_cuti,
         isLeave: true,
-        monthlyReportEmployeeId: monthlyReportEmployee.id
+        monthlyReportEmployeeId: monthlyReportEmployee.id,
+        note: leaveEmployee.reasons
       })
     }
   }
@@ -140,6 +141,15 @@ const countLeaveEmloyees = async (monthlyReportEmployee, fromDate) => {
   const leaveEmployees = await Leave.query()
     .select('employee_id')
     .select(Database.raw(`(case when (select status from employees where id = '${monthlyReportEmployee.employeeId}') = 'FULL_TIME' then 6 else 3 end) - (sum(to_date - from_date + 1)) as sisa_jatah_cuti`))
+    .select(Database.raw(`
+      STRING_AGG(
+        CASE
+            WHEN from_date = to_date THEN TO_CHAR(to_date, 'DD Month') || ': ' || reason
+            ELSE TO_CHAR(from_date, 'DD') || '-' || TO_CHAR(to_date, 'DD Month') || ': ' || reason
+        END,
+        ', '
+      ) AS reasons
+      `))
     .where('employee_id', monthlyReportEmployee.employeeId)
     .andWhere('leave_status', 'cuti')
     .andWhere('status', 'aprove')

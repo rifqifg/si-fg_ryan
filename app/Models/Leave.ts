@@ -9,6 +9,7 @@ export default class Leave extends BaseModel {
   public serializeExtras() {
     return {
       sisa_jatah_cuti: this.$extras.sisa_jatah_cuti,
+      reasons: this.$extras.reasons,
     }
   }
 

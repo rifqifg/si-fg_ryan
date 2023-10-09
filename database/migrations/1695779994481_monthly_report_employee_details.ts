@@ -8,7 +8,7 @@ export default class extends BaseSchema {
       table.uuid('id').unique().notNullable().primary()
       table.integer('skor').defaultTo(0)
       table.string('note').nullable()
-      table.uuid('monthly_report_employee_id').references('monthly_report_employees.id').onUpdate('cascade').onDelete('restrict')
+      table.uuid('monthly_report_employee_id').references('monthly_report_employees.id').onUpdate('cascade').onDelete('cascade')
       // table.uuid('leave_id').references('leaves.id').onUpdate('cascade').onDelete('restrict').nullable()
       table.uuid('activity_id').references('activities.id').onUpdate('cascade').onDelete('restrict').nullable()
       table.boolean('is_leave').defaultTo(false)

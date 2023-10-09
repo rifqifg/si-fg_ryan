@@ -87,6 +87,7 @@ Route.shallowResource('leaves', 'LeavesController').apiOnly().middleware({ '*': 
 Route.get('recap-sub-activities/:activityId', 'SubActivitiesController.recap').middleware(['auth', 'checkRole:admin'])
 Route.shallowResource('monthly-reports', 'MonthlyReportsController').apiOnly().middleware({ '*': ['auth', 'checkRole:admin'] })
 Route.shallowResource('monthly-report-employees', 'MonthlyReportEmployeesController').apiOnly().middleware({ '*': ['auth', 'checkRole:admin'] })
+Route.shallowResource('monthly-report-employee-details', 'MonthlyReportEmployeeDetailsController').apiOnly().middleware({ '*': ['auth', 'checkRole:admin'] })
 
 Route.group(() => {
   Route.get('activities', 'UserBehaviorHrdsController.activity').middleware(['auth'])

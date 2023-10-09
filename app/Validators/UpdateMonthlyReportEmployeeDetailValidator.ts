@@ -28,15 +28,6 @@ export default class UpdateMonthlyReportEmployeeDetailValidator {
     note: schema.string.nullableAndOptional([
       rules.minLength(3)
     ]),
-    monthlyReportEmployeeId: schema.string.nullableAndOptional({}, [
-      rules.exists({ table: 'monthly_report_employees', column: 'id' })
-    ]),
-    activityId: schema.string.nullableAndOptional({}, [
-      rules.exists({ table: 'activities', column: 'id' })
-    ]),
-    leaveId: schema.string.nullableAndOptional({}, [
-      rules.exists({ table: 'leaves', column: 'id' })
-    ]),
   })
 
   /**

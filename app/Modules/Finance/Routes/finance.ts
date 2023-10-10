@@ -19,5 +19,6 @@ Route.group(() => {
         'update': ['auth:api,parent_api'],
         'destroy': ['auth:api,parent_api']
     })
+    Route.post('revenues/import', 'RevenuesController.import').middleware(['auth:api'])
 
 }).prefix('finance').namespace('FinanceControllers')

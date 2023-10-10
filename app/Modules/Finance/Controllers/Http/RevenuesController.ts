@@ -8,6 +8,7 @@ import { validator } from '@ioc:Adonis/Core/Validator'
 import Account from '../../Models/Account';
 import { RevenueStatus } from '../../lib/enums';
 import Revenue from '../../Models/Revenue';
+import { validate as uuidValidation } from "uuid"
 
 export default class RevenuesController {
   public async index({ request, response }: HttpContextContract) {
@@ -40,13 +41,44 @@ export default class RevenuesController {
 
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
-      const message = "FAC-IND: " + error.message || error;
+      const message = "FRE-IND: " + error.message || error;
       console.log(error);
       response.badRequest({
         message: "Gagal mengambil data",
         error: message,
         error_data: error,
       });
+    }
+  }
+
+  public async show({ params, response }: HttpContextContract) {
+    const { id } = params;
+
+    if (!uuidValidation(id)) {
+      return response.badRequest({ message: "ID tidak valid" });
+    }
+
+    try {
+      const data = await Revenue.query()
+        .where('id', id)
+        .preload('account', qAccount => {
+          qAccount.preload('student', qStudent => {
+            qStudent.select('name')
+          })
+        })
+        .firstOrFail()
+
+      if (data.account) {
+        if (data.account.student) { data.account.owner = data.account.student.name }
+        if (data.account.employee) { data.account.owner = data.account.employee.name }
+      }
+
+      response.ok({ message: "Data Berhasil Didapatkan", data })
+    } catch (error) {
+      response.badRequest({
+        message: "FRE-IND: Gagal mengambil data",
+        error: error.message,
+      })
     }
   }
 
@@ -71,7 +103,7 @@ export default class RevenuesController {
 
       response.created({ message: "Berhasil import data", data })
     } catch (error) {
-      const message = "FAC-IMP: " + error.message || error;
+      const message = "FRE-IMP: " + error.message || error;
       response.badRequest({
         message: "Gagal import data",
         error: message,

@@ -13,18 +13,21 @@ export default class Revenue extends BaseModel {
   public id: string
 
   @column()
-  from_account: string
+  fromAccount: string
 
   @column()
   amount: number
 
   @column.dateTime()
-  time_received: DateTime
+  timeReceived: DateTime
 
   @column()
   status: RevenueStatus
 
-  @belongsTo(() => Account)
+  @belongsTo(() => Account, {
+    foreignKey: 'fromAccount',
+    localKey: 'id'
+  })
   public account: BelongsTo<typeof Account>
 
   @column.dateTime({ autoCreate: true })

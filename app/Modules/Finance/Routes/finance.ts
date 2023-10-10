@@ -19,7 +19,8 @@ Route.group(() => {
         'update': ['auth:api,parent_api'],
         'destroy': ['auth:api,parent_api']
     })
-    Route.resource('revenues', 'RevenuesController').apiOnly().middleware({ '*': ['auth'] })
+    Route.resource('revenues', 'RevenuesController').apiOnly().except(['update']).middleware({ '*': ['auth'] })
+    Route.put('revenues', 'RevenuesController.update').middleware(['auth'])
     Route.post('revenues/import', 'RevenuesController.import').middleware(['auth:api'])
 
 }).prefix('finance').namespace('FinanceControllers')

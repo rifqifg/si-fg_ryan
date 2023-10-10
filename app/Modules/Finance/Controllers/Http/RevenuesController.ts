@@ -9,6 +9,7 @@ import Account from '../../Models/Account';
 import { RevenueStatus } from '../../lib/enums';
 import Revenue from '../../Models/Revenue';
 import { validate as uuidValidation } from "uuid"
+import UpdateRevenueValidator from '../../Validators/UpdateRevenueValidator';
 
 export default class RevenuesController {
   public async index({ request, response }: HttpContextContract) {
@@ -79,6 +80,22 @@ export default class RevenuesController {
         message: "FRE-IND: Gagal mengambil data",
         error: error.message,
       })
+    }
+  }
+
+  public async update({ request, response }: HttpContextContract) {
+    try {
+      const payload = await request.validate(UpdateRevenueValidator))
+      const data = await Revenue.updateOrCreateMany("id", payload.revenues)
+      response.ok({ message: "Berhasil mengubah data", data });
+    } catch (error) {
+      const message = "FRE-UPD: " + error.message || error;
+      console.log(error);
+      response.badRequest({
+        message: "Gagal mengubah data",
+        error: message,
+        error_data: error,
+      });
     }
   }
 

@@ -2,7 +2,7 @@ import { schema, CustomMessages, rules } from '@ioc:Adonis/Core/Validator'
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 
 export default class UpdateMonthlyReportValidator {
-  constructor(protected ctx: HttpContextContract) {}
+  constructor(protected ctx: HttpContextContract) { }
 
   /*
    * Define schema to validate the "shape", "type", "formatting" and "integrity" of data.
@@ -27,12 +27,12 @@ export default class UpdateMonthlyReportValidator {
     name: schema.string.optional([
       rules.minLength(3)
     ]),
-    fromDate: schema.date.optional({
-      format: 'yyyy-MM-dd'
-    }),
-    toDate: schema.date.optional({
-      format: 'yyyy-MM-dd'
-    }),
+    fromDate: schema.date.optional({ format: 'yyyy-MM-dd' }, [
+      rules.requiredIfExists('toDate')
+    ]),
+    toDate: schema.date.optional({ format: 'yyyy-MM-dd' }, [
+      rules.requiredIfExists('fromDate')
+    ]),
   })
 
   /**

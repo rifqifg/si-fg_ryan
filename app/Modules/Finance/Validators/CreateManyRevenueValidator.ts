@@ -17,6 +17,9 @@ export default class CreateManyRevenueValidator {
         amount: schema.number([
           rules.unsigned(),
         ]),
+        ref_no: schema.string([
+          rules.unique({table:'finance.revenues', column:'ref_no'})
+        ]),
         status: schema.enum(Object.values(RevenueStatus))
       })
     )
@@ -33,9 +36,9 @@ export default class CreateManyRevenueValidator {
 
       let cekColumn;
       switch (column[2]) {
-        // case 'account_no':
-        //   cekColumn = 'No Pembayaran'
-        //   break
+        case 'ref_no':
+          cekColumn = 'Ref'
+          break
         case 'time_received':
           cekColumn = 'Tanggal'
           break

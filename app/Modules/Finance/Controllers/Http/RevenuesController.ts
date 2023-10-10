@@ -143,7 +143,8 @@ export default class RevenuesController {
         from_account: account.id,
         time_received: jsDate,
         amount: fixedNominal,
-        status: RevenueStatus.NEW
+        status: RevenueStatus.NEW,
+        ref_no: data["Ref"]
       }
     }))
 

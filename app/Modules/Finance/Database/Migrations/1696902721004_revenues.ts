@@ -10,6 +10,7 @@ export default class extends BaseSchema {
       .createTable(this.tableName, (table) => {
         table.uuid('id').primary().notNullable().unique()
         table.uuid('from_account').notNullable().references('id').inTable('finance.accounts').onDelete('set null').onUpdate('cascade')
+        table.string('ref_no').notNullable()
         table.float('amount').notNullable()
         table.timestamp('time_received').notNullable()
         table.enum('status', Object.values(RevenueStatus)).notNullable()

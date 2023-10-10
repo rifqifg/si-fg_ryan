@@ -13,6 +13,9 @@ export default class Revenue extends BaseModel {
   public id: string
 
   @column()
+  refNo: string
+
+  @column()
   fromAccount: string
 
   @column()

@@ -96,14 +96,16 @@ export default class MonthlyReportEmployeesController {
 
       monthlyReportEmployeeDetail.map(value => {
         const fixedTime = dataObject.monthlyReportEmployeesFixedTime[0]
-        if (value.name == fixedTime.activity.categoryActivity.name) {
-          value.data.push({
-            id: fixedTime.id,
-            skor: fixedTime.skor,
-            note: fixedTime.note,
-            percentage: fixedTime.percentage,
-            activity_name: fixedTime.activity.name
-          })
+        if (fixedTime) {
+          if (value.name == fixedTime.activity.categoryActivity.name) {
+            value.data.push({
+              id: fixedTime.id,
+              skor: fixedTime.skor,
+              note: fixedTime.note,
+              percentage: fixedTime.percentage,
+              activity_name: fixedTime.activity.name
+            })
+          }
         }
 
         const leave = dataObject.monthlyReportEmployeesLeave[0]
@@ -133,7 +135,7 @@ export default class MonthlyReportEmployeesController {
 
       response.ok({ message: "Berhasil mengambil data", dataEmployee, monthlyReportEmployee, monthlyReportEmployeeDetail });
     } catch (error) {
-      const message = "HRDMR03: " + error.message || error;
+      const message = "HRDMRE02: " + error.message || error;
       console.log(error);
       response.badRequest({
         message: "Gagal mengambil data",
@@ -159,7 +161,7 @@ export default class MonthlyReportEmployeesController {
       const data = await MRE.merge(payload).save();
       response.ok({ message: "Berhasil mengubah data", data });
     } catch (error) {
-      const message = "HRDLE03: " + error.message || error;
+      const message = "HRDMRE03: " + error.message || error;
       console.log(error);
       response.badRequest({
         message: "Gagal mengubah data",

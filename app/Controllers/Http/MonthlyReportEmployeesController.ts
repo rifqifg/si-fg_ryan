@@ -1,5 +1,6 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Database from '@ioc:Adonis/Lucid/Database';
+import CategoryActivity from 'App/Models/CategoryActivity';
 import MonthlyReportEmployee from 'App/Models/MonthlyReportEmployee';
 import DeleteManyMonthlyReportEmployeeValidator from 'App/Validators/DeleteManyMonthlyReportEmployeeValidator';
 import UpdateMonthlyReportEmployeeValidator from 'App/Validators/UpdateMonthlyReportEmployeeValidator';
@@ -64,7 +65,73 @@ export default class MonthlyReportEmployeesController {
           .select('*')
           .where('is_leave', true))
 
-      response.ok({ message: "Berhasil mengambil data", data });
+      const categoryActivity = await CategoryActivity.query().select('name')
+
+      const dataObject = JSON.parse(JSON.stringify(data))[0]
+      const categoryActivityObject = JSON.parse(JSON.stringify(categoryActivity))
+
+      const dataEmployee = {
+        "name": dataObject.employee.name,
+        "nik": dataObject.employee.nik,
+        "status": dataObject.employee.status,
+        "divisi": dataObject.employee.divisi,
+        "period_of_work": dataObject.employee.period_of_work,
+        "period_of_assesment": dataObject.monthlyReport.name,
+      }
+
+      const monthlyReportEmployee = {
+        "id": dataObject.id,
+        "achievement": dataObject.achievement,
+        "indisipliner": dataObject.indisipliner,
+        "suggestions_and_improvements": dataObject.suggestions_and_improvements,
+      }
+
+      let monthlyReportEmployeeDetail: any = []
+      categoryActivityObject.map(value => {
+        monthlyReportEmployeeDetail.push({
+          name: value.name,
+          data: []
+        })
+      })
+
+      monthlyReportEmployeeDetail.map(value => {
+        const fixedTime = dataObject.monthlyReportEmployeesFixedTime[0]
+        if (value.name == fixedTime.activity.categoryActivity.name) {
+          value.data.push({
+            id: fixedTime.id,
+            skor: fixedTime.skor,
+            note: fixedTime.note,
+            percentage: fixedTime.percentage,
+            activity_name: fixedTime.activity.name
+          })
+        }
+
+        const leave = dataObject.monthlyReportEmployeesLeave[0]
+        if (value.name == "KEDISIPLINAN DAN KINERJA" && leave.is_leave) {
+          value.data.push({
+            id: leave.id,
+            skor: leave.skor,
+            note: leave.note,
+            percentage: null,
+            activity_name: "SISA JATAH CUTI"
+          })
+        }
+
+        const notFixedTime = dataObject.monthlyReportEmployeesNotFixedTime
+        notFixedTime.map(nft => {
+          if (value.name == nft.activity.categoryActivity.name) {
+            value.data.push({
+              id: nft.id,
+              skor: nft.skor,
+              note: nft.note,
+              percentage: nft.percentage,
+              activity_name: nft.activity.name
+            })
+          }
+        })
+      })
+
+      response.ok({ message: "Berhasil mengambil data", dataEmployee, monthlyReportEmployee, monthlyReportEmployeeDetail });
     } catch (error) {
       const message = "HRDMR03: " + error.message || error;
       console.log(error);

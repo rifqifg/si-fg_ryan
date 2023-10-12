@@ -12,10 +12,8 @@ export default class extends BaseSchema {
       // table.uuid('leave_id').references('leaves.id').onUpdate('cascade').onDelete('restrict').nullable()
       table.uuid('activity_id').references('activities.id').onUpdate('cascade').onDelete('restrict').nullable()
       table.boolean('is_leave').defaultTo(false)
+      table.boolean('is_leave_session').defaultTo(false)
 
-      // activity_id uuid [ref: <> activities.id]
-      // leave_id uuid [ref: <> leaves.id]
-      // monthly_report_employee_id uuid [ref: <> monthly_report_employees.id]
       /**
        * Uses timestamptz for PostgreSQL and DATETIME2 for MSSQL
        */

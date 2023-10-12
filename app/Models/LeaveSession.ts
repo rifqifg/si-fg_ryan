@@ -6,6 +6,13 @@ import { v4 as uuidv4 } from 'uuid'
 let newId = ""
 
 export default class LeaveSession extends BaseModel {
+  public serializeExtras() {
+    return {
+      count_sessions: this.$extras.count_sessions,
+      notes: this.$extras.notes,
+    }
+  }
+
   @column({ isPrimary: true })
   public id: string
 

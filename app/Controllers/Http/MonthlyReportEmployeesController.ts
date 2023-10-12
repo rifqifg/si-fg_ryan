@@ -64,6 +64,9 @@ export default class MonthlyReportEmployeesController {
         .preload('monthlyReportEmployeesLeave', mrel => mrel
           .select('*')
           .where('is_leave', true))
+        .preload('monthlyReportEmployeesLeaveSession', mrel => mrel
+          .select('*')
+          .where('is_leave_session', true))
 
       const categoryActivity = await CategoryActivity.query().select('name')
 
@@ -109,28 +112,45 @@ export default class MonthlyReportEmployeesController {
         }
 
         const leave = dataObject.monthlyReportEmployeesLeave[0]
-        if (value.name == "KEDISIPLINAN DAN KINERJA" && leave.is_leave) {
-          value.data.push({
-            id: leave.id,
-            skor: leave.skor,
-            note: leave.note,
-            percentage: null,
-            activity_name: "SISA JATAH CUTI"
-          })
+        if (leave) {
+          if (value.name == "KEDISIPLINAN DAN KINERJA" && leave.is_leave) {
+            value.data.push({
+              id: leave.id,
+              skor: leave.skor,
+              note: leave.note,
+              percentage: null,
+              activity_name: "SISA JATAH CUTI"
+            })
+          }
+        }
+
+        const leaveSession = dataObject.monthlyReportEmployeesLeaveSession[0]
+        if (leaveSession) {
+          if (value.name == "KEDISIPLINAN DAN KINERJA" && leaveSession.is_leave_session) {
+            value.data.push({
+              id: leaveSession.id,
+              skor: leaveSession.skor,
+              note: leaveSession.note,
+              percentage: null,
+              activity_name: "IZIN (SESI)"
+            })
+          }
         }
 
         const notFixedTime = dataObject.monthlyReportEmployeesNotFixedTime
-        notFixedTime.map(nft => {
-          if (value.name == nft.activity.categoryActivity.name) {
-            value.data.push({
-              id: nft.id,
-              skor: nft.skor,
-              note: nft.note,
-              percentage: nft.percentage,
-              activity_name: nft.activity.name
-            })
-          }
-        })
+        if (notFixedTime.length > 0) {
+          notFixedTime.map(nft => {
+            if (value.name == nft.activity.categoryActivity.name) {
+              value.data.push({
+                id: nft.id,
+                skor: nft.skor,
+                note: nft.note,
+                percentage: nft.percentage,
+                activity_name: nft.activity.name
+              })
+            }
+          })
+        }
       })
 
       response.ok({ message: "Berhasil mengambil data", dataEmployee, monthlyReportEmployee, monthlyReportEmployeeDetail });

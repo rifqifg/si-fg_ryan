@@ -8,6 +8,7 @@ import Presence from './Presence'
 import MonthlyReport from './MonthlyReport'
 import Leave from './Leave'
 import Database from '@ioc:Adonis/Lucid/Database'
+import LeaveSession from './LeaveSession'
 let newId = ""
 
 export default class MonthlyReportEmployee extends BaseModel {
@@ -43,6 +44,9 @@ export default class MonthlyReportEmployee extends BaseModel {
 
   @hasMany(() => MonthlyReportEmployeeDetail)
   public monthlyReportEmployeesLeave: HasMany<typeof MonthlyReportEmployeeDetail>
+
+  @hasMany(() => MonthlyReportEmployeeDetail)
+  public monthlyReportEmployeesLeaveSession: HasMany<typeof MonthlyReportEmployeeDetail>
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
@@ -93,6 +97,17 @@ export default class MonthlyReportEmployee extends BaseModel {
         isLeave: true,
         monthlyReportEmployeeId: monthlyReportEmployee.id,
         note: leaveEmployee.reasons
+      })
+    }
+
+    //menghitung sisa jumlah cuti
+    const leaveSessionEmployee = await countLeaveSessionEmployee(monthlyReportEmployee, fromDate, toDate)
+    if (leaveSessionEmployee) {
+      await MonthlyReportEmployeeDetail.create({
+        skor: leaveSessionEmployee.count_sessions,
+        isLeaveSession: true,
+        monthlyReportEmployeeId: monthlyReportEmployee.id,
+        note: leaveSessionEmployee.notes
       })
     }
   }
@@ -166,4 +181,20 @@ const countLeaveEmloyees = async (monthlyReportEmployee, fromDate) => {
   const dataEmployeeObject = JSON.parse(JSON.stringify(employee))
 
   return dataLeaveEmployeeObject.length != 0 ? dataLeaveEmployeeObject[0] : dataEmployeeObject[0]
+}
+
+const countLeaveSessionEmployee = async (monthlyReportEmployee, fromDate, toDate) => {
+  //menghitung jumlah izin persesinya
+  const leaveSessionEmployee = await LeaveSession.query()
+    .select('employee_id')
+    .select(Database.raw(`sum(ARRAY_LENGTH(sessions, 1)) as count_sessions`))
+    .select(Database.raw(`string_agg(TO_CHAR(date, 'DD Month') || 'izin ' || array_to_string(sessions, ',') || ': ' ||note, ', ') as notes`))
+    .where('employee_id', monthlyReportEmployee.employeeId)
+    .andWhere('status', 'aprove')
+    .andWhereBetween('date', [fromDate, toDate])
+    .groupBy('employee_id')
+
+  const leaveSessionEmployeeObject = JSON.parse(JSON.stringify(leaveSessionEmployee))
+
+  return leaveSessionEmployeeObject[0]
 }

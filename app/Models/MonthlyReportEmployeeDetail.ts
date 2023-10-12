@@ -26,6 +26,9 @@ export default class MonthlyReportEmployeeDetail extends BaseModel {
   public isLeave: boolean
 
   @column()
+  public isLeaveSession: boolean
+
+  @column()
   public monthlyReportEmployeeId: string
 
   @belongsTo(() => MonthlyReportEmployee)

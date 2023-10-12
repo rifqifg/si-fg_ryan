@@ -1,29 +1,130 @@
-import Route from '@ioc:Adonis/Core/Route'
+import Route from "@ioc:Adonis/Core/Route";
 Route.group(() => {
-    Route.get('/', () => {
-        return "You got here at academic"
-    })
-    Route.resource('classes', 'ClassesController').apiOnly().middleware({ '*': ['auth'] })
-    Route.resource('students', 'StudentsController').apiOnly().middleware({ '*': ['auth'] })
-    Route.resource('subjects', 'SubjectsController').apiOnly().middleware({ '*': ['auth'] })
-    Route.resource('teachers', 'TeachersController').apiOnly().middleware({ '*': ['auth'] })
-    Route.resource('teachers.teachings', 'TeachingsController').apiOnly().middleware({ '*': ['auth'] })
-    Route.shallowResource('students.parents', 'StudentParentsController').apiOnly().middleware({ '*': ['auth'] })
-    Route.resource('sessions', 'SessionsController').only(['index', 'show']).middleware({ '*': ['auth'] })
-    Route.shallowResource('daily-attendances', 'DailyAttendancesController').apiOnly().except(['update']).middleware({ '*': ['auth'] })
-    Route.put('daily-attendances', 'DailyAttendancesController.update').middleware(['auth'])
-    Route.shallowResource('lesson-attendances', 'LessonAttendancesController').apiOnly().middleware({ '*': ['auth'] })
-    Route.shallowResource('teacher-attendances', 'TeacherAttendancesController').apiOnly().middleware({ '*': ['auth'] })
-    Route.shallowResource('kompetensi-inti', 'KompetensiIntisController').apiOnly().middleware({ '*': ['auth'] })
-    Route.shallowResource('metode-pengambilain-nilai', 'MetodePengambilanNilaisController').apiOnly().middleware({ '*': ['auth'] })
-    Route.shallowResource('program-semester', 'ProgramSemestersController').apiOnly().middleware({ '*': ['auth'] })
-    Route.post('program-semester/duplicate', 'ProgramSemestersController.duplicate').middleware('auth')
-    Route.shallowResource('program-semester.program-semester-detail', 'ProgramSemesterDetailsController').apiOnly().middleware({ '*': ['auth'] })
-    Route.shallowResource('rencana-pengambilan-nilai', 'RencanaPengambilanNilaisController').apiOnly().middleware({ '*': ['auth'] })
-    Route.shallowResource('buku-nilai', 'BukuNilaisController').apiOnly().middleware({ '*': ['auth'] })
-    Route.shallowResource('import-students', 'ImportStudentsController').only(['store']).apiOnly().middleware({ '*': ['auth'] })
-    Route.shallowResource('mutating-many-students', 'MutatingManyStudentsController').only(['update']).apiOnly().middleware({ '*': ['auth'] })
-    Route.shallowResource('subjects.members', 'SubjectMembersController').apiOnly().middleware({ '*': ['auth'] })
-    Route.delete('multi-delete-subject-members', 'SubjectMembersController.deleteMany').middleware('auth')
-    Route.shallowResource('agendas', 'AgendasController').middleware({ '*': ['auth'] }).apiOnly()
-}).prefix('academics').namespace('AcademicControllers')
+  Route.get("/", () => {
+    return "You got here at academic";
+  });
+  Route.resource("classes", "ClassesController")
+    .apiOnly()
+    .middleware({ "*": ["auth"] });
+  Route.resource("students", "StudentsController")
+    .apiOnly()
+    .middleware({ "*": ["auth"] });
+  Route.resource("subjects", "SubjectsController")
+    .apiOnly()
+    .middleware({ "*": ["auth"] });
+  Route.resource("teachers", "TeachersController")
+    .apiOnly()
+    .middleware({
+      store: ["auth"],
+      destroy: ["auth"],
+      update: ["auth"],
+      show: ["auth"],
+    });
+  Route.resource("teachers.teachings", "TeachingsController")
+    .apiOnly()
+    .middleware({
+      store: ["auth"],
+      destroy: ["auth"],
+      update: ["auth"],
+      show: ["auth"],
+      
+    });
+  Route.shallowResource("students.parents", "StudentParentsController")
+    .apiOnly()
+    .middleware({ "*": ["auth"] });
+  Route.resource("sessions", "SessionsController")
+    .only(["index", "show"])
+    .middleware({
+      store: ["auth"],
+      destroy: ["auth"],
+      update: ["auth"],
+      show: ["auth"],
+      
+    });
+  Route.shallowResource("daily-attendances", "DailyAttendancesController")
+    .apiOnly()
+    .except(["update"])
+    .middleware({ "*": ["auth"] });
+  Route.put(
+    "daily-attendances",
+    "DailyAttendancesController.update"
+  ).middleware(["auth"]);
+  Route.shallowResource("lesson-attendances", "LessonAttendancesController")
+    .apiOnly()
+    .middleware({ "*": ["auth"] });
+  Route.shallowResource("teacher-attendances", "TeacherAttendancesController")
+    .apiOnly()
+    .middleware({
+      index: ["auth"],
+      destroy: ["auth"],
+      update: ["auth"],
+      show: ["auth"],
+      
+    });
+  Route.shallowResource("kompetensi-inti", "KompetensiIntisController")
+    .apiOnly()
+    .middleware({ "*": ["auth"] });
+  Route.shallowResource(
+    "metode-pengambilain-nilai",
+    "MetodePengambilanNilaisController"
+  )
+    .apiOnly()
+    .middleware({ "*": ["auth"] });
+  Route.shallowResource("program-semester", "ProgramSemestersController")
+    .apiOnly()
+    .middleware({
+      store: ["auth"],
+      destroy: ["auth"],
+      update: ["auth"],
+      show: ["auth"],
+      
+    });
+  Route.post(
+    "program-semester/duplicate",
+    "ProgramSemestersController.duplicate"
+  ).middleware("auth");
+  Route.shallowResource(
+    "program-semester.program-semester-detail",
+    "ProgramSemesterDetailsController"
+  )
+    .apiOnly()
+    .middleware({
+      store: ["auth"],
+      destroy: ["auth"],
+      update: ["auth"],
+      show: ["auth"],
+      
+    });
+  Route.shallowResource(
+    "rencana-pengambilan-nilai",
+    "RencanaPengambilanNilaisController"
+  )
+    .apiOnly()
+    .middleware({ "*": ["auth"] });
+  Route.shallowResource("buku-nilai", "BukuNilaisController")
+    .apiOnly()
+    .middleware({ "*": ["auth"] });
+  Route.shallowResource("import-students", "ImportStudentsController")
+    .only(["store"])
+    .apiOnly()
+    .middleware({ "*": ["auth"] });
+  Route.shallowResource(
+    "mutating-many-students",
+    "MutatingManyStudentsController"
+  )
+    .only(["update"])
+    .apiOnly()
+    .middleware({ "*": ["auth"] });
+  Route.shallowResource("subjects.members", "SubjectMembersController")
+    .apiOnly()
+    .middleware({ "*": ["auth"] });
+  Route.delete(
+    "multi-delete-subject-members",
+    "SubjectMembersController.deleteMany"
+  ).middleware("auth");
+  Route.shallowResource("agendas", "AgendasController")
+    .middleware({ "*": ["auth"] })
+    .apiOnly();
+})
+  .prefix("academics")
+  .namespace("AcademicControllers");

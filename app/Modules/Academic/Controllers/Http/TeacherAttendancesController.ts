@@ -101,13 +101,13 @@ export default class TeacherAttendancesController {
   public async store({ request, response, auth }: HttpContextContract) {
     const payload = await request.validate(CreateTeacherAttendanceValidator);
 
-    const user = await User.findBy("id", auth?.user?.id);
-    const teacher = await Teacher.findOrFail(payload.teacherId);
-    if (user?.role === "employee" && user?.employeeId !== teacher.employeeId) {
-      return response.badRequest({
-        message: "You dont have permission to store another user data",
-      });
-    }
+    // const user = await User.findBy("id", auth?.user?.id);
+    // const teacher = await Teacher.findOrFail(payload.teacherId);
+    // if (user?.role === "employee" && user?.employeeId !== teacher.employeeId) {
+    //   return response.badRequest({
+    //     message: "You dont have permission to store another user data",
+    //   });
+    // }
 
     const data = await TeacherAttendance.create(payload);
 
@@ -166,13 +166,21 @@ export default class TeacherAttendancesController {
       console.log("data update kosong");
       return response.badRequest({ message: "Data tidak boleh kosong" });
     }
-    const user = await User.findBy("id", auth?.user?.id);
+    const user = await User.query()
+    .where("id", auth.user!.id)
+    .preload("roles", (r) => r.select("*"))
+    .preload("employee", (e) => e.preload("teacher", (t) => t.select("id")))
+    .firstOrFail();
 
     const daily = await TeacherAttendance.findOrFail(id);
 
     const teacher = await Teacher.findOrFail(daily.teacherId);
 
-    if (user?.role === "employee" && user?.employeeId !== teacher.employeeId) {
+    const userObject = JSON.parse(JSON.stringify(user))
+
+    if (userObject.roles.find(
+      (role) => role.role_name === "teacher"
+    ) && user?.employeeId !== teacher.employeeId) {
       return response.badRequest({
         message: "You dont have permission to update another user data",
       });
@@ -193,7 +201,11 @@ export default class TeacherAttendancesController {
     const user = await User.findBy("id", auth?.user?.id);
     const data = await TeacherAttendance.findOrFail(id);
     const teacher = await Teacher.findOrFail(data.teacherId);
-    if (user?.role === "employee" && user?.employeeId !== teacher.employeeId) {
+    const userObject = JSON.parse(JSON.stringify(user))
+
+    if (userObject.roles.find(
+      (role) => role.role_name === "teacher"
+    ) && user?.employeeId !== teacher.employeeId) {
       return response.badRequest({
         message: "You dont have permission to delete another user data",
       });

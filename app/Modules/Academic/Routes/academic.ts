@@ -8,7 +8,12 @@ Route.group(() => {
     .middleware({ "*": ["auth"] });
   Route.resource("students", "StudentsController")
     .apiOnly()
-    .middleware({ "*": ["auth"] });
+    .middleware({
+      store: ["auth"],
+      destroy: ["auth"],
+      update: ["auth"],
+      show: ["auth"],
+    });
   Route.resource("subjects", "SubjectsController")
     .apiOnly()
     .middleware({ "*": ["auth"] });
@@ -51,7 +56,12 @@ Route.group(() => {
   ).middleware(["auth"]);
   Route.shallowResource("lesson-attendances", "LessonAttendancesController")
     .apiOnly()
-    .middleware({ "*": ["auth"] });
+    .middleware({
+      index: ["auth"],
+      destroy: ["auth"],
+      update: ["auth"],
+      show: ["auth"],
+    });
   Route.shallowResource("teacher-attendances", "TeacherAttendancesController")
     .apiOnly()
     .middleware({
@@ -72,17 +82,12 @@ Route.group(() => {
     .middleware({ "*": ["auth"] });
   Route.shallowResource("program-semester", "ProgramSemestersController")
     .apiOnly()
-    .middleware({
-      store: ["auth"],
-      destroy: ["auth"],
-      update: ["auth"],
-      show: ["auth"],
-      
-    });
+    .middleware({ "*": ["auth"] });
   Route.post(
     "program-semester/duplicate",
     "ProgramSemestersController.duplicate"
   ).middleware("auth");
+  Route.get('prosem-no-login', 'ProgramSemestersController.noLogin')
   Route.shallowResource(
     "program-semester.program-semester-detail",
     "ProgramSemesterDetailsController"

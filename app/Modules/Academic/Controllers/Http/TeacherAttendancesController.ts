@@ -11,7 +11,7 @@ import User from "App/Models/User";
 import LessonAttendance from "../../Models/LessonAttendance";
 
 export default class TeacherAttendancesController {
-  public async index({ request, response }: HttpContextContract) {
+  public async index({ request, response , auth}: HttpContextContract) {
     const {
       page = 1,
       limit = 10,
@@ -28,6 +28,19 @@ export default class TeacherAttendancesController {
     } 00:00:00.000 +0700`;
     const formattedEndDate = `${toDate ? toDate : hariIni} 23:59:59.000 +0700`;
 
+
+    const user = await User.query()
+    .where("id", auth.user!.id)
+    .preload("roles", (r) => r.select("*"))
+    .preload("employee", (e) => e.preload("teacher", (t) => t.select("id")))
+    .firstOrFail();
+  const userObject = JSON.parse(JSON.stringify(user));
+
+  
+
+  const teacher = userObject.roles.find(
+    (role) => role.role_name === "teacher"
+  );
     let data = {};
 
     if (recap) {
@@ -92,6 +105,7 @@ export default class TeacherAttendancesController {
       .preload("session", (s) => s.select("session"))
       .preload("subject", (s) => s.select("name"))
       .preload("prosemDetail", (pd) => pd.select("materi", "kompetensiDasar"))
+      .if(teacher, q => q.where('teacherId', user.employee.teacher.id))
       .orderBy("date_in", "desc")
       .paginate(page, limit);
 

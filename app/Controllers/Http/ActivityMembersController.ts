@@ -123,6 +123,7 @@ export default class ActivityMembersController {
 
     const data = await Employee.query()
       .select('id', 'name')
+      .whereNull('date_out')
       .whereNotIn('id', employeeIds)
       .whereILike('name', `%${keyword}%`)
 

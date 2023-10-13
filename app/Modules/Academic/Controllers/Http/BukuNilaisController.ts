@@ -9,6 +9,7 @@ export default class BukuNilaisController {
       subjectId = "",
       teacherId = "",
       classId = "",
+      aspekPenilaian = "",
       type = "",
       keyword = "",
     } = request.qs();
@@ -60,62 +61,15 @@ export default class BukuNilaisController {
         });
       }
 
-      // const data = await Database.rawQuery(`
-      //   with results as (
-      //   	select program_semester_detail_id , json_build_object('name', bn."type", 'materi', bn.material, 'materi_prosem', psd.materi, 'nilai', jsonb_agg(json_build_object('id', bn.id, 'studentId', bn.student_id, 'value', bn.nilai))) types
-      //   	from academic.buku_nilais bn
-      //   	left join academic.program_semester_details psd
-      //   		on psd.id = bn.program_semester_detail_id
-      //   	group by bn."type", bn.material , psd.materi, bn.nilai, bn.program_semester_detail_id
-      //   ), bab as (
-      //   	select id,  jsonb_build_object('kompetensi_dasar_index', psd2.kompetensi_dasar_index, 'kompetensi_dasar', psd2.kompetensi_dasar, 'type', jsonb_agg(types)  ) bab
-      //   	from academic.program_semester_details psd2
-      //   	left join results r
-      //   		on r.program_semester_detail_id = psd2.id
-      //   	group by psd2.id, psd2.kompetensi_dasar_index, psd2.kompetensi_dasar
-      //   )
-
-      //   select json_build_object('students', jsonb_agg(json_build_object('name', s."name", 'studentId', s.id)), 'data', json_build_object('teacher_name', e."name", 'teacher_id', t.id, 'class_name', c."name", 'class_id', c.id, 'subject_name', s2."name", 'subject_id', s2.id), 'bab', jsonb_agg(b.bab))
-      //   from academic.buku_nilais bn
-      //   left join academic.students s
-      //   	on s.id = bn.student_id
-      //   left join bab b
-      //   	on b.id = bn.program_semester_detail_id
-      //   left join academic.teachers t
-      //   	on t.id = bn.teacher_id
-      //   left join public.employees e
-      //   	on e.id = t.employee_id
-      //   left join academic.classes c
-      //   	on c.id = bn.class_id
-      //   left join academic.subjects s2
-      //   	on s2.id = bn.subject_id
-      //   group by e.name, t.id , c.name, c.id, s2."name" , s2.id
-      // `);
-      //       const data = await Database.rawQuery(
-      //         `
-
-      // -- select data nilai
-      // select bn.type, bn.material, psd.kompetensi_dasar_index,
-      //        psd.materi materi_prosem,
-      //        bn.id, st.name, bn.student_id, bn.nilai
-      // from academic.buku_nilais bn
-      // left join academic.program_semesters ps
-      //     on bn.subject_id = ps.subject_id
-      // left join  academic.program_semester_details psd
-      //     on psd.program_semester_id = ps.id
-      // left join academic.students st
-      //     on bn.student_id = st.id
-      // where bn.subject_id = '205d4ab0-7d79-4154-9d4e-bc346a763fd5'
-      //     and st.class_id = '88aac526-b2ed-4c4b-8dd5-048083eee53a'
-      // limit 200
-      // `
-      //       );
       const bukuNilaiData = await BukuNilai.query()
         .if(type, (q) => q.whereILike("type", `%${type}%`))
         .where("class_id", classId)
         .andWhere("subject_id", subjectId)
         .andWhere("teacher_id", teacherId)
+        .andWhere('aspekPenilaian', aspekPenilaian)
         .whereHas("students", (s) => s.whereILike("name", `%${keyword}%`))
+        .whereHas('semester', s => s.where('is_active', true))
+        .andWhereHas('academicYear', y => y.where('active', true))
         .preload("classes", (c) => c.select("id", "name"))
         .preload(
           "teachers",
@@ -128,13 +82,16 @@ export default class BukuNilaisController {
         .preload("students", (s) => s.select("id", "name"))
         .preload("programSemesterDetail", (psd) =>
           psd.select("kompetensi_dasar", "kompetensi_dasar_index", "materi")
-        );
+        ).preload('semester', s => s.select('*')).preload('academicYear', ay => ay.select('*'))
+        // return bukuNilaiData
       const nilais = bukuNilaiData.map((bn) => ({
         id: bn.id,
         studentId: bn.studentId,
-        value: bn.nilai,
+        value: aspekPenilaian !== 'SIKAP' ? bn.nilai : bn.nilaiSikap,
         materi: bn.material,
       }));
+
+
       const types = bukuNilaiData.map((bn) => ({
         type: bn.type,
         prosemDetailId: bn.programSemesterDetailId,
@@ -171,6 +128,8 @@ export default class BukuNilaisController {
           class_id: bukuNilaiData[0]?.classId,
           subject_id: bukuNilaiData[0]?.subjectId,
           subject_name: bukuNilaiData[0]?.mapels.name,
+          aspek_penilaian: bukuNilaiData[0]?.aspekPenilaian,
+          tahun_ajaran: bukuNilaiData[0]?.semester.description + " / " + bukuNilaiData[0]?.academicYear.description
         },
         bab: uniqueProsemDetails.map((b) => ({
           kompetensi_dasar_index: b?.kompetensi_dasar_index
@@ -184,11 +143,11 @@ export default class BukuNilaisController {
                 (type.prosemDetailId === null && b === null)
             )
             .map((t) => ({
-              name: t.type,
+              name: aspekPenilaian === "SIKAP" ? "SIKAP" : t.type,
               materi: t.materi,
               materi_prosem: b?.materi,
               nilai: nilais
-                .filter((n) => n.materi === t.materi)
+                .filter((n) => n.materi === t.materi || n.value !== null)
                 .map((nilai) => ({
                   id: nilai?.id,
                   studentId: nilai?.studentId,
@@ -256,6 +215,10 @@ export default class BukuNilaisController {
                 column: "id",
               }),
             ]),
+            academicYearId: schema.number(),
+            semesterId: schema.string(),
+            nilaiSikap: schema.string.optional(),
+            aspekPenilaian: schema.string(),
             studentId: schema.string([
               rules.uuid({ version: 4 }),
               rules.exists({
@@ -281,8 +244,8 @@ export default class BukuNilaisController {
               }),
             ]),
             material: schema.string.optional([rules.trim()]),
-            nilai: schema.number(),
-            type: schema.enum(["HARIAN", "UTS", "UAS"]),
+            nilai: schema.number.optional(),
+            type: schema.enum.optional(["HARIAN", "UTS", "UAS"]),
           })
         ),
       });
@@ -312,6 +275,10 @@ export default class BukuNilaisController {
                 column: "id",
               }),
             ]),
+            academicYearId: schema.number(),
+            semesterId: schema.string(),
+            nilaiSikap: schema.string.optional(),
+            aspekPenilaian: schema.string(),
             studentId: schema.string([
               rules.uuid({ version: 4 }),
               rules.exists({
@@ -333,8 +300,8 @@ export default class BukuNilaisController {
                 column: "id",
               }),
             ]),
-            nilai: schema.number(),
-            type: schema.enum(["HARIAN", "UTS", "UAS"]),
+            nilai: schema.number.optional(),
+            type: schema.enum.optional(["HARIAN", "UTS", "UAS"]),
             material: schema.string.optional([rules.trim()]),
           })
         ),
@@ -463,6 +430,10 @@ export default class BukuNilaisController {
           material: schema.string.optional([rules.trim()]),
           nilai: schema.number.optional(),
           type: schema.enum.optional(["HARIAN", "UTS", "UAS"]),
+          academicYearId: schema.number(),
+          semesterId: schema.string(),
+          nilaiSikap: schema.string.optional(),
+          aspekPenilaian: schema.string(),
         });
         payload = await request.validate({ schema: schemaForTeacher });
       } catch (error) {
@@ -494,6 +465,10 @@ export default class BukuNilaisController {
             column: "id",
           }),
         ]),
+        academicYearId: schema.number(),
+        semesterId: schema.string(),
+        nilaiSikap: schema.string.optional(),
+        aspekPenilaian: schema.string(),
         teacherId: schema.string.optional([
           rules.uuid({ version: 4 }),
           rules.exists({

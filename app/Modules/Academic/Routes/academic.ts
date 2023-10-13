@@ -130,6 +130,7 @@ Route.group(() => {
   Route.shallowResource("agendas", "AgendasController")
     .middleware({ "*": ["auth"] })
     .apiOnly();
+  Route.shallowResource('semesters', 'SemestersController').apiOnly().only(['index'])
 })
   .prefix("academics")
   .namespace("AcademicControllers");

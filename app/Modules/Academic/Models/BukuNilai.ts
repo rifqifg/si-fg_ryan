@@ -12,6 +12,8 @@ import Student from "./Student";
 import Teacher from "./Teacher";
 import Subject from "./Subject";
 import Class from "./Class";
+import Semester from "./Semester";
+import AcademicYear from "./AcademicYear";
 
 export default class BukuNilai extends BaseModel {
   public static table = "academic.buku_nilais";
@@ -38,10 +40,28 @@ export default class BukuNilai extends BaseModel {
   public nilai: number;
 
   @column()
+  public nilaiSikap: string;
+
+  @column()
   public type: string;
 
   @column()
+  public aspekPenilaian: string;
+
+  @column()
+  public semesterId: string;
+
+  @column()
+  public academicYearId: string;
+
+  @column()
   public material: string | null;
+
+  @belongsTo(() => Semester)
+  public semester: BelongsTo<typeof Semester>;
+
+  @belongsTo(() => AcademicYear)
+  public academicYear: BelongsTo<typeof AcademicYear>;
 
   @belongsTo(() => ProgramSemesterDetail)
   public programSemesterDetail: BelongsTo<typeof ProgramSemesterDetail>;

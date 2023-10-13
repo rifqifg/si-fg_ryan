@@ -1,7 +1,17 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import Semester from '../../Models/Semester'
 
 export default class SemestersController {
-  public async index({}: HttpContextContract) {}
+  public async index({request, response}: HttpContextContract) {
+    try {
+      const data = await Semester.query().select('*')
+
+
+      response.ok({message: 'Berhasil mengambil data', data})
+    } catch (error) {
+      response.badRequest({message: 'Gagal mengambil data', error})
+    }
+  }
 
   public async create({}: HttpContextContract) {}
 

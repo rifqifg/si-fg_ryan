@@ -41,7 +41,7 @@ export default class MonthlyReport extends BaseModel {
 
   @afterCreate()
   public static async insertMonthlyReportEmployee() {
-    const employeeIds = await Employee.query().select('id')
+    const employeeIds = await Employee.query().select('id').whereNull('date_out')
     const dataObject = JSON.parse(JSON.stringify(employeeIds))
 
     dataObject.map(async (value) => (

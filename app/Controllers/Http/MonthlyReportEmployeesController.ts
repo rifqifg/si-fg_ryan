@@ -68,92 +68,15 @@ export default class MonthlyReportEmployeesController {
           .select('*')
           .where('is_leave_session', true))
 
-      const categoryActivity = await CategoryActivity.query().select('name')
-
       const dataObject = JSON.parse(JSON.stringify(data))[0]
-      const categoryActivityObject = JSON.parse(JSON.stringify(categoryActivity))
 
-      const dataEmployee = {
-        "name": dataObject.employee.name,
-        "nik": dataObject.employee.nik,
-        "status": dataObject.employee.status,
-        "divisi": dataObject.employee.divisi,
-        "period_of_work": dataObject.employee.period_of_work,
-        "period_of_assesment": dataObject.monthlyReport.name,
-      }
+      const result = await destructurMonthlyReport(dataObject)
+      const dataEmployee = result.dataEmployee
+      const monthlyReportEmployeeDetail = result.monthlyReportEmployeeDetail
+      const monthlyReportEmployee = result.monthlyReportEmployee
 
-      const monthlyReportEmployee = {
-        "id": dataObject.id,
-        "achievement": dataObject.achievement,
-        "indisipliner": dataObject.indisipliner,
-        "suggestions_and_improvements": dataObject.suggestions_and_improvements,
-      }
 
-      let monthlyReportEmployeeDetail: any = []
-      categoryActivityObject.map(value => {
-        monthlyReportEmployeeDetail.push({
-          name: value.name,
-          data: []
-        })
-      })
-
-      monthlyReportEmployeeDetail.map(value => {
-        const fixedTime = dataObject.monthlyReportEmployeesFixedTime[0]
-        if (fixedTime) {
-          if (value.name == fixedTime.activity.categoryActivity.name) {
-            value.data.push({
-              id: fixedTime.id,
-              skor: fixedTime.skor,
-              note: fixedTime.note,
-              percentage: fixedTime.percentage,
-              activity_name: fixedTime.activity.name
-            })
-          }
-        }
-
-        const leave = dataObject.monthlyReportEmployeesLeave[0]
-        if (leave) {
-          if (value.name == "KEDISIPLINAN DAN KINERJA" && leave.is_leave) {
-            value.data.push({
-              id: leave.id,
-              skor: leave.skor,
-              note: leave.note,
-              percentage: null,
-              activity_name: "SISA JATAH CUTI"
-            })
-          }
-        }
-
-        const leaveSession = dataObject.monthlyReportEmployeesLeaveSession[0]
-        if (leaveSession) {
-          if (value.name == "KEDISIPLINAN DAN KINERJA" && leaveSession.is_leave_session) {
-            value.data.push({
-              id: leaveSession.id,
-              skor: leaveSession.skor,
-              note: leaveSession.note,
-              percentage: null,
-              activity_name: "IZIN (SESI)"
-            })
-          }
-        }
-
-        const notFixedTime = dataObject.monthlyReportEmployeesNotFixedTime
-        if (notFixedTime.length > 0) {
-          notFixedTime.map(nft => {
-            if (value.name == nft.activity.categoryActivity.name) {
-              value.data.push({
-                id: nft.id,
-                skor: nft.skor,
-                note: nft.note,
-                percentage: nft.percentage,
-                activity_name: nft.activity.name
-              })
-            }
-          })
-        }
-      })
-
-      response.ok({ message: "Berhasil mengambil data", dataEmployee, monthlyReportEmployee, monthlyReportEmployeeDetail });
+      response.ok({ message: "Berhasil mengambil data", dataEmployee, monthlyReportEmployeeDetail, monthlyReportEmployee });
     } catch (error) {
       const message = "HRDMRE02: " + error.message || error;
       console.log(error);
@@ -209,4 +132,91 @@ export default class MonthlyReportEmployeesController {
       })
     }
   }
+}
+
+export const destructurMonthlyReport = async (dataObject) => {
+  const categoryActivity = await CategoryActivity.query().select('name')
+  const categoryActivityObject = JSON.parse(JSON.stringify(categoryActivity))
+
+  const dataEmployee = {
+    "name": dataObject.employee.name,
+    "nik": dataObject.employee.nik,
+    "status": dataObject.employee.status,
+    "divisi": dataObject.employee.divisi,
+    "period_of_work": dataObject.employee.period_of_work,
+    "period_of_assesment": dataObject.monthlyReport.name,
+  }
+
+  const monthlyReportEmployee = {
+    "id": dataObject.id,
+    "achievement": dataObject.achievement,
+    "indisipliner": dataObject.indisipliner,
+    "suggestions_and_improvements": dataObject.suggestions_and_improvements,
+  }
+
+  let monthlyReportEmployeeDetail: any = []
+  categoryActivityObject.map(value => {
+    monthlyReportEmployeeDetail.push({
+      name: value.name,
+      data: []
+    })
+  })
+
+  monthlyReportEmployeeDetail.map(value => {
+    const fixedTime = dataObject.monthlyReportEmployeesFixedTime[0]
+    if (fixedTime) {
+      if (value.name == fixedTime.activity.categoryActivity.name) {
+        value.data.push({
+          id: fixedTime.id,
+          skor: fixedTime.skor,
+          note: fixedTime.note,
+          percentage: fixedTime.percentage,
+          activity_name: fixedTime.activity.name
+        })
+      }
+    }
+
+    const leave = dataObject.monthlyReportEmployeesLeave[0]
+    if (leave) {
+      if (value.name == "KEDISIPLINAN DAN KINERJA" && leave.is_leave) {
+        value.data.push({
+          id: leave.id,
+          skor: leave.skor,
+          note: leave.note,
+          percentage: null,
+          activity_name: "SISA JATAH CUTI"
+        })
+      }
+    }
+
+    const leaveSession = dataObject.monthlyReportEmployeesLeaveSession[0]
+    if (leaveSession) {
+      if (value.name == "KEDISIPLINAN DAN KINERJA" && leaveSession.is_leave_session) {
+        value.data.push({
+          id: leaveSession.id,
+          skor: leaveSession.skor,
+          note: leaveSession.note,
+          percentage: null,
+          activity_name: "IZIN (SESI)"
+        })
+      }
+    }
+
+    const notFixedTime = dataObject.monthlyReportEmployeesNotFixedTime
+    if (notFixedTime.length > 0) {
+      notFixedTime.map(nft => {
+        if (value.name == nft.activity.categoryActivity.name) {
+          value.data.push({
+            id: nft.id,
+            skor: nft.skor,
+            note: nft.note,
+            percentage: nft.percentage,
+            activity_name: nft.activity.name
+          })
+        }
+      })
+    }
+  })
+
+  return { dataEmployee, monthlyReportEmployee, monthlyReportEmployeeDetail }
 }

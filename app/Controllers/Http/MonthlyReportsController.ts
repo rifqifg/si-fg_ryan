@@ -1,8 +1,10 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import Database from '@ioc:Adonis/Lucid/Database'
 import MonthlyReport from 'App/Models/MonthlyReport'
 import CreateMonthlyReportValidator from 'App/Validators/CreateMonthlyReportValidator'
 import UpdateMonthlyReportValidator from 'App/Validators/UpdateMonthlyReportValidator'
 import { validate as uuidValidation } from "uuid"
+import { destructurMonthlyReport } from './MonthlyReportEmployeesController'
 
 export default class MonthlyReportsController {
   public async index({ request, response }: HttpContextContract) {
@@ -54,7 +56,7 @@ export default class MonthlyReportsController {
   }
 
   public async show({ params, response, request }: HttpContextContract) {
-    const { keyword = "" } = request.qs()
+    const { keyword = "", employeeId } = request.qs()
 
     const { id } = params;
     if (!uuidValidation(id)) {
@@ -62,13 +64,54 @@ export default class MonthlyReportsController {
     }
 
     try {
-      const data = await MonthlyReport.query()
-        .where("id", id)
-        .preload('monthlyReportEmployees', mre => mre
-          .whereHas('employee', e => e.whereILike('name', `%${keyword}%`))
-          .preload('employee', e => e.select('name')))
-        .firstOrFail();
-      response.ok({ message: "Berhasil mengambil data", data });
+      let data
+      if (!employeeId) {
+        data = await MonthlyReport.query()
+          .where("id", id)
+          .preload('monthlyReportEmployees', mre => mre
+            .whereHas('employee', e => e.whereILike('name', `%${keyword}%`))
+            .preload('employee', e => e.select('name')))
+          .firstOrFail();
+        return response.ok({ message: "Berhasil mengambil data", data });
+      } else {
+        data = await MonthlyReport.query()
+          .where("id", id)
+          .preload('monthlyReportEmployees', mre => mre
+            .whereHas('employee', e => e.where('employee_id', employeeId))
+            .preload('monthlyReport', mr => mr.select('name', 'from_date', 'to_date'))
+            .preload('employee', e => e
+              .select('name', 'nik', 'status')
+              .select(Database.raw(`EXTRACT(YEAR FROM AGE(NOW(), "date_in")) || ' tahun ' || EXTRACT(MONTH FROM AGE(NOW(), "date_in")) || ' bulan' AS period_of_work`))
+              .preload('divisi', d => d.select('name')))
+            .preload('monthlyReportEmployeesFixedTime', mreft => mreft
+              .select('*')
+              .select(Database.raw(`skor * 100 / (select default_presence from public.employees where id='${employeeId}') as percentage`))
+              .whereHas('activity', ac => ac.where('activity_type', 'fixed_time').andWhere('assessment', true))
+              .preload('activity', a => a.select('id', 'name', 'category_activity_id')
+                .preload('categoryActivity', ca => ca.select('name'))))
+            .preload('monthlyReportEmployeesNotFixedTime', mrenft => mrenft
+              .select('*')
+              .select(Database.raw(`skor * 100 / (select "default" from public.activities where id=activity_id) as percentage`))
+              .whereHas('activity', ac => ac.where('activity_type', 'not_fixed_time').andWhere('assessment', true))
+              .preload('activity', a => a.select('id', 'name', 'category_activity_id')
+                .preload('categoryActivity', ca => ca.select('name'))))
+            .preload('monthlyReportEmployeesLeave', mrel => mrel
+              .select('*')
+              .where('is_leave', true))
+            .preload('monthlyReportEmployeesLeaveSession', mrel => mrel
+              .select('*')
+              .where('is_leave_session', true)))
+          .firstOrFail();
+
+        const dataObject = JSON.parse(JSON.stringify(data)).monthlyReportEmployees[0]
+
+        const result = await destructurMonthlyReport(dataObject)
+        const dataEmployee = result.dataEmployee
+        const monthlyReportEmployeeDetail = result.monthlyReportEmployeeDetail
+        const monthlyReportEmployee = result.monthlyReportEmployee
+
+        return response.ok({ message: "Berhasil mengambil data", dataEmployee, monthlyReportEmployee, monthlyReportEmployeeDetail });
+      }
     } catch (error) {
       const message = "HRDMR03: " + error.message || error;
       console.log(error);

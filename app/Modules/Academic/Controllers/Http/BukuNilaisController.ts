@@ -430,10 +430,10 @@ export default class BukuNilaisController {
           material: schema.string.optional([rules.trim()]),
           nilai: schema.number.optional(),
           type: schema.enum.optional(["HARIAN", "UTS", "UAS"]),
-          academicYearId: schema.number(),
-          semesterId: schema.string(),
+          academicYearId: schema.number.optional(),
+          semesterId: schema.string.optional(),
           nilaiSikap: schema.string.optional(),
-          aspekPenilaian: schema.string(),
+          aspekPenilaian: schema.string.optional(),
         });
         payload = await request.validate({ schema: schemaForTeacher });
       } catch (error) {
@@ -465,10 +465,10 @@ export default class BukuNilaisController {
             column: "id",
           }),
         ]),
-        academicYearId: schema.number(),
-        semesterId: schema.string(),
+        academicYearId: schema.number.optional(),
+        semesterId: schema.string.optional(),
         nilaiSikap: schema.string.optional(),
-        aspekPenilaian: schema.string(),
+        aspekPenilaian: schema.string.optional(),
         teacherId: schema.string.optional([
           rules.uuid({ version: 4 }),
           rules.exists({

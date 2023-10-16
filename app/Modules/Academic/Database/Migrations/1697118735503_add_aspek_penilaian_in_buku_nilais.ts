@@ -5,7 +5,7 @@ export default class extends BaseSchema {
 
   public async up () {
     this.schema.alterTable(this.tableName, (table) => {
-      table.enum('aspek_penilaian', ['PENGETAHUAN', 'KETRAMPILAN', 'SIKAP'])
+      table.enum('aspek_penilaian', ['PENGETAHUAN', 'KETERAMPILAN', 'SIKAP'])
       table.uuid('semester_id').references('id').inTable('academic.semesters').onDelete('set null').onUpdate('cascade')
       table.integer('academic_year_id').references('id').inTable('academic.academic_years').onDelete('set null').onUpdate('cascade')
       table.enum('nilai_sikap', ['SB', 'B'])

@@ -1,11 +1,10 @@
 import { DateTime } from 'luxon'
-import { BaseModel, BelongsTo, HasMany, ManyToMany, afterCreate, beforeCreate, belongsTo, column, hasMany, manyToMany } from '@ioc:Adonis/Lucid/Orm'
+import { BaseModel, BelongsTo, ManyToMany, afterCreate, beforeCreate, belongsTo, column, manyToMany } from '@ioc:Adonis/Lucid/Orm'
 import { TransactionMethods, TransactionStatus, TransactionTypes } from '../lib/enums';
 import { v4 as uuidv4 } from 'uuid'
 import Billing from './Billing';
 import Employee from 'App/Models/Employee';
 import TransactionDocument from './TransactionDocument';
-import TransactionBilling from './TransactionBilling';
 
 let newId = ""
 

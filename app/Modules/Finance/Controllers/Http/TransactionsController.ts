@@ -3,7 +3,7 @@ import Transaction from '../../Models/Transaction';
 import CreateTransactionValidator from '../../Validators/CreateTransactionValidator';
 import { validate as uuidValidation } from "uuid";
 import UpdateTransactionValidator from '../../Validators/UpdateTransactionValidator';
-import TransactionBilling from '../../Models/TransactionBilling';
+import Billing from '../../Models/Billing';
 
 export default class TransactionsController {
   public async index({ request, response }: HttpContextContract) {
@@ -51,8 +51,23 @@ export default class TransactionsController {
 
       // insert ke tabel pivot
       await transactionData.related('billings').attach(attachBill)
+      const relatedBilling = await transactionData.related('billings').query()
+      
+      //////
+      // kurangi sisa pembayaran di billing sesuai jumlah yg sudah dibayarkan
+      // kenapa dibikin object Map disini, utk relasi paidItems.billingId dengan relatedBilling.id
+      const paidItemsMap = new Map(paidItems.map(item => [item.billing_id, item.amount]))
 
-      // TODO: update value remaining_amount di billing
+      const updateBillingPayload = relatedBilling.map(item => {
+        const amountPaid = paidItemsMap.get(item.id) || 0
+        return {
+          id: item.id,
+          remaining_amount: item.remainingAmount - amountPaid
+        }
+      })
+
+      await Billing.updateOrCreateMany("id", updateBillingPayload)
+      //////
 
       const data = await Transaction.query()
         .where('id', transactionData.id)

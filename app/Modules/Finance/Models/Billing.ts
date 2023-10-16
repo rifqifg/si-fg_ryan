@@ -35,7 +35,7 @@ export default class Billing extends BaseModel {
   public type: BillingType | null
 
   @column()
-  public remainingAmount: number | null
+  public remainingAmount: number
 
   @belongsTo(() => Account)
   public account: BelongsTo<typeof Account>

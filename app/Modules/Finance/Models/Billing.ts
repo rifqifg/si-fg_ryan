@@ -23,7 +23,7 @@ export default class Billing extends BaseModel {
   public name: string
 
   @column()
-  public amount: string
+  public amount: number
 
   @column()
   public description: string | null

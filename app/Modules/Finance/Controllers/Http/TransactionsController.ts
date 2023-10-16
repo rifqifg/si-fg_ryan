@@ -3,6 +3,7 @@ import Transaction from '../../Models/Transaction';
 import CreateTransactionValidator from '../../Validators/CreateTransactionValidator';
 import { validate as uuidValidation } from "uuid";
 import UpdateTransactionValidator from '../../Validators/UpdateTransactionValidator';
+import TransactionBilling from '../../Models/TransactionBilling';
 
 export default class TransactionsController {
   public async index({ request, response }: HttpContextContract) {
@@ -12,15 +13,15 @@ export default class TransactionsController {
       let data = {}
       if (mode === 'page') {
         data = await Transaction.query()
-          .preload('billing', qBilling => {
-            qBilling.select('name', 'account_id').preload('account', qAccount => qAccount.select('account_name'))
-          })
+          // .preload('billing', qBilling => {
+          //   qBilling.select('name', 'account_id').preload('account', qAccount => qAccount.select('account_name'))
+          // })
           .paginate(page, limit);
       } else {
         data = await Transaction.query()
-          .preload('billing', qBilling => {
-            qBilling.select('name', 'account_id').preload('account', qAccount => qAccount.select('account_name'))
-          })
+        // .preload('billing', qBilling => {
+        //   qBilling.select('name', 'account_id').preload('account', qAccount => qAccount.select('account_name'))
+        // })
       }
 
       response.ok({ message: "Berhasil mengambil data", data });
@@ -37,8 +38,25 @@ export default class TransactionsController {
 
   public async store({ request, response }: HttpContextContract) {
     const payload = await request.validate(CreateTransactionValidator)
+
+    const { items: paidItems, ...transactionPayload } = payload
+
     try {
-      const data = await Transaction.create(payload)
+      const transactionData: Transaction = await Transaction.create(transactionPayload)
+
+      const attachBill = paidItems.reduce((result, item) => {
+        result[item.billing_id] = { amount: item.amount}
+        return result
+      }, {})
+
+      // insert ke tabel pivot
+      await transactionData.related('billings').attach(attachBill)
+
+      // TODO: update value remaining_amount di billing
+
+      const data = await Transaction.query()
+        .where('id', transactionData.id)
+        .preload('billings')
       response.created({ message: "Berhasil menyimpan data", data })
     } catch (error) {
       const message = "FTR-STO: " + error.message || error;
@@ -59,13 +77,13 @@ export default class TransactionsController {
     try {
       const data = await Transaction.query()
         .where('id', id)
-        .preload('billing', qBilling => {
-          qBilling
-            .select('name', 'account_id')
-            .preload('account', qAccount => {
-              qAccount.select('account_name', 'number')
-            })
-        })
+        // .preload('billing', qBilling => {
+        //   qBilling
+        //     .select('name', 'account_id')
+        //     .preload('account', qAccount => {
+        //       qAccount.select('account_name', 'number')
+        //     })
+        // })
         .preload('teller', qEmployee => qEmployee.select('name'))
         .firstOrFail()
       response.ok({ message: "Berhasil mengambil data", data });

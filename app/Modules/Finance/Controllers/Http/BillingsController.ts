@@ -43,6 +43,15 @@ export default class BillingsController {
     const payload = await request.validate(billingValidator)
 
     try {
+      // set remaining_amount
+      payload.billings.map(billing => {
+        if (!billing.remaining_amount && billing.remaining_amount !== 0) {
+          billing.remaining_amount = billing.amount
+        }
+
+        return billing
+      })
+
       const data = await Billing.createMany(payload.billings)
       response.created({ message: "Berhasil menyimpan data", data })
     } catch (error) {

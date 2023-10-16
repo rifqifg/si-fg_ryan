@@ -18,7 +18,7 @@ export default class UpdateBillingValidator {
           rules.exists({ table: 'finance.master_billings', column: 'id' })
         ]),
         name: schema.string.optional(),
-        amount: schema.string.optional([
+        amount: schema.number.optional([
           rules.regex(new RegExp("^[1-9][0-9]*$")),
         ]),
         remaining_amount: schema.number.optional(),

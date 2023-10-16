@@ -15,11 +15,13 @@ export default class CreateBillingValidator {
           rules.exists({ table: 'finance.master_billings', column: 'id' })
         ]),
         name: schema.string(),
-        amount: schema.string([
-          rules.regex(new RegExp("^[1-9][0-9]*$")),
-        ]),
+        amount: schema.number(),
+        // schema.string([
+        //   rules.regex(new RegExp("^[1-9][0-9]*$")),
+        // ]),
         description: schema.string.optional(),
-        type: schema.enum.optional(Object.values(BillingType))
+        type: schema.enum.optional(Object.values(BillingType)),
+        remaining_amount: schema.number.optional()
       })
     )
   })

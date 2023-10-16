@@ -13,15 +13,15 @@ export default class TransactionsController {
       let data = {}
       if (mode === 'page') {
         data = await Transaction.query()
-          // .preload('billing', qBilling => {
-          //   qBilling.select('name', 'account_id').preload('account', qAccount => qAccount.select('account_name'))
-          // })
+          .preload('billings', qBilling => {
+            qBilling.select('name', 'amount', 'remaining_amount', 'account_id').preload('account', qAccount => qAccount.select('account_name'))
+          })
           .paginate(page, limit);
       } else {
         data = await Transaction.query()
-        // .preload('billing', qBilling => {
-        //   qBilling.select('name', 'account_id').preload('account', qAccount => qAccount.select('account_name'))
-        // })
+        .preload('billings', qBilling => {
+          qBilling.select('name', 'amount', 'remaining_amount', 'account_id').preload('account', qAccount => qAccount.select('account_name'))
+        })
       }
 
       response.ok({ message: "Berhasil mengambil data", data });
@@ -92,13 +92,13 @@ export default class TransactionsController {
     try {
       const data = await Transaction.query()
         .where('id', id)
-        // .preload('billing', qBilling => {
-        //   qBilling
-        //     .select('name', 'account_id')
-        //     .preload('account', qAccount => {
-        //       qAccount.select('account_name', 'number')
-        //     })
-        // })
+        .preload('billings', qBilling => {
+          qBilling
+            .select('name', 'amount', 'remaining_amount', 'account_id')
+            .preload('account', qAccount => {
+              qAccount.select('account_name', 'number')
+            })
+        })
         .preload('teller', qEmployee => qEmployee.select('name'))
         .firstOrFail()
       response.ok({ message: "Berhasil mengambil data", data });

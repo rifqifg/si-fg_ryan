@@ -96,6 +96,7 @@ export default class BukuNilaisController {
         type: bn.type,
         prosemDetailId: bn.programSemesterDetailId,
         materi: bn.material,
+        tanggalPengambilanNilai: bn.tanggalPengambilanNilai
       }));
 
       const students = bukuNilaiData.map((bn) => bn.students); // ekstrak students
@@ -146,6 +147,7 @@ export default class BukuNilaisController {
               name: aspekPenilaian === "SIKAP" ? "SIKAP" : t.type,
               materi: t.materi,
               materi_prosem: b?.materi,
+              tanggal_pengambilan_nilai: b?.tanggalPengambilanNilai,
               nilai: nilais
                 .filter((n) => n.materi === t.materi || n.value !== null)
                 .map((nilai) => ({
@@ -246,6 +248,7 @@ export default class BukuNilaisController {
             material: schema.string.optional([rules.trim()]),
             nilai: schema.number.optional(),
             type: schema.enum.optional(["HARIAN", "UTS", "UAS"]),
+            tanggalPengambilanNilai: schema.date({format: 'yyyy-MM-dd'})
           })
         ),
       });
@@ -303,6 +306,7 @@ export default class BukuNilaisController {
             nilai: schema.number.optional(),
             type: schema.enum.optional(["HARIAN", "UTS", "UAS"]),
             material: schema.string.optional([rules.trim()]),
+            tanggalPengambilanNilai: schema.date({format: 'yyyy-MM-dd'}),
           })
         ),
       });
@@ -434,6 +438,7 @@ export default class BukuNilaisController {
           semesterId: schema.string.optional(),
           nilaiSikap: schema.string.optional(),
           aspekPenilaian: schema.string.optional(),
+          tanggalPengambilanNilai: schema.date.optional({format: 'yyyy-MM-dd'})
         });
         payload = await request.validate({ schema: schemaForTeacher });
       } catch (error) {
@@ -486,6 +491,7 @@ export default class BukuNilaisController {
         nilai: schema.number.optional(),
         material: schema.string.optional([rules.trim()]),
         type: schema.enum.optional(["HARIAN", "UTS", "UAS"]),
+        tanggalPengambilanNilai: schema.date.optional({format: 'yyyy-MM-dd'})
       });
       payload = await request.validate({ schema: schemaForAdmin });
     }

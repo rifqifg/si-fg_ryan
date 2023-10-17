@@ -83,6 +83,9 @@ export default class BukuNilai extends BaseModel {
     bn.id = uuidv4();
   }
 
+  @column.date()
+  public tanggalPengambilanNilai: DateTime
+
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime;
 

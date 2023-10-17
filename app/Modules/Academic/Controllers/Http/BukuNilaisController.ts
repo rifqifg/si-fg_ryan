@@ -3,6 +3,7 @@ import { validate as uuidValidation } from "uuid";
 import { schema, rules } from "@ioc:Adonis/Core/Validator";
 import BukuNilai from "../../Models/BukuNilai";
 import User from "App/Models/User";
+import Database from "@ioc:Adonis/Lucid/Database";
 export default class BukuNilaisController {
   public async index({ request, response, auth }: HttpContextContract) {
     const {
@@ -12,6 +13,9 @@ export default class BukuNilaisController {
       aspekPenilaian = "",
       type = "",
       keyword = "",
+      generateUts = false,
+      startDate = "",
+      endDate = ""
     } = request.qs();
     try {
       const user = await User.query()
@@ -91,6 +95,7 @@ export default class BukuNilaisController {
         materi: bn.material,
       }));
 
+      
 
       const types = bukuNilaiData.map((bn) => ({
         type: bn.type,
@@ -119,6 +124,34 @@ export default class BukuNilaisController {
         new Set(types?.map(JSON.stringify))
         // @ts-ignore
       )?.map(JSON.parse);
+
+      if (generateUts) {
+        const utsData = await Database.rawQuery(`
+        select bn.student_id, round(avg(bn.nilai), 2) uts
+        from academic.buku_nilais bn
+                 left join academic.semesters s
+                           on s.id = bn.semester_id
+                 left join academic.academic_years ay
+                           on ay.id = bn.academic_year_id
+        where bn.aspek_penilaian = '${aspekPenilaian}'
+          and ay.active = true
+          and s.is_active = true
+          and bn.class_id = '${classId}'
+          and bn.teacher_id = '${teacherId}'
+          and bn.subject_id = '${subjectId}'
+          and bn.tanggal_pengambilan_nilai between '${startDate}' and '${endDate}'
+        group by bn.student_id
+        order by bn.student_id
+        `)
+
+        const utsNilai = utsData.rows.map(n => ({studentId: n.student_id, value: n.uts, materi: 'uts'}))
+        // return uniqueTypeOfBukuNilai
+        uniqueTypeOfBukuNilai.push({type: 'uts', materi: 'uts', prosemDetailId: null })
+        nilais.push(...utsNilai)
+        // return nilais
+
+        // return utsData.rows
+      }
 
       const data = {
         students: uniquesStudents,
@@ -149,7 +182,7 @@ export default class BukuNilaisController {
               materi_prosem: b?.materi,
               tanggal_pengambilan_nilai: b?.tanggalPengambilanNilai,
               nilai: nilais
-                .filter((n) => n.materi === t.materi || n.value !== null)
+                .filter((n) => n.materi === t.materi )
                 .map((nilai) => ({
                   id: nilai?.id,
                   studentId: nilai?.studentId,

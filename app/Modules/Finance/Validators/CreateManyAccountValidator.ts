@@ -18,9 +18,7 @@ export default class CreateManyAccountValidator {
         // ]),
         // owner: schema.string.optional(),
         account_name: schema.string(),
-        balance: schema.number([
-          rules.regex(new RegExp("^[0-9]*$")),
-        ]),
+        balance: schema.number(),
         number: schema.string([
           rules.regex(new RegExp("^[0-9]+$")),
           rules.unique({table: 'finance.accounts', column: 'number'})

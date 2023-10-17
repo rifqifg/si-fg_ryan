@@ -173,10 +173,10 @@ export default class AccountsController {
     // Warning: async call didalam loop (map)
     // might refactor later
     const formattedJson = await Promise.all(jsonData.map(async data => {
-      const nisSiswa = data["NIS"]?.toString()
+      const nisn = data["NISN"]?.toString()
 
       const student = await Student.query()
-        .where('nis', '=', nisSiswa)
+        .where('nisn', '=', nisn)
         .firstOrFail()
       const accountName = `Rekening ${data['Jenis Akun']} ${student.name}`
       const balance = data["Saldo"] ? data["Saldo"].toString() : "0"

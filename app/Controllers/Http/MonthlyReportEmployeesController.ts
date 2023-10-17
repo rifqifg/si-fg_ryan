@@ -67,6 +67,10 @@ export default class MonthlyReportEmployeesController {
         .preload('monthlyReportEmployeesLeaveSession', mrel => mrel
           .select('*')
           .where('is_leave_session', true))
+        .preload('monthlyReportEmployeesTeaching', mret => mret
+          .select('*')
+          .select(Database.raw(`skor * 100 / (select total_mengajar from academic.teachers where employee_id ='${employeeId}') as percentage`))
+          .where('is_teaching', true))
 
       const dataObject = JSON.parse(JSON.stringify(data))[0]
 
@@ -198,6 +202,18 @@ export const destructurMonthlyReport = async (dataObject) => {
           note: leaveSession.note,
           percentage: null,
           activity_name: "IZIN (SESI)"
+        })
+      }
+    }
+
+    const teaching = dataObject.monthlyReportEmployeesTeaching[0]
+    if (teaching) {
+      if (value.name == "KEDISIPLINAN DAN KINERJA" && teaching.is_teaching) {
+        value.data.push({
+          id: teaching.id,
+          skor: teaching.skor,
+          percentage: teaching.percentage,
+          activity_name: "MENGAJAR"
         })
       }
     }

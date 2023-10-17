@@ -9,6 +9,7 @@ import MonthlyReport from './MonthlyReport'
 import Leave from './Leave'
 import Database from '@ioc:Adonis/Lucid/Database'
 import LeaveSession from './LeaveSession'
+import TeacherAttendance from 'App/Modules/Academic/Models/TeacherAttendance'
 let newId = ""
 
 export default class MonthlyReportEmployee extends BaseModel {
@@ -47,6 +48,9 @@ export default class MonthlyReportEmployee extends BaseModel {
 
   @hasMany(() => MonthlyReportEmployeeDetail)
   public monthlyReportEmployeesLeaveSession: HasMany<typeof MonthlyReportEmployeeDetail>
+
+  @hasMany(() => MonthlyReportEmployeeDetail)
+  public monthlyReportEmployeesTeaching: HasMany<typeof MonthlyReportEmployeeDetail>
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
@@ -108,6 +112,15 @@ export default class MonthlyReportEmployee extends BaseModel {
         isLeaveSession: true,
         monthlyReportEmployeeId: monthlyReportEmployee.id,
         note: leaveSessionEmployee.notes
+      })
+    }
+
+    const teachingEmployee = await countTeachingEmployee(monthlyReportEmployee, fromDate, toDate)
+    if (teachingEmployee) {
+      await MonthlyReportEmployeeDetail.create({
+        skor: teachingEmployee.teach,
+        isTeaching: true,
+        monthlyReportEmployeeId: monthlyReportEmployee.id,
       })
     }
   }
@@ -188,7 +201,7 @@ const countLeaveSessionEmployee = async (monthlyReportEmployee, fromDate, toDate
   const leaveSessionEmployee = await LeaveSession.query()
     .select('employee_id')
     .select(Database.raw(`sum(ARRAY_LENGTH(sessions, 1)) as count_sessions`))
-    .select(Database.raw(`string_agg(TO_CHAR(date, 'DD Month') || 'izin ' || array_to_string(sessions, ',') || ': ' ||note, ', ') as notes`))
+    .select(Database.raw(`string_agg(TO_CHAR(date, 'DD Month') || ' izin ' || array_to_string(sessions, ',') || ': ' ||note, ', ') as notes`))
     .where('employee_id', monthlyReportEmployee.employeeId)
     .andWhere('status', 'aprove')
     .andWhereBetween('date', [fromDate, toDate])
@@ -197,4 +210,17 @@ const countLeaveSessionEmployee = async (monthlyReportEmployee, fromDate, toDate
   const leaveSessionEmployeeObject = JSON.parse(JSON.stringify(leaveSessionEmployee))
 
   return leaveSessionEmployeeObject[0]
+}
+
+const countTeachingEmployee = async (monthlyReportEmployee, fromDate, toDate) => {
+  //menghitung jumlah mengajar
+  const teachingEmployee = await TeacherAttendance.query()
+    .whereBetween('date_in', [fromDate, toDate])
+    .andWhereHas('teacher', t => t.whereHas('employee', e => e.where('id', monthlyReportEmployee.employeeId)))
+    .andWhere('status', 'teach')
+    .count('*', 'teach')
+
+  const teachingEmployeeObject = JSON.parse(JSON.stringify(teachingEmployee))
+
+  return teachingEmployeeObject[0]
 }

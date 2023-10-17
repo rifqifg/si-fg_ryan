@@ -100,7 +100,11 @@ export default class MonthlyReportsController {
               .where('is_leave', true))
             .preload('monthlyReportEmployeesLeaveSession', mrel => mrel
               .select('*')
-              .where('is_leave_session', true)))
+              .where('is_leave_session', true))
+            .preload('monthlyReportEmployeesTeaching', mret => mret
+              .select('*')
+              .select(Database.raw(`skor * 100 / (select total_mengajar from academic.teachers where employee_id ='${employeeId}') as percentage`))
+              .where('is_teaching', true)))
           .firstOrFail();
 
         const dataObject = JSON.parse(JSON.stringify(data)).monthlyReportEmployees[0]

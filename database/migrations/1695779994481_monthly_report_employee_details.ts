@@ -13,6 +13,7 @@ export default class extends BaseSchema {
       table.uuid('activity_id').references('activities.id').onUpdate('cascade').onDelete('restrict').nullable()
       table.boolean('is_leave').defaultTo(false)
       table.boolean('is_leave_session').defaultTo(false)
+      table.boolean('is_teaching').defaultTo(false)
 
       /**
        * Uses timestamptz for PostgreSQL and DATETIME2 for MSSQL

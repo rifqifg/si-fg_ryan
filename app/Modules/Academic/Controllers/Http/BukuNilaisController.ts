@@ -126,6 +126,11 @@ export default class BukuNilaisController {
       )?.map(JSON.parse);
 
       if (generateUts) {
+
+        if (aspekPenilaian === 'SIKAP') {
+          return response.badRequest({message: 'Aspek Sikap tidak bisa di generate UTS'})
+        }
+
         const utsData = await Database.rawQuery(`
         select bn.student_id, round(avg(bn.nilai), 2) uts
         from academic.buku_nilais bn

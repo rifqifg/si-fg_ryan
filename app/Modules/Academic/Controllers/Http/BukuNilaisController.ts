@@ -152,12 +152,8 @@ export default class BukuNilaisController {
         `)
 
         const utsNilai = utsData.rows.map(n => ({studentId: n.student_id, value: n.uts, materi: 'uts'}))
-        // return uniqueTypeOfBukuNilai
         uniqueTypeOfBukuNilai.push({type: 'uts', materi: 'uts', prosemDetailId: null })
         nilais.push(...utsNilai)
-        // return nilais
-
-        // return utsData.rows
       }
 
       const data = {

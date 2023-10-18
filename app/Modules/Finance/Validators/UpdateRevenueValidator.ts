@@ -3,7 +3,7 @@ import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import { RevenueStatus } from '../lib/enums'
 
 export default class UpdateRevenueValidator {
-  constructor(protected ctx: HttpContextContract) {}
+  constructor(protected ctx: HttpContextContract) { }
 
   public schema = schema.create({
     revenues: schema.array().members(
@@ -11,7 +11,8 @@ export default class UpdateRevenueValidator {
         id: schema.string({}, [
           rules.exists({ table: 'finance.revenues', column: 'id' })
         ]),
-        status: schema.enum.optional(Object.values(RevenueStatus))
+        status: schema.enum.optional(Object.values(RevenueStatus)),
+        current_balance: schema.number.optional([rules.unsigned()])
       })
     )
   })

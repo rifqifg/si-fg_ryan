@@ -85,7 +85,7 @@ export default class RevenuesController {
 
   public async update({ request, response }: HttpContextContract) {
     try {
-      const payload = await request.validate(UpdateRevenueValidator))
+      const payload = await request.validate(UpdateRevenueValidator)
       const data = await Revenue.updateOrCreateMany("id", payload.revenues)
       response.ok({ message: "Berhasil mengubah data", data });
     } catch (error) {

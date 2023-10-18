@@ -160,6 +160,7 @@ export default class RevenuesController {
         from_account: account.id,
         time_received: jsDate,
         amount: fixedNominal,
+        current_balance: fixedNominal,
         status: RevenueStatus.NEW,
         ref_no: data["Ref"]
       }

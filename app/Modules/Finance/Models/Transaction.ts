@@ -30,7 +30,7 @@ export default class Transaction extends BaseModel {
   public tellerId: string | null
 
   @column()
-  public amount: string
+  public amount: number
 
   @column()
   public method: TransactionMethods | null

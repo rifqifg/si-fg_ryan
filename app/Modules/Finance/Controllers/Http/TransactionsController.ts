@@ -41,8 +41,10 @@ export default class TransactionsController {
 
     const { items: paidItems, ...transactionPayload } = payload
 
+    const totalAmount = paidItems.reduce((sum, current) => sum + current.amount, 0)
+
     try {
-      const transactionData: Transaction = await Transaction.create(transactionPayload)
+      const transactionData: Transaction = await Transaction.create({...transactionPayload, amount: totalAmount})
 
       const attachBill = paidItems.reduce((result, item) => {
         result[item.billing_id] = { amount: item.amount}

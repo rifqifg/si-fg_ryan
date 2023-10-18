@@ -31,7 +31,7 @@ export default class CreateTransactionValidator {
         billing_id: schema.string([
           rules.exists({table: 'finance.billings', column: 'id'})
         ]),
-        amount: schema.number.optional()
+        amount: schema.number()
       })
     )
   })

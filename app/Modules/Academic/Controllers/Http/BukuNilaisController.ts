@@ -125,7 +125,9 @@ export default class BukuNilaisController {
         // @ts-ignore
       )?.map(JSON.parse);
 
-      if (generateUts) {
+      const uts = generateUts === "true" ? true : false
+
+      if (uts) {
 
         if (aspekPenilaian === 'SIKAP') {
           return response.badRequest({message: 'Aspek Sikap tidak bisa di generate UTS'})

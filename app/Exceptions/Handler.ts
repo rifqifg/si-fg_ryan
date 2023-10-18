@@ -16,50 +16,53 @@
 import Logger from '@ioc:Adonis/Core/Logger'
 import HttpExceptionHandler from '@ioc:Adonis/Core/HttpExceptionHandler'
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist'
+import { statusRoutes } from 'App/Modules/Log/lib/enum'
 
 export default class ExceptionHandler extends HttpExceptionHandler {
   constructor() {
     super(Logger)
   }
 
-  public async handle(error: any, ctx: HttpContextContract) {
+  public async handle(error: any, { request }: HttpContextContract) {
     /**
      * Self handle the validation exception
      */
     // console.log(error.messages);
+    CreateRouteHist(request, statusRoutes.ERROR, error.messages)
 
     if (error.code === 'E_INVALID_AUTH_PASSWORD') {
-      return ctx.response.badRequest({
+      return request.ctx?.response.badRequest({
         message: 'Wrong password',
       })
     }
     if (error.code === 'E_ROW_NOT_FOUND') {
-      return ctx.response.badRequest({
+      return request.ctx?.response.badRequest({
         message: 'Data not found',
       })
     }
     if (error.code === 'E_VALIDATION_FAILURE') {
       const data = error.messages
-      
+
       // Extract the unique error messages from the object
       //@ts-ignore
       const uniqueErrorMessages = Object.values(data).flatMap((errorMessages) => [...new Set(errorMessages)]);
       const combinedData = uniqueErrorMessages.join(' \n ');
 
       if (uniqueErrorMessages.every(item => typeof item === 'object')) {
-        return ctx.response.badRequest({
+        return request.ctx?.response.badRequest({
           message: 'Data tidak valid',
           data: error.messages.errors,
         })
       }else {
-        return ctx.response.badRequest({
+        return request.ctx?.response.badRequest({
           message: combinedData,
         })
       }
-      
+
     }
     if (error.code === 'E_ROUTE_NOT_FOUND') {
-      return ctx.response.badRequest({
+      return request.ctx?.response.badRequest({
         message: 'Route not found',
       })
     }
@@ -75,8 +78,8 @@ export default class ExceptionHandler extends HttpExceptionHandler {
     /**
      * Forward rest of the exceptions to the parent class
      */
-    return super.handle(error, ctx)
+    return super.handle(error, request.ctx!)
 
-    // return ctx.response.status(error.status).send(errorResponse)
+    // return request.ctx?.response.status(error.status).send(errorResponse)
   }
 }

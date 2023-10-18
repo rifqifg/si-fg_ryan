@@ -150,10 +150,13 @@ export default class BukuNilaisController {
         group by bn.student_id
         order by bn.student_id
         `)
-
+        
         const utsNilai = utsData.rows.map(n => ({studentId: n.student_id, value: n.uts, materi: 'uts'}))
+        uniqueProsemDetails.push(null)
         uniqueTypeOfBukuNilai.push({type: 'uts', materi: 'uts', prosemDetailId: null })
         nilais.push(...utsNilai)
+        
+
       }
 
       const data = {
@@ -177,7 +180,7 @@ export default class BukuNilaisController {
             .filter(
               (type) =>
                 type.prosemDetailId === b?.id ||
-                (type.prosemDetailId === null && b === null)
+                (type.prosemDetailId === null && b === null )
             )
             .map((t) => ({
               name: aspekPenilaian === "SIKAP" ? "SIKAP" : t.type,

@@ -18,9 +18,7 @@ export default class UpdateTransactionValidator {
     // teller_id: schema.string.optional({}, [
     //   rules.exists({ table: 'public.employees', column: 'id' })
     // ]),
-    amount: schema.string.optional([
-      rules.regex(new RegExp("^[1-9][0-9]*$")),
-    ]),
+    amount: schema.number.optional(),
     method: schema.enum.optional(Object.values(TransactionMethods)),
     type: schema.enum.optional(Object.values(TransactionTypes)),
     description: schema.string.optional(),

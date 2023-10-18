@@ -4,6 +4,7 @@ import CreateTransactionValidator from '../../Validators/CreateTransactionValida
 import { validate as uuidValidation } from "uuid";
 import UpdateTransactionValidator from '../../Validators/UpdateTransactionValidator';
 import Billing from '../../Models/Billing';
+import { BillingStatus } from '../../lib/enums';
 
 export default class TransactionsController {
   public async index({ request, response }: HttpContextContract) {
@@ -62,14 +63,24 @@ export default class TransactionsController {
 
       const updateBillingPayload = relatedBilling.map(item => {
         const amountPaid = paidItemsMap.get(item.id) || 0
+        const remainingAmount = item.remainingAmount - amountPaid
+        let newStatus = item.status
+
+        if (remainingAmount !== item.remainingAmount) {
+          if (remainingAmount > 0) newStatus = BillingStatus.PAID_PARTIAL
+          if (remainingAmount <= 0) newStatus = BillingStatus.PAID_FULL
+        }
+
         return {
           id: item.id,
-          remaining_amount: item.remainingAmount - amountPaid
+          remaining_amount: remainingAmount,
+          status: newStatus
         }
       })
 
       await Billing.updateOrCreateMany("id", updateBillingPayload)
       //////
+
 
       const data = await Transaction.query()
         .where('id', transactionData.id)

@@ -35,12 +35,7 @@ export default class RencanaPengambilanNilaisController {
         .preload(
           "programSemesterDetail",
           (prosemDetail) => (
-            prosemDetail.select(
-              "id",
-              "pertemuan",
-              "kompetensiIntiId",
-              "programSemesterId"
-            ),
+            prosemDetail.select("id", "kompetensiIntiId", "programSemesterId"),
             prosemDetail.preload("kompetensiInti", (ki) =>
               ki.select("id", "nama")
             )
@@ -83,6 +78,7 @@ export default class RencanaPengambilanNilaisController {
         teacherId: schema.string([rules.uuid({ version: 4 }), rules.trim()]),
         topik: schema.string([rules.trim()]),
         presentase: schema.number(),
+        pertemuan: schema.number(),
       }),
     });
 
@@ -113,9 +109,6 @@ export default class RencanaPengambilanNilaisController {
         .preload("metodePengambilanNilai", (mtn) => mtn.select("*"))
         .preload("programSemesterDetail", (prosemDetail) => {
           prosemDetail.select("*");
-          prosemDetail.preload("programSemester", (prosem) =>
-            prosem.select("id", "totalPertemuan")
-          );
         })
         .preload("subjects", (s) => s.select("name"))
         .preload(
@@ -155,10 +148,17 @@ export default class RencanaPengambilanNilaisController {
           rules.uuid({ version: 4 }),
           rules.trim(),
         ]),
-        subjectId: schema.string.optional([rules.uuid({ version: 4 }), rules.trim()]),
-        teacherId: schema.string.optional([rules.uuid({ version: 4 }), rules.trim()]),
+        subjectId: schema.string.optional([
+          rules.uuid({ version: 4 }),
+          rules.trim(),
+        ]),
+        teacherId: schema.string.optional([
+          rules.uuid({ version: 4 }),
+          rules.trim(),
+        ]),
         topik: schema.string.optional([rules.trim()]),
         presentase: schema.number.optional(),
+        pertemuan: schema.number.optional(),
       }),
     });
 

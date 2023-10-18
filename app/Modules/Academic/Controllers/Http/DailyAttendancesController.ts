@@ -20,7 +20,7 @@ export default class DailyAttendancesController {
       recap = false,
       sortingByAbsent = false,
       lastDays = 7,
-      lastMonths = 3
+      lastMonths = 3,
     } = request.qs();
 
     if (classId && !uuidValidation(classId)) {
@@ -52,7 +52,6 @@ export default class DailyAttendancesController {
           start.setDate(start.getDate() + 1);
         }
 
-        
         const whereClassId = classId ? `and c.id = '${classId}'` : "";
 
         const agenda = await Database.rawQuery(
@@ -60,7 +59,7 @@ export default class DailyAttendancesController {
         );
 
         totalDays = totalDays - Number(agenda.rows[0].count);
-        
+
         if (recap === "kelas") {
           // const rows  =  Database.rawQuery(`
           const { rows } = await Database.rawQuery(`
@@ -121,7 +120,7 @@ export default class DailyAttendancesController {
               limit ${limit}
               offset ${(page - 1) * limit}
 
-          `)
+          `);
           // .toQuery()
           // return rows
 
@@ -202,31 +201,31 @@ export default class DailyAttendancesController {
           where date_in is not null
           order by substring(cast(date_in::date as varchar), 0, 8) desc
           limit ${lastMonths}`);
-          
-          const {rows: getLastDays} = await Database.rawQuery(`
+
+          const { rows: getLastDays } = await Database.rawQuery(`
           select distinct cast(date_in::date as varchar) tanggal
           from academic.daily_attendances
           where daily_attendances.date_in is not null
           and EXTRACT(ISODOW FROM date_in::date) < 6
           order by cast(date_in::date as varchar) desc
           limit ${lastDays}
-          `)
+          `);
           // return getLastDays[0].tanggal
 
-          const {rows: date} = await Database.rawQuery(`
+          const { rows: date } = await Database.rawQuery(`
           select distinct cast(date_in::date as varchar) tanggal
           from academic.daily_attendances
           where daily_attendances.date_in is not null
           and EXTRACT(ISODOW FROM date_in::date) < 6
           order by cast(date_in::date as varchar) desc
-          `)
+          `);
 
-          const startDate = getLastDays[getLastDays.length - 1].tanggal
-          const endDate = getLastDays[0].tanggal
+          const startDate = getLastDays[getLastDays.length - 1].tanggal;
+          const endDate = getLastDays[0].tanggal;
 
-          const startMonth = getLastMonth[getLastMonth.length - 1].tanggal
-          const endMonth = getLastMonth[0].tanggal
-           
+          const startMonth = getLastMonth[getLastMonth.length - 1].tanggal;
+          const endMonth = getLastMonth[0].tanggal;
+
           const { rows: dataHarian } = await Database.rawQuery(`
           select
           	distinct cast(date_in::date as varchar) tanggal,
@@ -264,49 +263,51 @@ export default class DailyAttendancesController {
           	cast(date_in::date as varchar) desc
         
           `);
-          // const rows = await Database.rawQuery(`
-  //         const { rows: dataBulanan } = await Database.rawQuery(`
-  //         select
-  //           distinct substring(cast(date_in::date as varchar),
-  //           0,
-  //           8) bulan,
-  //           (c.name) as class_name,
-  //           (c.id) as class_id,
-  //           count(distinct da.student_id) as total_student,
-  //           (sum(case when da.status = 'present' then 1 else 0 end) + sum(case when da.status = 'sick' then 1 else 0 end)) as total_presence,
-  //           round(cast(sum(case when da.status = 'present' then 1 else 0 end) * 100.0 / (count(distinct student_id))as decimal(10,
-  //           2)),
-  //           0) + round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id))as decimal(10,
-  //           2)),
-  //           0) as present_accumulation
-  //         from
-  //           academic.daily_attendances da
-  //         left join academic.students s
-  //                            on
-  //           da.student_id = s.id
-  //         left join academic.classes c
-  //                            on
-  //           c.id = s.class_id
-  //         where
-  //           substring(cast(da.date_in::date as varchar),0,8) between '${startMonth}' and '${endMonth}'
-  //           and da.date_in::date not in (
-  //           select
-  //             date
-  //           from
-  //             academic.agendas a
-  //           where
-  //             a.count_presence = false)
-  //         group by
-  //           bulan,
-  //           c."name",
-  //           c.id
-  //         order by
-  //           bulan desc
-  // `)
-  // .toQuery()
-          // return rows
-          // const rows = Database.rawQuery(`
-          const {rows: dataBulanan} = await Database.rawQuery(`
+          const { rows: akumulasiBulanan } = await Database.rawQuery(`
+            with presence_calc as (
+              select * from     
+              (select c.id, c.name, count(s.id) total
+              from academic.students s
+              left join academic.classes c
+              on c.id = s.class_id 
+              where c.is_graduated = false
+              group by c.name, c.id
+              order by c.name) ts,
+              (
+                  WITH date_range AS (
+                      SELECT generate_series('${
+                        date[date.length - 1].tanggal
+                      }'::date, '${
+            date[0].tanggal
+          }'::date, '1 day'::interval) AS date
+                  )
+                  SELECT COUNT(*) AS days_count
+                  FROM date_range
+                  WHERE EXTRACT(ISODOW FROM date) < 6 
+                      AND date not in (select date from academic.agendas where count_presence <> true) 
+              ) dc
+          )
+          select pc.days_count, c.id as class_id, c."name" as class_name , count(da.status) as total_presence,  count(distinct s.id) as total_student,
+                round(cast(sum(case when da.status = 'present' then 1 else 0 end) * 100.0 / (count(distinct student_id) * pc.days_count)as decimal(10,
+              2)),
+              0) + round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id) * pc.days_count )as decimal(10,
+              2)),
+              0) as present_accumulation
+            
+          from academic.daily_attendances da 
+          left join academic.students s 
+              on s.id = da.student_id 
+          left join academic.classes c 
+              on c.id = s.class_id 
+          left join presence_calc pc
+              on pc.id = c.id
+          where da.status in ('present','sick')
+          and substring(cast(da.date_in::date as varchar),0,8) between '${startMonth}' and '${endMonth}'
+          group by c.name, c.id , days_count
+          order by c.name
+         `);
+
+          const { rows: dataBulanan } = await Database.rawQuery(`
           with presence_calc as (
             select *, (total * days_count) total_days from     
             (select c.id, c.name, count(s.id) total
@@ -319,7 +320,11 @@ export default class DailyAttendancesController {
             (
                 WITH date_range AS (
                 -- tanggal dinamis dari input
-                    SELECT generate_series('${date[date.length - 1].tanggal}'::date, '${date[0].tanggal}'::date, '1 day'::interval) AS date
+                    SELECT generate_series('${
+                      date[date.length - 1].tanggal
+                    }'::date, '${
+            date[0].tanggal
+          }'::date, '1 day'::interval) AS date
                 )
                 SELECT extract(month from date) bulan ,COUNT(*) AS days_count
                 FROM date_range
@@ -350,13 +355,14 @@ export default class DailyAttendancesController {
         order by extract(month from date_in) desc, c.name
         
         
-          `)
+          `);
           // .toQuery()
 
           // return rows
           data = {
             dataHarian,
             dataBulanan,
+            akumulasiBulanan,
           };
         } else {
           return response.badRequest({

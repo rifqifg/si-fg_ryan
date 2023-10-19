@@ -69,10 +69,47 @@ export default class MonthlyReportsController {
         data = await MonthlyReport.query()
           .where("id", id)
           .preload('monthlyReportEmployees', mre => mre
+            .preload('monthlyReport', mr => mr.select('name', 'from_date', 'to_date'))
             .whereHas('employee', e => e.whereILike('name', `%${keyword}%`))
-            .preload('employee', e => e.select('name')))
+            .preload('employee', e => e
+              .select('name', 'nik', 'status')
+              .select(Database.raw(`EXTRACT(YEAR FROM AGE(NOW(), "date_in")) || ' tahun ' || EXTRACT(MONTH FROM AGE(NOW(), "date_in")) || ' bulan' AS period_of_work`))
+              .preload('divisi', d => d.select('name')))
+            .preload('monthlyReportEmployeesFixedTime', mreft => mreft
+              .select('*')
+              .select(Database.raw(`skor * 100 / (select default_presence from public.employees where id= (select employee_id from monthly_report_employees where id = monthly_report_employee_id)) as percentage`))
+              .whereHas('activity', ac => ac.where('activity_type', 'fixed_time').andWhere('assessment', true))
+              .preload('activity', a => a.select('id', 'name', 'category_activity_id')
+                .preload('categoryActivity', ca => ca.select('name'))))
+            .preload('monthlyReportEmployeesNotFixedTime', mrenft => mrenft
+              .select('*')
+              .select(Database.raw(`skor * 100 / (select "default" from public.activities where id=activity_id) as percentage`))
+              .whereHas('activity', ac => ac.where('activity_type', 'not_fixed_time').andWhere('assessment', true))
+              .preload('activity', a => a.select('id', 'name', 'category_activity_id')
+                .preload('categoryActivity', ca => ca.select('name'))))
+            .preload('monthlyReportEmployeesLeave', mrel => mrel
+              .select('*')
+              .where('is_leave', true))
+            .preload('monthlyReportEmployeesLeaveSession', mrel => mrel
+              .select('*')
+              .where('is_leave_session', true))
+            .preload('monthlyReportEmployeesTeaching', mret => mret
+              .select('*')
+              .select(Database.raw(`skor * 100 / (select total_mengajar from academic.teachers where employee_id =(select employee_id from monthly_report_employees where id = monthly_report_employee_id)) as percentage`))
+              .where('is_teaching', true)))
           .firstOrFail();
-        return response.ok({ message: "Berhasil mengambil data", data });
+
+        const dataArrayObject = JSON.parse(JSON.stringify(data)).monthlyReportEmployees
+        let datas: any = []
+        for (let i = 0; i < dataArrayObject.length; i++) {
+          const result = await destructurMonthlyReport(dataArrayObject[i])
+          const dataEmployee = result.dataEmployee
+          const monthlyReportEmployeeDetail = result.monthlyReportEmployeeDetail
+          const monthlyReportEmployee = result.monthlyReportEmployee
+          datas.push({dataEmployee, monthlyReportEmployee, monthlyReportEmployeeDetail})
+        }
+
+        return response.ok({ message: "Berhasil mengambil data", data: datas });
       } else {
         data = await MonthlyReport.query()
           .where("id", id)

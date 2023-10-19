@@ -29,7 +29,7 @@ export default class ExceptionHandler extends HttpExceptionHandler {
      * Self handle the validation exception
      */
     // console.log(error.messages);
-    CreateRouteHist(request, statusRoutes.ERROR, error.messages)
+    CreateRouteHist(request, statusRoutes.ERROR, error.code)
 
     if (error.code === 'E_INVALID_AUTH_PASSWORD') {
       return request.ctx?.response.badRequest({

@@ -1,9 +1,12 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Module from 'App/Models/Module'
 import { schema, rules } from '@ioc:Adonis/Core/Validator'
+import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist'
+import { statusRoutes } from 'App/Modules/Log/lib/enum'
 
 export default class ModulesController {
   public async index({ request, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const { page = 1, limit = 10, keyword = "", mode = "pagination" } = request.qs()
 
     try {
@@ -13,12 +16,16 @@ export default class ModulesController {
           .whereILike('id', `%${keyword}%`)
           .orderBy('id')
           .paginate(page, limit)
+
+        CreateRouteHist(request, statusRoutes.FINISH)
         response.ok({ message: "Berhasil mengambil data", data })
       } else if (mode === "tree") {
         const data = await Module.query().preload('menus', menus => menus.preload('functions'))
+        CreateRouteHist(request, statusRoutes.FINISH)
         response.ok({ message: "Berhasil mengambil data", data })
       }
     } catch (error) {
+      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
       response.badRequest({ message: "Gagal mengambil data", error })
     }
   }
@@ -30,6 +37,7 @@ export default class ModulesController {
   }
 
   public async store({ request, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const createModuleSchema = schema.create({
       id: schema.string([
         rules.unique({ table: 'modules', column: 'id' }),
@@ -42,20 +50,24 @@ export default class ModulesController {
 
     try {
       const data = await Module.create(payload)
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.created({ message: "Berhasil menyimpan data", data })
     } catch (error) {
+      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
       response.badRequest({ message: "Gagal menyimpan data", error })
     }
   }
 
-  public async show({ params, response }: HttpContextContract) {
+  public async show({ request, params, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const { id } = params
     try {
       const data = await Module.query().preload('menus', query => query.preload('functions')).where('id', id)
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.ok({ message: "Berhasil mengambil data", data })
     } catch (error) {
+      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
       console.log(error);
-
       response.badRequest({ message: "Gagal mengambil data", error })
     }
   }

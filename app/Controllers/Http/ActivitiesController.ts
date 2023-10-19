@@ -5,6 +5,8 @@ import ActivityMember from 'App/Models/ActivityMember';
 import Presence from 'App/Models/Presence';
 import SubActivity from 'App/Models/SubActivity';
 import User from 'App/Models/User';
+import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist';
+import { statusRoutes } from 'App/Modules/Log/lib/enum';
 import CreateActivityValidator from 'App/Validators/CreateActivityValidator'
 import UpdateActivityValidator from 'App/Validators/UpdateActivityValidator';
 import { DateTime } from 'luxon';
@@ -12,36 +14,50 @@ import { validate as uuidValidation } from "uuid";
 
 export default class ActivitiesController {
   public async index({ request, response, auth }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const { page = 1, limit = 10, keyword = "", orderBy = "name", orderDirection = 'ASC' } = request.qs()
 
     const user = await User.query().preload('roles', r => r.preload('role')).where('id', auth.use('api').user!.id).firstOrFail()
     const userObject = JSON.parse(JSON.stringify(user))
 
-    let data: object
-    if (userObject.roles[0].role_name == 'super_admin') {
-      data = await Activity.query()
-        .preload('division', division => division.select('id', 'name'))
-        .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
-        .whereILike('name', `%${keyword}%`)
-        .orderBy(orderBy, orderDirection)
-        .paginate(page, limit)
-    } else {
-      data = await Activity.query()
-        .preload('division', division => division.select('id', 'name'))
-        .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
-        .whereILike('name', `%${keyword}%`)
-        .andWhere(query => {
-          query.where('division_id', auth.use('api').user!.divisionId)
-          query.orWhereHas('activityMembers', am => (am.where('employee_id', user.employeeId), am.where('role', 'manager')))
-        })
-        .orderBy(orderBy, orderDirection)
-        .paginate(page, limit)
-    }
+    try {
+      let data: object
+      if (userObject.roles[0].role_name == 'super_admin') {
+        data = await Activity.query()
+          .preload('division', division => division.select('id', 'name'))
+          .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
+          .whereILike('name', `%${keyword}%`)
+          .orderBy(orderBy, orderDirection)
+          .paginate(page, limit)
+      } else {
+        data = await Activity.query()
+          .preload('division', division => division.select('id', 'name'))
+          .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
+          .whereILike('name', `%${keyword}%`)
+          .andWhere(query => {
+            query.where('division_id', auth.use('api').user!.divisionId)
+            query.orWhereHas('activityMembers', am => (am.where('employee_id', user.employeeId), am.where('role', 'manager')))
+          })
+          .orderBy(orderBy, orderDirection)
+          .paginate(page, limit)
+      }
 
-    response.ok({ message: "Data Berhasil Didapatkan", data })
+      CreateRouteHist(request, statusRoutes.FINISH)
+      response.ok({ message: "Data Berhasil Didapatkan", data })
+    } catch (error) {
+      const message = "HRDAC-index: " + error.message || error;
+      CreateRouteHist(request, statusRoutes.ERROR, message)
+      console.log(error);
+      response.badRequest({
+        message: "Gagal mengambil data",
+        error: message,
+        error_data: error,
+      });
+    }
   }
 
-  public async show({ params, response }: HttpContextContract) {
+  public async show({ request, params, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const { id } = params;
     if (!uuidValidation(id)) {
       return response.badRequest({ message: "Activity ID tidak valid" });
@@ -54,9 +70,12 @@ export default class ActivitiesController {
         .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
         .preload('activityMembers', activityMembers => activityMembers.select('id', 'role', 'employee_id').preload('employee', employee => employee.select('name')))
         .firstOrFail();
+
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
       const message = "HRDAC-SHOW: " + error.message || error;
+      CreateRouteHist(request, statusRoutes.ERROR, message)
       console.log(error);
       response.badRequest({
         message: "Gagal mengambil data",
@@ -67,47 +86,61 @@ export default class ActivitiesController {
   }
 
   public async getActivity({ request, response, auth }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const { keyword = "", orderBy = "name", orderDirection = 'ASC', activity_type = '' } = request.qs()
 
     const user = await User.query().preload('roles', r => r.preload('role')).where('id', auth.use('api').user!.id).firstOrFail()
     const userObject = JSON.parse(JSON.stringify(user))
     let data: object
 
-    if (userObject.roles[0].role_name == 'super_admin') {
-      console.log('masuk sinikah?');
+    try {
+      if (userObject.roles[0].role_name == 'super_admin') {
+        console.log('masuk sinikah?');
 
-      data = await Activity.query()
-        .preload('division', division => division.select('id', 'name'))
-        .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
-        .where(query => {
-          if (activity_type !== '') {
-            query.where('activity_type', activity_type);
+        data = await Activity.query()
+          .preload('division', division => division.select('id', 'name'))
+          .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
+          .where(query => {
+            if (activity_type !== '') {
+              query.where('activity_type', activity_type);
+              query.andWhereILike('name', `%${keyword}%`);
+            }
             query.andWhereILike('name', `%${keyword}%`);
-          }
-          query.andWhereILike('name', `%${keyword}%`);
-        })
-        // .andWhere('owner', auth.user!.id) // Jika perlu, aktifkan kembali ini
-        .orderBy(orderBy, orderDirection)
-    } else {
-      console.log('masuk sini ya');
+          })
+          // .andWhere('owner', auth.user!.id) // Jika perlu, aktifkan kembali ini
+          .orderBy(orderBy, orderDirection)
+      } else {
+        console.log('masuk sini ya');
 
-      data = await Activity.query()
-        .preload('division', division => division.select('id', 'name'))
-        .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
-        .where(query => {
-          if (activity_type !== '') {
-            query.where('activity_type', activity_type);
+        data = await Activity.query()
+          .preload('division', division => division.select('id', 'name'))
+          .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
+          .where(query => {
+            if (activity_type !== '') {
+              query.where('activity_type', activity_type);
+              query.andWhereILike('name', `%${keyword}%`);
+            }
             query.andWhereILike('name', `%${keyword}%`);
-          }
-          query.andWhereILike('name', `%${keyword}%`);
-        })
-        // .andWhere('owner', auth.user!.id) // Jika perlu, aktifkan kembali ini
-        .orderBy(orderBy, orderDirection)
+          })
+          // .andWhere('owner', auth.user!.id) // Jika perlu, aktifkan kembali ini
+          .orderBy(orderBy, orderDirection)
+      }
+      CreateRouteHist(request, statusRoutes.FINISH)
+      response.ok({ message: "Data Berhasil Didapatkan", data })
+    } catch (error) {
+      const message = "HRDAC-GETACTIVITY: " + error.message || error;
+      CreateRouteHist(request, statusRoutes.ERROR, message)
+      console.log(error);
+      response.badRequest({
+        message: "Gagal mengambil data",
+        error: message,
+        error_data: error,
+      });
     }
-    response.ok({ message: "Data Berhasil Didapatkan", data })
   }
 
   public async store({ request, response, auth }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const payload = await request.validate(CreateActivityValidator)
 
     try {
@@ -133,16 +166,24 @@ export default class ActivitiesController {
       }
       const data = await Activity.create(formattedPayload)
 
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.created({
         message: "Create data success", data
       })
     } catch (error) {
+      const message = "HRDAC-STORE: " + error.message || error;
+      CreateRouteHist(request, statusRoutes.ERROR, message)
       console.log(error);
-      response.badRequest(error)
+      response.badRequest({
+        message: "Gagal mengambil data",
+        error: message,
+        error_data: error,
+      });
     }
   }
 
   public async update({ request, response, params }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const { id } = params
     const payload = await request.validate(UpdateActivityValidator)
 
@@ -256,24 +297,35 @@ export default class ActivitiesController {
       const findData = await Activity.findOrFail(id)
       const data = await findData.merge(formattedPayload).save()
 
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.created({
         message: "Update data success", data
       })
     } catch (error) {
+      const message = "HRDAC-UPDATE: " + error.message || error;
+      CreateRouteHist(request, statusRoutes.ERROR, message)
       console.log(error);
-      response.badRequest(error)
+      response.badRequest({
+        message: "Gagal mengambil data",
+        error: message,
+        error_data: error,
+      });
     }
   }
 
 
-  public async destroy({ params, response }: HttpContextContract) {
+  public async destroy({ request, params, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const { id } = params
     try {
       const data = await Activity.findOrFail(id)
       await data.delete()
 
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.ok({ message: "Delete data success" })
     } catch (error) {
+      const message = "HRDAC-DELETE: " + error.message || error;
+      CreateRouteHist(request, statusRoutes.ERROR, message)
       console.log(error);
       response.badRequest({ message: "Tidak dapat menghapus aktivitas yang sudah memiliki presensi", error: error.message || error })
     }

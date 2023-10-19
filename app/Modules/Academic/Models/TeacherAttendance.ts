@@ -47,6 +47,9 @@ export default class TeacherAttendance extends BaseModel {
   public post_test: boolean
 
   @column()
+  public catatanKelas: string
+
+  @column()
   public sessionId: string
 
   @belongsTo(() => Session)

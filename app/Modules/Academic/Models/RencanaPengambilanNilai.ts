@@ -34,6 +34,9 @@ export default class RencanaPengambilanNilai extends BaseModel {
   public topik: string;
 
   @column()
+  public pertemuan: number
+
+  @column()
   public presentase: number;
 
   @belongsTo(() => ProgramSemesterDetail)

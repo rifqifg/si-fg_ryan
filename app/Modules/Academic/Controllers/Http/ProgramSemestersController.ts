@@ -386,4 +386,45 @@ export default class ProgramSemestersController {
       });
     }
   }
+
+  public async noLogin({request, response}: HttpContextContract) {
+    const {
+      subjectId = "",
+      classId = "", teacherId = ""
+    } = request.qs()
+
+    if (
+      (subjectId && !uuidValidation(subjectId)) ||
+      (classId && !uuidValidation(classId)) || (teacherId && !uuidValidation(teacherId))
+    ) {
+      return response.badRequest({
+        message: "Subject ID atau Class ID atau Teacher ID tidak valid",
+      });
+    }
+
+    try {
+      
+      const data = await ProgramSemester.query()
+            .select("*")
+            .withCount("programSemesterDetail", (q) => q.as("total_pertemuan"))
+            .preload("teachers", (t) =>
+              t.preload("employee", (e) => e.select("name"))
+            )
+            .preload("class", (c) => c.select("name", "id"))
+            .if(subjectId, (q) => q.where("subjectId", subjectId))
+            .if(teacherId, (q) =>
+              q.where("teacherId", teacherId)
+            )
+            .if(classId, (q) => q.where("classId", classId))
+            .preload("mapel", (m) => m.select("name"));
+
+      response.ok({ message: "Berhasil mengambil data", data });
+    } catch (error) {
+      response.badRequest({
+        message: "Gagal mengambil data",
+        error: error.message,
+      });      
+    }
+
+  }
 }

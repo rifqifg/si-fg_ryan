@@ -47,7 +47,8 @@ export default class CreateTeacherAttendanceValidator {
     subjectId: schema.string({}, [
       rules.exists({ table: 'academic.subjects', column: 'id' })
     ]),
-    programSemesterDetailId: schema.string.optional(([rules.exists({table: 'academic.program_semester_details', column: 'id'})]))
+    programSemesterDetailId: schema.string.optional(([rules.exists({table: 'academic.program_semester_details', column: 'id'})])),
+    catatanKelas: schema.string.optional()
   })
   /**
    * Custom messages for validation failures. You can make use of dot notation `(.)`

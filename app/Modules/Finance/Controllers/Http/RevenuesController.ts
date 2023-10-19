@@ -115,6 +115,8 @@ export default class RevenuesController {
     const manyRevenueValidator = new CreateManyRevenueValidator(HttpContext.get()!, wrappedJson)
     const payloadRevenue = await validator.validate(manyRevenueValidator)
 
+    // return payloadRevenue
+
     try {
       const data = await Revenue.createMany(payloadRevenue.revenues)
 
@@ -154,10 +156,12 @@ export default class RevenuesController {
       const fixedNominal = data["Nominal"] + 3000
 
       const noPembayaran = data["No Pembayaran"].toString()
-      const account = await Account.query().where('number', noPembayaran).firstOrFail()
+      const account = await Account.query().where('number', noPembayaran).first()
+      const accountId = account ? account.id : "-1" // there is no account id with negative value, right.. right?
 
       return {
-        from_account: account.id,
+        // account_no: noPembayaran,
+        from_account: accountId,
         time_received: jsDate,
         amount: fixedNominal,
         current_balance: fixedNominal,

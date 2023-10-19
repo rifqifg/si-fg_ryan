@@ -8,18 +8,19 @@ export default class CreateManyRevenueValidator {
   public schema = schema.create({
     revenues: schema.array().members(
       schema.object().members({
-        from_account: schema.string(),
+        from_account: schema.string([
+          rules.exists({ table: 'finance.accounts', column: 'id' })
+        ]),
         time_received: schema.date(),
         // account_no: schema.string([
-          // tidak perlu validasi exist, sudah di tangani RevenuesController.spreadsheetToJSON()
-          // rules.exists({ table: 'finance.accounts', column: 'number' })
+        //   rules.exists({ table: 'finance.accounts', column: 'number' })
         // ]),
         amount: schema.number([
           rules.unsigned(),
         ]),
         current_balance: schema.number(),
         ref_no: schema.string([
-          rules.unique({table:'finance.revenues', column:'ref_no'})
+          rules.unique({ table: 'finance.revenues', column: 'ref_no' })
         ]),
         status: schema.enum(Object.values(RevenueStatus))
       })
@@ -39,6 +40,9 @@ export default class CreateManyRevenueValidator {
       switch (column[2]) {
         case 'ref_no':
           cekColumn = 'Ref'
+          break
+        case 'from_account':
+          cekColumn = 'No Pembayaran'
           break
         case 'time_received':
           cekColumn = 'Tanggal'

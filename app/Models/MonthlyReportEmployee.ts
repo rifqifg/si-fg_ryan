@@ -147,9 +147,10 @@ const countPresenceEMployeeNotFixedTime = async (monthlyReportEmployee, fromDate
   // mengambil presensi empoyee waktu tidak tetap
   const presenceEmployee = await Presence.query()
     .select('activity_id')
-    .whereBetween("created_at", [fromDate + ' 00:00:00', toDate + ' 23:59:59'])
-    .andWhere('employee_id', monthlyReportEmployee.employeeId)
+    // .whereBetween("created_at", [fromDate + ' 00:00:00', toDate + ' 23:59:59'])
+    .where('employee_id', monthlyReportEmployee.employeeId)
     .andWhereHas('activity', ac => ac.where('activity_type', 'not_fixed_time').andWhere('assessment', true))
+    .andWhereHas('subActivity', sa => sa.whereBetween('date', [fromDate + ' 00:00:00', toDate + ' 23:59:59']))
     .count('*', 'presence_count')
     // .preload('activity', ac => ac.select('id', 'name'))
     .groupBy('activity_id')

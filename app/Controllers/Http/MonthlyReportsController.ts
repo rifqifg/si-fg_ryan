@@ -99,18 +99,25 @@ export default class MonthlyReportsController {
               .where('is_teaching', true)))
           .firstOrFail();
 
-        const dataArrayObject = JSON.parse(JSON.stringify(data)).monthlyReportEmployees
+        const dataArrayObject = JSON.parse(JSON.stringify(data))
+        const monthlyReport = {
+          id: dataArrayObject.id,
+          name: dataArrayObject.name,
+          from_date: dataArrayObject.from_date,
+          to_date: dataArrayObject.to_date
+        }
         let datas: any = []
-        for (let i = 0; i < dataArrayObject.length; i++) {
-          const result = await destructurMonthlyReport(dataArrayObject[i])
+        for (let i = 0; i < dataArrayObject.monthlyReportEmployees.length; i++) {
+          const result = await destructurMonthlyReport(dataArrayObject.monthlyReportEmployees[i])
           const dataEmployee = result.dataEmployee
           const monthlyReportEmployeeDetail = result.monthlyReportEmployeeDetail
           const monthlyReportEmployee = result.monthlyReportEmployee
-          datas.push({dataEmployee, monthlyReportEmployee, monthlyReportEmployeeDetail})
+          datas.push({ dataEmployee, monthlyReportEmployee, monthlyReportEmployeeDetail })
         }
 
-        return response.ok({ message: "Berhasil mengambil data", data: datas });
+        return response.ok({ message: "Berhasil mengambil data", monthlyReport, data: datas });
       } else {
+        //buat module profile
         data = await MonthlyReport.query()
           .where("id", id)
           .preload('monthlyReportEmployees', mre => mre

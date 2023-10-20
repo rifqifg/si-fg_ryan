@@ -186,7 +186,7 @@ export default class BukuNilaisController {
               name: aspekPenilaian === "SIKAP" ? "SIKAP" : t.type,
               materi: t.materi,
               materi_prosem: b?.materi,
-              tanggal_pengambilan_nilai: b?.tanggalPengambilanNilai,
+              tanggal_pengambilan_nilai: t?.tanggalPengambilanNilai,
               nilai: nilais
                 .filter((n) => n.materi === t.materi )
                 .map((nilai) => ({

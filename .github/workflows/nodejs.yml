@@ -30,6 +30,7 @@ jobs:
         port: ${{ secrets.PORT }}
         script: |
           cd /home/jidzrun/projects/api/jamal
-          git pull 
-          npm install
-          pm2 restart api-jamal 
+          git pull
+          export NVM_DIR=~/.nvm
+          source ~/.nvm/nvm.sh 
+          npm install 

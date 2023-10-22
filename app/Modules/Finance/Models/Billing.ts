@@ -1,9 +1,10 @@
 import { DateTime } from 'luxon'
-import { BaseModel, BelongsTo, afterCreate, beforeCreate, belongsTo, column } from '@ioc:Adonis/Lucid/Orm'
+import { BaseModel, BelongsTo, ManyToMany, afterCreate, beforeCreate, belongsTo, column, manyToMany } from '@ioc:Adonis/Lucid/Orm'
 import { BillingStatus, BillingType } from '../lib/enums';
 import MasterBilling from './MasterBilling';
 import Account from './Account';
 import { v4 as uuidv4 } from 'uuid'
+import Transaction from './Transaction';
 
 let newId = ""
 
@@ -42,6 +43,13 @@ export default class Billing extends BaseModel {
 
   @belongsTo(() => MasterBilling)
   public masterBilling: BelongsTo<typeof MasterBilling>
+
+  @manyToMany(() => Transaction, {
+    pivotTable: 'finance.transaction_billings',
+    pivotColumns: ['amount'],
+    pivotTimestamps: true
+  })
+  public transactions: ManyToMany<typeof Transaction>
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime

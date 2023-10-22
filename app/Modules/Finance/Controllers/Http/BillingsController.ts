@@ -73,7 +73,11 @@ export default class BillingsController {
     }
 
     try {
-      const data = await Billing.findOrFail(id)
+      const data = await Billing.query()
+        .where('id', id)
+        .preload('transactions')
+        .firstOrFail()
+
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
       const message = "FBIL-SHO: " + error.message || error;

@@ -9,9 +9,6 @@ export default class CreateTransactionValidator {
     coa_id: schema.string.optional({}, [
       rules.exists({ table: 'finance.coas', column: 'id' })
     ]),
-    // billing_id: schema.string({}, [
-    //   rules.exists({ table: 'finance.billings', column: 'id' })
-    // ]),
     document_id: schema.string.optional({}, [
       rules.exists({ table: 'finance.transaction_documents', column: 'id' })
     ]),
@@ -24,6 +21,9 @@ export default class CreateTransactionValidator {
     method: schema.enum(Object.values(TransactionMethods)),
     type: schema.enum(Object.values(TransactionTypes)),
     description: schema.string.optional(),
+    revenue_id: schema.string.optional([
+      rules.exists({ table: 'finance.revenues', column: 'id' })
+    ]),
 
     // TODO: validasi billing_id harus unique di array ini
     items: schema.array().members(

@@ -5,6 +5,7 @@ import { validate as uuidValidation } from "uuid";
 import UpdateTransactionValidator from '../../Validators/UpdateTransactionValidator';
 import Billing from '../../Models/Billing';
 import { BillingStatus } from '../../lib/enums';
+import Revenue from '../../Models/Revenue';
 
 export default class TransactionsController {
   public async index({ request, response }: HttpContextContract) {
@@ -81,6 +82,11 @@ export default class TransactionsController {
       await Billing.updateOrCreateMany("id", updateBillingPayload)
       //////
 
+      if (payload.revenue_id) {
+        const currentRevenue = await Revenue.findOrFail(payload.revenue_id)
+        const newRevenueAmount = currentRevenue.currentBalance - totalAmount
+        currentRevenue.merge({currentBalance: newRevenueAmount}).save()
+      }
 
       const data = await Transaction.query()
         .where('id', transactionData.id)

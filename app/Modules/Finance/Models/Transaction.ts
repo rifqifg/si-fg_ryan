@@ -17,6 +17,9 @@ export default class Transaction extends BaseModel {
   @column()
   public coaId: string | null
 
+  @column()
+  public revenueId: string | null
+
   // @column()
   // public billingId: string | null
 

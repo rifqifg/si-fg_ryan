@@ -21,9 +21,9 @@ export default class TransactionsController {
           .paginate(page, limit);
       } else {
         data = await Transaction.query()
-        .preload('billings', qBilling => {
-          qBilling.select('name', 'amount', 'remaining_amount', 'account_id').preload('account', qAccount => qAccount.select('account_name'))
-        })
+          .preload('billings', qBilling => {
+            qBilling.select('name', 'amount', 'remaining_amount', 'account_id').preload('account', qAccount => qAccount.select('account_name'))
+          })
       }
 
       response.ok({ message: "Berhasil mengambil data", data });
@@ -46,17 +46,17 @@ export default class TransactionsController {
     const totalAmount = paidItems.reduce((sum, current) => sum + current.amount, 0)
 
     try {
-      const transactionData: Transaction = await Transaction.create({...transactionPayload, amount: totalAmount})
+      const transactionData: Transaction = await Transaction.create({ ...transactionPayload, amount: totalAmount })
 
       const attachBill = paidItems.reduce((result, item) => {
-        result[item.billing_id] = { amount: item.amount}
+        result[item.billing_id] = { amount: item.amount }
         return result
       }, {})
 
       // insert ke tabel pivot
       await transactionData.related('billings').attach(attachBill)
       const relatedBilling = await transactionData.related('billings').query()
-      
+
       //////
       // kurangi sisa pembayaran di billing sesuai jumlah yg sudah dibayarkan
       // kenapa dibikin object Map disini, utk relasi paidItems.billingId dengan relatedBilling.id
@@ -85,7 +85,7 @@ export default class TransactionsController {
       if (payload.revenue_id) {
         const currentRevenue = await Revenue.findOrFail(payload.revenue_id)
         const newRevenueAmount = currentRevenue.currentBalance - totalAmount
-        currentRevenue.merge({currentBalance: newRevenueAmount}).save()
+        currentRevenue.merge({ currentBalance: newRevenueAmount }).save()
       }
 
       const data = await Transaction.query()
@@ -139,9 +139,44 @@ export default class TransactionsController {
       return response.badRequest({ message: "Data tidak boleh kosong" });
     }
 
+    const { items, ...transactionPayload } = payload
+
     try {
       const transaction = await Transaction.findOrFail(id);
-      const data = await transaction.merge(payload).save();
+
+      if (items) {
+        const syncBill = items.reduce((result, item) => {
+          result[item.billing_id] = { amount: item.amount }
+          return result
+        }, {})
+
+        await transaction.related('billings').sync(syncBill, false)
+
+        const relatedBillings = await transaction.related('billings').query().pivotColumns(['amount'])
+        const transactionTotalAmount = relatedBillings.reduce((sum, current) => sum + current.$extras.pivot_amount, 0)
+
+        // update total amount di transactions
+        transactionPayload.amount = transactionTotalAmount
+
+        // update remaining_amount di billing
+        relatedBillings.forEach(async billing => {
+          const relatedTransaction = await billing.related('transactions').query().pivotColumns(['amount'])
+          const totalAmountPivot = relatedTransaction.reduce((sum, current) => sum + current.$extras.pivot_amount, 0)
+          const remainingAmount = billing.amount - totalAmountPivot
+
+          await billing.merge({remainingAmount}).save()
+        })
+
+        // update remaining_amount di revenues
+        if (payload.revenue_id) {
+          const currentRevenue = await Revenue.findOrFail(payload.revenue_id)
+          const newRevenueAmount = currentRevenue.currentBalance - transactionTotalAmount
+          currentRevenue.merge({ currentBalance: newRevenueAmount }).save()
+        }
+      }
+
+      const data = await transaction.merge(transactionPayload).save();
+
       response.ok({ message: "Berhasil mengubah data", data });
     } catch (error) {
       const message = "FTR-UPD: " + error.message || error;
@@ -155,23 +190,23 @@ export default class TransactionsController {
   }
 
   public async destroy({ params, response }: HttpContextContract) {
-    const { id } = params;
+    const { id } = params
     if (!uuidValidation(id)) {
-      return response.badRequest({ message: "ID tidak valid" });
+      return response.badRequest({ message: "ID tidak valid" })
     }
 
     try {
-      const data = await Transaction.findOrFail(id);
-      await data.delete();
-      response.ok({ message: "Berhasil menghapus data" });
+      const data = await Transaction.findOrFail(id)
+      await data.delete()
+      response.ok({ message: "Berhasil menghapus data" })
     } catch (error) {
-      const message = "FMB-DES: " + error.message || error;
-      console.log(error);
+      const message = "FMB-DES: " + error.message || error
+      console.log(error)
       response.badRequest({
         message: "Gagal menghapus data",
         error: message,
         error_data: error,
-      });
+      })
     }
   }
 }

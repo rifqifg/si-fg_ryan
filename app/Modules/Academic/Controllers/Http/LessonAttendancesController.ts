@@ -125,6 +125,14 @@ export default class LessonAttendancesController {
       )
       .preload("session", (s) => s.select("session"))
       .preload("subject", (s) => s.select("name"))
+      .orderByRaw(`(case when academic.lesson_attendances.status = 'sick' then concat('1-', academic.lesson_attendances.status)
+      when academic.lesson_attendances.status = 'permission' then concat('2-', academic.lesson_attendances.status)
+      when academic.lesson_attendances.status = 'absent' then concat('3-', academic.lesson_attendances.status)
+      when academic.lesson_attendances.status = 'present' then concat('4-', academic.lesson_attendances.status)
+    end), c.name, academic.lesson_attendances.description`)
+      .orderBy("c.name")
+          .orderBy("academic.lesson_attendances.created_at")
+          .orderBy("s.name")
       .orderBy("date", "desc")
       .paginate(page, limit);
 

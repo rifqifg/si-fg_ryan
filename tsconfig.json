@@ -14,7 +14,8 @@
       "Inventory/*": ["./app/Modules/Inventory/*"],
       "Academic/*": ["./app/Modules/Academic/*"],
       "PPDB/*": ["./app/Modules/PPDB/*"],
-      "Finance/*": ["./app/Modules/Finance/*"]
+      "Finance/*": ["./app/Modules/Finance/*"],
+      "Log/*": ["./app/Modules/Log/*"],
     },
     "types": [
       "@adonisjs/core",

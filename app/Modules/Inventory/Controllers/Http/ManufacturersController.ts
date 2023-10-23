@@ -6,6 +6,8 @@ import Application from '@ioc:Adonis/Core/Application'
 import { validate as uuidValidation } from "uuid";
 import UpdateManufacturerValidator from 'Inventory/Validators/UpdateManufacturerValidator'
 import Drive from '@ioc:Adonis/Core/Drive'
+import { statusRoutes } from 'App/Modules/Log/lib/enum'
+import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist'
 
 const getSignedUrl = async (filename: string) => {
   const inventoryDrive = Drive.use('inventory')
@@ -15,6 +17,7 @@ const getSignedUrl = async (filename: string) => {
 
 export default class ManufacturersController {
   public async index({ response, request }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const { page = 1, limit = 10, keyword = "", mode = "page" } = request.qs()
 
     try {
@@ -34,15 +37,18 @@ export default class ManufacturersController {
         return response.badRequest({ message: "Mode tidak dikenali, (pilih: page / list)" })
       }
 
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.ok({ message: "Berhasil mengambil data", data })
     } catch (error) {
+      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
       response.badRequest({ message: "Gagal mengambil data", error: error.message })
     }
   }
 
   public async store({ request, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const payload = await request.validate(CreateManufacturerValidator)
-    // TIPS: upload file 
+    // TIPS: upload file
     const parsedPayload = { ...payload } // parse dulu payload nya biar dinamis, karena takutnya ada yang optional kan
     let newData: any // ini untuk ngisi image dari parsedPayload
 
@@ -58,15 +64,18 @@ export default class ManufacturersController {
     try {
       const data = await Manufacturer.create(newData)
       data.image = await getSignedUrl(data.image) //return array of signedUrl
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.created({ message: "Berhasil menyimpan data", data })
 
     } catch (error) {
+      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
       console.log(error);
       response.badRequest({ message: "Gagal menyimpan data", error: error.message })
     }
   }
 
-  public async show({ params, response }: HttpContextContract) {
+  public async show({ params, response, request }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const { id } = params
     if (!uuidValidation(id)) { return response.badRequest({ message: "Manufacturer ID tidak valid" }) }
 
@@ -74,8 +83,10 @@ export default class ManufacturersController {
       const data = await Manufacturer.query().where('id', id).firstOrFail()
       data.image = await getSignedUrl(data.image) //return array of signedUrl
 
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.ok({ message: "Berhasil mengambil data", data })
     } catch (error) {
+      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
       console.log(error);
       response.badRequest({ message: "Gagal mengambil data", error: error.message })
     }

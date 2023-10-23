@@ -1,18 +1,22 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import TemplateExcel from 'App/Models/TemplateExcel'
+import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist'
+import { statusRoutes } from 'App/Modules/Log/lib/enum'
 
 export default class TemplateExcelsController {
-    public async index({ request, response }: HttpContextContract) {
-        const { page = 1, limit = 10, keyword = "" } = request.qs()
+  public async index({ request, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
+    const { page = 1, limit = 10, keyword = "" } = request.qs()
 
-        let data = {}
+    let data = {}
 
-        data = await TemplateExcel.query()
-            .select('id', 'name', 'link', 'description')
-            .whereILike('name', `%${keyword}%`)
-            .orderBy('name')
-            .paginate(page, limit)
+    data = await TemplateExcel.query()
+      .select('id', 'name', 'link', 'description')
+      .whereILike('name', `%${keyword}%`)
+      .orderBy('name')
+      .paginate(page, limit)
 
-        response.ok({ message: "Berhasil mengambil data", data })
-    }
+    CreateRouteHist(request, statusRoutes.FINISH)
+    response.ok({ message: "Berhasil mengambil data", data })
+  }
 }

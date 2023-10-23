@@ -13,6 +13,8 @@ import Employee from "App/Models/Employee";
 import Student from "App/Modules/Academic/Models/Student";
 import UserRole from "App/Models/UserRole";
 import Account from "App/Modules/Finance/Models/Account";
+import { statusRoutes } from "App/Modules/Log/lib/enum";
+import { CreateRouteHist } from "App/Modules/Log/Helpers/createRouteHist";
 
 enum ROLE {
   EMPLOYEE = "employee",
@@ -28,6 +30,7 @@ interface UserGoogle {
 }
 export default class UsersController {
   public async login({ request, response, auth }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const loginSchema = schema.create({
       email: schema.string({ trim: true }, [
         rules.exists({ table: "users", column: "email" }),
@@ -180,19 +183,21 @@ export default class UsersController {
       userObject["role"] = { name: name.toString(), descriptions: descriptions.toString(), permissions: { modules: modulesSimple } }
       delete userObject["roles"]
 
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.ok({
         message: "login succesfull",
         token,
         data: userObject,
       });
     } catch (error) {
+      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
       console.log(error);
-
       return response.badRequest({ message: "Invalid credentials", error });
     }
   }
 
   public async loginParent({ request, response, auth }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const loginParentValidator = schema.create({
       va_number: schema.string({ trim: true }, [
         rules.exists({ table: "finance.accounts", column: "number" }),
@@ -216,12 +221,14 @@ export default class UsersController {
 
       const token = await auth.use('parent_api').login(account)
 
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.ok({
         message: "login succesfull",
         token,
         data: account,
       });
     } catch (error) {
+      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
       // console.log(error);
       return response.badRequest({ message: "Invalid credentials", error });
     }
@@ -232,6 +239,7 @@ export default class UsersController {
     response,
     auth,
   }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const { cred } = await request.validate({
       schema: schema.create({
         cred: schema.string([rules.trim()]),
@@ -386,8 +394,10 @@ export default class UsersController {
 
       const tokenAuth = await auth.use("api").login(user);
 
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.ok({ message: "login berhasil", token: tokenAuth, data: userObject });
     } catch (error) {
+      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
       return response.send({
         message: "Anda belum memiliki akun",
         email: userDetails.email,
@@ -395,19 +405,24 @@ export default class UsersController {
     }
   }
 
-  public async logout({ auth, response }: HttpContextContract) {
+  public async logout({ request, auth, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     await auth.use("api").logout();
     await Database.manager.close("pg");
+    CreateRouteHist(request, statusRoutes.FINISH)
     response.ok({ message: "logged out" });
   }
 
-  public async logoutParent({ auth, response }: HttpContextContract) {
+  public async logoutParent({ auth, response, request }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     await auth.use('parent_api').revoke();
     await Database.manager.close("pg");
+    CreateRouteHist(request, statusRoutes.FINISH)
     response.ok({ message: "logged out (parent)" });
   }
 
   public async register({ request, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     let payload = await request.validate({
       schema: schema.create({
         name: schema.string([rules.minLength(5), rules.escape(), rules.trim()]),
@@ -454,6 +469,7 @@ export default class UsersController {
           .htmlView("emails/registered", { verify_url });
       });
     } catch (error) {
+      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
       return response.internalServerError({ message: "Gagal mengirim email verifikasi", error: error.message });
     }
 
@@ -479,6 +495,7 @@ export default class UsersController {
       try {
         student = await Student.findByOrFail("nisn", payload.nisn);
       } catch (error) {
+        CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
         return response.send({ message: "NISN tidak terdaftar" });
       }
       if (student && payload.role === ROLE.STUDENT) {
@@ -521,6 +538,7 @@ export default class UsersController {
       }
     }
 
+    CreateRouteHist(request, statusRoutes.FINISH)
     response.ok({
       message: "Berhasil melakukan register/nSilahkan verifikasi email anda",
       user,
@@ -528,6 +546,7 @@ export default class UsersController {
   }
 
   public async verify({ request, response, view }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const token = request.input("token");
 
     try {
@@ -536,13 +555,16 @@ export default class UsersController {
       await user.merge({ verifyToken: "", verified: true, }).save();
 
       const LOGIN_URL = Env.get("FE_URL")
+      CreateRouteHist(request, statusRoutes.FINISH)
       return view.render('user_verification_success', { LOGIN_URL })
     } catch (error) {
+      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
       return response.badRequest({ message: "email tidak ditemukan / token tidak cocok", error });
     }
   }
 
   public async password_encrypt({ request, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const { password } = request.qs();
     const encrypted_password = await Hash.make(password);
     const new_uuid = await uuidv4();
@@ -569,6 +591,7 @@ export default class UsersController {
         .verifyCredentials(auth.use('api').user!.email, payload.old_password);
       console.log("password verified", verifyPassword);
     } catch (error) {
+      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
       response.unprocessableEntity({
         message: "Password lama salah",
         error: error.message,
@@ -581,20 +604,25 @@ export default class UsersController {
       const user = await User.findOrFail(auth.user!.id);
       await user.merge({ password: payload.password }).save();
 
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.ok({ message: "Password reset success" });
     } catch (error) {
+      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
       return response.badRequest(error);
     }
   }
 
   public async getUsers({ request, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const { keyword, division = "" } = request.qs();
     try {
       const data = await User.query()
         .preload(division)
         .whereILike("name", "%" + keyword + "%");
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.ok({ message: "Get data success", data });
     } catch (error) {
+      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
       console.log(error);
       response.internalServerError(error);
     }

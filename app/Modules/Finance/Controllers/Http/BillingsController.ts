@@ -12,15 +12,19 @@ import { HttpContext } from '@adonisjs/core/build/standalone';
 
 export default class BillingsController {
   public async index({ request, response }: HttpContextContract) {
-    const { page = 1, limit = 10, keyword = "", mode = "page", student_id } = request.qs();
+    const { page = 1, limit = 10, keyword = "", status, mode = "page", student_id } = request.qs();
 
     try {
       let data = {}
       if (mode === 'page') {
         data = await Billing.query()
-          .whereILike("name", `%${keyword}%`)
           .if(student_id, q => q.whereHas('account', qAccount => qAccount.where('student_id', student_id)))
-          .preload('account', qAccount => qAccount.select('account_name'))
+          .if(status, q => q.where('status', '=', status))
+          .if(keyword, q => {
+            q.andWhereHas('account', (a) => a.whereILike("number", `%${keyword}%`))
+              .orWhereILike("name", `%${keyword}%`)
+          })
+          .preload('account', qAccount => qAccount.select('account_name', 'number', 'student_id'))
           .paginate(page, limit);
       } else {
         data = await Billing.query().whereILike('name', `%${keyword}%`)
@@ -76,6 +80,7 @@ export default class BillingsController {
       const data = await Billing.query()
         .where('id', id)
         .preload('transactions')
+        .preload('account', qAccount => qAccount.select('account_name', 'number'))
         .firstOrFail()
 
       response.ok({ message: "Berhasil mengambil data", data });
@@ -137,7 +142,7 @@ export default class BillingsController {
 
     const manyBillingValidator = new CreateBillingValidator(HttpContext.get()!, jsonData)
     const payloadBilling = await validator.validate(manyBillingValidator)
-    
+
     try {
       const data = await Billing.createMany(payloadBilling.billings)
 

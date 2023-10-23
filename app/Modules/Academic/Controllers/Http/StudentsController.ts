@@ -109,6 +109,7 @@ export default class StudentsController {
         .preload("kota")
         .preload("provinsi")
         .where("id", id)
+        .preload('parents')
         .firstOrFail();
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {

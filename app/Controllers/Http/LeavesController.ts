@@ -1,11 +1,14 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Leave from 'App/Models/Leave'
+import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist'
+import { statusRoutes } from 'App/Modules/Log/lib/enum'
 import CreateLeaveValidator from 'App/Validators/CreateLeaveValidator'
 import UpdateLeaveValidator from 'App/Validators/UpdateLeaveValidator'
 import { validate as uuidValidation } from "uuid"
 
 export default class LeavesController {
   public async index({ request, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const { page = 1, limit = 10, keyword = "", fromDate = "", toDate = "", employeeId } = request.qs()
 
     try {
@@ -38,9 +41,11 @@ export default class LeavesController {
           .paginate(page, limit)
       }
 
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.ok({ message: "Data Berhasil Didapatkan", data })
     } catch (error) {
       const message = "HRDLE01: " + error.message || error;
+      CreateRouteHist(request, statusRoutes.ERROR, message)
       console.log(error);
       response.badRequest({
         message: "Gagal mengambil data",
@@ -51,13 +56,16 @@ export default class LeavesController {
   }
 
   public async store({ request, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const payload = await request.validate(CreateLeaveValidator)
 
     try {
       const data = await Leave.create(payload);
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.created({ message: "Berhasil menyimpan data", data });
     } catch (error) {
       const message = "HRDLE02: " + error.message || error;
+      CreateRouteHist(request, statusRoutes.ERROR, message)
       console.log(error);
       response.badRequest({
         message: "Gagal mengambil data",
@@ -67,7 +75,8 @@ export default class LeavesController {
     }
   }
 
-  public async show({ params, response }: HttpContextContract) {
+  public async show({ request, params, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const { id } = params;
     if (!uuidValidation(id)) {
       return response.badRequest({ message: "Leave ID tidak valid" });
@@ -75,9 +84,11 @@ export default class LeavesController {
 
     try {
       const data = await Leave.query().where("id", id).firstOrFail();
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
       const message = "HRDLE03: " + error.message || error;
+      CreateRouteHist(request, statusRoutes.ERROR)
       console.log(error);
       response.badRequest({
         message: "Gagal mengambil data",
@@ -88,6 +99,7 @@ export default class LeavesController {
   }
 
   public async update({ params, request, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const { id } = params;
     if (!uuidValidation(id)) {
       return response.badRequest({ message: "Leave ID tidak valid" });
@@ -101,9 +113,11 @@ export default class LeavesController {
     try {
       const leave = await Leave.findOrFail(id);
       const data = await leave.merge(payload).save();
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.ok({ message: "Berhasil mengubah data", data });
     } catch (error) {
       const message = "HRDLE04: " + error.message || error;
+      CreateRouteHist(request, statusRoutes.ERROR, message)
       console.log(error);
       response.badRequest({
         message: "Gagal mengubah data",
@@ -113,7 +127,8 @@ export default class LeavesController {
     }
   }
 
-  public async destroy({ params, response }: HttpContextContract) {
+  public async destroy({ request, params, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const { id } = params;
     if (!uuidValidation(id)) {
       return response.badRequest({ message: "Leave ID tidak valid" });
@@ -122,9 +137,11 @@ export default class LeavesController {
     try {
       const data = await Leave.findOrFail(id);
       await data.delete();
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.ok({ message: "Berhasil menghapus data" });
     } catch (error) {
       const message = "HRDLE05: " + error.message || error;
+      CreateRouteHist(request, statusRoutes.ERROR, message)
       console.log(error);
       response.badRequest({
         message: "Gagal menghapus data",

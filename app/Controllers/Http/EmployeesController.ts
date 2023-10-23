@@ -1,10 +1,13 @@
 import type { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import Employee from "App/Models/Employee";
+import { CreateRouteHist } from "App/Modules/Log/Helpers/createRouteHist";
+import { statusRoutes } from "App/Modules/Log/lib/enum";
 import CreateEmployeeValidator from "App/Validators/CreateEmployeeValidator";
 import UpdateEmployeeValidator from "App/Validators/UpdateEmployeeValidator";
 
 export default class EmployeesController {
   public async index({ request, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const {
       page = 1,
       limit = 10,
@@ -25,7 +28,7 @@ export default class EmployeesController {
           d.preload("division", (x) => x.select("name"))
         )
       )
-      .if(divisionId, d => d.whereHas("divisions", (q) => q.where("divisionId", "=", divisionId)) )
+      .if(divisionId, d => d.whereHas("divisions", (q) => q.where("divisionId", "=", divisionId)))
       .preload("provinsi")
       .preload("kota")
       .preload("kecamatan")
@@ -39,10 +42,12 @@ export default class EmployeesController {
       .orderBy(orderBy, orderDirection)
       .paginate(page, limit);
 
+    CreateRouteHist(request, statusRoutes.FINISH)
     response.ok({ message: "Data Berhasil Didapatkan", data });
   }
 
   public async getEmployee({ request, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const {
       keyword = "",
       employeeTypeId = "",
@@ -61,7 +66,7 @@ export default class EmployeesController {
           d.preload("division", (x) => x.select("name"))
         )
       )
-      .if(divisionId, d => d.whereHas("divisions", (q) => q.where("divisionId", "=", divisionId)) )
+      .if(divisionId, d => d.whereHas("divisions", (q) => q.where("divisionId", "=", divisionId)))
       .preload("provinsi")
       .preload("kota")
       .preload("kecamatan")
@@ -73,23 +78,29 @@ export default class EmployeesController {
         // query.orWhereILike("division", `%${keyword}%`);
       })
       .orderBy(orderBy, orderDirection)
+
+    CreateRouteHist(request, statusRoutes.FINISH)
     response.ok({ message: "Data Berhasil Didapatkan", data });
   }
 
   public async store({ request, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const payload = await request.validate(CreateEmployeeValidator);
 
     try {
       const data = await Employee.create(payload);
 
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.ok({ message: "Create data success", data });
     } catch (error) {
+      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
       console.log(error);
       return response.internalServerError(error);
     }
   }
 
-  public async show({ params, response }: HttpContextContract) {
+  public async show({ request, params, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const { id } = params;
     try {
       const data = await Employee.query()
@@ -109,8 +120,10 @@ export default class EmployeesController {
           )
         )
         .where("id", id);
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.ok({ message: "Get data success", data });
     } catch (error) {
+      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
       console.log(error);
       return response.internalServerError(error);
     }

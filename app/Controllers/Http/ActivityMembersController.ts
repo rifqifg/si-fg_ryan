@@ -2,6 +2,8 @@ import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import ActivityMember from 'App/Models/ActivityMember';
 import Employee from 'App/Models/Employee';
 import Presence from 'App/Models/Presence';
+import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist';
+import { statusRoutes } from 'App/Modules/Log/lib/enum';
 import CreateActivityMemberValidator from 'App/Validators/CreateActivityMemberValidator';
 import UpdateActivityMemberValidator from 'App/Validators/UpdateActivityMemberValidator';
 import { validate as uuidValidation } from "uuid";
@@ -22,23 +24,36 @@ function filteredDataMembersAndEmployees(dataMembersOrEmployees, dataPresences) 
 }
 export default class ActivityMembersController {
   public async index({ request, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const { activityId = "", keyword = "" } = request.qs()
 
-    const data = await ActivityMember.query()
-      .where('activity_id', '=', activityId)
-      .preload('employee', e => e.select('id', 'name'))
-      .preload('activity', a => a.select('id', 'name'))
-      .andWhere(query => {
-        query.orWhereHas('employee', query => {
-          query.whereILike('name', `%${keyword}%`)
+    try {
+      const data = await ActivityMember.query()
+        .where('activity_id', '=', activityId)
+        .preload('employee', e => e.select('id', 'name'))
+        .preload('activity', a => a.select('id', 'name'))
+        .andWhere(query => {
+          query.orWhereHas('employee', query => {
+            query.whereILike('name', `%${keyword}%`)
+          })
         })
-      })
 
-
-    response.ok({ message: "Data Berhasil Didapatkan", data })
+      CreateRouteHist(request, statusRoutes.FINISH)
+      response.ok({ message: "Data Berhasil Didapatkan", data })
+    } catch (error) {
+      const message = "HRDAM01: " + error.message || error;
+      CreateRouteHist(request, statusRoutes.ERROR, message)
+      console.log(error);
+      response.badRequest({
+        message: "Gagal mengambil data",
+        error: message,
+        error_data: error,
+      });
+    }
   }
 
   public async store({ request, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const payload = await request.validate(CreateActivityMemberValidator);
 
     const promises = payload.activityMembers.map(async value => {
@@ -59,13 +74,22 @@ export default class ActivityMembersController {
       await Promise.all(promises);
 
       const data = await ActivityMember.createMany(payload.activityMembers);
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.created({ message: "Berhasil menyimpan data", data });
     } catch (error) {
-      response.badRequest({ message: error.message });
+      const message = "HRDAM02: " + error.message || error;
+      CreateRouteHist(request, statusRoutes.ERROR, message)
+      console.log(error);
+      response.badRequest({
+        message: "Gagal mengambil data",
+        error: message,
+        error_data: error,
+      });
     }
   }
 
   public async update({ request, response, params }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const { id } = params
     if (!uuidValidation(id)) {
       return response.badRequest({ message: "Subject ID tidak valid" });
@@ -81,15 +105,22 @@ export default class ActivityMembersController {
       const data = await ActivityMember.findOrFail(id)
       await data.merge(payload).save()
 
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.ok({ message: "Update data success", data })
     } catch (error) {
-      return response.badRequest({
-        message: "Gagal mengubah data"
-      })
+      const message = "HRDAM03: " + error.message || error;
+      CreateRouteHist(request, statusRoutes.ERROR, message)
+      console.log(error);
+      response.badRequest({
+        message: "Gagal update data",
+        error: message,
+        error_data: error,
+      });
     }
   }
 
   public async destroy({ request, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const rawBody = request.raw();
     const datas = JSON.parse(rawBody!);
 
@@ -98,16 +129,20 @@ export default class ActivityMembersController {
         const data = await ActivityMember.findOrFail(value.member_id)
         await data.delete()
       } catch (error) {
+        const message = "HRDAM04: " + error.message || error;
+        CreateRouteHist(request, statusRoutes.ERROR, message)
         return response.badRequest({
           message: error.message
         })
       }
     })
 
+    CreateRouteHist(request, statusRoutes.FINISH)
     response.ok({ message: "Delete data success" })
   }
 
   public async getEmployee({ response, params, request }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const { activityId } = params
     const { keyword = "" } = request.qs()
 
@@ -127,10 +162,12 @@ export default class ActivityMembersController {
       .whereNotIn('id', employeeIds)
       .whereILike('name', `%${keyword}%`)
 
+    CreateRouteHist(request, statusRoutes.FINISH)
     response.ok({ message: "Data Berhasil Didapatkan", data })
   }
 
   public async getActivityMemberAndEmployee({ request, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     try {
       const { keyword = "", activityId, subActivityId = "" } = request.qs()
 
@@ -188,9 +225,11 @@ export default class ActivityMembersController {
         filteredDataMembersAndEmployees(dataEmployeesObject, dataPresences)
       }
 
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.ok({ message: "Data Berhasil Didapatkan", data: [...dataActivityMembersObject, ...dataEmployeesObject] })
     } catch (error) {
       const message = "HRDAM06: " + error.message || error;
+      CreateRouteHist(request, statusRoutes.ERROR, message)
       console.log(error);
       response.badRequest({
         message: "Gagal mengambil data",

@@ -1,9 +1,12 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import AssetStatus from 'Inventory/Models/AssetStatus'
 import Database from '@ioc:Adonis/Lucid/Database'
+import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist'
+import { statusRoutes } from 'App/Modules/Log/lib/enum'
 
 export default class AssetStatusesController {
   public async index({ request, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const { page = 1, limit = 10, keyword = "", mode = "page" } = request.qs()
 
     try {
@@ -25,8 +28,10 @@ export default class AssetStatusesController {
       }
 
       const allAssetsCount = await Database.from('inventory.assets').count('id as total').first()
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.ok({ message: "Berhasil mengambil data", total_asset: allAssetsCount.total, data })
     } catch (error) {
+      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
       response.badRequest({ message: "Gagal mengambil data", error: error.message })
     }
   }

@@ -14,6 +14,8 @@ import DeleteManyPresenceValidator from 'App/Validators/DeleteManyPresenceValida
 import User from 'App/Models/User';
 import Database from '@ioc:Adonis/Lucid/Database';
 import Activity from 'App/Models/Activity';
+import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist';
+import { statusRoutes } from 'App/Modules/Log/lib/enum';
 
 const getSignedUrl = async (filename: string) => {
   const beHost = Env.get('BE_URL')
@@ -37,6 +39,7 @@ const hasDuplicateEmployeeId = (presences) => {
 
 export default class SubActivitiesController {
   public async index({ request, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const hariIni = DateTime.now().toSQLDate()!.toString();
     const { activityId = "", keyword = "", page = 1, limit = 10, fromDate, toDate } = request.qs()
 
@@ -69,10 +72,12 @@ export default class SubActivitiesController {
         .paginate(page, limit)
     }
 
+    CreateRouteHist(request, statusRoutes.FINISH)
     response.ok({ message: "Data Berhasil Didapatkan", data })
   }
 
   public async store({ request, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const payload = await request.validate(CreateSubActivityValidator)
 
     let nameFileImage: string[] = [] //buat nampung nama file image
@@ -99,8 +104,10 @@ export default class SubActivitiesController {
       for (let i = 0; i < data.images.length; i++) {
         data.images[i] = await getSignedUrl(data.images[i]);
       }
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.created({ message: "Berhasil menyimpan data", data });
     } catch (error) {
+      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
       response.badRequest({
         message: "Gagal menyimpan data",
         error: error.message,
@@ -108,7 +115,8 @@ export default class SubActivitiesController {
     }
   }
 
-  public async show({ params, response }: HttpContextContract) {
+  public async show({ request, params, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const { id } = params
     if (!uuidValidation(id)) { return response.badRequest({ message: "SubActivity ID tidak valid" }) }
 
@@ -123,8 +131,10 @@ export default class SubActivitiesController {
         data.images[i] = await getSignedUrl(data.images[i]);
       }
 
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.ok({ message: "Berhasil mengambil data", data })
     } catch (error) {
+      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
       console.log(error);
       response.badRequest({ message: "Gagal mengambil data", error: error.message })
     }
@@ -211,6 +221,7 @@ export default class SubActivitiesController {
   }
 
   public async getPresenceSubActivity({ request, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const { subActivityId = "", keyword = "", page = 1, limit = 10 } = request.qs()
 
     try {
@@ -225,9 +236,11 @@ export default class SubActivitiesController {
         .preload('employee', e => e.select('name'))
         .paginate(page, limit)
 
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.ok({ message: "Data Berhasil Didapatkan", data })
     } catch (error) {
       const message = "HRDPSA03-presences: " + error.message || error;
+      CreateRouteHist(request, statusRoutes.ERROR, message)
       console.log(error);
       response.badRequest({
         message: "Gagal Mengambil Data",
@@ -238,6 +251,7 @@ export default class SubActivitiesController {
   }
 
   public async presence({ request, params, response, auth }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const { activityId, subActivityId } = params
     if (!uuidValidation(activityId)) { return response.badRequest({ message: "Activity ID tidak valid" }) }
 
@@ -279,12 +293,14 @@ export default class SubActivitiesController {
       if (authRole == 'super_admin' || memberManager.length > 0) { // buat ngecek yang berwenang absen membernya
         if (payload.presences.length > 0 && hasDuplicateEmployeeId(payload.presences)) { return response.badRequest({ message: "Employee_ID Duplicated" }); }
         const data = await Presence.createMany(payload.presences)
+        CreateRouteHist(request, statusRoutes.FINISH)
         response.created({ message: "Create data success", data })
       } else {
         return response.badRequest({ message: "Permission Denied" })
       }
     } catch (error) {
       const message = "HRDPSA01-presences: " + error.message || error;
+      CreateRouteHist(request, statusRoutes.ERROR, message)
       console.log(error);
       response.badRequest({
         message: "Gagal Menambah Data",
@@ -309,6 +325,7 @@ export default class SubActivitiesController {
   }
 
   public async recap({ params, request, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const hariIni = DateTime.now().toSQLDate()?.toString()
     const { page = 1, limit = 10, fromDate = hariIni, toDate = hariIni } = request.qs()
     const { activityId } = params
@@ -334,14 +351,16 @@ export default class SubActivitiesController {
         .paginate(page, limit)
 
       const activity = await Activity.query()
-            .where('id', activityId)
-            .preload('categoryActivity', ca => ca.select('name'))
-            .preload('division', d => d.select('name'))
-            .firstOrFail()
+        .where('id', activityId)
+        .preload('categoryActivity', ca => ca.select('name'))
+        .preload('division', d => d.select('name'))
+        .firstOrFail()
 
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.ok({ message: "Data Berhasil Didapatkan", data, activity })
     } catch (error) {
       const message = "HRDRSA01-recap-subActivities: " + error.message || error;
+      CreateRouteHist(request, statusRoutes.ERROR, message)
       console.log(error);
       response.badRequest({
         message: "Gagal Menambah Data",

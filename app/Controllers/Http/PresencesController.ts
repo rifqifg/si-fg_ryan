@@ -141,10 +141,12 @@ export default class PresencesController {
     response.ok({ message: "Get data success", data: { activity, presence } })
   }
 
-  public async edit({ params, response }: HttpContextContract) {
+  public async edit({ params, response, request }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const { id } = params
     try {
       const data = await Presence.query().preload('employee', query => query.select('name')).where('id', id).firstOrFail()
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.ok({ message: "Get data success", data })
     } catch (error) {
       response.badRequest(error)
@@ -288,7 +290,7 @@ export default class PresencesController {
       ) mostPresent
     `)
 
-    CreateRouteHist(request, statusRoutes.START)
+    CreateRouteHist(request, statusRoutes.FINISH)
     response.ok({ message: "Get data success", overview, recap, detail })
   }
 

@@ -31,8 +31,10 @@ export default class ModulesController {
   }
 
   // create ini untuk nanti get all pas mau bikin permissions
-  public async create({ response }: HttpContextContract) {
+  public async create({ request, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const data = await Module.all()
+    CreateRouteHist(request, statusRoutes.FINISH)
     response.ok({ message: "Berhasil mengambil data", data })
   }
 

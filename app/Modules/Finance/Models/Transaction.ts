@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from 'uuid'
 import Billing from './Billing';
 import Employee from 'App/Models/Employee';
 import TransactionDocument from './TransactionDocument';
+import Revenue from './Revenue';
 
 let newId = ""
 
@@ -70,6 +71,9 @@ export default class Transaction extends BaseModel {
 
   // @hasMany(() => TransactionBilling)
   // public transactionBillings: HasMany<typeof TransactionBilling>
+
+  @belongsTo(() => Revenue)
+  public revenue: BelongsTo<typeof Revenue>
 
   @manyToMany(() => Billing, {
     pivotTable: 'finance.transaction_billings',

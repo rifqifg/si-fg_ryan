@@ -78,9 +78,9 @@ export default class BillingsController {
 
     try {
       const billing = await Billing.findOrFail(id)
-      const relatedTransaction = await billing.related('transactions').query().pivotColumns(['amount'])
+      const relatedTransaction = await billing.related('transactions').query().pivotColumns(['amount']).preload('revenue', q => q.preload('account'))
 
-      response.ok({ message: "Berhasil mengambil data", data: {...billing.$attributes, transactions: relatedTransaction} });
+      response.ok({ message: "Berhasil mengambil data", data: {...billing.$attributes, related_transaction: relatedTransaction} });
     } catch (error) {
       const message = "FBIL-SHO: " + error.message || error;
       console.log(error);

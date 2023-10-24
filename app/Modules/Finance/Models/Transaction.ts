@@ -11,6 +11,12 @@ let newId = ""
 export default class Transaction extends BaseModel {
   public static table = 'finance.transactions';
 
+  public serializeExtras() {
+    return {
+      pivot_amount: this.$extras.pivot_amount,
+    }
+  }
+
   @column({ isPrimary: true })
   public id: string
 

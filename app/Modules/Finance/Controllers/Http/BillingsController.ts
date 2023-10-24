@@ -77,13 +77,10 @@ export default class BillingsController {
     }
 
     try {
-      const data = await Billing.query()
-        .where('id', id)
-        .preload('transactions')
-        .preload('account', qAccount => qAccount.select('account_name', 'number'))
-        .firstOrFail()
+      const billing = await Billing.findOrFail(id)
+      const relatedTransaction = await billing.related('transactions').query().pivotColumns(['amount'])
 
-      response.ok({ message: "Berhasil mengambil data", data });
+      response.ok({ message: "Berhasil mengambil data", data: {...billing.$attributes, transactions: relatedTransaction} });
     } catch (error) {
       const message = "FBIL-SHO: " + error.message || error;
       console.log(error);

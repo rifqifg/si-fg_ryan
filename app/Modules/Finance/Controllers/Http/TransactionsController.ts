@@ -197,7 +197,15 @@ export default class TransactionsController {
 
     try {
       const data = await Transaction.findOrFail(id)
-      await data.delete()
+
+      // TODO: detach related pivot (all)
+      // cek apa detach berhasil
+
+      // TODO: update value berikut:
+      // 1. current_amount revenue
+      // 3. current_amount billings
+
+      // await data.delete()
       response.ok({ message: "Berhasil menghapus data" })
     } catch (error) {
       const message = "FMB-DES: " + error.message || error

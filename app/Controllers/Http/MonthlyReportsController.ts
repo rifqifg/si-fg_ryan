@@ -5,9 +5,12 @@ import CreateMonthlyReportValidator from 'App/Validators/CreateMonthlyReportVali
 import UpdateMonthlyReportValidator from 'App/Validators/UpdateMonthlyReportValidator'
 import { validate as uuidValidation } from "uuid"
 import { destructurMonthlyReport } from './MonthlyReportEmployeesController'
+import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist'
+import { statusRoutes } from 'App/Modules/Log/lib/enum'
 
 export default class MonthlyReportsController {
   public async index({ request, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const { page = 1, limit = 10, keyword = "", fromDate = "", toDate = "" } = request.qs()
 
     try {
@@ -26,9 +29,11 @@ export default class MonthlyReportsController {
           .paginate(page, limit)
       }
 
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.ok({ message: "Data Berhasil Didapatkan", data })
     } catch (error) {
       const message = "HRDMR01: " + error.message || error;
+      CreateRouteHist(request, statusRoutes.ERROR, message)
       console.log(error);
       response.badRequest({
         message: "Gagal mengambil data",
@@ -39,13 +44,16 @@ export default class MonthlyReportsController {
   }
 
   public async store({ request, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const payload = await request.validate(CreateMonthlyReportValidator)
 
     try {
       const data = await MonthlyReport.create(payload);
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.created({ message: "Berhasil menyimpan data", data });
     } catch (error) {
       const message = "HRDMR02: " + error.message || error;
+      CreateRouteHist(request, statusRoutes.ERROR, message)
       console.log(error);
       response.badRequest({
         message: "Gagal menyimpan data",
@@ -56,6 +64,7 @@ export default class MonthlyReportsController {
   }
 
   public async show({ params, response, request }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const { keyword = "", employeeId } = request.qs()
 
     const { id } = params;
@@ -124,6 +133,7 @@ export default class MonthlyReportsController {
           datas.push({ dataEmployee, monthlyReportEmployee, monthlyReportEmployeeDetail })
         }
 
+        CreateRouteHist(request, statusRoutes.FINISH)
         return response.ok({ message: "Berhasil mengambil data", monthlyReport, data: datas });
       } else {
         //buat module profile
@@ -176,10 +186,12 @@ export default class MonthlyReportsController {
         const monthlyReportEmployeeDetail = result.monthlyReportEmployeeDetail
         const monthlyReportEmployee = result.monthlyReportEmployee
 
+        CreateRouteHist(request, statusRoutes.FINISH)
         return response.ok({ message: "Berhasil mengambil data", dataEmployee, monthlyReportEmployee, monthlyReportEmployeeDetail });
       }
     } catch (error) {
       const message = "HRDMR03: " + error.message || error;
+      CreateRouteHist(request, statusRoutes.ERROR, message)
       console.log(error);
       response.badRequest({
         message: "Gagal mengambil data",

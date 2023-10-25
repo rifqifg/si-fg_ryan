@@ -2,12 +2,15 @@ import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Database from '@ioc:Adonis/Lucid/Database';
 import CategoryActivity from 'App/Models/CategoryActivity';
 import MonthlyReportEmployee from 'App/Models/MonthlyReportEmployee';
+import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist';
+import { statusRoutes } from 'App/Modules/Log/lib/enum';
 import DeleteManyMonthlyReportEmployeeValidator from 'App/Validators/DeleteManyMonthlyReportEmployeeValidator';
 import UpdateMonthlyReportEmployeeValidator from 'App/Validators/UpdateMonthlyReportEmployeeValidator';
 import { validate as uuidValidation } from "uuid"
 
 export default class MonthlyReportEmployeesController {
   public async index({ request, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const { page = 1, limit = 10, keyword = "", monthlyReportId } = request.qs()
 
     try {
@@ -17,9 +20,11 @@ export default class MonthlyReportEmployeesController {
         .andWhere('monthly_report_id', monthlyReportId)
         .paginate(page, limit)
 
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.ok({ message: "Data Berhasil Didapatkan", data })
     } catch (error) {
       const message = "HRDMRE01: " + error.message || error;
+      CreateRouteHist(request, statusRoutes.ERROR, message)
       console.log(error);
       response.badRequest({
         message: "Gagal mengambil data",
@@ -29,7 +34,8 @@ export default class MonthlyReportEmployeesController {
     }
   }
 
-  public async show({ params, response }: HttpContextContract) {
+  public async show({ params, response, request }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const { id } = params;
     if (!uuidValidation(id)) {
       return response.badRequest({ message: "MonthlyReportEmployee ID tidak valid" });
@@ -88,10 +94,11 @@ export default class MonthlyReportEmployeesController {
       const monthlyReportEmployeeDetail = result.monthlyReportEmployeeDetail
       const monthlyReportEmployee = result.monthlyReportEmployee
 
-
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.ok({ message: "Berhasil mengambil data", dataEmployee, monthlyReportEmployeeDetail, monthlyReportEmployee });
     } catch (error) {
       const message = "HRDMRE02: " + error.message || error;
+      CreateRouteHist(request, statusRoutes.ERROR, message)
       console.log(error);
       response.badRequest({
         message: "Gagal mengambil data",

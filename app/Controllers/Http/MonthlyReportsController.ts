@@ -83,7 +83,7 @@ export default class MonthlyReportsController {
             .preload('employee', e => e
               .select('name', 'nik', 'status')
               .select(Database.raw(`EXTRACT(YEAR FROM AGE(NOW(), "date_in")) || ' tahun ' || EXTRACT(MONTH FROM AGE(NOW(), "date_in")) || ' bulan' AS period_of_work`))
-              .preload('divisi', d => d.select('name')))
+              .preload('divisions', ds => ds.select("title", "divisionId").preload('division', d => d.select('name'))))
             .preload('monthlyReportEmployeesFixedTime', mreft => mreft
               .select('*')
               .select(Database.raw(`(case
@@ -145,7 +145,7 @@ export default class MonthlyReportsController {
             .preload('employee', e => e
               .select('name', 'nik', 'status')
               .select(Database.raw(`EXTRACT(YEAR FROM AGE(NOW(), "date_in")) || ' tahun ' || EXTRACT(MONTH FROM AGE(NOW(), "date_in")) || ' bulan' AS period_of_work`))
-              .preload('divisi', d => d.select('name')))
+              .preload('divisions', ds => ds.select("title", "divisionId").preload('division', d => d.select('name'))))
             .preload('monthlyReportEmployeesFixedTime', mreft => mreft
               .select('*')
               .select(Database.raw(`(case

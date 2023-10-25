@@ -54,7 +54,7 @@ export default class MonthlyReportEmployeesController {
         .preload('employee', e => e
           .select('name', 'nik', 'status')
           .select(Database.raw(`EXTRACT(YEAR FROM AGE(NOW(), "date_in")) || ' tahun ' || EXTRACT(MONTH FROM AGE(NOW(), "date_in")) || ' bulan' AS period_of_work`))
-          .preload('divisi', d => d.select('name')))
+          .preload('divisions', ds => ds.select("title", "divisionId").preload('division', d => d.select('name'))))
         .preload('monthlyReportEmployeesFixedTime', mreft => mreft
           .select('*')
           .select(Database.raw(`(case
@@ -162,7 +162,7 @@ export const destructurMonthlyReport = async (dataObject) => {
     "name": dataObject.employee.name,
     "nik": dataObject.employee.nik,
     "status": dataObject.employee.status,
-    "divisi": dataObject.employee.divisi,
+    "divisi": dataObject.employee.divisions,
     "period_of_work": dataObject.employee.period_of_work,
     "period_of_assesment": dataObject.monthlyReport.name,
   }

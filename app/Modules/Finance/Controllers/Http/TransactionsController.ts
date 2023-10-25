@@ -3,28 +3,37 @@ import Transaction from '../../Models/Transaction';
 import CreateTransactionValidator from '../../Validators/CreateTransactionValidator';
 import { validate as uuidValidation } from "uuid";
 import UpdateTransactionValidator from '../../Validators/UpdateTransactionValidator';
-import Billing from '../../Models/Billing';
-import { BillingStatus } from '../../lib/enums';
-import Revenue from '../../Models/Revenue';
 
 export default class TransactionsController {
   public async index({ request, response }: HttpContextContract) {
     const { page = 1, limit = 10, mode = "page" } = request.qs();
 
     try {
-      let data = {}
+      let data: Transaction[]
       if (mode === 'page') {
         data = await Transaction.query()
           .preload('billings', qBilling => {
-            qBilling.select('name', 'amount', 'remaining_amount', 'account_id').preload('account', qAccount => qAccount.select('account_name'))
+            qBilling
+              .select('name', 'amount', 'account_id')
+              .pivotColumns(['amount'])
+              .preload('account', qAccount => qAccount.select('account_name'))
           })
           .paginate(page, limit);
       } else {
         data = await Transaction.query()
           .preload('billings', qBilling => {
-            qBilling.select('name', 'amount', 'remaining_amount', 'account_id').preload('account', qAccount => qAccount.select('account_name'))
+            qBilling
+              .select('name', 'amount', 'account_id')
+              .pivotColumns(['amount'])
+              .preload('account', qAccount => qAccount.select('account_name'))
           })
       }
+
+      // TODO: refactor, gabungin query related billings ke query atas
+      await Promise.all(data.map(async transaction => {
+        const relatedBillings = await transaction.related('billings').query().pivotColumns(['amount'])
+        transaction.$extras.amount = relatedBillings.reduce((sum, current) => sum + current.$extras.pivot_amount, 0)
+      }))
 
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
@@ -43,50 +52,15 @@ export default class TransactionsController {
 
     const { items: paidItems, ...transactionPayload } = payload
 
-    const totalAmount = paidItems.reduce((sum, current) => sum + current.amount, 0)
-
     try {
-      const transactionData: Transaction = await Transaction.create({ ...transactionPayload, amount: totalAmount })
+      const transactionData: Transaction = await Transaction.create(transactionPayload)
 
       const attachBill = paidItems.reduce((result, item) => {
         result[item.billing_id] = { amount: item.amount }
         return result
       }, {})
 
-      // insert ke tabel pivot
       await transactionData.related('billings').attach(attachBill)
-      const relatedBilling = await transactionData.related('billings').query()
-
-      //////
-      // kurangi sisa pembayaran di billing sesuai jumlah yg sudah dibayarkan
-      // kenapa dibikin object Map disini, utk relasi paidItems.billingId dengan relatedBilling.id
-      const paidItemsMap = new Map(paidItems.map(item => [item.billing_id, item.amount]))
-
-      const updateBillingPayload = relatedBilling.map(item => {
-        const amountPaid = paidItemsMap.get(item.id) || 0
-        const remainingAmount = item.remainingAmount - amountPaid
-        let newStatus = item.status
-
-        if (remainingAmount !== item.remainingAmount) {
-          if (remainingAmount > 0) newStatus = BillingStatus.PAID_PARTIAL
-          if (remainingAmount <= 0) newStatus = BillingStatus.PAID_FULL
-        }
-
-        return {
-          id: item.id,
-          remaining_amount: remainingAmount,
-          status: newStatus
-        }
-      })
-
-      await Billing.updateOrCreateMany("id", updateBillingPayload)
-      //////
-
-      if (payload.revenue_id) {
-        const currentRevenue = await Revenue.findOrFail(payload.revenue_id)
-        const newRevenueAmount = currentRevenue.currentBalance - totalAmount
-        currentRevenue.merge({ currentBalance: newRevenueAmount }).save()
-      }
 
       const data = await Transaction.query()
         .where('id', transactionData.id)
@@ -113,6 +87,7 @@ export default class TransactionsController {
         .where('id', id)
         .preload('billings', qBilling => {
           qBilling
+            .pivotColumns(['amount'])
             .select('name', 'amount', 'remaining_amount', 'account_id')
             .preload('account', qAccount => {
               qAccount.select('account_name', 'number')
@@ -120,6 +95,10 @@ export default class TransactionsController {
         })
         .preload('teller', qEmployee => qEmployee.select('name'))
         .firstOrFail()
+
+      const relatedBillings = await data.related('billings').query().pivotColumns(['amount'])
+      data.$extras.amount = relatedBillings.reduce((sum, current) => sum + current.$extras.pivot_amount, 0)
+
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
       const message = "FTR-SHO: " + error.message || error;
@@ -139,43 +118,9 @@ export default class TransactionsController {
       return response.badRequest({ message: "Data tidak boleh kosong" });
     }
 
-    const { items, ...transactionPayload } = payload
-
     try {
       const transaction = await Transaction.findOrFail(id);
-
-      if (items) {
-        const syncBill = items.reduce((result, item) => {
-          result[item.billing_id] = { amount: item.amount }
-          return result
-        }, {})
-
-        await transaction.related('billings').sync(syncBill, false)
-
-        const relatedBillings = await transaction.related('billings').query().pivotColumns(['amount'])
-        const transactionTotalAmount = relatedBillings.reduce((sum, current) => sum + current.$extras.pivot_amount, 0)
-
-        // update total amount di transactions
-        transactionPayload.amount = transactionTotalAmount
-
-        // update remaining_amount di billing
-        relatedBillings.forEach(async billing => {
-          const relatedTransaction = await billing.related('transactions').query().pivotColumns(['amount'])
-          const totalAmountPivot = relatedTransaction.reduce((sum, current) => sum + current.$extras.pivot_amount, 0)
-          const remainingAmount = billing.amount - totalAmountPivot
-
-          await billing.merge({remainingAmount}).save()
-        })
-
-        // update remaining_amount di revenues
-        if (payload.revenue_id) {
-          const currentRevenue = await Revenue.findOrFail(payload.revenue_id)
-          const newRevenueAmount = currentRevenue.currentBalance - transactionTotalAmount
-          currentRevenue.merge({ currentBalance: newRevenueAmount }).save()
-        }
-      }
-
-      const data = await transaction.merge(transactionPayload).save();
+      const data = await transaction.merge(payload).save();
 
       response.ok({ message: "Berhasil mengubah data", data });
     } catch (error) {
@@ -198,14 +143,11 @@ export default class TransactionsController {
     try {
       const data = await Transaction.findOrFail(id)
 
-      // TODO: detach related pivot (all)
-      // cek apa detach berhasil
+      // hapus dulu semua data di tabel pivot
+      await data.related('billings').detach()
+      
+      await data.delete()
 
-      // TODO: update value berikut:
-      // 1. current_amount revenue
-      // 3. current_amount billings
-
-      // await data.delete()
       response.ok({ message: "Berhasil menghapus data" })
     } catch (error) {
       const message = "FMB-DES: " + error.message || error

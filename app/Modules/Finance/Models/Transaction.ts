@@ -14,7 +14,9 @@ export default class Transaction extends BaseModel {
 
   public serializeExtras() {
     return {
+      remaining_amount: this.$extras.remaining_amount,
       pivot_amount: this.$extras.pivot_amount,
+      amount: this.$extras.amount,
     }
   }
 
@@ -39,8 +41,8 @@ export default class Transaction extends BaseModel {
   @column()
   public tellerId: string | null
 
-  @column()
-  public amount: number
+  // @column()
+  // public amount: number
 
   @column()
   public method: TransactionMethods | null

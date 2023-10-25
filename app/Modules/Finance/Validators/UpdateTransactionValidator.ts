@@ -26,14 +26,14 @@ export default class UpdateTransactionValidator {
     type: schema.enum.optional(Object.values(TransactionTypes)),
     description: schema.string.optional(),
     status: schema.enum.optional(Object.values(TransactionStatus)),
-    items: schema.array.optional().members(
-      schema.object().members({
-        billing_id: schema.string([
-          rules.exists({table: 'finance.billings', column: 'id'})
-        ]),
-        amount: schema.number()
-      })
-    )
+    // items: schema.array.optional().members(
+    //   schema.object().members({
+    //     billing_id: schema.string([
+    //       rules.exists({table: 'finance.billings', column: 'id'})
+    //     ]),
+    //     amount: schema.number()
+    //   })
+    // )
   })
 
   public messages: CustomMessages = {}

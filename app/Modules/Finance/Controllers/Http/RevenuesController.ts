@@ -24,8 +24,7 @@ export default class RevenuesController {
               qStudent.select('name')
             })
           })
-          // .whereILike("account_name", `%${keyword}%`)
-          // .if(account_no, (q) => q.where('number', account_no))
+          .preload('transactions', qTransaction => qTransaction.preload('billings', qBilling => qBilling.pivotColumns(['amount'])))
           .paginate(page, limit);
       } else {
         data = await Revenue.query().whereILike('account_name', `%${keyword}%`)
@@ -39,6 +38,18 @@ export default class RevenuesController {
 
         return revenue
       })
+
+      data.map(revenue => {
+        let totalRevenueUsed = 0
+
+        revenue.transactions.forEach(transaction => {
+          const subTotalRevenueUsed = transaction.billings.reduce((sum, current) => sum + current.$extras.pivot_amount, 0)
+          totalRevenueUsed += subTotalRevenueUsed
+        })
+
+        revenue.$extras.current_balance = revenue.amount - totalRevenueUsed
+      })
+
 
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
@@ -67,12 +78,20 @@ export default class RevenuesController {
             qStudent.select('name')
           })
         })
+        .preload('transactions', qTransaction => qTransaction.preload('billings', qBilling => qBilling.pivotColumns(['amount'])))
         .firstOrFail()
 
       if (data.account) {
         if (data.account.student) { data.account.owner = data.account.student.name }
         if (data.account.employee) { data.account.owner = data.account.employee.name }
       }
+
+      let totalRevenueUsed = 0
+      data.transactions.forEach(transaction => {
+        const subTotalRevenueUsed = transaction.billings.reduce((sum, current) => sum + current.$extras.pivot_amount, 0)
+        totalRevenueUsed += subTotalRevenueUsed
+      })
+      data.$extras.current_balance = data.amount - totalRevenueUsed
 
       response.ok({ message: "Data Berhasil Didapatkan", data })
     } catch (error) {
@@ -114,8 +133,6 @@ export default class RevenuesController {
 
     const manyRevenueValidator = new CreateManyRevenueValidator(HttpContext.get()!, wrappedJson)
     const payloadRevenue = await validator.validate(manyRevenueValidator)
-
-    // return payloadRevenue
 
     try {
       const data = await Revenue.createMany(payloadRevenue.revenues)
@@ -160,11 +177,9 @@ export default class RevenuesController {
       const accountId = account ? account.id : "-1" // there is no account id with negative value, right.. right?
 
       return {
-        // account_no: noPembayaran,
         from_account: accountId,
         time_received: jsDate,
         amount: fixedNominal,
-        current_balance: fixedNominal,
         status: RevenueStatus.NEW,
         ref_no: data["Ref"]
       }

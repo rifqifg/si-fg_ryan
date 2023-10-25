@@ -77,13 +77,19 @@ export default class MonthlyReportsController {
               .preload('divisi', d => d.select('name')))
             .preload('monthlyReportEmployeesFixedTime', mreft => mreft
               .select('*')
-              .select(Database.raw(`skor * 100 / (select default_presence from public.employees where id= (select employee_id from monthly_report_employees where id = monthly_report_employee_id)) as percentage`))
+              .select(Database.raw(`(case
+                when skor * 100 / (select default_presence from public.employees where id= (select employee_id from monthly_report_employees where id = monthly_report_employee_id)) > 100 then 100
+                else skor * 100 / (select default_presence from public.employees where id= (select employee_id from monthly_report_employees where id = monthly_report_employee_id))
+                end) as percentage`))
               .whereHas('activity', ac => ac.where('activity_type', 'fixed_time').andWhere('assessment', true))
               .preload('activity', a => a.select('id', 'name', 'category_activity_id')
                 .preload('categoryActivity', ca => ca.select('name'))))
             .preload('monthlyReportEmployeesNotFixedTime', mrenft => mrenft
               .select('*')
-              .select(Database.raw(`skor * 100 / (select "default" from public.activities where id=activity_id) as percentage`))
+              .select(Database.raw(`(case
+                when skor * 100 / (select "default" from public.activities where id=activity_id) > 100 then 100
+                else skor * 100 / (select "default" from public.activities where id=activity_id)
+                end) as percentage`))
               .whereHas('activity', ac => ac.where('activity_type', 'not_fixed_time').andWhere('assessment', true))
               .preload('activity', a => a.select('id', 'name', 'category_activity_id')
                 .preload('categoryActivity', ca => ca.select('name'))))
@@ -95,7 +101,10 @@ export default class MonthlyReportsController {
               .where('is_leave_session', true))
             .preload('monthlyReportEmployeesTeaching', mret => mret
               .select('*')
-              .select(Database.raw(`skor * 100 / (select total_mengajar from academic.teachers where employee_id =(select employee_id from monthly_report_employees where id = monthly_report_employee_id)) as percentage`))
+              .select(Database.raw(`(case
+                when skor * 100 / (select total_mengajar from academic.teachers where employee_id =(select employee_id from monthly_report_employees where id = monthly_report_employee_id)) > 100 then 100
+                else skor * 100 / (select total_mengajar from academic.teachers where employee_id =(select employee_id from monthly_report_employees where id = monthly_report_employee_id))
+                end) as percentage`))
               .where('is_teaching', true)))
           .firstOrFail();
 
@@ -129,13 +138,19 @@ export default class MonthlyReportsController {
               .preload('divisi', d => d.select('name')))
             .preload('monthlyReportEmployeesFixedTime', mreft => mreft
               .select('*')
-              .select(Database.raw(`skor * 100 / (select default_presence from public.employees where id='${employeeId}') as percentage`))
+              .select(Database.raw(`(case
+                when skor * 100 / (select default_presence from public.employees where id='${employeeId}') > 100 then 100
+                else skor * 100 / (select default_presence from public.employees where id='${employeeId}')
+                end) as percentage`))
               .whereHas('activity', ac => ac.where('activity_type', 'fixed_time').andWhere('assessment', true))
               .preload('activity', a => a.select('id', 'name', 'category_activity_id')
                 .preload('categoryActivity', ca => ca.select('name'))))
             .preload('monthlyReportEmployeesNotFixedTime', mrenft => mrenft
               .select('*')
-              .select(Database.raw(`skor * 100 / (select "default" from public.activities where id=activity_id) as percentage`))
+              .select(Database.raw(`(case
+                when skor * 100 / (select "default" from public.activities where id=activity_id) > 100 then 100
+                else skor * 100 / (select "default" from public.activities where id=activity_id)
+                end) as percentage`))
               .whereHas('activity', ac => ac.where('activity_type', 'not_fixed_time').andWhere('assessment', true))
               .preload('activity', a => a.select('id', 'name', 'category_activity_id')
                 .preload('categoryActivity', ca => ca.select('name'))))
@@ -147,7 +162,10 @@ export default class MonthlyReportsController {
               .where('is_leave_session', true))
             .preload('monthlyReportEmployeesTeaching', mret => mret
               .select('*')
-              .select(Database.raw(`skor * 100 / (select total_mengajar from academic.teachers where employee_id ='${employeeId}') as percentage`))
+              .select(Database.raw(`(case
+                when skor * 100 / (select total_mengajar from academic.teachers where employee_id ='${employeeId}') > 100 then 100
+                else skor * 100 / (select total_mengajar from academic.teachers where employee_id ='${employeeId}')
+                end) as percentage`))
               .where('is_teaching', true)))
           .firstOrFail();
 

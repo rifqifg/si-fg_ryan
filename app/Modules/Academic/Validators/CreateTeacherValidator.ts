@@ -1,5 +1,5 @@
-import { schema, CustomMessages, rules } from '@ioc:Adonis/Core/Validator'
-import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import { schema, CustomMessages, rules } from "@ioc:Adonis/Core/Validator";
+import type { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 
 export default class CreateTeacherValidator {
   constructor(protected ctx: HttpContextContract) {}
@@ -25,10 +25,11 @@ export default class CreateTeacherValidator {
    */
   public schema = schema.create({
     employeeId: schema.string({}, [
-      rules.exists({ table: 'public.employees', column: 'id' }),
-      rules.unique({table: 'academic.teachers', column: 'employee_id'})
-    ])
-  })
+      rules.exists({ table: "public.employees", column: "id" }),
+      rules.unique({ table: "academic.teachers", column: "employee_id" }),
+    ]),
+    totalMengajar: schema.number(),
+  });
 
   /**
    * Custom messages for validation failures. You can make use of dot notation `(.)`
@@ -41,5 +42,5 @@ export default class CreateTeacherValidator {
    * }
    *
    */
-  public messages: CustomMessages = {}
+  public messages: CustomMessages = {};
 }

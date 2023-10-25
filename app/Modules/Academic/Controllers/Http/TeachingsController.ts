@@ -33,7 +33,7 @@ export default class TeachingsController {
             q.whereNot("class_id", classId);
           })
         )
-        .if(classId, q => q.whereNot('class_id', classId))
+        .if(classId, (q) => q.whereNot("class_id", classId))
         .andWhere((q) => {
           q.andWhereHas("class", (c) => c.where("is_graduated", false));
           q.orWhereHas("subject", (s) => s.where("is_extracurricular", true));

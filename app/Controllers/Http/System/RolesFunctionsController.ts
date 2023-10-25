@@ -1,10 +1,13 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import { schema, rules } from '@ioc:Adonis/Core/Validator'
 import Role from 'App/Models/Role'
+import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist'
+import { statusRoutes } from 'App/Modules/Log/lib/enum'
 
 
 export default class RolesFunctionsController {
   public async store({ params, request, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const { role_id } = params
     const { idModule, idMenu } = request.body()
 
@@ -41,8 +44,10 @@ export default class RolesFunctionsController {
 
     try {
       await roles.merge({ permissions: permissions }).save()
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.ok({ message: 'Permissions updated successfully', roles })
     } catch (error) {
+      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
       console.log("roles_functions.store ", error);
       response.badRequest(error)
     }

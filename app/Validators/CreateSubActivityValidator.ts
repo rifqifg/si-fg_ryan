@@ -31,11 +31,8 @@ export default class CreateSubActivityValidator {
       size: '2mb',
       extnames: ['png', 'jpg', 'jpeg']
     })),
-    date: schema.date({ format: 'yyyy-MM-dd' }),
-    time: schema.string(),
-    note: schema.string.nullableAndOptional([
-      rules.minLength(3)
-    ]),
+    date: schema.date({ format: 'yyyy-MM-dd HH:mm:ss' }),
+    note: schema.object.nullableAndOptional().anyMembers(),
     activityId: schema.string({}, [
       rules.exists({ table: 'activities', column: 'id' })
     ])

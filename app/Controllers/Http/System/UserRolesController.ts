@@ -1,9 +1,12 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import UserRole from 'App/Models/UserRole';
+import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist';
+import { statusRoutes } from 'App/Modules/Log/lib/enum';
 import CreateUserRoleValidator from 'App/Validators/CreateUserRoleValidator'
 
 export default class UserRolesController {
   public async store({ request, response, params }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const { userId } = params
 
     const payload = await request.validate(CreateUserRoleValidator)
@@ -18,10 +21,11 @@ export default class UserRolesController {
 
     try {
       const data = await UserRole.createMany(datas)
-
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.ok({ message: "Role created successfully", data })
     } catch (error) {
       const message = "SYSUR01: " + error.message || error;
+      CreateRouteHist(request, statusRoutes.ERROR, message)
       console.log(error);
       response.badRequest({
         message: "Gagal Menambah Data",

@@ -7,3 +7,19 @@ export enum RoleActivityMember {
   MANAGER = 'manager',
   MEMBER = 'member'
 }
+
+export enum TypeLeaves {
+  PAID = 'paid',
+  UNPAID = 'unpaid'
+}
+
+export enum StatusLeaves {
+  APROVE = 'aprove',
+  REJECTED = 'rejected',
+  WAITING = 'waiting'
+}
+
+export enum StatusEmployees {
+  FULL_TIME = 'FULL_TIME',
+  PART_TIME = 'PART_TIME',
+}

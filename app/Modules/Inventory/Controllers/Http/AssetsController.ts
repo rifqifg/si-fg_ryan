@@ -6,6 +6,8 @@ import { validate as uuidValidation } from "uuid";
 import Application from '@ioc:Adonis/Core/Application'
 import { DateTime } from 'luxon'
 import UpdateAssetValidator from 'Inventory/Validators/UpdateAssetValidator';
+import { statusRoutes } from 'App/Modules/Log/lib/enum';
+import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist';
 
 const getSignedUrl = async (filename: string) => {
   const inventoryDrive = Drive.use('inventory')
@@ -15,6 +17,7 @@ const getSignedUrl = async (filename: string) => {
 
 export default class AssetsController {
   public async index({ response, request }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const { page = 1, limit = 10, keyword = "", mode = "page", status = "" } = request.qs()
 
     try {
@@ -50,13 +53,16 @@ export default class AssetsController {
         return response.badRequest({ message: "Mode tidak dikenali, (pilih: page / list)" })
       }
 
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.ok({ message: "Berhasil mengambil data", data })
     } catch (error) {
+      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
       response.badRequest({ message: "Gagal mengambil data", error: error.message })
     }
   }
 
   public async store({ request, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const payload = await request.validate(CreateAssetValidator)
     const parsedPayload = { ...payload }
     let newData: any
@@ -73,15 +79,18 @@ export default class AssetsController {
     try {
       const data = await Asset.create(newData)
       data.image = await getSignedUrl(data.image)
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.created({ message: "Berhasil menyimpan data", data })
 
     } catch (error) {
+      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
       console.log(error);
       response.badRequest({ message: "Gagal menyimpan data", error: error.message })
     }
   }
 
-  public async show({ params, response }: HttpContextContract) {
+  public async show({ params, response, request }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const { id } = params
     if (!uuidValidation(id)) { return response.badRequest({ message: "Asset ID tidak valid" }) }
 
@@ -89,8 +98,10 @@ export default class AssetsController {
       const data = await Asset.query().where('id', id).firstOrFail()
       data.image = data.image && await getSignedUrl(data.image)
 
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.ok({ message: "Berhasil mengambil data", data })
     } catch (error) {
+      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
       console.log(error);
       response.badRequest({ message: "Gagal mengambil data", error: error.message })
     }

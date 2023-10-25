@@ -19,7 +19,6 @@ export default class UpdateBillingValidator {
         ]),
         name: schema.string.optional(),
         amount: schema.number.optional(),
-        remaining_amount: schema.number.optional(),
         description: schema.string.optional(),
         type: schema.enum.optional(Object.values(BillingType))
       })

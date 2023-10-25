@@ -11,6 +11,13 @@ let newId = ""
 export default class Billing extends BaseModel {
   public static table = 'finance.billings';
 
+  public serializeExtras() {
+    return {
+      pivot_amount: this.$extras.pivot_amount,
+      remaining_amount: this.$extras.remaining_amount,
+    }
+  }
+
   @column({ isPrimary: true })
   public id: string
 
@@ -35,8 +42,8 @@ export default class Billing extends BaseModel {
   @column()
   public type: BillingType | null
 
-  @column()
-  public remainingAmount: number
+  // @column()
+  // public remainingAmount: number
 
   @belongsTo(() => Account)
   public account: BelongsTo<typeof Account>

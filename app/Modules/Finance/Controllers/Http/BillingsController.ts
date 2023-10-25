@@ -15,7 +15,7 @@ export default class BillingsController {
     const { page = 1, limit = 10, keyword = "", status, mode = "page", student_id } = request.qs();
 
     try {
-      let data = {}
+      let data: Billing[]
       if (mode === 'page') {
         data = await Billing.query()
           .if(student_id, q => q.whereHas('account', qAccount => qAccount.where('student_id', student_id)))
@@ -29,6 +29,14 @@ export default class BillingsController {
       } else {
         data = await Billing.query().whereILike('name', `%${keyword}%`)
       }
+
+      // TODO: refactor, gabungin query related transactions ke query atas
+      await Promise.all(data.map(async billing => {
+        const relatedTransaction = await billing.related('transactions').query().pivotColumns(['amount'])
+        const totalPaid = relatedTransaction.reduce((sum, current) => sum + current.$extras.pivot_amount, 0)
+
+        billing.$extras.remaining_amount = billing.amount - totalPaid
+      }))
 
       response.ok({ message: "Berhasil mengambil data", data })
     } catch (error) {
@@ -47,15 +55,6 @@ export default class BillingsController {
     const payload = await request.validate(billingValidator)
 
     try {
-      // set remaining_amount
-      payload.billings.map(billing => {
-        if (!billing.remaining_amount && billing.remaining_amount !== 0) {
-          billing.remaining_amount = billing.amount
-        }
-
-        return billing
-      })
-
       const data = await Billing.createMany(payload.billings)
       response.created({ message: "Berhasil menyimpan data", data })
     } catch (error) {
@@ -79,8 +78,10 @@ export default class BillingsController {
     try {
       const billing = await Billing.findOrFail(id)
       const relatedTransaction = await billing.related('transactions').query().pivotColumns(['amount']).preload('revenue', q => q.preload('account'))
+      const totalPaid = relatedTransaction.reduce((sum, current) => sum + current.$extras.pivot_amount, 0)
+      billing.$extras.remaining_amount = billing.amount - totalPaid
 
-      response.ok({ message: "Berhasil mengambil data", data: {...billing.$attributes, related_transaction: relatedTransaction} });
+      response.ok({ message: "Berhasil mengambil data", data: {...billing.$attributes, ...billing.$extras, related_transaction: relatedTransaction} });
     } catch (error) {
       const message = "FBIL-SHO: " + error.message || error;
       console.log(error);
@@ -163,17 +164,18 @@ export default class BillingsController {
     const firstSheet = workbook.Sheets[sheetNames[0]]
     const jsonData: Array<object> = XLSX.utils.sheet_to_json(firstSheet)
 
-    if (jsonData.length <= 1) return 0
+    if (jsonData.length < 1) return 0
 
     const formattedJson = await Promise.all(jsonData.map(async data => {
       const accountNo = data['Nomor Akun Tertagih'].toString()
       const amount = data['Jumlah'].toString()
       const type = data['Tipe'].toString().toLowerCase()
 
-      const account = await Account.findByOrFail('number', accountNo)
+      const account = await Account.findBy('number', accountNo)
+      const accountNumber = account ? account.id : "-1"
 
       return {
-        account_id: account.id,
+        account_id: accountNumber,
         name: data['Nama Billing'],
         amount: amount,
         description: data['Deskripsi'],

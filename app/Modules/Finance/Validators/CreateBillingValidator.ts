@@ -21,7 +21,6 @@ export default class CreateBillingValidator {
         // ]),
         description: schema.string.optional(),
         type: schema.enum.optional(Object.values(BillingType)),
-        remaining_amount: schema.number.optional()
       })
     )
   })
@@ -38,7 +37,7 @@ export default class CreateBillingValidator {
       let cekColumn;
       switch (column[2]) {
         case 'account_id':
-          cekColumn = 'ID Akun'
+          cekColumn = 'Nomor Rekening'
           break
         case 'master_billing_id':
           cekColumn = 'ID Master Billing'

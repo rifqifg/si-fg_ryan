@@ -22,5 +22,7 @@ Route.group(() => {
     Route.resource('revenues', 'RevenuesController').apiOnly().except(['update']).middleware({ '*': ['auth'] })
     Route.put('revenues', 'RevenuesController.update').middleware(['auth'])
     Route.post('revenues/import', 'RevenuesController.import').middleware(['auth:api'])
+    Route.put('transaction-billings', 'TransactionBillingsController.update').middleware(['auth'])
+    Route.delete('transaction-billings', 'TransactionBillingsController.destroy').middleware(['auth'])
 
 }).prefix('finance').namespace('FinanceControllers')

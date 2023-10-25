@@ -9,6 +9,7 @@ import fs from "fs";
 import Account from '../../Models/Account';
 import { validator } from '@ioc:Adonis/Core/Validator'
 import { HttpContext } from '@adonisjs/core/build/standalone';
+import { BillingStatus } from '../../lib/enums';
 
 export default class BillingsController {
   public async index({ request, response }: HttpContextContract) {
@@ -36,6 +37,10 @@ export default class BillingsController {
         const totalPaid = relatedTransaction.reduce((sum, current) => sum + current.$extras.pivot_amount, 0)
 
         billing.$extras.remaining_amount = billing.amount - totalPaid
+
+        if (billing.$extras.remaining_amount > 0) billing.$extras.status = BillingStatus.PAID_PARTIAL
+        if (billing.$extras.remaining_amount === billing.amount) billing.$extras.status = BillingStatus.UNPAID
+        if (billing.$extras.remaining_amount <= 0) billing.$extras.status = BillingStatus.PAID_FULL
       }))
 
       response.ok({ message: "Berhasil mengambil data", data })
@@ -80,8 +85,12 @@ export default class BillingsController {
       const relatedTransaction = await billing.related('transactions').query().pivotColumns(['amount']).preload('revenue', q => q.preload('account'))
       const totalPaid = relatedTransaction.reduce((sum, current) => sum + current.$extras.pivot_amount, 0)
       billing.$extras.remaining_amount = billing.amount - totalPaid
+      
+      if (billing.$extras.remaining_amount > 0) billing.$extras.status = BillingStatus.PAID_PARTIAL
+      if (billing.$extras.remaining_amount === billing.amount) billing.$extras.status = BillingStatus.UNPAID
+      if (billing.$extras.remaining_amount <= 0) billing.$extras.status = BillingStatus.PAID_FULL
 
-      response.ok({ message: "Berhasil mengambil data", data: {...billing.$attributes, ...billing.$extras, related_transaction: relatedTransaction} });
+      response.ok({ message: "Berhasil mengambil data", data: { ...billing.$attributes, ...billing.$extras, related_transaction: relatedTransaction } });
     } catch (error) {
       const message = "FBIL-SHO: " + error.message || error;
       console.log(error);

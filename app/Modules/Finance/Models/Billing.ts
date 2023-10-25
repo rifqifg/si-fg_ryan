@@ -15,6 +15,7 @@ export default class Billing extends BaseModel {
     return {
       pivot_amount: this.$extras.pivot_amount,
       remaining_amount: this.$extras.remaining_amount,
+      status: this.$extras.status
     }
   }
 
@@ -41,6 +42,9 @@ export default class Billing extends BaseModel {
 
   @column()
   public type: BillingType | null
+
+  @column()
+  public approved: boolean
 
   // @column()
   // public remainingAmount: number

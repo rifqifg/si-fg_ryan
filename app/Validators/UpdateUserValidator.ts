@@ -38,9 +38,6 @@ export default class UpdateUserValidator {
     division_id: schema.string.optional({}, [
       rules.exists({ table: 'divisions', column: 'id' })
     ]),
-    role: schema.string.nullableAndOptional({}, [
-      rules.exists({ table: 'roles', column: 'name' })
-    ]),
     password: schema.string.optional({}, [
       rules.minLength(6),
       rules.confirmed()

@@ -19,24 +19,12 @@
 */
 
 import Route from '@ioc:Adonis/Core/Route'
-import User from 'App/Models/User'
 import 'Inventory/Routes/inventory'
 import 'Academic/Routes/academic'
 import 'PPDB/Routes/ppdb'
-import UserStudentCandidate from 'App/Modules/PPDB/Models/UserStudentCandidate'
+import 'Finance/Routes/finance'
 
-Route.get('/', async ({ auth, response }) => {
-  if (auth.use('api').isLoggedIn) {
-    const data = await User.query().preload('roles').where('id', auth.user!.id)
-    response.ok({ message: 'you are logged in', data })
-  } else if (auth.use('ppdb_api').isLoggedIn) {
-    const data = await UserStudentCandidate.query()
-      .preload('roles')
-      .preload('studentCandidate')
-      .where('id', auth.user!.id)
-    response.ok({ message: 'you are logged in as student candidate', data })
-  }
-}).middleware("auth:api,ppdb_api")
+Route.get('/', 'DashboardController.index').middleware("auth:api,ppdb_api,parent_api")
 
 Route.group(() => {
   Route.get('pendaftar-baru', 'PPDBChartsController.pendaftarBaru')
@@ -52,8 +40,10 @@ Route.get('/wilayah-all/:keyword', 'System/WilayahsController.getAllByKel')
 
 Route.post('/password-encrypt', 'System/UsersController.password_encrypt').as('passwordEncrypt')
 Route.post('/auth/login', 'System/UsersController.login').as('auth.login')
+Route.post('/auth/login-parent', 'System/UsersController.loginParent').as('auth.loginParent')
 Route.post('/auth/google', 'System/UsersController.googleCallback').as('auth.googleSignIn')
 Route.post('/auth/logout', 'System/UsersController.logout').as('auth.logout').middleware('auth')
+Route.post('/auth/logout-parent', 'System/UsersController.logoutParent').as('auth.logoutParent').middleware('auth:parent_api')
 Route.post('/auth/register', 'System/UsersController.register').as('auth.register')
 Route.get('/auth/verify-email', 'System/UsersController.verify').as('auth.verify')
 Route.post('/auth/reset-password', 'System/UsersController.resetUserPassword').as('auth.resetUserPassword').middleware(['auth'])
@@ -80,6 +70,22 @@ Route.group(() => {
   Route.resource('roles.modules', 'System/RolesModulesController').only(['store', 'destroy', 'update']).middleware({ '*': ['auth', 'checkRole:admin'] }).as('roles.modules')
   Route.resource('roles.menus', 'System/RolesMenusController').only(['store', 'destroy', 'update']).middleware({ '*': ['auth', 'checkRole:admin'] }).as('roles.menus')
   Route.resource('roles.functions', 'System/RolesFunctionsController').only(['store', 'destroy', 'update']).middleware({ '*': ['auth', 'checkRole:admin'] }).as('roles.functions')
+  Route.post('user-roles/:userId', 'System/UserRolesController.store').middleware(['auth', 'checkRole:admin'])
+  Route.delete('user-roles/:userId/:roleName', 'System/UserRolesController.destroy').middleware(['auth', 'checkRole:admin'])
 }).prefix('/system')
 
-Route.shallowResource('template-excels', 'TemplateExcelsController').apiOnly().only(['index'])
+Route.shallowResource('template-excels', 'TemplateExcelsController').apiOnly().only(['index']).middleware({ '*': ['auth', 'checkRole:admin'] })
+Route.shallowResource('category-activities', 'CategoryActivitiesController').apiOnly().only(['index']).middleware({ '*': ['auth', 'checkRole:admin'] })
+Route.shallowResource('activity-members', 'ActivityMembersController').apiOnly().middleware({ '*': ['auth', 'checkRole:admin'] })
+Route.get('/get-employees/:activityId', 'ActivityMembersController.getEmployee').middleware(['auth', 'checkRole:admin'])
+Route.get('/get-member-and-employees', 'ActivityMembersController.getActivityMemberAndEmployee').middleware(['auth', 'checkRole:admin'])
+Route.shallowResource('sub-activities', 'SubActivitiesController').apiOnly().middleware({ '*': ['auth', 'checkRole:admin'] })
+Route.get('presences', 'SubActivitiesController.getPresenceSubActivity').middleware(['auth', 'checkRole:admin'])
+Route.post('presences/:activityId/:subActivityId', 'SubActivitiesController.presence').middleware(['auth', 'checkRole:admin'])
+Route.delete('multi-delete-presences', 'SubActivitiesController.destroyPresences').middleware(['auth', 'checkRole:admin'])
+Route.shallowResource('leaves', 'LeavesController').apiOnly().middleware({ '*': ['auth', 'checkRole:admin'] })
+Route.get('recap-sub-activities/:activityId', 'SubActivitiesController.recap').middleware(['auth', 'checkRole:admin'])
+
+Route.group(() => {
+  Route.get('activities', 'UserBehaviorHrdsController.activity').middleware(['auth'])
+}).prefix('/user-behavior-hrd')

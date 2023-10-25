@@ -1,9 +1,12 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Function from 'App/Models/Function'
 import { schema, rules } from '@ioc:Adonis/Core/Validator'
+import { statusRoutes } from 'App/Modules/Log/lib/enum'
+import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist'
 
 export default class FunctionsController {
   public async index({ request, response, params }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const { page = 1, limit = 10, keyword = "" } = request.qs()
     const { menu_id } = params
 
@@ -14,13 +17,17 @@ export default class FunctionsController {
         .andWhere('menu_id', menu_id)
         .orderBy('id')
         .paginate(page, limit)
+
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.ok({ message: "Berhasil mengambil data", data })
     } catch (error) {
+      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
       response.badRequest({ message: "Gagal mengambil data", error })
     }
   }
 
   public async store({ request, response, params }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const { menu_id } = params
     Function.findOrFail(menu_id).catch(error => response.badRequest({ message: "Gagal mencari data modul", error: error.message }))
 
@@ -36,27 +43,33 @@ export default class FunctionsController {
     Object.assign(payload, { menu_id })
     try {
       const data = await Function.create(payload)
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.created({ message: "Berhasil menyimpan data", data })
     } catch (error) {
+      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
       response.badRequest({ message: "Gagal menyimpan data", error })
     }
   }
 
-  public async show({ params, response }: HttpContextContract) {
+  public async show({ request, params, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const { id } = params
     try {
       const data = await Function.query().where('id', id)
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.ok({ message: "Berhasil mengambil data", data })
     } catch (error) {
+      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
       console.log(error);
-
       response.badRequest({ message: "Gagal mengambil data", error })
     }
   }
 
   // create ini untuk nanti get all pas mau bikin permissions
-  public async create({ response, params }: HttpContextContract) {
+  public async create({ request, response, params }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const data = await Function.query().select('id', 'description').where('menu_id', params.menu_id)
+    CreateRouteHist(request, statusRoutes.FINISH)
     response.ok({ message: "Berhasil mengambil data", data })
   }
 

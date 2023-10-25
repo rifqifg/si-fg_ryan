@@ -9,9 +9,14 @@ import { DateTime, Duration } from 'luxon'
 import { validate as uuidValidation } from "uuid";
 import { validator } from '@ioc:Adonis/Core/Validator'
 import UpdateTimeOutPresenceValidator from 'App/Validators/UpdateTimeOutPresenceValidator'
+import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist'
+import { statusRoutes } from 'App/Modules/Log/lib/enum'
 export default class PresencesController {
-  public async index({ request, response }: HttpContextContract) { // @ts-ignore
-    const hariIni = DateTime.now().toSQLDate().toString() // @ts-ignore
+  public async index({ request, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
+    // @ts-ignore
+    const hariIni = DateTime.now().toSQLDate().toString()
+    // @ts-ignore
     const { page = 1, limit = 10, keyword = "", activityId = "", orderBy = "time_in", orderDirection = 'ASC', fromDate = hariIni, toDate = hariIni } = request.qs()
     //TODO: bikin raw query & select secukupnya biar bisa order by join column
 
@@ -37,7 +42,7 @@ export default class PresencesController {
 
     // console.log(presence);
 
-
+    CreateRouteHist(request, statusRoutes.FINISH)
     response.ok({
       message: "Data Berhasil Didapatkan", data: {
         activity, presence
@@ -69,18 +74,22 @@ export default class PresencesController {
   }
 
   public async store({ request, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const payload = await request.validate(CreatePresenceValidator)
 
     try {
       const data = await Presence.create(payload)
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.created({ message: "Create data success", data })
     } catch (error) {
+      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
       console.log(error);
       response.badRequest({ ...error })
     }
   }
 
   public async scanRFID({ request, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const { activityId, rfid } = request.body()
     const employeeId = (await Employee.findByOrFail('rfid', rfid)).id
     const activity = await Activity.findOrFail(activityId)
@@ -99,11 +108,13 @@ export default class PresencesController {
     if (prezence === null) { //belum ada data = belum pernah masuk
       // @ts-ignore
       const scanIn = await Presence.create({ activityId, employeeId, timeIn: DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss').toString() })
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.ok({ message: "Scan In Success", activity, scanIn })
     } else if (prezence!.timeOut === null) { //sudah ada data & belum keluar
       const scanOut = await prezence! // @ts-ignore
         .merge({ timeOut: DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss').toString() })
         .save()
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.ok({ message: "Scan Out Success", data: scanOut })
     } else {
       response.badRequest({ message: "Anda sudah melakukan scan in & scan out!" })
@@ -113,7 +124,8 @@ export default class PresencesController {
     // TODO: check apakah dia sudah scan_in atau belum
   }
 
-  public async show({ params, response }: HttpContextContract) {
+  public async show({ request, params, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const { id } = params
     const activity = await Activity.findOrFail(id)
 
@@ -125,13 +137,16 @@ export default class PresencesController {
       .andWhere('activity_id', id)
       .andWhereNot('employee_id', '12e6c4b9-2942-4870-b48c-4b4a93eee52b')
       .orderBy('updated_at', 'desc')
+    CreateRouteHist(request, statusRoutes.FINISH)
     response.ok({ message: "Get data success", data: { activity, presence } })
   }
 
-  public async edit({ params, response }: HttpContextContract) {
+  public async edit({ params, response, request }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const { id } = params
     try {
       const data = await Presence.query().preload('employee', query => query.select('name')).where('id', id).firstOrFail()
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.ok({ message: "Get data success", data })
     } catch (error) {
       response.badRequest(error)
@@ -166,7 +181,7 @@ export default class PresencesController {
           const id = value.$attributes.id
           const time_in = new Date(value.$attributes.timeIn).toISOString()
           const extractedDate = time_in.split("T")[0];
-          let time_out = timeOutDefault ? extractedDate + " " + timeOutDefault : extractedDate + " " + timeOut;
+          let time_out = timeOut ? extractedDate + " " + timeOut : extractedDate + " " + timeOutDefault;
           //@ts-ignore
           const presenceTimeOutValidator = new UpdateTimeOutPresenceValidator(null, { timeOut: time_out })
           const payload = await validator.validate(presenceTimeOutValidator)
@@ -204,7 +219,9 @@ export default class PresencesController {
   }
 
 
-  public async recap({ params, response, request }: HttpContextContract) {// @ts-ignore
+  public async recap({ params, response, request }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
+    // @ts-ignore
     const hariIni = DateTime.now().toSQLDate().toString()
     const { id } = params
     const { from = hariIni, to = hariIni } = request.qs()
@@ -273,10 +290,13 @@ export default class PresencesController {
       ) mostPresent
     `)
 
+    CreateRouteHist(request, statusRoutes.FINISH)
     response.ok({ message: "Get data success", overview, recap, detail })
   }
 
-  public async hours({ params, response, request }: HttpContextContract) { // @ts-ignore
+  public async hours({ params, response, request }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
+    // @ts-ignore
     const hariIni = DateTime.now().toSQLDate().toString()
     const { id } = params
     let { from = hariIni, to = hariIni, employeeId } = request.qs()
@@ -352,6 +372,7 @@ export default class PresencesController {
 
     // remarked due to BUG
     // return response.ok({ message: "Berhasil mengambil data", grandTotalHours, data: sortedRecaps })
+    CreateRouteHist(request, statusRoutes.FINISH)
     return response.ok({ message: "Berhasil mengambil data", data: sortedRecaps })
   }
 }

@@ -1,14 +1,19 @@
 import { DateTime, Duration } from 'luxon'
-import { afterCreate, afterFetch, afterFind, BaseModel, beforeCreate, BelongsTo, belongsTo, column } from '@ioc:Adonis/Lucid/Orm'
+import { afterCreate, afterFetch, afterFind, BaseModel, beforeCreate, beforeSave, BelongsTo, belongsTo, column } from '@ioc:Adonis/Lucid/Orm'
 import { v4 as uuidv4 } from 'uuid'
 import Activity from './Activity'
 import Employee from './Employee'
+import HttpContext from '@ioc:Adonis/Core/HttpContext'
+import SubActivity from './SubActivity'
 
 let newId = ""
 export default class Presence extends BaseModel {
   public serializeExtras() {
     return {
-      workingTimeDiff: this.$extras.timeDiff
+      workingTimeDiff: this.$extras.timeDiff,
+      presence_count: this.$extras.presence_count,
+      total_sessions: this.$extras.total_sessions,
+      percentage: this.$extras.percentage,
     }
   }
 
@@ -36,10 +41,35 @@ export default class Presence extends BaseModel {
   @column()
   public description: string
 
+  @column()
+  public clientUserId: string
+
+  @column()
+  public clientIp: string | null
+
+  @column()
+  public clientHostname: string | null
+
+  @column()
+  public subActivityId: string | null
+
+  @belongsTo(() => SubActivity)
+  public subActivity: BelongsTo<typeof SubActivity>
+
+  @beforeSave()
+  public static async addClientUserId(presence: Presence) {
+    const { auth, request } = HttpContext.get()!
+    presence.clientUserId = auth.user!.id
+    presence.clientHostname = request.hostname()
+    presence.clientIp = request.ip()
+  }
+
   @afterFetch()
   public static async createWorkingDuration(presences: Presence[]) {
     for (const presence of presences) {
-      presence.$extras.timeDiff = await calculateWorkingTime(presence)
+      if (presence.timeIn) {
+        presence.$extras.timeDiff = await calculateWorkingTime(presence)
+      }
     }
   }
 

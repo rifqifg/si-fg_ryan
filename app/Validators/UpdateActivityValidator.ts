@@ -1,5 +1,6 @@
 import { schema, CustomMessages, rules } from '@ioc:Adonis/Core/Validator'
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import { ActivityType } from 'App/lib/enum'
 
 export default class UpdateActivityValidator {
   constructor(protected ctx: HttpContextContract) { }
@@ -26,18 +27,34 @@ export default class UpdateActivityValidator {
   public schema = schema.create({
     name: schema.string.optional(),
     description: schema.string.optional(),
-    timeInStart: schema.date.optional({ format: 'HH:mm:ss' }, []),
-    timeLateStart: schema.date.optional({ format: 'HH:mm:ss' }),
-    timeInEnd: schema.date.optional({ format: 'HH:mm:ss' }, []),
-    timeOutStart: schema.date.optional({ format: 'HH:mm:ss' }, []),
-    timeOutEnd: schema.date.optional({ format: 'HH:mm:ss' }, []),
+    timeInStart: schema.date.nullableAndOptional({ format: 'HH:mm:ss' }, [
+      rules.requiredWhen('activityType', '=', ActivityType.FIXED_TIME)
+    ]),
+    timeLateStart: schema.date.nullableAndOptional({ format: 'HH:mm:ss' }, [
+      rules.requiredWhen('activityType', '=', ActivityType.FIXED_TIME)
+    ]),
+    timeInEnd: schema.date.nullableAndOptional({ format: 'HH:mm:ss' }, [
+      rules.requiredWhen('activityType', '=', ActivityType.FIXED_TIME)
+    ]),
+    timeOutStart: schema.date.nullableAndOptional({ format: 'HH:mm:ss' }, [
+      rules.requiredWhen('activityType', '=', ActivityType.FIXED_TIME)
+    ]),
+    timeOutEnd: schema.date.nullableAndOptional({ format: 'HH:mm:ss' }, [
+      rules.requiredWhen('activityType', '=', ActivityType.FIXED_TIME)
+    ]),
     timeOutDefault: schema.date.nullableAndOptional({ format: 'HH:mm:ss' }),
-    maxWorkingDuration: schema.date.optional({ format: 'HH:mm:ss' }),
+    maxWorkingDuration: schema.date.nullableAndOptional({ format: 'HH:mm:ss' }),
     type: schema.enum.optional(['scheduled', 'standalone']),
     scheduleActive: schema.boolean.optional(),
     days: schema.string.optional(),
     division_id: schema.string.optional({}, [
       rules.exists({ table: 'divisions', column: 'id' })
+    ]),
+    assessment: schema.boolean.optional(),
+    default: schema.number.nullableAndOptional(),
+    activityType: schema.enum.optional(Object.values(ActivityType)),
+    categoryActivityId: schema.string.optional({}, [
+      rules.exists({ table: 'category_activities', column: 'id' })
     ]),
   })
 

@@ -1,11 +1,12 @@
 import { DateTime } from 'luxon'
-import { BaseModel, BelongsTo, afterCreate, beforeCreate, belongsTo, column } from '@ioc:Adonis/Lucid/Orm'
+import {BaseModel, BelongsTo, afterCreate, beforeCreate, belongsTo, column} from '@ioc:Adonis/Lucid/Orm'
 import Session from './Session'
 import Class from './Class'
 import Subject from './Subject'
 import Teacher from './Teacher'
 import { v4 as uuidv4 } from 'uuid'
 import { TeacherAttendanceStatus } from '../lib/enums'
+import ProgramSemesterDetail from "Academic/Models/ProgramSemesterDetail";
 let newId = ""
 
 export default class TeacherAttendance extends BaseModel {
@@ -44,7 +45,10 @@ export default class TeacherAttendance extends BaseModel {
 
   @column()
   public post_test: boolean
-  
+
+  @column()
+  public catatanKelas: string
+
   @column()
   public sessionId: string
 
@@ -52,7 +56,7 @@ export default class TeacherAttendance extends BaseModel {
   public session: BelongsTo<typeof Session>
 
   @column()
-  public classId: string
+  public classId: string | null
 
   @belongsTo(() => Class)
   public class: BelongsTo<typeof Class>
@@ -68,6 +72,12 @@ export default class TeacherAttendance extends BaseModel {
 
   @belongsTo(() => Subject)
   public subject: BelongsTo<typeof Subject>
+
+  @column()
+  public programSemesterDetailId: string | null
+
+  @belongsTo(() => ProgramSemesterDetail)
+  public prosemDetail: BelongsTo<typeof ProgramSemesterDetail>
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime

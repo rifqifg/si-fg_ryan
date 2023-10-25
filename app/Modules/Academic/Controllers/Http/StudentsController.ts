@@ -13,12 +13,24 @@ export default class StudentsController {
       mode = "page",
       classId = "",
       isGraduated = false,
+      notInSubject = "",
+      subjectMember = ""
     } = request.qs();
 
     if (classId && !uuidValidation(classId)) {
       return response.badRequest({ message: "Class ID tidak valid" });
     }
 
+    if (notInSubject && !uuidValidation(notInSubject)) {
+      return response.badRequest({ message: "Subject ID tidak valid" });
+    }
+
+    if (subjectMember && !uuidValidation(subjectMember)) {
+      return response.badRequest(({message: "Subject ID tidak valid"}))
+    }
+
+    const graduated = isGraduated == 'false'? false : true
+    
     try {
       let data: object = {};
       if (mode === "page") {
@@ -29,7 +41,9 @@ export default class StudentsController {
           .preload("kecamatan")
           .preload("kota")
           .preload("provinsi")
-          .if(isGraduated, (g) => g.where("isGraduated", isGraduated))
+          .if(subjectMember, sm => sm.whereHas('extracurricular', ex => ex.where('subjectId', subjectMember)))
+          .if(notInSubject, q => q.whereDoesntHave('extracurricular', q => q.where('subjectId', notInSubject)))
+          .if(graduated, (g) => g.where("isGraduated", isGraduated))
           .andWhere((q) => {
             q.whereILike("name", `%${keyword}%`);
             q.orWhereILike("nis", `%${keyword}%`);
@@ -39,13 +53,15 @@ export default class StudentsController {
           .paginate(page, limit);
       } else if (mode === "list") {
         data = await Student.query()
-          .select("id", "name", "nis", "nisn")
+          .select("*")
           .preload("class", (query) => query.select("name"))
           .preload("kelurahan")
           .preload("kecamatan")
           .preload("kota")
           .preload("provinsi")
-          .if(isGraduated, (g) => g.where("isGraduated", isGraduated))
+          .if(subjectMember, sm => sm.whereHas('extracurricular', ex => ex.where('subjectId', subjectMember)))
+          .if(notInSubject, q => q.whereDoesntHave('extracurricular', q => q.where('subjectId', notInSubject)))
+          .if(graduated, (g) => g.where("isGraduated", isGraduated))
           .andWhere((q) => {
             q.whereILike("name", `%${keyword}%`);
             q.orWhereILike("nis", `%${keyword}%`);

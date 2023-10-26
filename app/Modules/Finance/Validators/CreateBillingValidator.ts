@@ -19,6 +19,7 @@ export default class CreateBillingValidator {
         // schema.string([
         //   rules.regex(new RegExp("^[1-9][0-9]*$")),
         // ]),
+        due_date: schema.date.optional(),
         description: schema.string.optional(),
         type: schema.enum.optional(Object.values(BillingType)),
       })

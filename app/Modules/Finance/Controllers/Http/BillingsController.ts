@@ -10,12 +10,25 @@ import Account from '../../Models/Account';
 import { validator } from '@ioc:Adonis/Core/Validator'
 import { HttpContext } from '@adonisjs/core/build/standalone';
 import { BillingStatus } from '../../lib/enums';
+import { DateTime } from 'luxon';
+import AcademicYear from 'App/Modules/Academic/Models/AcademicYear';
 
 export default class BillingsController {
   public async index({ request, response }: HttpContextContract) {
-    const { page = 1, limit = 10, keyword = "", status, mode = "page", student_id } = request.qs();
+    const { page = 1, limit = 10, keyword = "", status, mode = "page", student_id, academic_year_id } = request.qs();
 
     try {
+      let academicYearBegin: string,
+          academicYearEnd: string
+
+      if (academic_year_id) {
+        const academicYear = await AcademicYear.find(academic_year_id)
+
+        if (academicYear) {
+          [academicYearBegin, academicYearEnd] = academicYear.year.split(' - ')
+        }
+      }
+
       let data: Billing[]
       if (mode === 'page') {
         data = await Billing.query()
@@ -25,7 +38,11 @@ export default class BillingsController {
             q.andWhereHas('account', (a) => a.whereILike("number", `%${keyword}%`))
               .orWhereILike("name", `%${keyword}%`)
           })
+          .if(academic_year_id, q => {
+            q.whereBetween('due_date', [`${academicYearBegin}-07-01`, `${academicYearEnd}-06-01`])
+          })
           .preload('account', qAccount => qAccount.select('account_name', 'number', 'student_id'))
+          .orderBy('due_date', 'asc')
           .paginate(page, limit);
       } else {
         data = await Billing.query().whereILike('name', `%${keyword}%`)
@@ -85,7 +102,7 @@ export default class BillingsController {
       const relatedTransaction = await billing.related('transactions').query().pivotColumns(['amount']).preload('revenue', q => q.preload('account'))
       const totalPaid = relatedTransaction.reduce((sum, current) => sum + current.$extras.pivot_amount, 0)
       billing.$extras.remaining_amount = billing.amount - totalPaid
-      
+
       if (billing.$extras.remaining_amount > 0) billing.$extras.status = BillingStatus.PAID_PARTIAL
       if (billing.$extras.remaining_amount === billing.amount) billing.$extras.status = BillingStatus.UNPAID
       if (billing.$extras.remaining_amount <= 0) billing.$extras.status = BillingStatus.PAID_FULL
@@ -179,6 +196,7 @@ export default class BillingsController {
       const accountNo = data['Nomor Akun Tertagih'].toString()
       const amount = data['Jumlah'].toString()
       const type = data['Tipe'].toString().toLowerCase()
+      const dueDate = DateTime.fromFormat(data['Jatuh Tempo'], 'dd/MM/yyyy')
 
       const account = await Account.findBy('number', accountNo)
       const accountNumber = account ? account.id : "-1"
@@ -188,6 +206,7 @@ export default class BillingsController {
         name: data['Nama Billing'],
         amount: amount,
         description: data['Deskripsi'],
+        due_date: dueDate,
         type: type,
       }
     }))

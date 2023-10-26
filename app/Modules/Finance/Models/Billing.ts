@@ -46,6 +46,9 @@ export default class Billing extends BaseModel {
   @column()
   public approved: boolean
 
+  @column.dateTime()
+  public dueDate: DateTime
+
   // @column()
   // public remainingAmount: number
 

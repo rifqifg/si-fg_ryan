@@ -35,19 +35,23 @@ export default class TransactionBillingsController {
     public async update({ request, response }: HttpContextContract) {
         const payload = await request.validate(UpdateTransactionBillingValidator);
 
-        if (JSON.stringify(payload) === "{}" || payload.transaction_billings.length <= 0) {
+        // if (JSON.stringify(payload) === "{}" || payload.transaction_billings.length <= 0) {
+        if (JSON.stringify(payload) === "{}") {
             return response.badRequest({ message: "Data tidak boleh kosong" });
         }
 
         try {
-            payload.transaction_billings.forEach(async pivotRow => {
-                const transaction = await Transaction.findOrFail(pivotRow.transaction_id)
-                const billing = await Billing.findOrFail(pivotRow.billing_id)
+            const transaction = await Transaction.findOrFail(payload.transaction_id)
+            const billing = await Billing.findOrFail(payload.billing_id)
 
-                await transaction.related('billings').sync({ [billing.id]: { amount: pivotRow.amount } }, false)
-            })
+            await transaction.related('billings').sync({ [billing.id]: { amount: payload.amount } }, false)
 
-            response.ok({ message: "Berhasil mengubah data" });
+            const data = await TransactionBilling.query()
+                .where('transaction_id', payload.transaction_id)
+                .andWhere('billing_id', payload.billing_id)
+                .firstOrFail()
+
+            response.ok({ message: "Berhasil mengubah data", data });
         } catch (error) {
             const message = "FTB-IND: " + error.message || error;
             console.log(error);

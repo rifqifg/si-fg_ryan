@@ -3,9 +3,12 @@ import CreateSubjectValidator from "Academic/Validators/CreateSubjectValidator";
 import Subject from "Academic/Models/Subject";
 import { validate as uuidValidation } from "uuid";
 import UpdateSubjectValidator from "../../Validators/UpdateSubjectValidator";
+import { statusRoutes } from "App/Modules/Log/lib/enum";
+import { CreateRouteHist } from "App/Modules/Log/Helpers/createRouteHist";
 
 export default class SubjectsController {
   public async index({ request, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const {
       page = 1,
       limit = 10,
@@ -64,10 +67,12 @@ export default class SubjectsController {
         });
       }
 
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
       const message = "ACSU41: " + error.message || error;
       console.log(error);
+      CreateRouteHist(request, statusRoutes.ERROR, message)
       response.badRequest({
         message: "Gagal mengambil data",
         error: message,
@@ -77,13 +82,17 @@ export default class SubjectsController {
   }
 
   public async store({ request, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const payload = await request.validate(CreateSubjectValidator);
     try {
       const data = await Subject.create(payload);
+
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.created({ message: "Berhasil menyimpan data", data });
     } catch (error) {
       const message = "ACSU57: " + error.message || error;
       console.log(error);
+      CreateRouteHist(request, statusRoutes.ERROR, message)
       response.badRequest({
         message: "Gagal menyimpan data",
         error: message,
@@ -92,7 +101,8 @@ export default class SubjectsController {
     }
   }
 
-  public async show({ params, response }: HttpContextContract) {
+  public async show({request, params, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const { id } = params;
     if (!uuidValidation(id)) {
       return response.badRequest({ message: "Subject ID tidak valid" });
@@ -100,10 +110,13 @@ export default class SubjectsController {
 
     try {
       const data = await Subject.query().where("id", id).firstOrFail();
+      
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
       const message = "ACSU77: " + error.message || error;
       console.log(error);
+      CreateRouteHist(request, statusRoutes.ERROR, message)
       response.badRequest({
         message: "Gagal mengambil data",
         error: message,

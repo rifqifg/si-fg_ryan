@@ -3,10 +3,13 @@ import CreateTeacherValidator from "../../Validators/CreateTeacherValidator";
 import Teacher from "Academic/Models/Teacher";
 import { validate as uuidValidation } from "uuid";
 import UpdateTeacherValidator from "../../Validators/UpdateTeacherValidator";
+import { statusRoutes } from "App/Modules/Log/lib/enum";
+import { CreateRouteHist } from "App/Modules/Log/Helpers/createRouteHist";
 
 //TODO: CRUD Teacher
 export default class TeachersController {
   public async index({ request, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const { page = 1, limit = 10, keyword = "", mode = "page" } = request.qs();
 
     try {
@@ -54,10 +57,12 @@ export default class TeachersController {
         });
       }
 
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
       const message = "ACSU46: " + error.message || error;
       console.log(error);
+      CreateRouteHist(request, statusRoutes.ERROR, message)
       response.badRequest({
         message: "Gagal mengambil data",
         error: message,
@@ -67,13 +72,16 @@ export default class TeachersController {
   }
 
   public async store({ request, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const payload = await request.validate(CreateTeacherValidator);
     try {
       const data = await Teacher.create(payload);
+
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.created({ message: "Berhasil menyimpan data", data });
     } catch (error) {
       const message = "ACTE63: " + error.message || error;
-      // console.log(error);
+      CreateRouteHist(request, statusRoutes.ERROR, message)
       response.badRequest({
         message: "Gagal menyimpan data",
         error: message,
@@ -82,7 +90,8 @@ export default class TeachersController {
     }
   }
 
-  public async show({ params, response }: HttpContextContract) {
+  public async show({request, params, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const { id } = params;
     if (!uuidValidation(id)) {
       return response.badRequest({ message: "Teacher ID tidak valid" });
@@ -104,10 +113,14 @@ export default class TeachersController {
         )
         .where("id", id)
         .firstOrFail();
+
+        CreateRouteHist(request, statusRoutes.FINISH)
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
+
       const message = "ACTE92: " + error.message || error;
       console.log(error);
+      CreateRouteHist(request, statusRoutes.ERROR, message)
       response.badRequest({
         message: "Gagal mengambil data",
         error: message,

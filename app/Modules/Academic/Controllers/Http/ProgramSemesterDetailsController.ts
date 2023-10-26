@@ -3,9 +3,12 @@ import { schema, rules } from "@ioc:Adonis/Core/Validator";
 import ProgramSemesterDetail from "../../Models/ProgramSemesterDetail";
 import { validate as uuidValidation } from "uuid";
 import ProgramSemester from "../../Models/ProgramSemester";
+import { statusRoutes } from "App/Modules/Log/lib/enum";
+import { CreateRouteHist } from "App/Modules/Log/Helpers/createRouteHist";
 
 export default class ProgramSemesterDetailsController {
-  public async index({ response, params }: HttpContextContract) {
+  public async index({request, response, params }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const { program_semester_id: programSemesterId } = params;
 
     if (!uuidValidation(programSemesterId))
@@ -33,12 +36,13 @@ export default class ProgramSemesterDetailsController {
         })
         .firstOrFail();
 
-      // return kelas;
+        CreateRouteHist(request, statusRoutes.FINISH)
       response.ok({
         message: "Berhasil mengambil data",
         data: { kelas, data },
       });
     } catch (error) {
+      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
       response.badRequest({
         message: "Gagal mengambil data",
         error: error.message,
@@ -47,6 +51,7 @@ export default class ProgramSemesterDetailsController {
   }
 
   public async store({ request, response, params }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const { program_semester_id: programSemesterId } = params;
     if (!uuidValidation(programSemesterId))
       return response.badRequest({ message: "Program Semeter ID tidak valid" });
@@ -74,8 +79,10 @@ export default class ProgramSemesterDetailsController {
         programSemesterId,
       });
 
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.ok({ message: "Berhasil menyimpan data", data });
     } catch (error) {
+      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
       response.badRequest({
         message: "Gagal menyimpan data",
         error: error.message,
@@ -83,7 +90,8 @@ export default class ProgramSemesterDetailsController {
     }
   }
 
-  public async show({ response, params }: HttpContextContract) {
+  public async show({request, response, params }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const { id } = params;
 
     if (!uuidValidation(id))
@@ -98,8 +106,10 @@ export default class ProgramSemesterDetailsController {
         .preload("kompetensiInti", (ki) => ki.select("*"))
         .firstOrFail();
 
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
+      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
       response.badRequest({
         message: "Gagal mengambil data",
         error: error.message,

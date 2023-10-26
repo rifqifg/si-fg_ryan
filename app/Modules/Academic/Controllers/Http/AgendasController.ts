@@ -3,9 +3,12 @@ import { validate as uuidValidation } from "uuid";
 import Agenda from "../../Models/Agenda";
 import CreateAgendumValidator from "../../Validators/CreateAgendumValidator";
 import UpdateAgendumValidator from "../../Validators/UpdateAgendumValidator";
+import { CreateRouteHist } from "App/Modules/Log/Helpers/createRouteHist";
+import { statusRoutes } from "App/Modules/Log/lib/enum";
 
 export default class AgendasController {
   public async index({ request, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START);
     const { keyword = "", date = "" } = request.qs();
 
     try {
@@ -15,25 +18,31 @@ export default class AgendasController {
         .if(date, (q) => q.where("date", date))
         .preload("user", (s) => s.select("id", "name"));
 
+      CreateRouteHist(request, statusRoutes.FINISH);
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
+      CreateRouteHist(request, statusRoutes.ERROR, error.message || error);
       response.badRequest({ message: "Gagal mengambil data", error });
     }
   }
 
   public async store({ request, response, auth }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START);
     const payload = await request.validate(CreateAgendumValidator);
 
     try {
       const data = await Agenda.create({ userId: auth?.user?.id, ...payload });
 
+      CreateRouteHist(request, statusRoutes.FINISH);
       response.ok({ message: "Berhasil menyimpan data", data });
     } catch (error) {
+      CreateRouteHist(request, statusRoutes.ERROR, error.message || error);
       response.badRequest({ message: "Gagal menyimpan data", error });
     }
   }
 
-  public async show({ response, params }: HttpContextContract) {
+  public async show({ request, response, params }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START);
     const { id } = params;
 
     try {
@@ -41,8 +50,10 @@ export default class AgendasController {
         .preload("user", (s) => s.select("id", "name"))
         .where("id", id);
 
+      CreateRouteHist(request, statusRoutes.FINISH);
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
+      CreateRouteHist(request, statusRoutes.ERROR, error.message || error);
       response.badRequest({ message: "Gagal mengambil data", error });
     }
   }

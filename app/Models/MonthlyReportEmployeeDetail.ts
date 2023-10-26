@@ -10,6 +10,7 @@ export default class MonthlyReportEmployeeDetail extends BaseModel {
   public serializeExtras() {
     return {
       percentage: this.$extras.percentage,
+      default: this.$extras.default,
     }
   }
 

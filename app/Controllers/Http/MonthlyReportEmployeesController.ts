@@ -61,6 +61,7 @@ export default class MonthlyReportEmployeesController {
             when skor * 100 / (select default_presence from public.employees where id='${employeeId}') > 100 then 100
             else skor * 100 / (select default_presence from public.employees where id='${employeeId}')
             end) as percentage`))
+          .select(Database.raw(`(select default_presence from public.employees where id='${employeeId}') as "default"`))
           .whereHas('activity', ac => ac.where('activity_type', 'fixed_time').andWhere('assessment', true))
           .preload('activity', a => a.select('id', 'name', 'category_activity_id')
             .preload('categoryActivity', ca => ca.select('name'))))
@@ -70,6 +71,7 @@ export default class MonthlyReportEmployeesController {
             when skor * 100 / (select "default" from public.activities where id=activity_id) > 100 then 100
             else skor * 100 / (select "default" from public.activities where id=activity_id)
             end) as percentage`))
+          .select(Database.raw(`(select "default" from public.activities where id=activity_id) as "default"`))
           .whereHas('activity', ac => ac.where('activity_type', 'not_fixed_time').andWhere('assessment', true))
           .preload('activity', a => a.select('id', 'name', 'category_activity_id')
             .preload('categoryActivity', ca => ca.select('name'))))
@@ -85,6 +87,7 @@ export default class MonthlyReportEmployeesController {
             when skor * 100 / (select total_mengajar from academic.teachers where employee_id ='${employeeId}') > 100 then 100
             else skor * 100 / (select total_mengajar from academic.teachers where employee_id ='${employeeId}')
             end) as percentage`))
+          .select(Database.raw(`(select total_mengajar from academic.teachers where employee_id ='${employeeId}') as "default"`))
           .where('is_teaching', true))
 
       const dataObject = JSON.parse(JSON.stringify(data))[0]
@@ -191,7 +194,8 @@ export const destructurMonthlyReport = async (dataObject) => {
           skor: fixedTime.skor,
           note: fixedTime.note,
           percentage: fixedTime.percentage,
-          activity_name: fixedTime.activity.name
+          activity_name: fixedTime.activity.name,
+          default: fixedTime.default
         })
       }
     }
@@ -229,7 +233,8 @@ export const destructurMonthlyReport = async (dataObject) => {
           id: teaching.id,
           skor: teaching.skor,
           percentage: teaching.percentage,
-          activity_name: "MENGAJAR"
+          activity_name: "MENGAJAR",
+          default: teaching.default
         })
       }
     }
@@ -243,7 +248,8 @@ export const destructurMonthlyReport = async (dataObject) => {
             skor: nft.skor,
             note: nft.note,
             percentage: nft.percentage,
-            activity_name: nft.activity.name
+            activity_name: nft.activity.name,
+            default: nft.default
           })
         }
       })

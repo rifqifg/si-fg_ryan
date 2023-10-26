@@ -2,9 +2,12 @@ import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import { validate as uuidValidation } from "uuid";
 import Class from '../../Models/Class';
 import Student from '../../Models/Student';
+import { statusRoutes } from 'App/Modules/Log/lib/enum';
+import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist';
 
 export default class StudentBatchMutationsController {
     public async update({ params, request, response }: HttpContextContract) {
+        CreateRouteHist(request, statusRoutes.START);
         const class_id = params.id
 
         if (!uuidValidation(class_id)) {
@@ -25,9 +28,12 @@ export default class StudentBatchMutationsController {
                 const siswa = await Student.findOrFail(value.student_id)
                 await siswa?.merge({ isGraduated: classIsGraduated?.isGraduated, classId: class_id }).save()
             })
+
+            CreateRouteHist(request, statusRoutes.FINISH)
             response.ok({ message: "Berhasil pindah Siswa" })
         } catch (error) {
             console.log(error);
+            CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
             response.badRequest({
                 message: "Gagal pindah siswa",
                 error: error.message,

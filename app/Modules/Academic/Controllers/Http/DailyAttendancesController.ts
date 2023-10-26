@@ -5,9 +5,12 @@ import { DateTime } from "luxon";
 import { validate as uuidValidation } from "uuid";
 import UpdateDailyAttendanceValidator from "../../Validators/UpdateDailyAttendanceValidator";
 import Database from "@ioc:Adonis/Lucid/Database";
+import { statusRoutes } from "App/Modules/Log/lib/enum";
+import { CreateRouteHist } from "App/Modules/Log/Helpers/createRouteHist";
 
 export default class DailyAttendancesController {
   public async index({ request, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START);
     const hariIni = DateTime.now().toSQLDate()!.toString();
     const {
       page = 1,
@@ -370,7 +373,7 @@ export default class DailyAttendancesController {
               "Value parameter recap tidak dikenali, (pilih: kelas / siswa)",
           });
         }
-
+        CreateRouteHist(request, statusRoutes.FINISH);
         return response.ok({ message: "Berhasil mengambil data", data });
       }
       if (mode === "page") {
@@ -441,10 +444,11 @@ export default class DailyAttendancesController {
           message: "Mode tidak dikenali, (pilih: page / list)",
         });
       }
-
+      CreateRouteHist(request, statusRoutes.FINISH);
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
       const message = "ACDA-index: " + error.message || error;
+      CreateRouteHist(request, statusRoutes.ERROR, message);
       console.log(error);
       response.badRequest({
         message: "Gagal mengambil data",
@@ -455,6 +459,7 @@ export default class DailyAttendancesController {
   }
 
   public async store({ request, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START);
     const payload = await request.validate(CreateDailyAttendanceValidator);
 
     try {
@@ -488,10 +493,12 @@ export default class DailyAttendancesController {
       }
 
       const data = await DailyAttendance.createMany(payload.dailyAttendance);
+      CreateRouteHist(request, statusRoutes.FINISH);
       response.created({ message: "Berhasil menyimpan data", data });
     } catch (error) {
       const message = "ACDA-store: " + error.message || error;
       console.log(error);
+      CreateRouteHist(request, statusRoutes.ERROR, message);
       response.badRequest({
         message: "Gagal menyimpan data",
         error: message,
@@ -500,7 +507,8 @@ export default class DailyAttendancesController {
     }
   }
 
-  public async show({ params, response }: HttpContextContract) {
+  public async show({ request, params, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START);
     const { id } = params;
     if (!uuidValidation(id)) {
       return response.badRequest({ message: "DailyAttendance ID tidak valid" });
@@ -517,10 +525,13 @@ export default class DailyAttendancesController {
         )
         .where("id", id)
         .firstOrFail();
+      
+        CreateRouteHist(request, statusRoutes.FINISH);
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
       const message = "ACSU77: " + error.message || error;
       console.log(error);
+      CreateRouteHist(request, statusRoutes.ERROR, message);
       response.badRequest({
         message: "Gagal mengambil data",
         error: message,

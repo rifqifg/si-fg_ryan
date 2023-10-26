@@ -1,10 +1,13 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Database from '@ioc:Adonis/Lucid/Database'
+import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist';
+import { statusRoutes } from 'App/Modules/Log/lib/enum';
 import { GoogleSpreadsheet } from 'google-spreadsheet'
 import { DateTime } from 'luxon';
 
 export default class StudentChartsController {
-  public async siswaTingkat({ response }: HttpContextContract) {
+  public async siswaTingkat({request, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     const selectTingkat = `
       select tingkat, count(id) total
       from(select split_part(c.name,' ',1) tingkat ,split_part(c.name,' ',2) jurusan,  s.id 
@@ -60,6 +63,8 @@ export default class StudentChartsController {
       return a
     }, [])
 
+    CreateRouteHist(request, statusRoutes.FINISH)
+
     response.ok({
       message: 'Berhasil mengambil data statistik siswa',
       totalSiswa: totalSiswa[0].total,
@@ -70,6 +75,7 @@ export default class StudentChartsController {
   }
 
   public async siswaKehadiran({ request, response }: HttpContextContract) {
+    CreateRouteHist(request, statusRoutes.START)
     let { startDate, endDate, startMonth, endMonth, forceSync = 'false' } = request.qs()
     const tableSyncPresences = 'academic.sync_student_presences'
 
@@ -229,6 +235,7 @@ export default class StudentChartsController {
         return result
       }
 
+      CreateRouteHist(request, statusRoutes.FINISH)
       response.ok({
         message: "Berhasil menghitung data kehadiran siswa",
         // dataHarian2: dataHarian,
@@ -238,6 +245,7 @@ export default class StudentChartsController {
       })
     } catch (error) {
       console.log(error);
+      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
       return response.internalServerError({
         message: 'SCHR138: Gagal Menghitung Data' + tableSyncPresences,
         error: error.message || error

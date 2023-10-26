@@ -52,10 +52,13 @@ export default class TransactionsController {
 
     const { items: paidItems, ...transactionPayload } = payload
 
+    // hapus item yg amountnya dibawah 0
+    const filteredPaidItems = paidItems.filter(item => item.amount > 0)
+
     try {
       const transactionData: Transaction = await Transaction.create(transactionPayload)
 
-      const attachBill = paidItems.reduce((result, item) => {
+      const attachBill = filteredPaidItems.reduce((result, item) => {
         result[item.billing_id] = { amount: item.amount }
         return result
       }, {})

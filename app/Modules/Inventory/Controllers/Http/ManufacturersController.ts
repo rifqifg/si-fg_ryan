@@ -17,7 +17,8 @@ const getSignedUrl = async (filename: string) => {
 
 export default class ManufacturersController {
   public async index({ response, request }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
+    const dateStart = DateTime.now().toMillis()
+   CreateRouteHist(statusRoutes.START, dateStart)
     const { page = 1, limit = 10, keyword = "", mode = "page" } = request.qs()
 
     try {
@@ -37,16 +38,17 @@ export default class ManufacturersController {
         return response.badRequest({ message: "Mode tidak dikenali, (pilih: page / list)" })
       }
 
-      CreateRouteHist(request, statusRoutes.FINISH)
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil mengambil data", data })
     } catch (error) {
-      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
+      CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error)
       response.badRequest({ message: "Gagal mengambil data", error: error.message })
     }
   }
 
   public async store({ request, response }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
+    const dateStart = DateTime.now().toMillis()
+   CreateRouteHist(statusRoutes.START, dateStart)
     const payload = await request.validate(CreateManufacturerValidator)
     // TIPS: upload file
     const parsedPayload = { ...payload } // parse dulu payload nya biar dinamis, karena takutnya ada yang optional kan
@@ -64,18 +66,19 @@ export default class ManufacturersController {
     try {
       const data = await Manufacturer.create(newData)
       data.image = await getSignedUrl(data.image) //return array of signedUrl
-      CreateRouteHist(request, statusRoutes.FINISH)
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.created({ message: "Berhasil menyimpan data", data })
 
     } catch (error) {
-      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
+      CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error)
       console.log(error);
       response.badRequest({ message: "Gagal menyimpan data", error: error.message })
     }
   }
 
-  public async show({ params, response, request }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
+  public async show({ params, response }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis()
+   CreateRouteHist(statusRoutes.START, dateStart)
     const { id } = params
     if (!uuidValidation(id)) { return response.badRequest({ message: "Manufacturer ID tidak valid" }) }
 
@@ -83,10 +86,10 @@ export default class ManufacturersController {
       const data = await Manufacturer.query().where('id', id).firstOrFail()
       data.image = await getSignedUrl(data.image) //return array of signedUrl
 
-      CreateRouteHist(request, statusRoutes.FINISH)
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil mengambil data", data })
     } catch (error) {
-      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
+      CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error)
       console.log(error);
       response.badRequest({ message: "Gagal mengambil data", error: error.message })
     }

@@ -31,6 +31,12 @@ export default class RouteHist extends BaseModel {
   @column()
   public message: string
 
+  @column()
+  public userId: string | null
+
+  @column()
+  public duration: number | null
+
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
 

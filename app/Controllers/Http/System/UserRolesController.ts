@@ -3,10 +3,12 @@ import UserRole from 'App/Models/UserRole';
 import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist';
 import { statusRoutes } from 'App/Modules/Log/lib/enum';
 import CreateUserRoleValidator from 'App/Validators/CreateUserRoleValidator'
+import { DateTime } from 'luxon';
 
 export default class UserRolesController {
   public async store({ request, response, params }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
+    const dateStart = DateTime.now().toMillis()
+   CreateRouteHist(statusRoutes.START, dateStart)
     const { userId } = params
 
     const payload = await request.validate(CreateUserRoleValidator)
@@ -21,11 +23,11 @@ export default class UserRolesController {
 
     try {
       const data = await UserRole.createMany(datas)
-      CreateRouteHist(request, statusRoutes.FINISH)
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Role created successfully", data })
     } catch (error) {
       const message = "SYSUR01: " + error.message || error;
-      CreateRouteHist(request, statusRoutes.ERROR, message)
+      CreateRouteHist(statusRoutes.ERROR, dateStart, message)
       console.log(error);
       response.badRequest({
         message: "Gagal Menambah Data",

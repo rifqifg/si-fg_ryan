@@ -5,10 +5,12 @@ import Account from 'App/Modules/Finance/Models/Account'
 import Database from '@ioc:Adonis/Lucid/Database'
 import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist'
 import { statusRoutes } from 'App/Modules/Log/lib/enum'
+import { DateTime } from 'luxon'
 
 export default class DashboardController {
-  public async index({ request, auth, response }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
+  public async index({ auth, response }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis()
+   CreateRouteHist(statusRoutes.START, dateStart)
     if (auth.use('api').isLoggedIn) {
       const data = await User.query().preload('roles', r => r.select('role_name').preload('role', r => r.select('name', 'permissions'))).where('id', auth.user!.id)
       const dataObject = JSON.parse(JSON.stringify(data))
@@ -140,14 +142,14 @@ export default class DashboardController {
       dataObject[0]["role"] = { name: name.toString(), descriptions: descriptions.toString(), permissions: { modules: modulesSimple } }
       delete dataObject[0]["roles"]
 
-      CreateRouteHist(request, statusRoutes.FINISH)
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: 'you are logged in', data: dataObject })
     } else if (auth.use('ppdb_api').isLoggedIn) {
       const data = await UserStudentCandidate.query()
         .preload('roles')
         .preload('studentCandidate')
         .where('id', auth.user!.id)
-      CreateRouteHist(request, statusRoutes.FINISH)
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: 'you are logged in as student candidate', data })
     } else if (auth.use('parent_api').isLoggedIn) {
       const data = await Account.query()
@@ -159,7 +161,7 @@ export default class DashboardController {
           ) from public.roles r where name = 'parent') as roles`))
         .preload('student', qStudent => qStudent.select('name'))
         .where('id', auth.user!.id)
-      CreateRouteHist(request, statusRoutes.FINISH)
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: 'you are logged in as parent', data })
     }
   }

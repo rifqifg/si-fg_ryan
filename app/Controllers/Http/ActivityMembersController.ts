@@ -6,6 +6,7 @@ import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist';
 import { statusRoutes } from 'App/Modules/Log/lib/enum';
 import CreateActivityMemberValidator from 'App/Validators/CreateActivityMemberValidator';
 import UpdateActivityMemberValidator from 'App/Validators/UpdateActivityMemberValidator';
+import { DateTime } from 'luxon';
 import { validate as uuidValidation } from "uuid";
 
 function filteredDataMembersAndEmployees(dataMembersOrEmployees, dataPresences) {
@@ -24,7 +25,8 @@ function filteredDataMembersAndEmployees(dataMembersOrEmployees, dataPresences) 
 }
 export default class ActivityMembersController {
   public async index({ request, response }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
+    const dateStart = DateTime.now().toMillis()
+   CreateRouteHist(statusRoutes.START, dateStart)
     const { activityId = "", keyword = "" } = request.qs()
 
     try {
@@ -38,11 +40,11 @@ export default class ActivityMembersController {
           })
         })
 
-      CreateRouteHist(request, statusRoutes.FINISH)
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Data Berhasil Didapatkan", data })
     } catch (error) {
       const message = "HRDAM01: " + error.message || error;
-      CreateRouteHist(request, statusRoutes.ERROR, message)
+      CreateRouteHist(statusRoutes.ERROR, dateStart, message)
       console.log(error);
       response.badRequest({
         message: "Gagal mengambil data",
@@ -53,7 +55,8 @@ export default class ActivityMembersController {
   }
 
   public async store({ request, response }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
+    const dateStart = DateTime.now().toMillis()
+   CreateRouteHist(statusRoutes.START, dateStart)
     const payload = await request.validate(CreateActivityMemberValidator);
 
     const promises = payload.activityMembers.map(async value => {
@@ -74,11 +77,11 @@ export default class ActivityMembersController {
       await Promise.all(promises);
 
       const data = await ActivityMember.createMany(payload.activityMembers);
-      CreateRouteHist(request, statusRoutes.FINISH)
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.created({ message: "Berhasil menyimpan data", data });
     } catch (error) {
       const message = "HRDAM02: " + error.message || error;
-      CreateRouteHist(request, statusRoutes.ERROR, message)
+      CreateRouteHist(statusRoutes.ERROR, dateStart, message)
       console.log(error);
       response.badRequest({
         message: "Gagal mengambil data",
@@ -89,7 +92,8 @@ export default class ActivityMembersController {
   }
 
   public async update({ request, response, params }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
+    const dateStart = DateTime.now().toMillis()
+   CreateRouteHist(statusRoutes.START, dateStart)
     const { id } = params
     if (!uuidValidation(id)) {
       return response.badRequest({ message: "Subject ID tidak valid" });
@@ -105,11 +109,11 @@ export default class ActivityMembersController {
       const data = await ActivityMember.findOrFail(id)
       await data.merge(payload).save()
 
-      CreateRouteHist(request, statusRoutes.FINISH)
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Update data success", data })
     } catch (error) {
       const message = "HRDAM03: " + error.message || error;
-      CreateRouteHist(request, statusRoutes.ERROR, message)
+      CreateRouteHist(statusRoutes.ERROR, dateStart, message)
       console.log(error);
       response.badRequest({
         message: "Gagal update data",
@@ -120,7 +124,8 @@ export default class ActivityMembersController {
   }
 
   public async destroy({ request, response }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
+    const dateStart = DateTime.now().toMillis()
+   CreateRouteHist(statusRoutes.START, dateStart)
     const rawBody = request.raw();
     const datas = JSON.parse(rawBody!);
 
@@ -130,19 +135,20 @@ export default class ActivityMembersController {
         await data.delete()
       } catch (error) {
         const message = "HRDAM04: " + error.message || error;
-        CreateRouteHist(request, statusRoutes.ERROR, message)
+        CreateRouteHist(statusRoutes.ERROR, dateStart, message)
         return response.badRequest({
           message: error.message
         })
       }
     })
 
-    CreateRouteHist(request, statusRoutes.FINISH)
+    CreateRouteHist(statusRoutes.FINISH, dateStart)
     response.ok({ message: "Delete data success" })
   }
 
   public async getEmployee({ response, params, request }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
+    const dateStart = DateTime.now().toMillis()
+   CreateRouteHist(statusRoutes.START, dateStart)
     const { activityId } = params
     const { keyword = "" } = request.qs()
 
@@ -162,12 +168,13 @@ export default class ActivityMembersController {
       .whereNotIn('id', employeeIds)
       .whereILike('name', `%${keyword}%`)
 
-    CreateRouteHist(request, statusRoutes.FINISH)
+    CreateRouteHist(statusRoutes.FINISH, dateStart)
     response.ok({ message: "Data Berhasil Didapatkan", data })
   }
 
   public async getActivityMemberAndEmployee({ request, response }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
+    const dateStart = DateTime.now().toMillis()
+   CreateRouteHist(statusRoutes.START, dateStart)
     try {
       const { keyword = "", activityId, subActivityId = "" } = request.qs()
 
@@ -225,11 +232,11 @@ export default class ActivityMembersController {
         filteredDataMembersAndEmployees(dataEmployeesObject, dataPresences)
       }
 
-      CreateRouteHist(request, statusRoutes.FINISH)
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Data Berhasil Didapatkan", data: [...dataActivityMembersObject, ...dataEmployeesObject] })
     } catch (error) {
       const message = "HRDAM06: " + error.message || error;
-      CreateRouteHist(request, statusRoutes.ERROR, message)
+      CreateRouteHist(statusRoutes.ERROR, dateStart, message)
       console.log(error);
       response.badRequest({
         message: "Gagal mengambil data",

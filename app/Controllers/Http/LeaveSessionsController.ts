@@ -4,11 +4,13 @@ import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist'
 import { statusRoutes } from 'App/Modules/Log/lib/enum'
 import CreateLeaveSessionValidator from 'App/Validators/CreateLeaveSessionValidator'
 import UpdateLeaveSessionValidator from 'App/Validators/UpdateLeaveSessionValidator'
+import { DateTime } from 'luxon'
 import { validate as uuidValidation } from "uuid"
 
 export default class LeaveSessionsController {
   public async index({ request, response }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart)
     const { page = 1, limit = 10, keyword = "", fromDate = "", toDate = "", employeeId } = request.qs()
 
     try {
@@ -38,11 +40,11 @@ export default class LeaveSessionsController {
           .paginate(page, limit)
       }
 
-      CreateRouteHist(request, statusRoutes.FINISH)
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Data Berhasil Didapatkan", data })
     } catch (error) {
       const message = "HRDLES01: " + error.message || error;
-      CreateRouteHist(request, statusRoutes.ERROR, message)
+      CreateRouteHist(statusRoutes.ERROR, dateStart, message)
       console.log(error);
       response.badRequest({
         message: "Gagal mengambil data",
@@ -53,16 +55,17 @@ export default class LeaveSessionsController {
   }
 
   public async store({ request, response }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart)
     const payload = await request.validate(CreateLeaveSessionValidator)
 
     try {
       const data = await LeaveSession.create(payload);
-      CreateRouteHist(request, statusRoutes.FINISH)
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.created({ message: "Berhasil menyimpan data", data });
     } catch (error) {
       const message = "HRDLES02: " + error.message || error;
-      CreateRouteHist(request, statusRoutes.ERROR, message)
+      CreateRouteHist(statusRoutes.ERROR, dateStart, message)
       console.log(error);
       response.badRequest({
         message: "Gagal mengambil data",
@@ -72,8 +75,9 @@ export default class LeaveSessionsController {
     }
   }
 
-  public async show({ params, response, request }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
+  public async show({ params, response }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart)
     const { id } = params;
     if (!uuidValidation(id)) {
       return response.badRequest({ message: "LeaveSession ID tidak valid" });
@@ -81,11 +85,11 @@ export default class LeaveSessionsController {
 
     try {
       const data = await LeaveSession.query().where("id", id).firstOrFail();
-      CreateRouteHist(request, statusRoutes.FINISH)
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
       const message = "HRDLES03: " + error.message || error;
-      CreateRouteHist(request, statusRoutes.ERROR, message)
+      CreateRouteHist(statusRoutes.ERROR, dateStart, message)
       console.log(error);
       response.badRequest({
         message: "Gagal mengambil data",

@@ -5,10 +5,12 @@ import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist'
 import { statusRoutes } from 'App/Modules/Log/lib/enum'
 import AddEmployeeToDivisionValidator from 'App/Validators/AddEmployeeToDivisionValidator'
 import EditEmployeeTitleInDivisionValidator from 'App/Validators/EditEmployeeTitleInDivisionValidator'
+import { DateTime } from 'luxon'
 
 export default class EmployeeDivisionsController {
   public async store({ params, request, response }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
+    const dateStart = DateTime.now().toMillis()
+   CreateRouteHist(statusRoutes.START, dateStart)
     const { employee_id } = params
     await Employee.findOrFail(employee_id)
 
@@ -16,7 +18,7 @@ export default class EmployeeDivisionsController {
 
     await EmployeeDivision.create({ employeeId: employee_id, ...payload })
 
-    CreateRouteHist(request, statusRoutes.FINISH)
+    CreateRouteHist(statusRoutes.FINISH, dateStart)
     response.created({
       message: "Berhasil menambahakan karyawan ke divisi"
     })

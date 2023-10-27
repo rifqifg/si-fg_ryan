@@ -9,8 +9,8 @@ export default class extends BaseSchema {
       table.text('achievement').nullable()
       table.text('indisipliner').nullable()
       table.text('suggestions_and_improvements').nullable()
-      table.uuid('employee_id').references('employees.id').onUpdate('cascade').onDelete('restrict')
-      table.uuid('monthly_report_id').references('monthly_reports.id').onUpdate('cascade').onDelete('restrict')
+      table.uuid('employee_id').references('employees.id').onUpdate('cascade').onDelete('cascade')
+      table.uuid('monthly_report_id').references('monthly_reports.id').onUpdate('cascade').onDelete('cascade')
 
       /**
        * Uses timestamptz for PostgreSQL and DATETIME2 for MSSQL

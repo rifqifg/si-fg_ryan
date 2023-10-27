@@ -118,6 +118,27 @@ export default class RevenuesController {
     }
   }
 
+  public async destroy({ params, response }: HttpContextContract) {
+    const { id } = params;
+    if (!uuidValidation(id)) {
+      return response.badRequest({ message: "ID tidak valid" });
+    }
+
+    try {
+      const data = await Revenue.findOrFail(id);
+      await data.delete();
+      response.ok({ message: "Berhasil menghapus data" });
+    } catch (error) {
+      const message = "FBIL-DEL: " + error.message || error;
+      console.log(error);
+      response.badRequest({
+        message: "Gagal menghapus data",
+        error: message,
+        error_data: error,
+      });
+    }
+  }
+
   public async import({ request, response }: HttpContextContract) {
 
     const excelSchema = schema.create({ upload: schema.file({ extnames: ['xlsx', 'csv'] }) })

@@ -91,8 +91,8 @@ export default class MonthlyReportsController {
             .preload('monthlyReportEmployeesFixedTime', mreft => mreft
               .select('*')
               .select(Database.raw(`(case
-                when skor * 100 / (select default_presence from public.employees where id= (select employee_id from monthly_report_employees where id = monthly_report_employee_id)) > 100 then 100
-                else skor * 100 / (select default_presence from public.employees where id= (select employee_id from monthly_report_employees where id = monthly_report_employee_id))
+                when skor * 100 / NULLIF((select default_presence from public.employees where id= (select employee_id from monthly_report_employees where id = monthly_report_employee_id)), 0) > 100 then 100
+                else skor * 100 / NULLIF((select default_presence from public.employees where id= (select employee_id from monthly_report_employees where id = monthly_report_employee_id)), 0)
                 end) as percentage`))
               .select(Database.raw(`(select default_presence from public.employees where id= (select employee_id from monthly_report_employees where id = monthly_report_employee_id)) as "default"`))
               .whereHas('activity', ac => ac.where('activity_type', 'fixed_time').andWhere('assessment', true))
@@ -101,8 +101,8 @@ export default class MonthlyReportsController {
             .preload('monthlyReportEmployeesNotFixedTime', mrenft => mrenft
               .select('*')
               .select(Database.raw(`(case
-                when skor * 100 / (select "default" from public.activities where id=activity_id) > 100 then 100
-                else skor * 100 / (select "default" from public.activities where id=activity_id)
+                when skor * 100 / NULLIF((select "default" from public.activities where id=activity_id), 0) > 100 then 100
+                else skor * 100 / NULLIF((select "default" from public.activities where id=activity_id), 0)
                 end) as percentage`))
               .select(Database.raw(`(select "default" from public.activities where id=activity_id) as "default"`))
               .whereHas('activity', ac => ac.where('activity_type', 'not_fixed_time').andWhere('assessment', true))
@@ -117,8 +117,8 @@ export default class MonthlyReportsController {
             .preload('monthlyReportEmployeesTeaching', mret => mret
               .select('*')
               .select(Database.raw(`(case
-                when skor * 100 / (select total_mengajar from academic.teachers where employee_id =(select employee_id from monthly_report_employees where id = monthly_report_employee_id)) > 100 then 100
-                else skor * 100 / (select total_mengajar from academic.teachers where employee_id =(select employee_id from monthly_report_employees where id = monthly_report_employee_id))
+                when skor * 100 / NULLIF((select total_mengajar from academic.teachers where employee_id =(select employee_id from monthly_report_employees where id = monthly_report_employee_id)), 0) > 100 then 100
+                else skor * 100 / NULLIF((select total_mengajar from academic.teachers where employee_id =(select employee_id from monthly_report_employees where id = monthly_report_employee_id)), 0)
                 end) as percentage`))
               .select(Database.raw(`(select total_mengajar from academic.teachers where employee_id =(select employee_id from monthly_report_employees where id = monthly_report_employee_id)) as "default"`))
               .where('is_teaching', true)))
@@ -156,8 +156,8 @@ export default class MonthlyReportsController {
             .preload('monthlyReportEmployeesFixedTime', mreft => mreft
               .select('*')
               .select(Database.raw(`(case
-                when skor * 100 / (select default_presence from public.employees where id='${employeeId}') > 100 then 100
-                else skor * 100 / (select default_presence from public.employees where id='${employeeId}')
+                when skor * 100 / NULLIF((select default_presence from public.employees where id='${employeeId}'), 0) > 100 then 100
+                else skor * 100 / NULLIF((select default_presence from public.employees where id='${employeeId}'), 0)
                 end) as percentage`))
               .select(Database.raw(`(select default_presence from public.employees where id='${employeeId}') as "default"`))
               .whereHas('activity', ac => ac.where('activity_type', 'fixed_time').andWhere('assessment', true))
@@ -166,8 +166,8 @@ export default class MonthlyReportsController {
             .preload('monthlyReportEmployeesNotFixedTime', mrenft => mrenft
               .select('*')
               .select(Database.raw(`(case
-                when skor * 100 / (select "default" from public.activities where id=activity_id) > 100 then 100
-                else skor * 100 / (select "default" from public.activities where id=activity_id)
+                when skor * 100 / NULLIF((select "default" from public.activities where id=activity_id), 0) > 100 then 100
+                else skor * 100 / NULLIF((select "default" from public.activities where id=activity_id), 0)
                 end) as percentage`))
               .select(Database.raw(`(select "default" from public.activities where id=activity_id) as "default"`))
               .whereHas('activity', ac => ac.where('activity_type', 'not_fixed_time').andWhere('assessment', true))
@@ -182,8 +182,8 @@ export default class MonthlyReportsController {
             .preload('monthlyReportEmployeesTeaching', mret => mret
               .select('*')
               .select(Database.raw(`(case
-                when skor * 100 / (select total_mengajar from academic.teachers where employee_id ='${employeeId}') > 100 then 100
-                else skor * 100 / (select total_mengajar from academic.teachers where employee_id ='${employeeId}')
+                when skor * 100 / NULLIF((select total_mengajar from academic.teachers where employee_id ='${employeeId}'), 0) > 100 then 100
+                else skor * 100 / NULLIF((select total_mengajar from academic.teachers where employee_id ='${employeeId}'), 0)
                 end) as percentage`))
               .select(Database.raw(`(select total_mengajar from academic.teachers where employee_id ='${employeeId}') as "default"`))
               .where('is_teaching', true)))

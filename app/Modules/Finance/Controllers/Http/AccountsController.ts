@@ -178,7 +178,7 @@ export default class AccountsController {
       const student = await Student.query()
         .where('nisn', '=', nisn)
         .firstOrFail()
-      const accountName = `Rekening ${data['Jenis Akun']} ${student.name}`
+      const accountName = student.name
       const balance = data["Saldo"] ? data["Saldo"].toString() : "0"
 
       return {

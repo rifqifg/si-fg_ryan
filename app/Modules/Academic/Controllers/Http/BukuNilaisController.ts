@@ -18,7 +18,7 @@ export default class BukuNilaisController {
       keyword = "",
       generateUts = false,
       startDate = "",
-      endDate = ""
+      endDate = "",
     } = request.qs();
     try {
       const user = await User.query()
@@ -73,10 +73,10 @@ export default class BukuNilaisController {
         .where("class_id", classId)
         .andWhere("subject_id", subjectId)
         .andWhere("teacher_id", teacherId)
-        .andWhere('aspekPenilaian', aspekPenilaian)
+        .andWhere("aspekPenilaian", aspekPenilaian)
         .whereHas("students", (s) => s.whereILike("name", `%${keyword}%`))
-        .whereHas('semester', s => s.where('is_active', true))
-        .andWhereHas('academicYear', y => y.where('active', true))
+        .whereHas("semester", (s) => s.where("is_active", true))
+        .andWhereHas("academicYear", (y) => y.where("active", true))
         .preload("classes", (c) => c.select("id", "name"))
         .preload(
           "teachers",
@@ -89,22 +89,22 @@ export default class BukuNilaisController {
         .preload("students", (s) => s.select("id", "name"))
         .preload("programSemesterDetail", (psd) =>
           psd.select("kompetensi_dasar", "kompetensi_dasar_index", "materi")
-        ).preload('semester', s => s.select('*')).preload('academicYear', ay => ay.select('*'))
-        // return bukuNilaiData
+        )
+        .preload("semester", (s) => s.select("*"))
+        .preload("academicYear", (ay) => ay.select("*"));
+      // return bukuNilaiData
       const nilais = bukuNilaiData.map((bn) => ({
         id: bn.id,
         studentId: bn.studentId,
-        value: aspekPenilaian !== 'SIKAP' ? bn.nilai : bn.nilaiSikap,
+        value: aspekPenilaian !== "SIKAP" ? bn.nilai : bn.nilaiSikap,
         materi: bn.material,
       }));
-
-      
 
       const types = bukuNilaiData.map((bn) => ({
         type: bn.type,
         prosemDetailId: bn.programSemesterDetailId,
         materi: bn.material,
-        tanggalPengambilanNilai: bn.tanggalPengambilanNilai
+        tanggalPengambilanNilai: bn.tanggalPengambilanNilai,
       }));
 
       const students = bukuNilaiData.map((bn) => bn.students); // ekstrak students
@@ -128,16 +128,17 @@ export default class BukuNilaisController {
         // @ts-ignore
       )?.map(JSON.parse);
 
-      const uts = generateUts === "true" ? true : false
+      const uts = generateUts === "true" ? true : false;
 
       if (uts) {
-
-        if (aspekPenilaian === 'SIKAP') {
-          return response.badRequest({message: 'Aspek Sikap tidak bisa di generate UTS'})
+        if (aspekPenilaian === "SIKAP") {
+          return response.badRequest({
+            message: "Aspek Sikap tidak bisa di generate UTS",
+          });
         }
 
         const utsData = await Database.rawQuery(`
-        select bn.student_id, round(avg(bn.nilai), 2) uts
+        select bn.student_id, round(avg(bn.nilai), 2) uts, bn.subject_id, bn.class_id, bn.teacher_id, bn.aspek_penilaian, bn.semester_id, bn.academic_year_id
         from academic.buku_nilais bn
                  left join academic.semesters s
                            on s.id = bn.semester_id
@@ -149,17 +150,70 @@ export default class BukuNilaisController {
           and bn.class_id = '${classId}'
           and bn.teacher_id = '${teacherId}'
           and bn.subject_id = '${subjectId}'
+          and bn.type = 'HARIAN'
           and bn.tanggal_pengambilan_nilai between '${startDate}' and '${endDate}'
-        group by bn.student_id
+        group by bn.student_id, bn.subject_id, bn.class_id, bn.teacher_id, bn.aspek_penilaian, bn.semester_id, bn.academic_year_id
         order by bn.student_id
-        `)
-        
-        const utsNilai = utsData.rows.map(n => ({studentId: n.student_id, value: n.uts, materi: 'uts'}))
-        uniqueProsemDetails.push(null)
-        uniqueTypeOfBukuNilai.push({type: 'uts', materi: 'uts', prosemDetailId: null })
-        nilais.push(...utsNilai)
-        
+        `);
 
+        if (Boolean(bukuNilaiData.find((bn) => bn.type == "UTS"))) {
+          const updateUts = utsData.rows.map((uts) => ({
+            nilai: uts?.uts,
+            studentId: uts?.student_id,
+          }));
+          
+          const utsIds = bukuNilaiData
+            .filter((bn) => bn.type == "UTS")
+            .map((uts) => ({ id: uts.id, studentId: uts.studentId }));
+
+          const result: any = utsIds.map((utsIdItem) => {
+            const studentIdToFind = utsIdItem.studentId;
+            const updateUtsItem = updateUts.find(
+              (updateUtsItem) => updateUtsItem.studentId === studentIdToFind
+            );
+
+            if (updateUtsItem) {
+              return { id: utsIdItem.id, nilai: +updateUtsItem.nilai };
+            } else {
+              return `Data dengan studentId ${studentIdToFind} tidak ditemukan.`;
+            }
+          });
+          
+          try {
+            await BukuNilai.updateOrCreateMany('id', result)
+            
+            CreateRouteHist(request, statusRoutes.FINISH)
+            return response.ok({message: "UTS telah berhasil diperbarui"})
+          } catch (error) {
+            CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
+            response.badRequest({message: "Gagal memperbarui uts", error})
+          }
+        } else {
+          const utsPayload = utsData.rows.map((uts) => ({
+            studentId: uts.student_id,
+            subjectId: uts.subject_id,
+            classId: uts.class_id,
+            teacherId: uts.teacher_id,
+            semesterId: uts.semester_id,
+            aspekPenilaian: uts.aspek_penilaian,
+            academicYearId: uts.academic_year_id,
+            type: "UTS",
+            material: "UTS",
+            tanggalPengambilanNilai: new Date().toISOString().slice(0, 10),
+            nilai: uts.uts,
+          }));
+
+          try {
+
+            await BukuNilai.createMany(utsPayload);
+            CreateRouteHist(request, statusRoutes.FINISH)
+            return response.created({message: "uts generated successfully"})
+          } catch (error) {
+            CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
+            return response.badRequest({message: "Gagal menghitung nilai UTS", error})
+          }
+        }
+      
       }
 
       const data = {
@@ -172,7 +226,10 @@ export default class BukuNilaisController {
           subject_id: bukuNilaiData[0]?.subjectId,
           subject_name: bukuNilaiData[0]?.mapels.name,
           aspek_penilaian: bukuNilaiData[0]?.aspekPenilaian,
-          tahun_ajaran: bukuNilaiData[0]?.semester.description + " / " + bukuNilaiData[0]?.academicYear.description
+          tahun_ajaran:
+            bukuNilaiData[0]?.semester.description +
+            " / " +
+            bukuNilaiData[0]?.academicYear.description,
         },
         bab: uniqueProsemDetails.map((b) => ({
           kompetensi_dasar_index: b?.kompetensi_dasar_index
@@ -183,7 +240,7 @@ export default class BukuNilaisController {
             .filter(
               (type) =>
                 type.prosemDetailId === b?.id ||
-                (type.prosemDetailId === null && b === null )
+                (type.prosemDetailId === null && b === null)
             )
             .map((t) => ({
               name: aspekPenilaian === "SIKAP" ? "SIKAP" : t.type,
@@ -191,7 +248,7 @@ export default class BukuNilaisController {
               materi_prosem: b?.materi,
               tanggal_pengambilan_nilai: t?.tanggalPengambilanNilai,
               nilai: nilais
-                .filter((n) => n.materi === t.materi )
+                .filter((n) => n.materi === t.materi)
                 .map((nilai) => ({
                   id: nilai?.id,
                   studentId: nilai?.studentId,
@@ -292,7 +349,7 @@ export default class BukuNilaisController {
             material: schema.string.optional([rules.trim()]),
             nilai: schema.number.optional(),
             type: schema.enum.optional(["HARIAN", "UTS", "UAS"]),
-            tanggalPengambilanNilai: schema.date({format: 'yyyy-MM-dd'})
+            tanggalPengambilanNilai: schema.date({ format: "yyyy-MM-dd" }),
           })
         ),
       });
@@ -351,7 +408,7 @@ export default class BukuNilaisController {
             nilai: schema.number.optional(),
             type: schema.enum.optional(["HARIAN", "UTS", "UAS"]),
             material: schema.string.optional([rules.trim()]),
-            tanggalPengambilanNilai: schema.date({format: 'yyyy-MM-dd'}),
+            tanggalPengambilanNilai: schema.date({ format: "yyyy-MM-dd" }),
           })
         ),
       });
@@ -488,7 +545,9 @@ export default class BukuNilaisController {
           semesterId: schema.string.optional(),
           nilaiSikap: schema.string.optional(),
           aspekPenilaian: schema.string.optional(),
-          tanggalPengambilanNilai: schema.date.optional({format: 'yyyy-MM-dd'})
+          tanggalPengambilanNilai: schema.date.optional({
+            format: "yyyy-MM-dd",
+          }),
         });
         payload = await request.validate({ schema: schemaForTeacher });
       } catch (error) {
@@ -541,7 +600,7 @@ export default class BukuNilaisController {
         nilai: schema.number.optional(),
         material: schema.string.optional([rules.trim()]),
         type: schema.enum.optional(["HARIAN", "UTS", "UAS"]),
-        tanggalPengambilanNilai: schema.date.optional({format: 'yyyy-MM-dd'})
+        tanggalPengambilanNilai: schema.date.optional({ format: "yyyy-MM-dd" }),
       });
       payload = await request.validate({ schema: schemaForAdmin });
     }

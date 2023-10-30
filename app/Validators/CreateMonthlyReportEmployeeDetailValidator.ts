@@ -1,9 +1,8 @@
 import { schema, CustomMessages, rules } from '@ioc:Adonis/Core/Validator'
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import { LeaveStatuses, StatusLeaves, TypeLeaves } from 'App/lib/enum'
 
-export default class CreateLeaveValidator {
-  constructor(protected ctx: HttpContextContract) {}
+export default class CreateMonthlyReportEmployeeDetailValidator {
+  constructor(protected ctx: HttpContextContract) { }
 
   /*
    * Define schema to validate the "shape", "type", "formatting" and "integrity" of data.
@@ -25,24 +24,19 @@ export default class CreateLeaveValidator {
    *    ```
    */
   public schema = schema.create({
-    status: schema.enum.optional(Object.values(StatusLeaves)),
-    reason: schema.string([
+    skor: schema.number.optional(),
+    note: schema.string.nullableAndOptional([
       rules.minLength(3)
     ]),
-    fromDate: schema.date({
-      format: 'yyyy-MM-dd'
-    }),
-    toDate: schema.date({
-      format: 'yyyy-MM-dd'
-    }),
-    note: schema.string.optional([
-      rules.minLength(3)
+    monthlyReportEmployeeId: schema.string({}, [
+      rules.exists({ table: 'monthly_report_employees', column: 'id' })
     ]),
-    type: schema.enum(Object.values(TypeLeaves)),
-    employeeId: schema.string({}, [
-      rules.exists({table: 'employees', column: 'id'})
+    activityId: schema.string.nullableAndOptional({}, [
+      rules.exists({ table: 'activities', column: 'id' })
     ]),
-    leaveStatus: schema.enum(Object.values(LeaveStatuses))
+    leaveId: schema.string.nullableAndOptional({}, [
+      rules.exists({ table: 'leaves', column: 'id' })
+    ]),
   })
 
   /**

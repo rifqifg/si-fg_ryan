@@ -2,10 +2,12 @@ import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Database from '@ioc:Adonis/Lucid/Database'
 import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist'
 import { statusRoutes } from 'App/Modules/Log/lib/enum'
+import { DateTime } from 'luxon'
 
 export default class EmployeeChartsController {
-  public async karyawanKehadiran({ request, response }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
+  public async karyawanKehadiran({ response }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart)
     const tableSyncPresences = 'presences'
     const activityId = '02d5b9cc-1a1c-43a2-9bbb-2e291e7a6e90'
 
@@ -86,14 +88,14 @@ export default class EmployeeChartsController {
     try {
       const { rows: dataHarian } = await Database.rawQuery(selectDaily)
       const { rows: dataBulanan } = await Database.rawQuery(selectMonthly)
-      CreateRouteHist(request, statusRoutes.FINISH)
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({
         message: "Berhasil menghitung data kehadiran karyawan",
         dataHarian,
         dataBulanan,
       })
     } catch (error) {
-      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
+      CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error)
       console.log(error);
       return response.internalServerError({
         message: 'ECHR64: Gagal Menghitung Data kehadiran karyawan',

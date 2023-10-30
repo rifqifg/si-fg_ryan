@@ -35,11 +35,13 @@ export default class BillingsController {
           .if(student_id, q => q.whereHas('account', qAccount => qAccount.where('student_id', student_id)))
           .if(status, q => q.where('status', '=', status))
           .if(keyword, q => {
-            q.andWhereHas('account', (a) => a.whereILike("number", `%${keyword}%`))
-              .orWhereILike("name", `%${keyword}%`)
+            q.andWhere(qWhere => {
+              qWhere.andWhereHas('account', (a) => a.whereILike("number", `%${keyword}%`))
+              qWhere.orWhereHas('account', (a) => a.whereILike("account_name", `%${keyword}%`))
+            })
           })
           .if(academic_year_id, q => {
-            q.whereBetween('due_date', [`${academicYearBegin}-07-01`, `${academicYearEnd}-06-01`])
+            q.andWhereBetween('due_date', [`${academicYearBegin}-07-01`, `${academicYearEnd}-06-01`])
           })
           .preload('account', qAccount => qAccount.select('account_name', 'number', 'student_id'))
           .orderBy('due_date', 'asc')

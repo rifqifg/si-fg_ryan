@@ -18,6 +18,7 @@ import HttpExceptionHandler from '@ioc:Adonis/Core/HttpExceptionHandler'
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist'
 import { statusRoutes } from 'App/Modules/Log/lib/enum'
+import { DateTime } from 'luxon'
 
 export default class ExceptionHandler extends HttpExceptionHandler {
   constructor() {
@@ -25,11 +26,13 @@ export default class ExceptionHandler extends HttpExceptionHandler {
   }
 
   public async handle(error: any, { request }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis()
     /**
      * Self handle the validation exception
      */
     // console.log(error.messages);
-    CreateRouteHist(request, statusRoutes.ERROR, error.code)
+
+    CreateRouteHist(statusRoutes.ERROR, dateStart, error.code)
 
     if (error.code === 'E_INVALID_AUTH_PASSWORD') {
       return request.ctx?.response.badRequest({

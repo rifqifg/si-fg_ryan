@@ -3,10 +3,12 @@ import Activity from 'App/Models/Activity'
 import User from 'App/Models/User'
 import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist'
 import { statusRoutes } from 'App/Modules/Log/lib/enum'
+import { DateTime } from 'luxon'
 
 export default class UserBehaviorHrdsController {
-  public async activity({ request, response, auth }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
+  public async activity({ response, auth }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart)
     const user = await User.query().preload('roles', r => r.preload('role')).where('id', auth.use('api').user!.id).firstOrFail()
     const userObject = JSON.parse(JSON.stringify(user))
 
@@ -23,7 +25,7 @@ export default class UserBehaviorHrdsController {
         .whereHas('activityMembers', am => (am.where('employee_id', user.employeeId), am.where('role', 'manager')))
     }
 
-    CreateRouteHist(request, statusRoutes.FINISH)
+    CreateRouteHist(statusRoutes.FINISH, dateStart)
     response.ok({ message: "Data Berhasil Didapatkan", data })
   }
 }

@@ -3,6 +3,7 @@ import Transaction from '../../Models/Transaction';
 import CreateTransactionValidator from '../../Validators/CreateTransactionValidator';
 import { validate as uuidValidation } from "uuid";
 import UpdateTransactionValidator from '../../Validators/UpdateTransactionValidator';
+import { BillingStatus } from '../../lib/enums';
 
 export default class TransactionsController {
   public async index({ request, response }: HttpContextContract) {
@@ -91,7 +92,7 @@ export default class TransactionsController {
         .preload('billings', qBilling => {
           qBilling
             .pivotColumns(['amount'])
-            .select('name', 'amount', 'remaining_amount', 'account_id')
+            .select('name', 'amount', 'account_id', 'due_date')
             .preload('account', qAccount => {
               qAccount.select('account_name', 'number')
             })
@@ -101,6 +102,14 @@ export default class TransactionsController {
 
       const relatedBillings = await data.related('billings').query().pivotColumns(['amount'])
       data.$extras.amount = relatedBillings.reduce((sum, current) => sum + current.$extras.pivot_amount, 0)
+
+      data.billings.forEach(bill => {
+        bill.$extras.remaining_amount = bill.amount - bill.$extras.pivot_amount
+
+        if (bill.$extras.remaining_amount > 0) bill.$extras.status = BillingStatus.PAID_PARTIAL
+        if (bill.$extras.remaining_amount === bill.amount) bill.$extras.status = BillingStatus.UNPAID
+        if (bill.$extras.remaining_amount <= 0) bill.$extras.status = BillingStatus.PAID_FULL
+      })
 
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {

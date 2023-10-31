@@ -62,10 +62,10 @@ export default class MonthlyReportEmployeesController {
         .preload('monthlyReportEmployeesFixedTime', mreft => mreft
           .select('*')
           .select(Database.raw(`(case
-            when skor * 100 / NULLIF((select default_presence from public.employees where id='${employeeId}'), 0) > 100 then 100
-            else skor * 100 / NULLIF((select default_presence from public.employees where id='${employeeId}'), 0)
+            when skor * 100 / (NULLIF((select default_presence from public.employees where id='${employeeId}'), 0) - (select red_dates from monthly_reports where id = (select monthly_report_id from monthly_report_employees where id = '${id}'))) > 100 then 100
+            else skor * 100 / (NULLIF((select default_presence from public.employees where id='${employeeId}'), 0) - (select red_dates from monthly_reports where id = (select monthly_report_id from monthly_report_employees where id = '${id}')))
             end) as percentage`))
-          .select(Database.raw(`(select default_presence from public.employees where id='${employeeId}') as "default"`))
+          .select(Database.raw(`(select default_presence from public.employees where id='${employeeId}') - (select red_dates from monthly_reports where id = (select monthly_report_id from monthly_report_employees where id = '${id}')) as "default"`))
           .whereHas('activity', ac => ac.where('activity_type', 'fixed_time').andWhere('assessment', true))
           .preload('activity', a => a.select('id', 'name', 'category_activity_id')
             .preload('categoryActivity', ca => ca.select('name'))))

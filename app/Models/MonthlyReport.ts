@@ -19,6 +19,9 @@ export default class MonthlyReport extends BaseModel {
   @column.date()
   public toDate: DateTime
 
+  @column()
+  public redDates: number
+
   @hasMany(() => MonthlyReportEmployee)
   public monthlyReportEmployees: HasMany<typeof MonthlyReportEmployee>
 

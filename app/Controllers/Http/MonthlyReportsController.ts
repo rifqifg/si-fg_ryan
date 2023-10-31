@@ -86,7 +86,7 @@ export default class MonthlyReportsController {
             .whereHas('employee', e => e.whereILike('name', `%${keyword}%`))
             .preload('employee', e => e
               .select('name', 'nik', 'status')
-              .select(Database.raw(`EXTRACT(YEAR FROM AGE(NOW(), "date_in")) || ' tahun ' || EXTRACT(MONTH FROM AGE(NOW(), "date_in")) || ' bulan' AS period_of_work`))
+              .select(Database.raw(`EXTRACT(YEAR FROM AGE((select to_date from monthly_reports where id = '${id}'), "date_in")) || ' tahun ' || EXTRACT(MONTH FROM AGE((select to_date from monthly_reports where id = '${id}'), "date_in")) || ' bulan' AS period_of_work`))
               .preload('divisions', ds => ds.select("title", "divisionId").preload('division', d => d.select('name'))))
             .preload('monthlyReportEmployeesFixedTime', mreft => mreft
               .select('*')
@@ -151,7 +151,7 @@ export default class MonthlyReportsController {
             .preload('monthlyReport', mr => mr.select('name', 'from_date', 'to_date'))
             .preload('employee', e => e
               .select('name', 'nik', 'status')
-              .select(Database.raw(`EXTRACT(YEAR FROM AGE(NOW(), "date_in")) || ' tahun ' || EXTRACT(MONTH FROM AGE(NOW(), "date_in")) || ' bulan' AS period_of_work`))
+              .select(Database.raw(`EXTRACT(YEAR FROM AGE((select to_date from monthly_reports where id = '${id}'), "date_in")) || ' tahun ' || EXTRACT(MONTH FROM AGE((select to_date from monthly_reports where id = '${id}'), "date_in")) || ' bulan' AS period_of_work`))
               .preload('divisions', ds => ds.select("title", "divisionId").preload('division', d => d.select('name'))))
             .preload('monthlyReportEmployeesFixedTime', mreft => mreft
               .select('*')

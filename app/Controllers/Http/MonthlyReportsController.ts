@@ -82,7 +82,7 @@ export default class MonthlyReportsController {
         data = await MonthlyReport.query()
           .where("id", id)
           .preload('monthlyReportEmployees', mre => mre
-            .preload('monthlyReport', mr => mr.select('name', 'from_date', 'to_date'))
+            .preload('monthlyReport', mr => mr.select('name', 'from_date', 'to_date', 'red_dates'))
             .whereHas('employee', e => e.whereILike('name', `%${keyword}%`))
             .preload('employee', e => e
               .select('name', 'nik', 'status')
@@ -129,7 +129,8 @@ export default class MonthlyReportsController {
           id: dataArrayObject.id,
           name: dataArrayObject.name,
           from_date: dataArrayObject.from_date,
-          to_date: dataArrayObject.to_date
+          to_date: dataArrayObject.to_date,
+          red_dates: dataArrayObject.red_dates
         }
         let datas: any = []
         for (let i = 0; i < dataArrayObject.monthlyReportEmployees.length; i++) {

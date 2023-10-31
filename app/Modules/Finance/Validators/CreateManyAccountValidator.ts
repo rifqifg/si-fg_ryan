@@ -17,6 +17,7 @@ export default class CreateManyAccountValidator {
         //   rules.exists({ table: 'public.employees', column: 'id' })
         // ]),
         // owner: schema.string.optional(),
+        ref_amount: schema.number.optional(),
         account_name: schema.string(),
         balance: schema.number(),
         number: schema.string([
@@ -43,6 +44,9 @@ export default class CreateManyAccountValidator {
           break
         case 'student_id':
           cekColumn = 'Id Siswa'
+          break
+        case 'ref_amount':
+          cekColumn = 'Nominal Acuan'
           break
         // case 'employee_id':
         //   cekColumn = ''

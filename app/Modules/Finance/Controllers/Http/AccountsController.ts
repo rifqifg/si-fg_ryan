@@ -168,23 +168,23 @@ export default class AccountsController {
     const firstSheet = workbook.Sheets[sheetNames[0]]
     const jsonData: Array<object> = XLSX.utils.sheet_to_json(firstSheet)
 
-    if (jsonData.length <= 1) return 0
+    if (jsonData.length < 1) return 0
 
     // Warning: async call didalam loop (map)
     // might refactor later
     const formattedJson = await Promise.all(jsonData.map(async data => {
       const nisn = data["NISN"]?.toString()
 
-      const student = await Student.query()
-        .where('nisn', '=', nisn)
-        .firstOrFail()
-      const accountName = student.name
+      const student = await Student.findBy('nisn', nisn)
+      const studentId = student ? student.id : -1
+      const accountName = student ? student.name : "X Æ A-Xii"
       const balance = data["Saldo"] ? data["Saldo"].toString() : "0"
 
       return {
         coa_id: data['Nomor COA']?.toString(),
-        student_id: student.id,
+        student_id: studentId,
         account_name: accountName,
+        ref_amount: data['Nominal Acuan'],
         balance: balance,
         number: data['Nomor Rekening']?.toString()
       }

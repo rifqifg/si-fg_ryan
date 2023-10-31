@@ -10,6 +10,7 @@ import Leave from './Leave'
 import Database from '@ioc:Adonis/Lucid/Database'
 import LeaveSession from './LeaveSession'
 import TeacherAttendance from 'App/Modules/Academic/Models/TeacherAttendance'
+import Activity from './Activity'
 let newId = ""
 
 export default class MonthlyReportEmployee extends BaseModel {
@@ -68,60 +69,79 @@ export default class MonthlyReportEmployee extends BaseModel {
   public static async insertMonthlyReportEmployeeDetail(monthlyReportEmployee: MonthlyReportEmployee) {
     const { request } = HttpContext.get()!
     const { fromDate, toDate }: any = JSON.parse(request.raw()!)
-    // const monthlyReportId = monthlyReportEmployee.monthlyReportId
-    // const employeeId = monthlyReportEmployee.employeeId
 
-    // Menghitung Presensi employee Aktifitas yang tetap
-    const presenceEmployeeFixedTime = await countPresenceEMployeeFixedTime(monthlyReportEmployee, fromDate, toDate)
-    if (presenceEmployeeFixedTime) {
-      await MonthlyReportEmployeeDetail.create({
-        skor: presenceEmployeeFixedTime.presence_count,
-        activityId: presenceEmployeeFixedTime.activity_id,
-        monthlyReportEmployeeId: monthlyReportEmployee.id
-      })
-    }
-
-    // Menghitung Presensi employee Aktifitas yang tidak tetap
-    const presenceEmployeeNotFixedTime = await countPresenceEMployeeNotFixedTime(monthlyReportEmployee, fromDate, toDate)
-    if (presenceEmployeeNotFixedTime.length > 0) {
-      presenceEmployeeNotFixedTime.map(async value => {
+    try {
+      // Menghitung Presensi employee Aktifitas yang tetap
+      const presenceEmployeeFixedTime = await countPresenceEMployeeFixedTime(monthlyReportEmployee, fromDate, toDate)
+      if (presenceEmployeeFixedTime) {
         await MonthlyReportEmployeeDetail.create({
-          skor: value.presence_count,
-          activityId: value.activity_id,
+          skor: presenceEmployeeFixedTime.presence_count,
+          activityId: presenceEmployeeFixedTime.activity_id,
           monthlyReportEmployeeId: monthlyReportEmployee.id
         })
-      })
-    }
+      } else {
+        const activity = await Activity.query()
+          .select('id')
+          .where('activity_type', 'fixed_time')
+          .first()
+        const dataActivityObject = JSON.parse(JSON.stringify(activity))
+        await MonthlyReportEmployeeDetail.create({
+          skor: 0,
+          activityId: dataActivityObject.id,
+          monthlyReportEmployeeId: monthlyReportEmployee.id
+        })
+      }
 
-    //menghitung sisa jumlah cuti
-    const leaveEmployee = await countLeaveEmloyees(monthlyReportEmployee, fromDate)
-    if (leaveEmployee) {
-      await MonthlyReportEmployeeDetail.create({
-        skor: leaveEmployee.sisa_jatah_cuti,
-        isLeave: true,
-        monthlyReportEmployeeId: monthlyReportEmployee.id,
-        note: leaveEmployee.reasons
-      })
-    }
+      // Menghitung Presensi employee Aktifitas yang tidak tetap
+      const presenceEmployeeNotFixedTime = await countPresenceEMployeeNotFixedTime(monthlyReportEmployee, fromDate, toDate)
+      if (presenceEmployeeNotFixedTime.length > 0) {
+        presenceEmployeeNotFixedTime.map(async value => {
+          await MonthlyReportEmployeeDetail.create({
+            skor: value.presence_count,
+            activityId: value.activity_id,
+            monthlyReportEmployeeId: monthlyReportEmployee.id
+          })
+        })
+      }
 
-    //menghitung sisa jumlah cuti
-    const leaveSessionEmployee = await countLeaveSessionEmployee(monthlyReportEmployee, fromDate, toDate)
-    if (leaveSessionEmployee) {
-      await MonthlyReportEmployeeDetail.create({
-        skor: leaveSessionEmployee.count_sessions,
-        isLeaveSession: true,
-        monthlyReportEmployeeId: monthlyReportEmployee.id,
-        note: leaveSessionEmployee.notes
-      })
-    }
+      //menghitung sisa jumlah cuti
+      const leaveEmployee = await countLeaveEmloyees(monthlyReportEmployee, fromDate)
+      if (leaveEmployee) {
+        await MonthlyReportEmployeeDetail.create({
+          skor: leaveEmployee.sisa_jatah_cuti,
+          isLeave: true,
+          monthlyReportEmployeeId: monthlyReportEmployee.id,
+          note: leaveEmployee.reasons
+        })
+      }
 
-    const teachingEmployee = await countTeachingEmployee(monthlyReportEmployee, fromDate, toDate)
-    if (teachingEmployee) {
-      await MonthlyReportEmployeeDetail.create({
-        skor: teachingEmployee.teach,
-        isTeaching: true,
-        monthlyReportEmployeeId: monthlyReportEmployee.id,
-      })
+      //menghitung izin persesi
+      const leaveSessionEmployee = await countLeaveSessionEmployee(monthlyReportEmployee, fromDate, toDate)
+      if (leaveSessionEmployee) {
+        await MonthlyReportEmployeeDetail.create({
+          skor: leaveSessionEmployee.count_sessions,
+          isLeaveSession: true,
+          monthlyReportEmployeeId: monthlyReportEmployee.id,
+          note: leaveSessionEmployee.notes
+        })
+      } else {
+        await MonthlyReportEmployeeDetail.create({
+          skor: 0,
+          isLeaveSession: true,
+          monthlyReportEmployeeId: monthlyReportEmployee.id
+        })
+      }
+
+      const teachingEmployee = await countTeachingEmployee(monthlyReportEmployee, fromDate, toDate)
+      if (teachingEmployee) {
+        await MonthlyReportEmployeeDetail.create({
+          skor: teachingEmployee.teach,
+          isTeaching: true,
+          monthlyReportEmployeeId: monthlyReportEmployee.id,
+        })
+      }
+    } catch (error) {
+      console.log(error);
     }
   }
 }

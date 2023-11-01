@@ -15,7 +15,7 @@ import { DateTime } from "luxon";
 
 export default class TeacherAttendancesController {
   public async index({ request, response, auth }: HttpContextContract) {
-    const dateStart = DateTime.now().toMillis();
+    const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart);
     const {
       page = 1,
@@ -130,7 +130,7 @@ export default class TeacherAttendancesController {
   }
 
   public async store({ request, response }: HttpContextContract) {
-    const dateStart = DateTime.now().toMillis();
+    const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart);
 
     try {
@@ -157,8 +157,8 @@ export default class TeacherAttendancesController {
     }
   }
 
-  public async show({ params, response }: HttpContextContract) {
-    const dateStart = DateTime.now().toMillis();
+  public async show({  params, response }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart);
     const { id } = params;
 

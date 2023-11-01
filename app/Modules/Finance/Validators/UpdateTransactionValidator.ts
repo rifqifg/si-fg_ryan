@@ -15,16 +15,25 @@ export default class UpdateTransactionValidator {
     document_id: schema.string.optional({}, [
       rules.exists({ table: 'finance.transaction_documents', column: 'id' })
     ]),
+    revenue_id: schema.string.optional([
+      rules.exists({ table: 'finance.revenues', column: 'id' })
+    ]),
     // teller_id: schema.string.optional({}, [
     //   rules.exists({ table: 'public.employees', column: 'id' })
     // ]),
-    amount: schema.string.optional([
-      rules.regex(new RegExp("^[1-9][0-9]*$")),
-    ]),
+    amount: schema.number.optional(),
     method: schema.enum.optional(Object.values(TransactionMethods)),
     type: schema.enum.optional(Object.values(TransactionTypes)),
     description: schema.string.optional(),
-    status: schema.enum.optional(Object.values(TransactionStatus))
+    status: schema.enum.optional(Object.values(TransactionStatus)),
+    // items: schema.array.optional().members(
+    //   schema.object().members({
+    //     billing_id: schema.string([
+    //       rules.exists({table: 'finance.billings', column: 'id'})
+    //     ]),
+    //     amount: schema.number()
+    //   })
+    // )
   })
 
   public messages: CustomMessages = {}

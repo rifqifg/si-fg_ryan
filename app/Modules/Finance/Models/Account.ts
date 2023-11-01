@@ -32,13 +32,16 @@ export default class Account extends BaseModel {
   public owner: string | null
 
   @column()
-  accountName: string
+  public accountName: string
 
   @column()
-  balance: string
+  public balance: number | null
 
   @column()
-  number: string
+  public number: string
+
+  @column()
+  public refAmount: number
 
   @belongsTo(() => Coa)
   public coa: BelongsTo<typeof Coa>

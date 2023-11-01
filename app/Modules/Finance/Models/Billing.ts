@@ -1,14 +1,23 @@
 import { DateTime } from 'luxon'
-import { BaseModel, BelongsTo, afterCreate, beforeCreate, belongsTo, column } from '@ioc:Adonis/Lucid/Orm'
+import { BaseModel, BelongsTo, ManyToMany, afterCreate, beforeCreate, belongsTo, column, manyToMany } from '@ioc:Adonis/Lucid/Orm'
 import { BillingStatus, BillingType } from '../lib/enums';
 import MasterBilling from './MasterBilling';
 import Account from './Account';
 import { v4 as uuidv4 } from 'uuid'
+import Transaction from './Transaction';
 
 let newId = ""
 
 export default class Billing extends BaseModel {
   public static table = 'finance.billings';
+
+  public serializeExtras() {
+    return {
+      pivot_amount: this.$extras.pivot_amount,
+      remaining_amount: this.$extras.remaining_amount,
+      status: this.$extras.status
+    }
+  }
 
   @column({ isPrimary: true })
   public id: string
@@ -23,7 +32,7 @@ export default class Billing extends BaseModel {
   public name: string
 
   @column()
-  public amount: string
+  public amount: number
 
   @column()
   public description: string | null
@@ -34,11 +43,27 @@ export default class Billing extends BaseModel {
   @column()
   public type: BillingType | null
 
+  @column()
+  public approved: boolean
+
+  @column.dateTime()
+  public dueDate: DateTime
+
+  // @column()
+  // public remainingAmount: number
+
   @belongsTo(() => Account)
   public account: BelongsTo<typeof Account>
 
   @belongsTo(() => MasterBilling)
   public masterBilling: BelongsTo<typeof MasterBilling>
+
+  @manyToMany(() => Transaction, {
+    pivotTable: 'finance.transaction_billings',
+    pivotColumns: ['amount'],
+    pivotTimestamps: true
+  })
+  public transactions: ManyToMany<typeof Transaction>
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime

@@ -6,9 +6,11 @@ import User from "App/Models/User";
 import Database from "@ioc:Adonis/Lucid/Database";
 import { CreateRouteHist } from "App/Modules/Log/Helpers/createRouteHist";
 import { statusRoutes } from "App/Modules/Log/lib/enum";
+import { DateTime } from "luxon";
 export default class BukuNilaisController {
   public async index({ request, response, auth }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart);
     const {
       subjectId = "",
       teacherId = "",
@@ -204,10 +206,11 @@ export default class BukuNilaisController {
       if (data.students.length === 0 || data.bab.length === 0 || !data.data) {
         return response.ok({ message: "Behasil mengambil data", data: [] });
       }
-      CreateRouteHist(request, statusRoutes.FINISH)
+      
+      CreateRouteHist(statusRoutes.FINISH, dateStart);
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
-      CreateRouteHist(request, statusRoutes.ERROR, error.message || error);
+      CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error);
       response.badRequest({
         message: "Gagal mengambil data",
         error: error.message,
@@ -216,7 +219,9 @@ export default class BukuNilaisController {
   }
 
   public async store({ request, response, auth }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START )
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart);
+
     const user = await User.query()
       .where("id", auth.user!.id)
       .preload("roles", (r) => r.preload("role"))
@@ -299,7 +304,7 @@ export default class BukuNilaisController {
       payload = await request.validate({ schema: schemaForTeacher });
       try {
       } catch (error) {
-        CreateRouteHist(request, statusRoutes.ERROR, error.message || error);
+        CreateRouteHist(statusRoutes.ERROR, dateStart,  error.message || error);
         return response.badRequest({
           message: "Masukkan nilai sesuai dengan ID anda",
           error: error.message,
@@ -360,10 +365,10 @@ export default class BukuNilaisController {
 
     try {
       const data = await BukuNilai.createMany(payload.bukuNilai);
-      CreateRouteHist(request, statusRoutes.FINISH)
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil menyimpan data", data });
     } catch (error) {
-      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
+      CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error)
       response.badRequest({
         message: "Gagal menyimpan data",
         error: error.message,
@@ -371,8 +376,9 @@ export default class BukuNilaisController {
     }
   }
 
-  public async show({request, response, params }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
+  public async show({ response, params }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart);
     const { id } = params;
 
     try {
@@ -389,10 +395,10 @@ export default class BukuNilaisController {
         .preload("classes", (c) => c.select("name"))
         .firstOrFail();
         
-      CreateRouteHist(request, statusRoutes.START)
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
-      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
+      CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error)
       response.badRequest({
         message: "Gagal mengambil data",
         error: error.message,

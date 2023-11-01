@@ -3,28 +3,29 @@ import { validate as uuidValidation } from "uuid";
 import Session from "../../Models/Session";
 import { statusRoutes } from "App/Modules/Log/lib/enum";
 import { CreateRouteHist } from "App/Modules/Log/Helpers/createRouteHist";
+import { DateTime } from "luxon";
 
 export default class SessionsController {
   public async index({ request, response }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
+    const dateStart = DateTime.now().toMillis();
+    CreateRouteHist(statusRoutes.START, dateStart);
     const { page = 1, limit = 10, keyword = "", mode = "page" } = request.qs();
 
     try {
-      let data = {}
-      if (mode === 'page') {
-
-       data = await Session.query()
-        .whereILike("session", `%${keyword}%`)
-        .paginate(page, limit);
+      let data = {};
+      if (mode === "page") {
+        data = await Session.query()
+          .whereILike("session", `%${keyword}%`)
+          .paginate(page, limit);
       } else {
-        data = await  Session.query().whereILike('session', `%${keyword}%`)
+        data = await Session.query().whereILike("session", `%${keyword}%`);
       }
 
-      CreateRouteHist(request, statusRoutes.FINISH)
+      CreateRouteHist(statusRoutes.FINISH, dateStart);
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
       const message = "ACSE-INDEX: " + error.message || error;
-      CreateRouteHist(request, statusRoutes.ERROR, message)
+      CreateRouteHist(statusRoutes.ERROR, dateStart, message);
       console.log(error);
       response.badRequest({
         message: "Gagal mengambil data",
@@ -34,8 +35,9 @@ export default class SessionsController {
     }
   }
 
-  public async show({request, params, response }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
+  public async show({ params, response }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis();
+    CreateRouteHist(statusRoutes.START, dateStart);
     const { id } = params;
     if (!uuidValidation(id)) {
       return response.badRequest({ message: "Session ID tidak valid" });
@@ -44,11 +46,11 @@ export default class SessionsController {
     try {
       const data = await Session.query().where("id", id).firstOrFail();
 
-      CreateRouteHist(request, statusRoutes.FINISH)
+      CreateRouteHist(statusRoutes.FINISH, dateStart);
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
       const message = "ACSE-SHOW: " + error.message || error;
-      CreateRouteHist(request, statusRoutes.ERROR, message)
+      CreateRouteHist(statusRoutes.ERROR, dateStart, message);
       console.log(error);
       response.badRequest({
         message: "Gagal mengambil data",

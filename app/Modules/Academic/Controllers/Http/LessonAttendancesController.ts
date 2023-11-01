@@ -8,10 +8,12 @@ import UpdateLessonAttendanceValidator from "../../Validators/UpdateLessonAttend
 import Database from "@ioc:Adonis/Lucid/Database";
 import { statusRoutes } from "App/Modules/Log/lib/enum";
 import { CreateRouteHist } from "App/Modules/Log/Helpers/createRouteHist";
+import { DateTime } from "luxon";
 
 export default class LessonAttendancesController {
   public async index({ request, response }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START);
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart)
     const {
       page = 1,
       limit = 10,
@@ -95,7 +97,7 @@ export default class LessonAttendancesController {
         )
         .paginate(page, limit);
 
-        CreateRouteHist(request, statusRoutes.FINISH);
+        CreateRouteHist(statusRoutes.FINISH, dateStart);
       return response.ok({ message: "Berhasil mengambil data", data });
     }
 
@@ -140,10 +142,10 @@ export default class LessonAttendancesController {
           .orderBy("s.name")
       .orderBy("date", "desc")
       .paginate(page, limit);
-      CreateRouteHist(request, statusRoutes.FINISH);
+      CreateRouteHist(statusRoutes.FINISH, dateStart);
     response.ok({ message: "Berhasil mengambil data", data });
   } catch (error) {
-    CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
+    CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error)
 
     response.badRequest({message: "Gagal mengambil data", error: error.message || error})
     
@@ -151,7 +153,8 @@ export default class LessonAttendancesController {
   }
 
   public async store({ request, response }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart)
 
     try {
       
@@ -159,17 +162,18 @@ export default class LessonAttendancesController {
   
       // return payload.lessonAttendance
       const data = await LessonAttendance.createMany(payload.lessonAttendance);
-      CreateRouteHist(request, statusRoutes.FINISH)
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.created({ message: "Berhasil menyimpan data", data });
     } catch (error) {
-      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
+      CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error)
 
       response.badRequest({message: "Gagal menyimpan data", error: error.message || error})
     }
   }
 
-  public async show({request, params, response }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
+  public async show({ params, response }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart)
     const { id } = params;
     
     try {
@@ -190,10 +194,10 @@ export default class LessonAttendancesController {
         .preload("subject", (s) => s.select("name"))
         .where("id", id)
         .firstOrFail();
-        CreateRouteHist(request, statusRoutes.FINISH)
+        CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
-      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
+      CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error)
       response.badRequest({message: "Gagal mengambil data", error: error.message || error})
     }
     

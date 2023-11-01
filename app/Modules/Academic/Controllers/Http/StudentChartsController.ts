@@ -1,13 +1,14 @@
-import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import Database from '@ioc:Adonis/Lucid/Database'
-import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist';
-import { statusRoutes } from 'App/Modules/Log/lib/enum';
-import { GoogleSpreadsheet } from 'google-spreadsheet'
-import { DateTime } from 'luxon';
+import type { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
+import Database from "@ioc:Adonis/Lucid/Database";
+import { CreateRouteHist } from "App/Modules/Log/Helpers/createRouteHist";
+import { statusRoutes } from "App/Modules/Log/lib/enum";
+import { GoogleSpreadsheet } from "google-spreadsheet";
+import { DateTime } from "luxon";
 
 export default class StudentChartsController {
-  public async siswaTingkat({request, response }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
+  public async siswaTingkat({ response }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis();
+    CreateRouteHist(statusRoutes.START, dateStart);
     const selectTingkat = `
       select tingkat, count(id) total
       from(select split_part(c.name,' ',1) tingkat ,split_part(c.name,' ',2) jurusan,  s.id 
@@ -18,7 +19,7 @@ export default class StudentChartsController {
           order by c.name
         ) x
       group by tingkat;
-    `
+    `;
 
     const selectJurusan = `
       select jurusan, count(id) total
@@ -30,7 +31,7 @@ export default class StudentChartsController {
           order by c.name
         ) x
       group by jurusan;
-    `
+    `;
 
     const selectTingkatJurusan = `
       select tingkat, jurusan, count(id) total
@@ -43,49 +44,60 @@ export default class StudentChartsController {
         ) x
       group by tingkat, jurusan
       order by tingkat, jurusan;
-    `
-    const { rows: totalSiswa } = await Database.rawQuery(`select count(*) total from academic.students where student_status = 'AKTIF'`)
-    const { rows: perTingkat } = await Database.rawQuery(selectTingkat)
-    const { rows: perJurusan } = await Database.rawQuery(selectJurusan)
-    let { rows: perTingkatJurusan } = await Database.rawQuery(selectTingkatJurusan)
+    `;
+    const { rows: totalSiswa } = await Database.rawQuery(
+      `select count(*) total from academic.students where student_status = 'AKTIF'`
+    );
+    const { rows: perTingkat } = await Database.rawQuery(selectTingkat);
+    const { rows: perJurusan } = await Database.rawQuery(selectJurusan);
+    let { rows: perTingkatJurusan } = await Database.rawQuery(
+      selectTingkatJurusan
+    );
     //TODO: yang boarding fullday belum ada
 
     perTingkatJurusan = perTingkatJurusan.reduce((a, x) => {
-      const index = a.findIndex(v => {
-        return v.tingkat == x.tingkat
-      })
+      const index = a.findIndex((v) => {
+        return v.tingkat == x.tingkat;
+      });
 
-      const initObj = {}
-      initObj['tingkat'] = x.tingkat
-      initObj[x.jurusan] = x.total
+      const initObj = {};
+      initObj["tingkat"] = x.tingkat;
+      initObj[x.jurusan] = x.total;
 
-      index < 0 ? a.push(initObj) : a[index][x.jurusan] = x.total
-      return a
-    }, [])
+      index < 0 ? a.push(initObj) : (a[index][x.jurusan] = x.total);
+      return a;
+    }, []);
 
-    CreateRouteHist(request, statusRoutes.FINISH)
+    CreateRouteHist(statusRoutes.FINISH, dateStart);
 
     response.ok({
-      message: 'Berhasil mengambil data statistik siswa',
+      message: "Berhasil mengambil data statistik siswa",
       totalSiswa: totalSiswa[0].total,
       perTingkat,
       perJurusan,
-      perTingkatJurusan
-    })
+      perTingkatJurusan,
+    });
   }
 
   public async siswaKehadiran({ request, response }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
-    let { startDate, endDate, startMonth, endMonth, forceSync = 'false' } = request.qs()
-    const tableSyncPresences = 'academic.sync_student_presences'
+    const dateStart = DateTime.now().toMillis();
+    CreateRouteHist(statusRoutes.START, dateStart);
+    let {
+      startDate,
+      endDate,
+      startMonth,
+      endMonth,
+      forceSync = "false",
+    } = request.qs();
+    const tableSyncPresences = "academic.sync_student_presences";
 
     const selectSyncedData = `
       select extract(EPOCH from now()::timestamp - created_at::timestamp)/60 last_sync
       from academic.sync_student_presences, 
       (select count(*)  total_data from ${tableSyncPresences}) x
       limit 1
-    `
-    const { rows: syncedData } = await Database.rawQuery(selectSyncedData)
+    `;
+    const { rows: syncedData } = await Database.rawQuery(selectSyncedData);
 
     // return {
     //   l: syncedData.length < 1,
@@ -93,12 +105,18 @@ export default class StudentChartsController {
     //   forceSync,
     //   x: syncedData.length < 1 || +syncedData[0].last_sync > 15 || forceSync
     // }
-    let rows = []
-    if (syncedData.length < 1 || (+syncedData[0].last_sync > 15) || (forceSync === 'true')) {
+    let rows = [];
+    if (
+      syncedData.length < 1 ||
+      +syncedData[0].last_sync > 15 ||
+      forceSync === "true"
+    ) {
       // console.log(syncedData.length < 1 || +syncedData[0].last_sync > 15 || forceSync)
       // return syncedData.length < 1 || +syncedData[0].last_sync > 15 || forceSync
-      console.log("sync")
-      const doc = new GoogleSpreadsheet(process.env.GOOGLE_API_SHEET_KEHADIRAN_SISWA);
+      console.log("sync");
+      const doc = new GoogleSpreadsheet(
+        process.env.GOOGLE_API_SHEET_KEHADIRAN_SISWA
+      );
 
       await doc.useServiceAccountAuth({
         client_email: process.env.GOOGLE_API_EMAIL,
@@ -106,25 +124,25 @@ export default class StudentChartsController {
       });
       await doc.loadInfo(); // loads document properties and worksheets
 
-      const sheet = doc.sheetsByTitle['RAW MASTER'] //sheetsByTitle['Form Responses 1'];
-
+      const sheet = doc.sheetsByTitle["RAW MASTER"]; //sheetsByTitle['Form Responses 1'];
 
       rows = await sheet.getRows(); // can pass in { limit, offset }
 
+      const cleanRowSiswa = rows.map((row) => {
+        // @ts-ignore
+        const [sheet, rowNumber, rawData, ...keys] = Object.keys(row);
+        const clean = {};
 
-      const cleanRowSiswa = rows.map(row => {// @ts-ignore
-        const [sheet, rowNumber, rawData, ...keys] = Object.keys(row)
-        const clean = {}
-
-        if (row['Tanggal'] !== '#REF!') {// @ts-ignore
+        if (row["Tanggal"] !== "#REF!") {
+          // @ts-ignore
           keys.forEach((key, index) => {
-            clean[key.toLowerCase()] = row[key]
-          })// @ts-ignore
-          clean['created_at'] = DateTime.now().toSQL().toString()
+            clean[key.toLowerCase()] = row[key];
+          }); // @ts-ignore
+          clean["created_at"] = DateTime.now().toSQL().toString();
         }
 
-        return clean
-      })
+        return clean;
+      });
 
       function sliceIntoChunks(arr, chunkSize) {
         const res: any[] = [];
@@ -136,21 +154,25 @@ export default class StudentChartsController {
       }
 
       try {
-        if (syncedData.length < 1 || +syncedData[0].last_sync > 15 || forceSync) {
+        if (
+          syncedData.length < 1 ||
+          +syncedData[0].last_sync > 15 ||
+          forceSync
+        ) {
           console.log("syncronizing data kehadiran siswa");
-          await Database.rawQuery('truncate table ' + tableSyncPresences)
+          await Database.rawQuery("truncate table " + tableSyncPresences);
           for (const x of sliceIntoChunks(cleanRowSiswa, 1000)) {
-            await Database.table(tableSyncPresences).multiInsert(x)
+            await Database.table(tableSyncPresences).multiInsert(x);
           }
         }
       } catch (error) {
         return response.internalServerError({
-          message: 'SCHR112: Gagal Pada Proses Database' + tableSyncPresences,
-          error: error.message || error
-        })
+          message: "SCHR112: Gagal Pada Proses Database" + tableSyncPresences,
+          error: error.message || error,
+        });
       }
     } else {
-      console.log("not sync")
+      console.log("not sync");
     }
 
     const getLastDates = `
@@ -159,22 +181,22 @@ export default class StudentChartsController {
       where tanggal is not null 
       order by tanggal desc 
       limit 7 
-    `
+    `;
 
-    const { rows: lastDates } = await Database.rawQuery(getLastDates)
-    startDate = lastDates[lastDates.length - 1].tanggal
-    endDate = lastDates[0].tanggal
+    const { rows: lastDates } = await Database.rawQuery(getLastDates);
+    startDate = lastDates[lastDates.length - 1].tanggal;
+    endDate = lastDates[0].tanggal;
 
     const getLastMonths = `
     select distinct substring(tanggal::date,0,8) tanggal
     from academic.sync_student_presences 
     where tanggal is not null 
     order by substring(tanggal::date,0,8) limit 3 
-    `
+    `;
 
-    const { rows: lastMonths } = await Database.rawQuery(getLastMonths)
-    startMonth = lastMonths[0].tanggal
-    endMonth = lastMonths[lastMonths.length - 1].tanggal
+    const { rows: lastMonths } = await Database.rawQuery(getLastMonths);
+    startMonth = lastMonths[0].tanggal;
+    endMonth = lastMonths[lastMonths.length - 1].tanggal;
 
     // return { startDate, endDate, startMonth, endMonth }
 
@@ -190,7 +212,7 @@ export default class StudentChartsController {
         on rekap.tanggal = ssp.tanggal::date
       group by rekap.*
       order by rekap.tanggal
-    `
+    `;
 
     const selectBulanan = `
       select rekap.tanggal, rekap."status", rekap.total, concat(((rekap.total / count(ssp.id)) * 100)::integer, '%') presentase  
@@ -204,63 +226,64 @@ export default class StudentChartsController {
         on rekap.tanggal = substring(ssp.tanggal::date,0,8)
       group by rekap.*
       order by rekap.tanggal
-    `
+    `;
 
     try {
-      const { rows: dataHarian } = await Database.rawQuery(selectHarian)
-      const { rows: dataBulanan } = await Database.rawQuery(selectBulanan)
+      const { rows: dataHarian } = await Database.rawQuery(selectHarian);
+      const { rows: dataBulanan } = await Database.rawQuery(selectBulanan);
 
-      const pivot = data => {
-        const statuses = data.reduce((a, v) => {
-          a.push(v.status)
-          return a
-        }, []).filter((value, index, array) => array.indexOf(value) === index)
+      const pivot = (data) => {
+        const statuses = data
+          .reduce((a, v) => {
+            a.push(v.status);
+            return a;
+          }, [])
+          .filter((value, index, array) => array.indexOf(value) === index);
 
         const result = data.reduce((a, v) => {
-          const index = a.findIndex(x => x['tanggal'] == v.tanggal)
+          const index = a.findIndex((x) => x["tanggal"] == v.tanggal);
           if (index >= 0) {
-            a[index][v.status] = v.presentase
-            a[index]['total' + v.status] = v.total
+            a[index][v.status] = v.presentase;
+            a[index]["total" + v.status] = v.total;
           } else {
-            const newObj = {}
-            newObj['tanggal'] = v.tanggal
+            const newObj = {};
+            newObj["tanggal"] = v.tanggal;
             for (let stat of statuses) {
-              newObj[stat] = v.status == stat ? v.presentase : ''
-              newObj['total' + stat] = v.status == stat ? v.total : ''
+              newObj[stat] = v.status == stat ? v.presentase : "";
+              newObj["total" + stat] = v.status == stat ? v.total : "";
             }
-            a.push(newObj)
+            a.push(newObj);
           }
-          return a
-        }, [])
-        return result
-      }
+          return a;
+        }, []);
+        return result;
+      };
 
-      CreateRouteHist(request, statusRoutes.FINISH)
+      CreateRouteHist(statusRoutes.FINISH, dateStart);
       response.ok({
         message: "Berhasil menghitung data kehadiran siswa",
         // dataHarian2: dataHarian,
         dataHarian: pivot(dataHarian),
         dataBulanan: pivot(dataBulanan),
         table_debug: tableSyncPresences,
-      })
+      });
     } catch (error) {
       console.log(error);
-      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
+      CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error);
       return response.internalServerError({
-        message: 'SCHR138: Gagal Menghitung Data' + tableSyncPresences,
-        error: error.message || error
-      })
-
+        message: "SCHR138: Gagal Menghitung Data" + tableSyncPresences,
+        error: error.message || error,
+      });
     }
   }
 
-  public async store({ }: HttpContextContract) { }
+  public async store({}: HttpContextContract) {}
 
-  public async show({ }: HttpContextContract) { }
+  public async show({}: HttpContextContract) {}
 
-  public async edit({ }: HttpContextContract) { }
+  public async edit({}: HttpContextContract) {}
 
-  public async update({ }: HttpContextContract) { }
+  public async update({}: HttpContextContract) {}
 
-  public async destroy({ }: HttpContextContract) { }
+  public async destroy({}: HttpContextContract) {}
 }

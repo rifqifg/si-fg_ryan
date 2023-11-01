@@ -5,10 +5,12 @@ import { validate as uuidValidation } from "uuid";
 import UpdateSubjectValidator from "../../Validators/UpdateSubjectValidator";
 import { statusRoutes } from "App/Modules/Log/lib/enum";
 import { CreateRouteHist } from "App/Modules/Log/Helpers/createRouteHist";
+import { DateTime } from "luxon";
 
 export default class SubjectsController {
   public async index({ request, response }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
+    const dateStart = DateTime.now().toMillis();
+    CreateRouteHist(statusRoutes.START, dateStart);
     const {
       page = 1,
       limit = 10,
@@ -67,12 +69,12 @@ export default class SubjectsController {
         });
       }
 
-      CreateRouteHist(request, statusRoutes.FINISH)
+      CreateRouteHist(statusRoutes.FINISH, dateStart);
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
       const message = "ACSU41: " + error.message || error;
       console.log(error);
-      CreateRouteHist(request, statusRoutes.ERROR, message)
+      CreateRouteHist(statusRoutes.ERROR, dateStart, message);
       response.badRequest({
         message: "Gagal mengambil data",
         error: message,
@@ -82,17 +84,18 @@ export default class SubjectsController {
   }
 
   public async store({ request, response }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
+    const dateStart = DateTime.now().toMillis();
+    CreateRouteHist(statusRoutes.START, dateStart);
     const payload = await request.validate(CreateSubjectValidator);
     try {
       const data = await Subject.create(payload);
 
-      CreateRouteHist(request, statusRoutes.FINISH)
+      CreateRouteHist(statusRoutes.FINISH, dateStart);
       response.created({ message: "Berhasil menyimpan data", data });
     } catch (error) {
       const message = "ACSU57: " + error.message || error;
       console.log(error);
-      CreateRouteHist(request, statusRoutes.ERROR, message)
+      CreateRouteHist(statusRoutes.ERROR, dateStart, message);
       response.badRequest({
         message: "Gagal menyimpan data",
         error: message,
@@ -101,8 +104,9 @@ export default class SubjectsController {
     }
   }
 
-  public async show({request, params, response }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
+  public async show({ params, response }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis();
+    CreateRouteHist(statusRoutes.START, dateStart);
     const { id } = params;
     if (!uuidValidation(id)) {
       return response.badRequest({ message: "Subject ID tidak valid" });
@@ -110,13 +114,13 @@ export default class SubjectsController {
 
     try {
       const data = await Subject.query().where("id", id).firstOrFail();
-      
-      CreateRouteHist(request, statusRoutes.FINISH)
+
+      CreateRouteHist(statusRoutes.FINISH, dateStart);
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
       const message = "ACSU77: " + error.message || error;
       console.log(error);
-      CreateRouteHist(request, statusRoutes.ERROR, message)
+      CreateRouteHist(statusRoutes.ERROR, dateStart, message);
       response.badRequest({
         message: "Gagal mengambil data",
         error: message,

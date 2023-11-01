@@ -1,0 +1,36 @@
+
+name: Node.js CI
+
+on:
+  push:
+    branches: [ "dev-rifqi" ]
+  pull_request:
+    branches: [ "dev-rifqi" ]
+
+jobs:
+  deploy:
+  
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Use Node.js 18.x
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18.x
+        cache: 'npm'
+
+    - name: SSH and deploy node app
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        password: ${{ secrets.PASSWORD }}
+        port: ${{ secrets.PORT }}
+        script: |
+          cd /home/jidzrun/projects/api/rifqi
+          git pull origin-github dev-rifqi
+          export NVM_DIR=~/.nvm
+          source ~/.nvm/nvm.sh 
+          npm install 

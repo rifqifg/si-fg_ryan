@@ -4,24 +4,26 @@ import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist'
 import { statusRoutes } from 'App/Modules/Log/lib/enum'
 import CreateEmployeeTypeValidator from 'App/Validators/CreateEmployeeTypeValidator'
 import UpdateEmployeeTypeValidator from 'App/Validators/UpdateEmployeeTypeValidator'
+import { DateTime } from 'luxon'
 
 export default class EmployeeTypesController {
   public async index({ request, response }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
+    const dateStart = DateTime.now().toMillis()
+   CreateRouteHist(statusRoutes.START, dateStart)
     const { page = 1, limit = 10, keyword = "" } = request.qs()
     try {
       const data = await EmployeeType.query()
         .whereILike('name', `%${keyword}%`)
         .paginate(page, limit)
 
-      CreateRouteHist(request, statusRoutes.FINISH)
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({
         message: "Berhasil mengambil data",
         data
       })
     } catch (error) {
       const message = "HRDET01: " + error.message || error;
-      CreateRouteHist(request, statusRoutes.ERROR, message)
+      CreateRouteHist(statusRoutes.ERROR, dateStart, message)
       console.log(error);
       response.badRequest({
         message: "Gagal mengambil data",
@@ -33,16 +35,17 @@ export default class EmployeeTypesController {
 
   //TODO: bikin crud
   public async store({ request, response }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
+    const dateStart = DateTime.now().toMillis()
+   CreateRouteHist(statusRoutes.START, dateStart)
     const payload = await request.validate(CreateEmployeeTypeValidator)
 
     try {
       const data = await EmployeeType.create(payload);
-      CreateRouteHist(request, statusRoutes.FINISH)
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.created({ message: "Berhasil menyimpan data", data });
     } catch (error) {
       const message = "HRDET02: " + error.message || error;
-      CreateRouteHist(request, statusRoutes.ERROR, message)
+      CreateRouteHist(statusRoutes.ERROR, dateStart, message)
       console.log(error);
       response.badRequest({
         message: "Gagal mengambil data",

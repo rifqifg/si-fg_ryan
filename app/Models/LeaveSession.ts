@@ -1,15 +1,15 @@
 import { DateTime } from 'luxon'
 import { BaseModel, BelongsTo, afterCreate, beforeCreate, belongsTo, column } from '@ioc:Adonis/Lucid/Orm'
-import { LeaveStatuses, StatusLeaves, TypeLeaves } from 'App/lib/enum'
 import Employee from './Employee'
+import { StatusLeaves } from 'App/lib/enum'
 import { v4 as uuidv4 } from 'uuid'
 let newId = ""
 
-export default class Leave extends BaseModel {
+export default class LeaveSession extends BaseModel {
   public serializeExtras() {
     return {
-      sisa_jatah_cuti: this.$extras.sisa_jatah_cuti,
-      reasons: this.$extras.reasons,
+      count_sessions: this.$extras.count_sessions,
+      notes: this.$extras.notes,
     }
   }
 
@@ -20,28 +20,19 @@ export default class Leave extends BaseModel {
   public status: StatusLeaves
 
   @column()
-  public reason: string
+  public sessions: string[]
 
   @column.date()
-  public fromDate: DateTime
-
-  @column.date()
-  public toDate: DateTime
+  public date: DateTime
 
   @column()
   public note: string
-
-  @column()
-  public type: TypeLeaves
 
   @column()
   public employeeId: string
 
   @belongsTo(() => Employee)
   public employee: BelongsTo<typeof Employee>
-
-  @column()
-  public leaveStatus: LeaveStatuses
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
@@ -50,13 +41,13 @@ export default class Leave extends BaseModel {
   public updatedAt: DateTime
 
   @beforeCreate()
-  public static assignUuid(Leave: Leave) {
+  public static assignUuid(LeaveSession: LeaveSession) {
     newId = uuidv4()
-    Leave.id = newId
+    LeaveSession.id = newId
   }
 
   @afterCreate()
-  public static setNewId(Leave: Leave) {
-    Leave.id = newId
+  public static setNewId(LeaveSession: LeaveSession) {
+    LeaveSession.id = newId
   }
 }

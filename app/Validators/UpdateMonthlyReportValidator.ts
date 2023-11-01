@@ -33,6 +33,7 @@ export default class UpdateMonthlyReportValidator {
     toDate: schema.date.optional({ format: 'yyyy-MM-dd' }, [
       rules.requiredIfExists('fromDate')
     ]),
+    redDates: schema.number.optional()
   })
 
   /**

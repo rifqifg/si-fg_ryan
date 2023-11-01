@@ -14,7 +14,8 @@ import { validate as uuidValidation } from "uuid";
 
 export default class ActivitiesController {
   public async index({ request, response, auth }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart)
     const { page = 1, limit = 10, keyword = "", orderBy = "name", orderDirection = 'ASC' } = request.qs()
 
     const user = await User.query().preload('roles', r => r.preload('role')).where('id', auth.use('api').user!.id).firstOrFail()
@@ -42,11 +43,11 @@ export default class ActivitiesController {
           .paginate(page, limit)
       }
 
-      CreateRouteHist(request, statusRoutes.FINISH)
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Data Berhasil Didapatkan", data })
     } catch (error) {
       const message = "HRDAC-index: " + error.message || error;
-      CreateRouteHist(request, statusRoutes.ERROR, message)
+      CreateRouteHist(statusRoutes.ERROR, dateStart, message)
       console.log(error);
       response.badRequest({
         message: "Gagal mengambil data",
@@ -56,8 +57,9 @@ export default class ActivitiesController {
     }
   }
 
-  public async show({ request, params, response }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
+  public async show({ params, response }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart)
     const { id } = params;
     if (!uuidValidation(id)) {
       return response.badRequest({ message: "Activity ID tidak valid" });
@@ -71,11 +73,11 @@ export default class ActivitiesController {
         .preload('activityMembers', activityMembers => activityMembers.select('id', 'role', 'employee_id').preload('employee', employee => employee.select('name')))
         .firstOrFail();
 
-      CreateRouteHist(request, statusRoutes.FINISH)
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
       const message = "HRDAC-SHOW: " + error.message || error;
-      CreateRouteHist(request, statusRoutes.ERROR, message)
+      CreateRouteHist(statusRoutes.ERROR, dateStart, message)
       console.log(error);
       response.badRequest({
         message: "Gagal mengambil data",
@@ -86,7 +88,8 @@ export default class ActivitiesController {
   }
 
   public async getActivity({ request, response, auth }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart)
     const { keyword = "", orderBy = "name", orderDirection = 'ASC', activity_type = '' } = request.qs()
 
     const user = await User.query().preload('roles', r => r.preload('role')).where('id', auth.use('api').user!.id).firstOrFail()
@@ -125,11 +128,11 @@ export default class ActivitiesController {
           // .andWhere('owner', auth.user!.id) // Jika perlu, aktifkan kembali ini
           .orderBy(orderBy, orderDirection)
       }
-      CreateRouteHist(request, statusRoutes.FINISH)
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Data Berhasil Didapatkan", data })
     } catch (error) {
       const message = "HRDAC-GETACTIVITY: " + error.message || error;
-      CreateRouteHist(request, statusRoutes.ERROR, message)
+      CreateRouteHist(statusRoutes.ERROR, dateStart, message)
       console.log(error);
       response.badRequest({
         message: "Gagal mengambil data",
@@ -140,7 +143,8 @@ export default class ActivitiesController {
   }
 
   public async store({ request, response, auth }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart)
     const payload = await request.validate(CreateActivityValidator)
 
     try {
@@ -166,13 +170,13 @@ export default class ActivitiesController {
       }
       const data = await Activity.create(formattedPayload)
 
-      CreateRouteHist(request, statusRoutes.FINISH)
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.created({
         message: "Create data success", data
       })
     } catch (error) {
       const message = "HRDAC-STORE: " + error.message || error;
-      CreateRouteHist(request, statusRoutes.ERROR, message)
+      CreateRouteHist(statusRoutes.ERROR, dateStart, message)
       console.log(error);
       response.badRequest({
         message: "Gagal mengambil data",
@@ -183,7 +187,8 @@ export default class ActivitiesController {
   }
 
   public async update({ request, response, params }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart)
     const { id } = params
     const payload = await request.validate(UpdateActivityValidator)
 
@@ -297,13 +302,13 @@ export default class ActivitiesController {
       const findData = await Activity.findOrFail(id)
       const data = await findData.merge(formattedPayload).save()
 
-      CreateRouteHist(request, statusRoutes.FINISH)
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.created({
         message: "Update data success", data
       })
     } catch (error) {
       const message = "HRDAC-UPDATE: " + error.message || error;
-      CreateRouteHist(request, statusRoutes.ERROR, message)
+      CreateRouteHist(statusRoutes.ERROR, dateStart, message)
       console.log(error);
       response.badRequest({
         message: "Gagal mengambil data",
@@ -314,18 +319,19 @@ export default class ActivitiesController {
   }
 
 
-  public async destroy({ request, params, response }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
+  public async destroy({ params, response }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart)
     const { id } = params
     try {
       const data = await Activity.findOrFail(id)
       await data.delete()
 
-      CreateRouteHist(request, statusRoutes.FINISH)
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Delete data success" })
     } catch (error) {
       const message = "HRDAC-DELETE: " + error.message || error;
-      CreateRouteHist(request, statusRoutes.ERROR, message)
+      CreateRouteHist(statusRoutes.ERROR, dateStart, message)
       console.log(error);
       response.badRequest({ message: "Tidak dapat menghapus aktivitas yang sudah memiliki presensi", error: error.message || error })
     }

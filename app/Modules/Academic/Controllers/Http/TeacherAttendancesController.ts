@@ -11,10 +11,12 @@ import User from "App/Models/User";
 import LessonAttendance from "../../Models/LessonAttendance";
 import { statusRoutes } from "App/Modules/Log/lib/enum";
 import { CreateRouteHist } from "App/Modules/Log/Helpers/createRouteHist";
+import { DateTime } from "luxon";
 
 export default class TeacherAttendancesController {
   public async index({ request, response, auth }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START);
+    const dateStart = DateTime.now().toMillis();
+    CreateRouteHist(statusRoutes.START, dateStart);
     const {
       page = 1,
       limit = 10,
@@ -83,7 +85,7 @@ export default class TeacherAttendancesController {
           .groupBy("teacher_id")
           .paginate(page, limit);
 
-        CreateRouteHist(request, statusRoutes.FINISH);
+        CreateRouteHist(statusRoutes.FINISH, dateStart);
 
         return response.ok({ message: "Berhasil mengambil data", data });
       }
@@ -116,10 +118,10 @@ export default class TeacherAttendancesController {
         .orderBy("date_in", "desc")
         .paginate(page, limit);
 
-      CreateRouteHist(request, statusRoutes.FINISH);
+      CreateRouteHist(statusRoutes.FINISH, dateStart);
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
-      CreateRouteHist(request, statusRoutes.ERROR, error.message || error);
+      CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error);
       response.badRequest({
         message: "Gagal mengambil data",
         error: error.message || error,
@@ -128,7 +130,8 @@ export default class TeacherAttendancesController {
   }
 
   public async store({ request, response }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START);
+    const dateStart = DateTime.now().toMillis();
+    CreateRouteHist(statusRoutes.START, dateStart);
 
     try {
       const payload = await request.validate(CreateTeacherAttendanceValidator);
@@ -143,10 +146,10 @@ export default class TeacherAttendancesController {
 
       const data = await TeacherAttendance.create(payload);
 
-      CreateRouteHist(request, statusRoutes.FINISH);
+      CreateRouteHist(statusRoutes.FINISH, dateStart);
       response.created({ message: "Berhasil menyimpan data", data });
     } catch (error) {
-      CreateRouteHist(request, statusRoutes.ERROR, error.message || error);
+      CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error);
       response.badRequest({
         message: "Gagal menyimpan data",
         error: error.message || error,
@@ -154,8 +157,9 @@ export default class TeacherAttendancesController {
     }
   }
 
-  public async show({ request, params, response }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START);
+  public async show({ params, response }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis();
+    CreateRouteHist(statusRoutes.START, dateStart);
     const { id } = params;
 
     if (!uuidValidation(id)) {
@@ -188,13 +192,13 @@ export default class TeacherAttendancesController {
         .where("subject_id", data.subjectId)
         .where("date", `'${data.date_in}'`);
 
-      CreateRouteHist(request, statusRoutes.FINISH);
+      CreateRouteHist(statusRoutes.FINISH, dateStart);
       response.ok({
         message: "Berhasil mengambil data",
         data: { data, student },
       });
     } catch (error) {
-      CreateRouteHist(request, statusRoutes.ERROR, error.message || error);
+      CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error);
       response.badRequest({
         message: "Gagal mengambil data",
         error: error.message || error,

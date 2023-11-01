@@ -6,10 +6,12 @@ import { validate as uuidValidation } from "uuid";
 import Student from '../../Models/Student';
 import { statusRoutes } from 'App/Modules/Log/lib/enum';
 import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist';
+import { DateTime } from 'luxon';
 
 export default class ClassesController {
   public async index({ request, response }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START);
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart);
     let { page = 1, limit = 10, keyword = "", mode = "page", is_graduated = false } = request.qs()
 
     is_graduated = is_graduated == "true" ? true : false
@@ -38,31 +40,33 @@ export default class ClassesController {
         return response.badRequest({ message: "Mode tidak dikenali, (pilih: page / list)" })
       }
 
-      CreateRouteHist(request, statusRoutes.FINISH);
+      CreateRouteHist(statusRoutes.FINISH, dateStart);
       response.ok({ message: "Berhasil mengambil data", data })
     } catch (error) {
-      CreateRouteHist(request, statusRoutes.ERROR, error.message || error);
+      CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error);
       response.badRequest({ message: "Gagal mengambil data", error: error.message })
     }
   }
 
 
   public async store({ request, response }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START);
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart);
     const payload = await request.validate(CreateClassValidator)
     try {
       const data = await Class.create(payload)
-      CreateRouteHist(request, statusRoutes.FINISH);
+      CreateRouteHist( statusRoutes.FINISH, dateStart);
       response.created({ message: "Berhasil menyimpan data", data })
     } catch (error) {
-      CreateRouteHist(request, statusRoutes.ERROR, error.message || error);
+      CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error);
       console.log(error);
       response.badRequest({ message: "Gagal menyimpan data", error: error.message })
     }
   }
 
   public async show({ params, response, request }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START);
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart);
     const { id } = params
     const { keyword = "" } = request.qs()
 
@@ -73,10 +77,10 @@ export default class ClassesController {
         .preload('homeroomTeacher', query => query.select('name', 'nip'))
         .preload('students', student => student.select('id', 'name', 'nis', 'nisn').whereILike('name', `%${keyword}%`))
         .where('id', id).firstOrFail()
-      CreateRouteHist(request, statusRoutes.FINISH);
+      CreateRouteHist(statusRoutes.FINISH, dateStart);
       response.ok({ message: "Berhasil mengambil data", data })
     } catch (error) {
-      CreateRouteHist(request, statusRoutes.ERROR, error.message || error);
+      CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error);
       console.log(error);
       response.badRequest({ message: "Gagal mengambil data", error: error.message })
     }

@@ -5,10 +5,12 @@ import { validate as uuidValidation } from "uuid";
 import Semester from "../../Models/Semester";
 import { statusRoutes } from "App/Modules/Log/lib/enum";
 import { CreateRouteHist } from "App/Modules/Log/Helpers/createRouteHist";
+import { DateTime } from "luxon";
 
 export default class RencanaPengambilanNilaisController {
   public async index({ request, response }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
+    const dateStart = DateTime.now().toMillis();
+    CreateRouteHist(statusRoutes.START, dateStart);
     const {
       page = 1,
       limit = 10,
@@ -54,13 +56,13 @@ export default class RencanaPengambilanNilaisController {
         .preload("subjects", (s) => s.select("name"))
         .paginate(page, limit);
 
-      CreateRouteHist(request, statusRoutes.FINISH)
+      CreateRouteHist(statusRoutes.FINISH, dateStart);
       response.ok({
         message: "Berhasil mengambil data",
         data: { semester, data },
       });
     } catch (error) {
-      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
+      CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error);
       response.badRequest({
         message: "Gagal mengambil data",
         error: error.message,
@@ -69,7 +71,8 @@ export default class RencanaPengambilanNilaisController {
   }
 
   public async store({ request, response }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
+    const dateStart = DateTime.now().toMillis();
+    CreateRouteHist(statusRoutes.START, dateStart);
     const payload = await request.validate({
       schema: schema.create({
         programSemesterDetailId: schema.string([
@@ -91,10 +94,10 @@ export default class RencanaPengambilanNilaisController {
     try {
       const data = await RencanaPengambilanNilai.create(payload);
 
-      CreateRouteHist(request, statusRoutes.FINISH)
+      CreateRouteHist(statusRoutes.FINISH, dateStart);
       response.ok({ message: "Berhasil menyimpan data", data });
     } catch (error) {
-      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
+      CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error);
       response.badRequest({
         message: "Gagal menyimpan data",
         error: error.message,
@@ -102,8 +105,9 @@ export default class RencanaPengambilanNilaisController {
     }
   }
 
-  public async show({ request, response, params }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
+  public async show({ response, params }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis();
+    CreateRouteHist(statusRoutes.START, dateStart);
     const { id } = params;
 
     if (!uuidValidation(id)) {
@@ -129,10 +133,10 @@ export default class RencanaPengambilanNilaisController {
         )
         .firstOrFail();
 
-      CreateRouteHist(request, statusRoutes.FINISH)
+      CreateRouteHist(statusRoutes.FINISH, dateStart);
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
-      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
+      CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error);
       response.badRequest({
         message: "Gagal mengambil data",
         error: error.message,

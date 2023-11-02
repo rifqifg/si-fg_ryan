@@ -1,6 +1,6 @@
 import { schema, CustomMessages, rules } from '@ioc:Adonis/Core/Validator'
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import { StatusLeaves, TypeLeaves } from 'App/lib/enum'
+import { LeaveStatuses, StatusLeaves, TypeLeaves } from 'App/lib/enum'
 
 export default class CreateLeaveValidator {
   constructor(protected ctx: HttpContextContract) {}
@@ -25,7 +25,7 @@ export default class CreateLeaveValidator {
    *    ```
    */
   public schema = schema.create({
-    status: schema.enum(Object.values(StatusLeaves)),
+    status: schema.enum.optional(Object.values(StatusLeaves)),
     reason: schema.string([
       rules.minLength(3)
     ]),
@@ -41,7 +41,8 @@ export default class CreateLeaveValidator {
     type: schema.enum(Object.values(TypeLeaves)),
     employeeId: schema.string({}, [
       rules.exists({table: 'employees', column: 'id'})
-    ])
+    ]),
+    leaveStatus: schema.enum(Object.values(LeaveStatuses))
   })
 
   /**

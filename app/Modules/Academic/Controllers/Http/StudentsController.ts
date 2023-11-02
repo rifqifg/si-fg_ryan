@@ -3,9 +3,14 @@ import Student from "Academic/Models/Student";
 import CreateStudentValidator from "Academic/Validators/CreateStudentValidator";
 import { validate as uuidValidation } from "uuid";
 import UpdateStudentValidator from "Academic/Validators/UpdateStudentValidator";
+import { statusRoutes } from "App/Modules/Log/lib/enum";
+import { CreateRouteHist } from "App/Modules/Log/Helpers/createRouteHist";
+import { DateTime } from "luxon";
 
 export default class StudentsController {
   public async index({ request, response }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis();
+    CreateRouteHist(statusRoutes.START, dateStart);
     const {
       page = 1,
       limit = 10,
@@ -14,7 +19,7 @@ export default class StudentsController {
       classId = "",
       isGraduated = false,
       notInSubject = "",
-      subjectMember = ""
+      subjectMember = "",
     } = request.qs();
 
     if (classId && !uuidValidation(classId)) {
@@ -26,11 +31,11 @@ export default class StudentsController {
     }
 
     if (subjectMember && !uuidValidation(subjectMember)) {
-      return response.badRequest(({message: "Subject ID tidak valid"}))
+      return response.badRequest({ message: "Subject ID tidak valid" });
     }
 
-    const graduated = isGraduated == 'false'? false : true
-    
+    const graduated = isGraduated == "false" ? false : true;
+
     try {
       let data: object = {};
       if (mode === "page") {
@@ -41,8 +46,16 @@ export default class StudentsController {
           .preload("kecamatan")
           .preload("kota")
           .preload("provinsi")
-          .if(subjectMember, sm => sm.whereHas('extracurricular', ex => ex.where('subjectId', subjectMember)))
-          .if(notInSubject, q => q.whereDoesntHave('extracurricular', q => q.where('subjectId', notInSubject)))
+          .if(subjectMember, (sm) =>
+            sm.whereHas("extracurricular", (ex) =>
+              ex.where("subjectId", subjectMember)
+            )
+          )
+          .if(notInSubject, (q) =>
+            q.whereDoesntHave("extracurricular", (q) =>
+              q.where("subjectId", notInSubject)
+            )
+          )
           .if(graduated, (g) => g.where("isGraduated", isGraduated))
           .andWhere((q) => {
             q.whereILike("name", `%${keyword}%`);
@@ -59,8 +72,16 @@ export default class StudentsController {
           .preload("kecamatan")
           .preload("kota")
           .preload("provinsi")
-          .if(subjectMember, sm => sm.whereHas('extracurricular', ex => ex.where('subjectId', subjectMember)))
-          .if(notInSubject, q => q.whereDoesntHave('extracurricular', q => q.where('subjectId', notInSubject)))
+          .if(subjectMember, (sm) =>
+            sm.whereHas("extracurricular", (ex) =>
+              ex.where("subjectId", subjectMember)
+            )
+          )
+          .if(notInSubject, (q) =>
+            q.whereDoesntHave("extracurricular", (q) =>
+              q.where("subjectId", notInSubject)
+            )
+          )
           .if(graduated, (g) => g.where("isGraduated", isGraduated))
           .andWhere((q) => {
             q.whereILike("name", `%${keyword}%`);
@@ -74,20 +95,27 @@ export default class StudentsController {
         });
       }
 
+      CreateRouteHist(statusRoutes.FINISH, dateStart);
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
       console.log(error);
+      CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error);
       response.badRequest({ message: "Gagal mengambil data", error });
     }
   }
 
   public async store({ request, response }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis();
+    CreateRouteHist(statusRoutes.START, dateStart);
     const payload = await request.validate(CreateStudentValidator);
     try {
       const data = await Student.create(payload);
+
+      CreateRouteHist(statusRoutes.FINISH, dateStart);
       response.created({ message: "Berhasil menyimpan data", data });
     } catch (error) {
       console.log(error);
+      CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error);
       response.badRequest({
         message: "Gagal menyimpan data",
         error: error.message,
@@ -96,6 +124,8 @@ export default class StudentsController {
   }
 
   public async show({ params, response }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis();
+    CreateRouteHist(statusRoutes.START, dateStart);
     const { id } = params;
     if (!uuidValidation(id)) {
       return response.badRequest({ message: "Student ID tidak valid" });
@@ -111,9 +141,12 @@ export default class StudentsController {
         .where("id", id)
         .preload('parents')
         .firstOrFail();
+
+      CreateRouteHist(statusRoutes.FINISH, dateStart);
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
       console.log(error);
+      CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error);
       response.badRequest({
         message: "Gagal mengambil data",
         error: error.message,

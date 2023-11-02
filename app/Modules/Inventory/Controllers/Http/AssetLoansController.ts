@@ -6,10 +6,12 @@ import { validate as uuidValidation } from "uuid";
 import UpdateAssetLoanValidator from 'Inventory/Validators/UpdateAssetLoanValidator';
 import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist';
 import { statusRoutes } from 'App/Modules/Log/lib/enum';
+import { DateTime } from 'luxon';
 
 export default class AssetLoansController {
   public async index({ request, response }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
+    const dateStart = DateTime.now().toMillis()
+   CreateRouteHist(statusRoutes.START, dateStart)
     const { page = 1, limit = 10, keyword = "" } = request.qs()
 
     try {
@@ -38,25 +40,26 @@ export default class AssetLoansController {
         .orderBy('created_at', 'desc')
         .paginate(page, limit)
 
-      CreateRouteHist(request, statusRoutes.FINISH)
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil mengambil data", data })
     } catch (error) {
-      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
+      CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error)
       response.badRequest({ message: "Gagal mengambil data", error: error.message })
     }
   }
 
   public async store({ request, response }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
+    const dateStart = DateTime.now().toMillis()
+   CreateRouteHist(statusRoutes.START, dateStart)
     const payload = await request.validate(CreateAssetLoanValidator)
 
     if (!payload.endDate) {
       try {
         const asset = await Asset.findOrFail(payload.assetId)
         await asset.merge({ assetStatusId: 'BORROWED' }).save()
-        CreateRouteHist(request, statusRoutes.FINISH)
+        CreateRouteHist(statusRoutes.FINISH, dateStart)
       } catch (error) {
-        CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
+        CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error)
         console.log(error);
         response.badRequest({ message: "Gagal mengubah status asset", error: error.message })
       }
@@ -64,17 +67,18 @@ export default class AssetLoansController {
 
     try {
       const data = await AssetLoan.create(payload)
-      CreateRouteHist(request, statusRoutes.FINISH)
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.created({ message: "Berhasil menyimpan data", data })
     } catch (error) {
-      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
+      CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error)
       console.log(error);
       response.badRequest({ message: "Gagal menyimpan data", error: error.message })
     }
   }
 
-  public async show({ params, response, request }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
+  public async show({ params, response }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis()
+   CreateRouteHist(statusRoutes.START, dateStart)
     const { id } = params
     if (!uuidValidation(id)) { return response.badRequest({ message: "Loan ID tidak valid" }) }
 
@@ -95,10 +99,10 @@ export default class AssetLoansController {
         .where('id', id)
         .firstOrFail()
 
-      CreateRouteHist(request, statusRoutes.FINISH)
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil mengambil data", data })
     } catch (error) {
-      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
+      CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error)
       response.badRequest({ message: "Gagal mengambil data", error: error.message })
     }
 

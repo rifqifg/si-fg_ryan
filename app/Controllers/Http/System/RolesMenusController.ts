@@ -3,11 +3,13 @@ import { schema, rules } from '@ioc:Adonis/Core/Validator'
 import Role from 'App/Models/Role'
 import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist'
 import { statusRoutes } from 'App/Modules/Log/lib/enum'
+import { DateTime } from 'luxon'
 
 
 export default class RolesMenusController {
   public async store({ params, request, response }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
+    const dateStart = DateTime.now().toMillis()
+   CreateRouteHist(statusRoutes.START, dateStart)
     const { role_id } = params
     const { idModule } = request.body()
 
@@ -37,10 +39,10 @@ export default class RolesMenusController {
 
     try {
       await roles.merge({ permissions: permissions }).save()
-      CreateRouteHist(request, statusRoutes.FINISH)
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: 'Permissions updated successfully', roles })
     } catch (error) {
-      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
+      CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error)
       console.log("roles_modules.store ", error);
       response.badRequest(error)
     }

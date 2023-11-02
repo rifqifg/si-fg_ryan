@@ -6,6 +6,7 @@ import User from "App/Models/User";
 import Database from "@ioc:Adonis/Lucid/Database";
 import { CreateRouteHist } from "App/Modules/Log/Helpers/createRouteHist";
 import { statusRoutes } from "App/Modules/Log/lib/enum";
+import GenerateUtValidator from "../../Validators/GenerateUtsValidator";
 export default class BukuNilaisController {
   public async index({ request, response, auth }: HttpContextContract) {
     const {
@@ -16,8 +17,6 @@ export default class BukuNilaisController {
       type = "",
       keyword = "",
       generateUts = false,
-      startDate = "",
-      endDate = "",
     } = request.qs();
     try {
       const user = await User.query()
@@ -129,94 +128,10 @@ export default class BukuNilaisController {
 
       const uts = generateUts === "true" ? true : false;
 
-      if (uts) {
-        if (aspekPenilaian === "SIKAP") {
-          return response.badRequest({
-            message: "Aspek Sikap tidak bisa di generate UTS",
-          });
-        }
-
-        const utsData = await Database.rawQuery(`
-        select bn.student_id, round(avg(bn.nilai), 2) uts, bn.subject_id, bn.class_id, bn.teacher_id, bn.aspek_penilaian, bn.semester_id, bn.academic_year_id
-        from academic.buku_nilais bn
-                 left join academic.semesters s
-                           on s.id = bn.semester_id
-                 left join academic.academic_years ay
-                           on ay.id = bn.academic_year_id
-        where bn.aspek_penilaian = '${aspekPenilaian}'
-          and ay.active = true
-          and s.is_active = true
-          and bn.class_id = '${classId}'
-          and bn.teacher_id = '${teacherId}'
-          and bn.subject_id = '${subjectId}'
-          and bn.type = 'HARIAN'
-          and bn.tanggal_pengambilan_nilai between '${startDate}' and '${endDate}'
-        group by bn.student_id, bn.subject_id, bn.class_id, bn.teacher_id, bn.aspek_penilaian, bn.semester_id, bn.academic_year_id
-        order by bn.student_id
-        `);
-
-        if (Boolean(bukuNilaiData.find((bn) => bn.type == "UTS"))) {
-          const updateUts = utsData.rows.map((uts) => ({
-            nilai: uts?.uts,
-            studentId: uts?.student_id,
-          }));
-          
-          const utsIds = bukuNilaiData
-            .filter((bn) => bn.type == "UTS")
-            .map((uts) => ({ id: uts.id, studentId: uts.studentId }));
-
-          const result: any = utsIds.map((utsIdItem) => {
-            const studentIdToFind = utsIdItem.studentId;
-            const updateUtsItem = updateUts.find(
-              (updateUtsItem) => updateUtsItem.studentId === studentIdToFind
-            );
-
-            if (updateUtsItem) {
-              return { id: utsIdItem.id, nilai: +updateUtsItem.nilai };
-            } else {
-              return `Data dengan studentId ${studentIdToFind} tidak ditemukan.`;
-            }
-          });
-          
-          try {
-            await BukuNilai.updateOrCreateMany('id', result)
-            
-            CreateRouteHist(request, statusRoutes.FINISH)
-            return response.ok({message: "UTS telah berhasil diperbarui"})
-          } catch (error) {
-            CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
-            response.badRequest({message: "Gagal memperbarui uts", error})
-          }
-        } else {
-          const utsPayload = utsData.rows.map((uts) => ({
-            studentId: uts.student_id,
-            subjectId: uts.subject_id,
-            classId: uts.class_id,
-            teacherId: uts.teacher_id,
-            semesterId: uts.semester_id,
-            aspekPenilaian: uts.aspek_penilaian,
-            academicYearId: uts.academic_year_id,
-            type: "UTS",
-            material: "UTS",
-            tanggalPengambilanNilai: new Date().toISOString().slice(0, 10),
-            nilai: uts.uts,
-          }));
-
-          try {
-
-            await BukuNilai.createMany(utsPayload);
-            CreateRouteHist(request, statusRoutes.FINISH)
-            return response.created({message: "uts generated successfully"})
-          } catch (error) {
-            CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
-            return response.badRequest({message: "Gagal menghitung nilai UTS", error})
-          }
-        }
-      
-      }
-
       const data = {
-        students: uniquesStudents,
+        students: uniquesStudents.sort((a, b) =>
+          a?.name?.localeCompare(b?.name)
+        ),
         data: {
           teacher_name: bukuNilaiData[0]?.teachers.employee.name,
           teacher_id: bukuNilaiData[0]?.teachers.id,
@@ -230,38 +145,53 @@ export default class BukuNilaisController {
             " / " +
             bukuNilaiData[0]?.academicYear.description,
         },
-        bab: uniqueProsemDetails.map((b) => ({
-          kompetensi_dasar_index: b?.kompetensi_dasar_index
-            ? b?.kompetensi_dasar_index
-            : "penilaian lainnya",
-          kompetensi_dasar: b?.kompetensi_dasar ? b?.kompetensi_dasar : "",
-          type: uniqueTypeOfBukuNilai
-            .filter(
-              (type) =>
-                type.prosemDetailId === b?.id ||
-                (type.prosemDetailId === null && b === null)
-            )
-            .map((t) => ({
-              name: aspekPenilaian === "SIKAP" ? "SIKAP" : t.type,
-              materi: t.materi,
-              materi_prosem: b?.materi,
-              tanggal_pengambilan_nilai: t?.tanggalPengambilanNilai,
-              nilai: nilais
-                .filter((n) => n.materi === t.materi)
-                .map((nilai) => ({
-                  id: nilai?.id,
-                  studentId: nilai?.studentId,
-                  value: nilai?.value,
-                })),
-            })),
-        })),
+        bab: uniqueProsemDetails
+          .sort((a, b) => {
+            if (a === null && b !== null) {
+              return 1; // Place null values after non-null values
+            } else if (a !== null && b === null) {
+              return -1; // Place non-null values before null values
+            } else {
+              return 0; // Keep the order unchanged
+            }
+          })
+          .map((b) => ({
+            kompetensi_dasar_index: b?.kompetensi_dasar_index
+              ? b?.kompetensi_dasar_index
+              : "penilaian lainnya",
+            kompetensi_dasar: b?.kompetensi_dasar ? b?.kompetensi_dasar : "",
+            type: uniqueTypeOfBukuNilai
+              .filter(
+                (type) =>
+                  type.prosemDetailId === b?.id ||
+                  (type.prosemDetailId === null && b === null)
+              )
+              .map((t) => ({
+                name: aspekPenilaian === "SIKAP" ? "SIKAP" : t.type,
+                materi: t.materi,
+                materi_prosem: b?.materi,
+                tanggal_pengambilan_nilai: t?.tanggalPengambilanNilai,
+                nilai: nilais
+                  .filter((n) => n.materi === t.materi)
+                  .map((nilai) => ({
+                    id: nilai?.id,
+                    studentId: nilai?.studentId,
+                    value: nilai?.value,
+                  })),
+              })),
+          })),
       };
 
       if (data.students.length === 0 || data.bab.length === 0 || !data.data) {
         return response.ok({ message: "Behasil mengambil data", data: [] });
       }
 
-      response.ok({ message: "Berhasil mengambil data", data });
+      response.ok({
+        message: uts
+          ? "Berhasil men-generate nilai UTS"
+          : "Berhasil mengambil data",
+        data,
+      });
     } catch (error) {
       response.badRequest({
         message: "Gagal mengambil data",
@@ -628,6 +558,103 @@ export default class BukuNilaisController {
         message: "Gagal menghapus data",
         error: error.message,
       });
+    }
+  }
+
+  public async generateUts({ request, response }: HttpContextContract) {
+    const payload = await request.validate(GenerateUtValidator);
+    const { subjectId, teacherId, classId, aspekPenilaian, fromDate, toDate } =
+      payload;
+
+    const bukuNilaiData = await BukuNilai.query()
+      .where("class_id", classId)
+      .andWhere("subject_id", subjectId)
+      .andWhere("teacher_id", teacherId)
+      .andWhere("aspekPenilaian", aspekPenilaian);
+
+    if (aspekPenilaian === "SIKAP") {
+      return response.badRequest({
+        message: "Aspek Sikap tidak bisa di generate UTS",
+      });
+    }
+
+    const utsData = await Database.rawQuery(`
+          select bn.student_id, round(avg(bn.nilai), 2) uts, bn.subject_id, bn.class_id, bn.teacher_id, bn.aspek_penilaian, bn.semester_id, bn.academic_year_id
+          from academic.buku_nilais bn
+                   left join academic.semesters s
+                             on s.id = bn.semester_id
+                   left join academic.academic_years ay
+                             on ay.id = bn.academic_year_id
+          where bn.aspek_penilaian = '${aspekPenilaian}'
+            and ay.active = true
+            and s.is_active = true
+            and bn.class_id = '${classId}'
+            and bn.teacher_id = '${teacherId}'
+            and bn.subject_id = '${subjectId}'
+            and bn.type = 'HARIAN'
+            and bn.tanggal_pengambilan_nilai between '${fromDate}' and '${toDate}'
+          group by bn.student_id, bn.subject_id, bn.class_id, bn.teacher_id, bn.aspek_penilaian, bn.semester_id, bn.academic_year_id
+          order by bn.student_id
+          `);
+    // return utsData
+    if (Boolean(bukuNilaiData.find((bn) => bn.type == "UTS"))) {
+      const updateUts = utsData.rows.map((uts) => ({
+        nilai: uts?.uts,
+        studentId: uts?.student_id,
+      }));
+
+      const utsIds = bukuNilaiData
+        .filter((bn) => bn.type == "UTS")
+        .map((uts) => ({ id: uts.id, studentId: uts.studentId }));
+
+      const result: any = utsIds.map((utsIdItem) => {
+        const studentIdToFind = utsIdItem.studentId;
+        const updateUtsItem = updateUts.find(
+          (updateUtsItem) => updateUtsItem.studentId === studentIdToFind
+        );
+
+        if (updateUtsItem) {
+          return { id: utsIdItem.id, nilai: +updateUtsItem.nilai };
+        } else {
+          return `Data dengan studentId ${studentIdToFind} tidak ditemukan.`;
+        }
+      });
+
+      try {
+        await BukuNilai.updateOrCreateMany("id", result);
+
+        CreateRouteHist(request, statusRoutes.FINISH);
+        return response.ok({ message: "UTS telah berhasil diperbarui" });
+      } catch (error) {
+        CreateRouteHist(request, statusRoutes.ERROR, error.message || error);
+        response.badRequest({ message: "Gagal memperbarui uts", error });
+      }
+    } else {
+      const utsPayload = utsData.rows.map((uts) => ({
+        studentId: uts.student_id,
+        subjectId: uts.subject_id,
+        classId: uts.class_id,
+        teacherId: uts.teacher_id,
+        semesterId: uts.semester_id,
+        aspekPenilaian: uts.aspek_penilaian,
+        academicYearId: uts.academic_year_id,
+        type: "UTS",
+        material: "UTS",
+        tanggalPengambilanNilai: new Date().toISOString().slice(0, 10),
+        nilai: uts.uts,
+      }));
+
+      try {
+        await BukuNilai.createMany(utsPayload);
+        CreateRouteHist(request, statusRoutes.FINISH);
+        return response.created({ message: "uts generated successfully" });
+      } catch (error) {
+        CreateRouteHist(request, statusRoutes.ERROR, error.message || error);
+        return response.badRequest({
+          message: "Gagal menghitung nilai UTS",
+          error,
+        });
+      }
     }
   }
 }

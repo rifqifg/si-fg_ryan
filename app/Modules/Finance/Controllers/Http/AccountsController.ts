@@ -222,16 +222,19 @@ export default class AccountsController {
 
       // jika tidak ketemu, berarti belum ada data yg tersimpan dengan format 2223xxx.
       // langsung return '2223001'
-      if (account.length <= 0) { data = sppAccNumberLeft.concat('001') }
+      if (account.length <= 0) {
+        data = sppAccNumberLeft.concat('001')
+      } else {
+        // jika ketemu, ambil TIGA digit terakhir nomor rekening tsb.
+        const sppAccNumberRightRaw = account[0].number.slice(-3)
 
-      // jika ketemu, ambil TIGA digit terakhir nomor rekening tsb.
-      const sppAccNumberRightRaw = account[0].number.slice(-3)
+        // cast ke number, tambahkan dgn 1, lalu cast lagi ke string dengan leading zeros.
+        // jumlah leading zero ditentukan parameter kedua fungsi formatNumberWithLeadingZeros
+        const sppAccNumberRight = AccountsController.formatNumberWithLeadingZeros((+sppAccNumberRightRaw + 1).toString(), 3)
 
-      // cast ke number, tambahkan dgn 1, lalu cast lagi ke string dengan leading zeros.
-      // jumlah leading zero ditentukan parameter kedua fungsi formatNumberWithLeadingZeros
-      const sppAccNumberRight = AccountsController.formatNumberWithLeadingZeros((+sppAccNumberRightRaw + 1).toString(), 3)
+        data = `${sppAccNumberLeft}${sppAccNumberRight}`
+      }
 
-      data = `${sppAccNumberLeft}${sppAccNumberRight}`
     } else if (payload.type === BillingType.BP) {
       // ambil SATU digit terakhir dari array splitAcademicYear, lalu join
       const bpAccNumberLeft = splitAcademicYear.map(element => element.slice(-1)).join('') // '23'
@@ -241,15 +244,17 @@ export default class AccountsController {
         .orderBy('number', 'desc')
         .limit(1)
 
-      if (account.length <= 0) { data = bpAccNumberLeft.concat('0000') }
+      if (account.length <= 0) {
+        data = bpAccNumberLeft.concat('0000')
+      } else {
+        // ambil EMPAT digit terakhir nomor rekening
+        const bpAccNumberRightRaw = account[0].number.slice(-4)
 
-      // ambil EMPAT digit terakhir nomor rekening
-      const bpAccNumberRightRaw = account[0].number.slice(-4)
+        const bpAccNumberRight = AccountsController.formatNumberWithLeadingZeros((+bpAccNumberRightRaw + 1).toString(), 4)
 
-      const bpAccNumberRight = AccountsController.formatNumberWithLeadingZeros((+bpAccNumberRightRaw + 1).toString(), 4)
-
-      // jangan lupa leading 1 nya
-      data = `1${bpAccNumberLeft}${bpAccNumberRight}`
+        // jangan lupa leading 1 nya
+        data = `1${bpAccNumberLeft}${bpAccNumberRight}`
+      }
     }
 
     const finalData = parseInt(data, 10)

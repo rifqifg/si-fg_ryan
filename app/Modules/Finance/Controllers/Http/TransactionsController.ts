@@ -4,15 +4,22 @@ import CreateTransactionValidator from '../../Validators/CreateTransactionValida
 import { validate as uuidValidation } from "uuid";
 import UpdateTransactionValidator from '../../Validators/UpdateTransactionValidator';
 import { BillingStatus } from '../../lib/enums';
+import { DateTime } from 'luxon';
 
 export default class TransactionsController {
   public async index({ request, response }: HttpContextContract) {
-    const { page = 1, limit = 10, mode = "page" } = request.qs();
+    const { page = 1, limit = 10, mode = "page", date_start, date_end } = request.qs();
+    let dateStart: string, dateEnd: string
+
+    if (date_start) dateStart = DateTime.fromSQL(date_start).startOf('day').toString()
+    if (date_end) dateEnd = DateTime.fromSQL(date_end).endOf('day').toString()
 
     try {
       let data: Transaction[]
       if (mode === 'page') {
         data = await Transaction.query()
+          .if(date_start, qDateStart => qDateStart.where('createdAt', '>=', dateStart))
+          .if(date_end, qDateEnd => qDateEnd.andWhere('createdAt', '<=', dateEnd))
           .preload('billings', qBilling => {
             qBilling
               .select('name', 'amount', 'account_id')

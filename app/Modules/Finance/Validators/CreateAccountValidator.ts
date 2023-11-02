@@ -1,5 +1,6 @@
 import { schema, CustomMessages, rules } from '@ioc:Adonis/Core/Validator'
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import { BillingType } from '../lib/enums'
 
 export default class CreateAccountValidator {
   constructor(protected ctx: HttpContextContract) { }
@@ -20,6 +21,7 @@ export default class CreateAccountValidator {
         account_name: schema.string(),
         balance: schema.number.optional(),
         ref_amount: schema.number.optional(),
+        type: schema.enum.optional(Object.values(BillingType)),
         number: schema.string([
           rules.regex(new RegExp("^[0-9]+$")),
           rules.unique({table: 'finance.accounts', column: 'number'})

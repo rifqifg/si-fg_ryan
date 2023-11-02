@@ -245,7 +245,7 @@ export default class AccountsController {
         .limit(1)
 
       if (account.length <= 0) {
-        data = bpAccNumberLeft.concat('0000')
+        data = `1${bpAccNumberLeft.concat('0001')}`
       } else {
         // ambil EMPAT digit terakhir nomor rekening
         const bpAccNumberRightRaw = account[0].number.slice(-4)

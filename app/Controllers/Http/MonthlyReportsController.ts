@@ -91,8 +91,9 @@ export default class MonthlyReportsController {
             .preload('monthlyReportEmployeesFixedTime', mreft => mreft
               .select('*')
               .select(Database.raw(`(case
-                when skor * 100 / (NULLIF((select default_presence from public.employees where id= (select employee_id from monthly_report_employees where id = monthly_report_employee_id)), 0) - (select red_dates from monthly_reports where id = '${id}')) > 100 then 100
-                else skor * 100 / (NULLIF((select default_presence from public.employees where id= (select employee_id from monthly_report_employees where id = monthly_report_employee_id)), 0) - (select red_dates from monthly_reports where id = '${id}'))
+                when skor * 100 / NULLIF((select default_presence from public.employees where id = (select employee_id from monthly_report_employees where id = monthly_report_employee_id)) - (select red_dates from monthly_reports where id = '${id}'), 0) > 100 then 100
+                when skor * 100 / NULLIF((select default_presence from public.employees where id = (select employee_id from monthly_report_employees where id = monthly_report_employee_id)) - (select red_dates from monthly_reports where id = '${id}'), 0) <= 0 then 0
+                else skor * 100 / NULLIF((select default_presence from public.employees where id = (select employee_id from monthly_report_employees where id = monthly_report_employee_id)) - (select red_dates from monthly_reports where id = '${id}'), 0)
                 end) as percentage`))
               .select(Database.raw(`(select default_presence from public.employees where id= (select employee_id from monthly_report_employees where id = monthly_report_employee_id)) - (select red_dates from monthly_reports where id = '${id}') as "default"`))
               .whereHas('activity', ac => ac.where('activity_type', 'fixed_time').andWhere('assessment', true))
@@ -157,8 +158,9 @@ export default class MonthlyReportsController {
             .preload('monthlyReportEmployeesFixedTime', mreft => mreft
               .select('*')
               .select(Database.raw(`(case
-                when skor * 100 / (NULLIF((select default_presence from public.employees where id='${employeeId}'), 0) - (select red_dates from monthly_reports where id = '${id}')) > 100 then 100
-                else skor * 100 / (NULLIF((select default_presence from public.employees where id='${employeeId}'), 0) - (select red_dates from monthly_reports where id = '${id}'))
+                when skor * 100 / NULLIF((select default_presence from public.employees where id = '${employeeId}') - (select red_dates from monthly_reports where id = '${id}'), 0) > 100 then 100
+                when skor * 100 / NULLIF((select default_presence from public.employees where id = '${employeeId}') - (select red_dates from monthly_reports where id = '${id}'), 0) <= 0 then 0
+                else skor * 100 / NULLIF((select default_presence from public.employees where id = '${employeeId}') - (select red_dates from monthly_reports where id = '${id}'), 0)
                 end) as percentage`))
               .select(Database.raw(`(select default_presence from public.employees where id='${employeeId}') - (select red_dates from monthly_reports where id = '${id}') as "default"`))
               .whereHas('activity', ac => ac.where('activity_type', 'fixed_time').andWhere('assessment', true))

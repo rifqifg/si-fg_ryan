@@ -11,10 +11,15 @@ import {
     PayloadImportStudent,
     PayloadImportStudentParent,
 } from "../../lib/types/payload-import-student";
+import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist'
+import { statusRoutes } from 'App/Modules/Log/lib/enum'
+import { DateTime } from 'luxon'
 
 
 export default class ImportStudentsController {
     public async store({ request, response }: HttpContextContract) {
+        const dateStart = DateTime.now().toMillis()
+        CreateRouteHist(statusRoutes.START, dateStart);
         let payload = await request.validate(CreateImportStudentValidator)
 
         //@ts-ignore
@@ -25,6 +30,7 @@ export default class ImportStudentsController {
         if (importExcel == 0) {
             response.badRequest({ message: "Data tidak boleh kosong"})
         } else {
+            CreateRouteHist(statusRoutes.FINISH, dateStart);
             response.ok({ message: "Success import data" })
         }
 

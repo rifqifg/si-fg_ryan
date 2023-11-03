@@ -346,7 +346,7 @@ export default class SubActivitiesController {
             [activityId, fromDate + ' 00:00:00', toDate + ' 23:59:59']
           ),
           Database.raw(
-            '( COUNT(employee_id) * 100 ) / (SELECT COUNT(DISTINCT sub_activity_id) FROM presences WHERE activity_id = ? AND created_at >= ? AND created_at <= ? ) AS percentage',
+            '( COUNT(employee_id) * 100 ) / NULLIF((SELECT COUNT(DISTINCT sub_activity_id) FROM presences WHERE activity_id = ? AND created_at >= ? AND created_at <= ? ), 0) AS percentage',
             [activityId, fromDate + ' 00:00:00', toDate + ' 23:59:59']
           ),
         )

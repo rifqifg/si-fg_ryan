@@ -1,15 +1,24 @@
 import { DateTime } from 'luxon'
-import { BaseModel, BelongsTo, afterCreate, beforeCreate, belongsTo, column } from '@ioc:Adonis/Lucid/Orm'
+import { BaseModel, BelongsTo, ManyToMany, afterCreate, beforeCreate, belongsTo, column, manyToMany } from '@ioc:Adonis/Lucid/Orm'
 import { TransactionMethods, TransactionStatus, TransactionTypes } from '../lib/enums';
 import { v4 as uuidv4 } from 'uuid'
 import Billing from './Billing';
 import Employee from 'App/Models/Employee';
 import TransactionDocument from './TransactionDocument';
+import Revenue from './Revenue';
 
 let newId = ""
 
 export default class Transaction extends BaseModel {
   public static table = 'finance.transactions';
+
+  public serializeExtras() {
+    return {
+      remaining_amount: this.$extras.remaining_amount,
+      pivot_amount: this.$extras.pivot_amount,
+      amount: this.$extras.amount,
+    }
+  }
 
   @column({ isPrimary: true })
   public id: string
@@ -18,7 +27,10 @@ export default class Transaction extends BaseModel {
   public coaId: string | null
 
   @column()
-  public billingId: string | null
+  public revenueId: string | null
+
+  // @column()
+  // public billingId: string | null
 
   @column()
   public documentId: string | null
@@ -29,8 +41,8 @@ export default class Transaction extends BaseModel {
   @column()
   public tellerId: string | null
 
-  @column()
-  public amount: string
+  // @column()
+  // public amount: number
 
   @column()
   public method: TransactionMethods | null
@@ -47,8 +59,8 @@ export default class Transaction extends BaseModel {
   @column()
   public description: string | null
 
-  @belongsTo(() => Billing)
-  public billing: BelongsTo<typeof Billing>
+  // @belongsTo(() => Billing)
+  // public billing: BelongsTo<typeof Billing>
 
   @belongsTo(() => TransactionDocument)
   public document: BelongsTo<typeof TransactionDocument>
@@ -58,6 +70,19 @@ export default class Transaction extends BaseModel {
     localKey: 'id'
   })
   public teller: BelongsTo<typeof Employee>
+
+  // @hasMany(() => TransactionBilling)
+  // public transactionBillings: HasMany<typeof TransactionBilling>
+
+  @belongsTo(() => Revenue)
+  public revenue: BelongsTo<typeof Revenue>
+
+  @manyToMany(() => Billing, {
+    pivotTable: 'finance.transaction_billings',
+    pivotColumns: ['amount'],
+    pivotTimestamps: true
+  })
+  public billings: ManyToMany<typeof Billing>
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime

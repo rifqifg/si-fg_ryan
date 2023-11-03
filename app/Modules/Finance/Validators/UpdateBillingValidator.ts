@@ -18,11 +18,10 @@ export default class UpdateBillingValidator {
           rules.exists({ table: 'finance.master_billings', column: 'id' })
         ]),
         name: schema.string.optional(),
-        amount: schema.string.optional([
-          rules.regex(new RegExp("^[1-9][0-9]*$")),
-        ]),
+        amount: schema.number.optional(),
         description: schema.string.optional(),
-        type: schema.enum.optional(Object.values(BillingType))
+        type: schema.enum.optional(Object.values(BillingType)),
+        due_date: schema.date.optional()
       })
     )
   })

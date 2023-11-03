@@ -94,11 +94,41 @@ export default class MonthlyReportEmployee extends BaseModel {
 
       // Menghitung Presensi employee Aktifitas yang tidak tetap
       const presenceEmployeeNotFixedTime = await countPresenceEMployeeNotFixedTime(monthlyReportEmployee, fromDate, toDate)
+      let activityId: any = []
       if (presenceEmployeeNotFixedTime.length > 0) {
         presenceEmployeeNotFixedTime.map(async value => {
+          activityId.push(value.activity_id)
           await MonthlyReportEmployeeDetail.create({
             skor: value.presence_count,
             activityId: value.activity_id,
+            monthlyReportEmployeeId: monthlyReportEmployee.id
+          })
+        })
+
+          let activityNotFixedTime = await Activity.query()
+            .select('id')
+            .where('activity_type', 'not_fixed_time')
+            .andWhere('assessment', true)
+            .andWhereNotIn('id', activityId)
+
+          const dataActivityFixedTimeObject = JSON.parse(JSON.stringify(activityNotFixedTime))
+          dataActivityFixedTimeObject.map(async aft => {
+            await MonthlyReportEmployeeDetail.create({
+              skor: 0,
+              activityId: aft.id,
+              monthlyReportEmployeeId: monthlyReportEmployee.id
+            })
+          })
+      } else {
+        let activityNotFixedTime = await Activity.query()
+          .select('id')
+          .where('activity_type', 'not_fixed_time')
+          .andWhere('assessment', true)
+        const dataActivityFixedTimeObject = JSON.parse(JSON.stringify(activityNotFixedTime))
+        dataActivityFixedTimeObject.map(async aft => {
+          await MonthlyReportEmployeeDetail.create({
+            skor: 0,
+            activityId: aft.id,
             monthlyReportEmployeeId: monthlyReportEmployee.id
           })
         })

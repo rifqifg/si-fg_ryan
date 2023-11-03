@@ -4,11 +4,15 @@ import SubjectMember from "../../Models/SubjectMember";
 import CreateSubjectMemberValidator from "../../Validators/CreateSubjectMemberValidator";
 import UpdateSubjectMemberValidator from "App/Validators/UpdateSubjectMemberValidator";
 import DeleteManySubjectMemberValidator from "../../Validators/DeleteManySubjectMemberValidator";
+import { statusRoutes } from "App/Modules/Log/lib/enum";
+import { CreateRouteHist } from "App/Modules/Log/Helpers/createRouteHist";
+import { DateTime } from "luxon";
 
 export default class SubjectMembersController {
   public async index({ request, response, params }: HttpContextContract) {
-
-    const { page = 1, limit = 10, mode = "page", keyword = "" } = request.qs();
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart)
+  const { page = 1, limit = 10, mode = "page", keyword = "" } = request.qs();
   const {subject_id: subjectId} = params
     if (!uuidValidation(subjectId)) {
       return response.badRequest({ message: "SubjectId tidak valid" });
@@ -48,8 +52,10 @@ export default class SubjectMembersController {
           .whereHas("students", (q) => q.whereILike("name", `%${keyword}%`))
       }
 
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
+      CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error)
       return response.badRequest({
         message: "Gagal mengambil data",
         error: error.message,
@@ -59,6 +65,8 @@ export default class SubjectMembersController {
   }
 
   public async store({ request, response, params }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart)
     const rawPayload = await request.validate(CreateSubjectMemberValidator);
     const {subject_id: subjectId} = params
     if (!uuidValidation(subjectId)) {
@@ -74,8 +82,10 @@ export default class SubjectMembersController {
     try {
       const data = await SubjectMember.createMany(payload);
 
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil membuat data", data });
     } catch (error) {
+      CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error)
       return response.badRequest({
         message: "Gagal membuat data",
         error: error.message,
@@ -85,6 +95,8 @@ export default class SubjectMembersController {
   }
 
   public async show({ params, response }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart)
     const { id } = params;
     if (!uuidValidation(id)) {
       return response.badRequest({ message: "Subject Member ID tidak valid" });
@@ -97,8 +109,10 @@ export default class SubjectMembersController {
         .preload("subjects", (su) => su.select("name"))
         .firstOrFail();
 
+        CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
+      CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error)
       return response.badRequest({
         message: "Gagal mengambil data ",
         error: error.message,

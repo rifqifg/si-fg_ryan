@@ -56,15 +56,17 @@ export default class MonthlyReportEmployeesController {
         .preload('monthlyReport', mr => mr.select('name', 'from_date', 'to_date'))
         .preload('employee', e => e
           .select('name', 'nik', 'status')
-          .select(Database.raw(`EXTRACT(YEAR FROM AGE(NOW(), "date_in")) || ' tahun ' || EXTRACT(MONTH FROM AGE(NOW(), "date_in")) || ' bulan' AS period_of_work`))
+          .select(Database.raw(`EXTRACT(YEAR FROM AGE((select to_date from monthly_reports where id = (select monthly_report_id from monthly_report_employees where id = '${id}')), "date_in")) || ' tahun '
+            || EXTRACT(MONTH FROM AGE((select to_date from monthly_reports where id = (select monthly_report_id from monthly_report_employees where id = '${id}')), "date_in")) || ' bulan' AS period_of_work`))
           .preload('divisions', ds => ds.select("title", "divisionId").preload('division', d => d.select('name'))))
         .preload('monthlyReportEmployeesFixedTime', mreft => mreft
           .select('*')
           .select(Database.raw(`(case
-            when skor * 100 / NULLIF((select default_presence from public.employees where id='${employeeId}'), 0) > 100 then 100
-            else skor * 100 / NULLIF((select default_presence from public.employees where id='${employeeId}'), 0)
+            when NULLIF((select default_presence from public.employees where id = '${employeeId}') - (select red_dates from monthly_reports where id = '${id}'), 0) > 100 then 100
+            when NULLIF((select default_presence from public.employees where id = '${employeeId}') - (select red_dates from monthly_reports where id = '${id}'), 0) <= 0 then 0
+            else NULLIF((select default_presence from public.employees where id = '${employeeId}') - (select red_dates from monthly_reports where id = '${id}'), 0)
             end) as percentage`))
-          .select(Database.raw(`(select default_presence from public.employees where id='${employeeId}') as "default"`))
+          .select(Database.raw(`(select default_presence from public.employees where id='${employeeId}') - (select red_dates from monthly_reports where id = (select monthly_report_id from monthly_report_employees where id = '${id}')) as "default"`))
           .whereHas('activity', ac => ac.where('activity_type', 'fixed_time').andWhere('assessment', true))
           .preload('activity', a => a.select('id', 'name', 'category_activity_id')
             .preload('categoryActivity', ca => ca.select('name'))))

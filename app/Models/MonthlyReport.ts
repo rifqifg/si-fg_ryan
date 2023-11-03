@@ -19,6 +19,9 @@ export default class MonthlyReport extends BaseModel {
   @column.date()
   public toDate: DateTime
 
+  @column()
+  public redDates: number
+
   @hasMany(() => MonthlyReportEmployee)
   public monthlyReportEmployees: HasMany<typeof MonthlyReportEmployee>
 
@@ -44,12 +47,16 @@ export default class MonthlyReport extends BaseModel {
     const employeeIds = await Employee.query().select('id').whereNull('date_out')
     const dataObject = JSON.parse(JSON.stringify(employeeIds))
 
-    dataObject.map(async (value) => (
-      await MonthlyReportEmployee.create({
-        employeeId: value.id,
-        monthlyReportId: newId,
-      })
-    ));
+    try {
+      dataObject.map(async (value) => (
+        await MonthlyReportEmployee.create({
+          employeeId: value.id,
+          monthlyReportId: newId,
+        })
+      ));
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   @beforeUpdate()
@@ -58,8 +65,12 @@ export default class MonthlyReport extends BaseModel {
     const { id } = request.params()
     const { fromDate, toDate }: any = JSON.parse(request.raw()!)
 
-    if (fromDate && toDate) {
-      await MonthlyReportEmployee.query().where('monthly_report_id', id).delete()
+    try {
+      if (fromDate && toDate) {
+        await MonthlyReportEmployee.query().where('monthly_report_id', id).delete()
+      }
+    } catch (error) {
+      console.log(error);
     }
   }
 
@@ -67,16 +78,20 @@ export default class MonthlyReport extends BaseModel {
   public static async generateMonthlyReportEmployee(monthlyReport: MonthlyReport) {
     const { request } = HttpContext.get()!
     const { fromDate, toDate }: any = JSON.parse(request.raw()!)
-    if (fromDate && toDate) {
-      const employeeIds = await Employee.query().select('id').whereNull('date_out')
-      const dataObject = JSON.parse(JSON.stringify(employeeIds))
+    try {
+      if (fromDate && toDate) {
+        const employeeIds = await Employee.query().select('id').whereNull('date_out')
+        const dataObject = JSON.parse(JSON.stringify(employeeIds))
 
-      dataObject.map(async (value) => (
-        await MonthlyReportEmployee.create({
-          employeeId: value.id,
-          monthlyReportId: monthlyReport.id,
-        })
-      ));
+        dataObject.map(async (value) => (
+          await MonthlyReportEmployee.create({
+            employeeId: value.id,
+            monthlyReportId: monthlyReport.id,
+          })
+        ));
+      }
+    } catch (error) {
+      console.log(error);
     }
   }
 }

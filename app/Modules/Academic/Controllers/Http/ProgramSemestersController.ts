@@ -5,9 +5,14 @@ import { validate as uuidValidation } from "uuid";
 import User from "App/Models/User";
 import DuplicateProsemValidator from "../../Validators/DuplicateProsemValidator";
 import ProgramSemesterDetail from "../../Models/ProgramSemesterDetail";
+import { statusRoutes } from "App/Modules/Log/lib/enum";
+import { CreateRouteHist } from "App/Modules/Log/Helpers/createRouteHist";
+import { DateTime } from "luxon";
 
 export default class ProgramSemestersController {
   public async index({ request, response, auth }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart)
     const {
       page = 1,
       limit = 10,
@@ -77,9 +82,10 @@ export default class ProgramSemestersController {
           message: "Mode tidak dikenali, (pilih: page / list)",
         });
       }
-
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
+      CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error)
       response.badRequest({
         message: "Gagal mengambil data",
         error: error.message,
@@ -88,6 +94,8 @@ export default class ProgramSemestersController {
   }
 
   public async store({ request, response, auth }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart)
     const user = await User.query()
       .where("id", auth?.user!.id)
       .preload("roles", (r) => r.preload("role"))
@@ -203,8 +211,10 @@ export default class ProgramSemestersController {
     try {
       const data = await ProgramSemester.create(payload);
 
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil menyimpan data", data });
     } catch (error) {
+      CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error)
       response.badRequest({
         message: "Gagal menyimpan data",
         error: error.message,
@@ -212,7 +222,9 @@ export default class ProgramSemestersController {
     }
   }
 
-  public async show({ response, params }: HttpContextContract) {
+  public async show({  response, params }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart)
     const { id } = params;
 
     if (!uuidValidation(id)) {
@@ -233,8 +245,10 @@ export default class ProgramSemestersController {
 
         .firstOrFail();
 
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
+      CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error)
       response.badRequest({
         message: "Gagal mengambil data",
         error: error.message,

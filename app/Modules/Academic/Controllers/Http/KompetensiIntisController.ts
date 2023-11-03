@@ -1,19 +1,28 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import { schema, rules } from "@ioc:Adonis/Core/Validator";
 import KompetensiInti from '../../Models/KompetensiInti'
+import { statusRoutes } from 'App/Modules/Log/lib/enum';
+import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist';
+import { DateTime } from 'luxon';
 
 export default class KompetensiIntisController {
   public async index({ response}: HttpContextContract) {
-
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart);
     try {
       const data = await KompetensiInti.query().select('*')
+
+      CreateRouteHist(statusRoutes.FINISH, dateStart);
       response.ok({message: 'Berhasil mengambil data', data})
     } catch (error) {
+      CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error);
       response.badRequest({message: 'Gagal mengambil data', error: error.message})
     }
   }
 
   public async store({request, response}: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart);
     const payload = await request.validate({schema: schema.create({
       nama: schema.string([rules.trim()])
     })})
@@ -21,13 +30,17 @@ export default class KompetensiIntisController {
 
       const data = await KompetensiInti.create(payload)
 
+      CreateRouteHist(statusRoutes.FINISH, dateStart);
       response.ok({message: 'Berhasil menyimpan data', data})
     } catch (error) {
+      CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error);
       response.badRequest({message: 'Gagal mengambil data', error: error.message})
     }
   }
 
-  public async show({response, params}: HttpContextContract) {
+  public async show({ response, params}: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart);
     const {id} = params
 
     try {
@@ -35,8 +48,10 @@ export default class KompetensiIntisController {
 
       if(!data) return response.badRequest({message: 'Kompetensi Inti tidak ditemukan'})
 
+      CreateRouteHist(statusRoutes.FINISH, dateStart);
       response.ok({message: 'Berhasil mengambil data', data})
     } catch (error) {
+      CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error);
       response.badRequest({message: 'Gagal mengambil data', error: error.message})
     }
   }

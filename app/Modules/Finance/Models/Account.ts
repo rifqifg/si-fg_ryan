@@ -1,9 +1,11 @@
 import { DateTime } from 'luxon'
-import { BaseModel, BelongsTo, afterCreate, beforeCreate, belongsTo, column } from '@ioc:Adonis/Lucid/Orm'
+import { BaseModel, BelongsTo, HasMany, afterCreate, beforeCreate, belongsTo, column, hasMany } from '@ioc:Adonis/Lucid/Orm'
 import Coa from './Coa';
 import Student from 'App/Modules/Academic/Models/Student';
 import Employee from 'App/Models/Employee';
 import { v4 as uuidv4 } from 'uuid'
+import Billing from './Billing';
+import { BillingType } from '../lib/enums';
 
 let newId = ""
 
@@ -32,13 +34,19 @@ export default class Account extends BaseModel {
   public owner: string | null
 
   @column()
-  accountName: string
+  public accountName: string
 
   @column()
-  balance: string
+  public balance: number | null
 
   @column()
-  number: string
+  public number: string
+
+  @column()
+  public type: BillingType | null
+
+  @column()
+  public refAmount: number
 
   @belongsTo(() => Coa)
   public coa: BelongsTo<typeof Coa>
@@ -49,6 +57,9 @@ export default class Account extends BaseModel {
   @belongsTo(() => Employee)
   public employee: BelongsTo<typeof Employee>
 
+  @hasMany(() => Billing )
+  public billings: HasMany<typeof Billing>
+  
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
 

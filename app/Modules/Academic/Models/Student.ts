@@ -21,6 +21,7 @@ import Wilayah from "App/Models/Wilayah";
 import { hasMany } from "@ioc:Adonis/Lucid/Orm";
 import StudentParent from "./StudentParent";
 import SubjectMember from "Academic/Models/SubjectMember";
+import Account from "App/Modules/Finance/Models/Account";
 let newId = "";
 
 export default class Student extends BaseModel {
@@ -234,5 +235,6 @@ export default class Student extends BaseModel {
   @hasMany(() => SubjectMember )
   public extracurricular : HasMany<typeof SubjectMember>
 
-
+  @hasMany(() => Account )
+  public accounts : HasMany<typeof Account>
 }

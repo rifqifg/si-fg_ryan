@@ -20,6 +20,7 @@ export default class StudentsController {
       isGraduated = false,
       notInSubject = "",
       subjectMember = "",
+      isNew
     } = request.qs();
 
     if (classId && !uuidValidation(classId)) {
@@ -57,6 +58,7 @@ export default class StudentsController {
             )
           )
           .if(graduated, (g) => g.where("isGraduated", isGraduated))
+          .if((isNew === "true"), (newStudentQuery) => newStudentQuery.doesntHave('class'))
           .andWhere((q) => {
             q.whereILike("name", `%${keyword}%`);
             q.orWhereILike("nis", `%${keyword}%`);

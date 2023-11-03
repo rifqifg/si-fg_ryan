@@ -42,3 +42,8 @@ export enum TransactionStatus {
     APPROVED = 'approved',
     REJECTED = 'rejected'
 }
+
+export enum RevenueStatus {
+    NEW = 'new',
+    EXPORTED = 'exported'
+}

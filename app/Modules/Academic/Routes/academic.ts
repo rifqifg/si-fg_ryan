@@ -30,6 +30,7 @@ Route.group(() => {
   Route.delete("multi-delete-subject-members","SubjectMembersController.deleteMany").middleware("auth")
   Route.shallowResource("agendas", "AgendasController").middleware({ "*": ["auth"] }).apiOnly();
   Route.shallowResource('semesters', 'SemestersController').apiOnly().only(['index'])
+  Route.shallowResource('raports', 'RaportsController').apiOnly().middleware({ "*": ["auth"] })
 })
   .prefix("academics")
   .namespace("AcademicControllers");

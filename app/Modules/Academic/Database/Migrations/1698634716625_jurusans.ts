@@ -1,11 +1,11 @@
 import BaseSchema from '@ioc:Adonis/Lucid/Schema'
 
 export default class extends BaseSchema {
-  protected tableName = 'academic.jurusans'
+  protected tableName = 'jurusans'
 
   public async up () {
-    this.schema.createTable(this.tableName, (table) => {
-      table.uuid('id')
+    this.schema.withSchema('academic').createTable(this.tableName, (table) => {
+      table.uuid('id').notNullable().unique().defaultTo(this.raw("gen_random_uuid()"))
       table.string('kode').primary().unique().notNullable()
       table.string('nama')
 

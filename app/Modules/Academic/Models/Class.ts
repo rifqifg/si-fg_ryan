@@ -15,6 +15,7 @@ import Employee from "App/Models/Employee";
 import { v4 as uuidv4 } from "uuid";
 import Student from "./Student";
 import ProgramSemester from "./ProgramSemester";
+import Jurusan from "./Jurusan";
 let newId = "";
 export default class Class extends BaseModel {
   public static table = "academic.classes";
@@ -36,6 +37,15 @@ export default class Class extends BaseModel {
 
   @column()
   public employeeId: string | null;
+
+
+  @column()
+  public kelasJurusan: string
+
+  @belongsTo(() => Jurusan, {
+    foreignKey: 'kelas_jurusan'
+  })
+  public jurusan: BelongsTo<typeof Jurusan>
 
   @column()
   public isGraduated: boolean;

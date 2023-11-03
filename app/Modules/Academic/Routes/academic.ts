@@ -4,6 +4,7 @@ Route.group(() => {
     return "You got here at academic";
   });
   Route.resource("classes", "ClassesController").apiOnly().middleware({ "*": ["auth"] });
+  Route.shallowResource('jurusan', 'JurusansController').only(['index']).middleware({'index': ['auth']})
   Route.resource("students", "StudentsController").apiOnly().middleware({store: ["auth"],destroy: ["auth"],update: ["auth"],show: ["auth"],});
   Route.resource("subjects", "SubjectsController").apiOnly().middleware({ "*": ["auth"] });
   Route.resource("teachers", "TeachersController").apiOnly().middleware({store: ["auth"],destroy: ["auth"],update: ["auth"],show: ["auth"],});

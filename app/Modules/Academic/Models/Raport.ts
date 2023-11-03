@@ -1,5 +1,8 @@
 import { DateTime } from 'luxon'
-import { BaseModel, column } from '@ioc:Adonis/Lucid/Orm'
+import { BaseModel, BelongsTo, belongsTo, column } from '@ioc:Adonis/Lucid/Orm'
+import Class from './Class';
+import AcademicYear from './AcademicYear';
+import Semester from './Semester';
 
 export default class Raport extends BaseModel {
   public static table = "academic.raports";
@@ -20,10 +23,19 @@ export default class Raport extends BaseModel {
   public semesterId: string
 
   @column()
-  public academicYearId: string
+  public academicYearId: number
 
   @column()
   public classId: string
+
+  @belongsTo(() => AcademicYear)
+  public academicYear: BelongsTo<typeof AcademicYear>
+
+  @belongsTo(() => Semester)
+  public semester: BelongsTo<typeof Semester>
+
+  @belongsTo(() => Class)
+  public class: BelongsTo<typeof Class>
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime

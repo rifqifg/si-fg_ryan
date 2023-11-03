@@ -43,7 +43,7 @@ export default class Class extends BaseModel {
   public kelasJurusan: string
 
   @belongsTo(() => Jurusan, {
-    foreignKey: 'kelas_jurusan'
+    foreignKey: 'kelasJurusan'
   })
   public jurusan: BelongsTo<typeof Jurusan>
 

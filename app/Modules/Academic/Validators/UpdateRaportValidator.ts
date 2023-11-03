@@ -1,7 +1,7 @@
-import { schema, CustomMessages, rules} from '@ioc:Adonis/Core/Validator'
+import { schema, CustomMessages, rules } from '@ioc:Adonis/Core/Validator'
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 
-export default class CreateRaportValidator {
+export default class UpdateRaportValidator {
   constructor(protected ctx: HttpContextContract) {}
 
   /*
@@ -24,12 +24,12 @@ export default class CreateRaportValidator {
    *    ```
    */
   public schema = schema.create({
-    name: schema.string([rules.trim()]),
-    fromDate: schema.date({format: 'yyyy-MM-dd'}),
-    toDate: schema.date({format: 'yyyy-MM-dd'}),
-    semesterId: schema.string([rules.exists({table: 'academic.semesters', column: 'id'})]),
-    academicYearId: schema.number([rules.exists({table: 'academic.academic_years', column: 'id'})]),
-    classId: schema.string([rules.exists({table: 'academic.classes', column: 'id'})])
+    name: schema.string.optional([rules.trim()]),
+    fromDate: schema.date.optional({format: 'yyyy-MM-dd'}),
+    toDate: schema.date.optional({format: 'yyyy-MM-dd'}),
+    semesterId: schema.string.optional([rules.exists({table: 'academic.semesters', column: 'id'})]),
+    academicYearId: schema.number.optional([rules.exists({table: 'academic.academic_years', column: 'id'})]),
+    classId: schema.string.optional([rules.exists({table: 'academic.classes', column: 'id'})])
   })
 
   /**

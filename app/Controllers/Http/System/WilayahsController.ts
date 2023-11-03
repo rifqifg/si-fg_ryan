@@ -2,10 +2,12 @@ import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Wilayah from 'App/Models/Wilayah'
 import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist'
 import { statusRoutes } from 'App/Modules/Log/lib/enum'
+import { DateTime } from 'luxon'
 
 export default class WilayahsController {
   public async index({ request, response }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
+    const dateStart = DateTime.now().toMillis()
+   CreateRouteHist(statusRoutes.START, dateStart)
     const { t: tingkat = "", p: parent = "", k: keyword = "" } = request.qs()
     const objTingkat = {
       pro: 2,
@@ -23,14 +25,14 @@ export default class WilayahsController {
         .andWhereILike('nama', `%${keyword}%`)
         .if(tingkat !== 'pro', query => query.andWhereILike('kode', `${parent}%`))
 
-      CreateRouteHist(request, statusRoutes.FINISH)
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({
         message: "Get data successfully",
         data
       })
     } catch (errors) {
       const errMsg = "ROU35: " + errors.message || errors
-      CreateRouteHist(request, statusRoutes.ERROR, errMsg)
+      CreateRouteHist(statusRoutes.ERROR, dateStart, errMsg)
       console.log(errMsg);
       response.badRequest({ message: "Error getting data", errors: { message: errMsg, errors } });
     }

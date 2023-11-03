@@ -3,9 +3,14 @@ import CreateTeachingValidator from "../../Validators/CreateTeachingValidator";
 import Teaching from "../../Models/Teaching";
 import { validate as uuidValidation } from "uuid";
 import UpdateTeachingValidator from "../../Validators/UpdateTeachingValidator";
+import { statusRoutes } from "App/Modules/Log/lib/enum";
+import { CreateRouteHist } from "App/Modules/Log/Helpers/createRouteHist";
+import { DateTime } from "luxon";
 
 export default class TeachingsController {
   public async index({ request, response, params }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis();
+    CreateRouteHist(statusRoutes.START, dateStart);
     const { teacher_id } = params;
     const { subjectId = "", classId = "" } = request.qs();
     if (!uuidValidation(teacher_id)) {
@@ -40,9 +45,11 @@ export default class TeachingsController {
         })
         .where("academic.teachings.teacher_id", "=", teacher_id);
 
+      CreateRouteHist(statusRoutes.FINISH, dateStart);
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
       const message = "ACTH23: " + error.message || error;
+      CreateRouteHist(statusRoutes.ERROR, message);
       console.log(error);
       response.badRequest({
         message: "Gagal mengambil data",
@@ -53,13 +60,18 @@ export default class TeachingsController {
   }
 
   public async store({ request, response }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis();
+    CreateRouteHist(statusRoutes.START, dateStart);
     const payload = await request.validate(CreateTeachingValidator);
     try {
       const data = await Teaching.create(payload);
+
+      CreateRouteHist(statusRoutes.FINISH, dateStart);
       response.created({ message: "Berhasil menyimpan data", data });
     } catch (error) {
       const message = "ACTH40: " + error.message || error;
       console.log(error);
+      CreateRouteHist(statusRoutes.ERROR, message);
       response.badRequest({
         message: "Gagal menyimpan data",
         error: message,
@@ -69,6 +81,8 @@ export default class TeachingsController {
   }
 
   public async show({ params, response }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis();
+    CreateRouteHist(statusRoutes.START, dateStart);
     const { id } = params;
     if (!uuidValidation(id)) {
       return response.badRequest({ message: "Teaching ID tidak valid" });
@@ -80,10 +94,13 @@ export default class TeachingsController {
         .preload("subject", (s) => s.select("*"))
         .where("id", "=", id)
         .firstOrFail();
-      response.ok({ message: "Berhasil mengambil data", data: data });
+
+      CreateRouteHist(statusRoutes.FINISH, dateStart);
+      response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
       const message = "ACTH62: " + error.message || error;
       console.log(error);
+      CreateRouteHist(statusRoutes.ERROR, dateStart, message);
       response.badRequest({
         message: "Gagal mengambil data",
         error: message,

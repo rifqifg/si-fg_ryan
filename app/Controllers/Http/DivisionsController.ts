@@ -3,11 +3,13 @@ import Division from 'App/Models/Division'
 import { schema, rules } from '@ioc:Adonis/Core/Validator'
 import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist'
 import { statusRoutes } from 'App/Modules/Log/lib/enum'
+import { DateTime } from 'luxon'
 
 
 export default class DivisionsController {
   public async index({ request, response }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
+    const dateStart = DateTime.now().toMillis()
+   CreateRouteHist(statusRoutes.START, dateStart)
     const { page = 1, limit = 10, keyword = "", orderBy = "name", orderDirection = 'ASC' } = request.qs()
     const data = await Division.query()
       .preload('employees', e => {
@@ -19,29 +21,31 @@ export default class DivisionsController {
       .orderBy(orderBy, orderDirection)
       .paginate(page, limit)
 
-    CreateRouteHist(request, statusRoutes.FINISH)
+    CreateRouteHist(statusRoutes.FINISH, dateStart)
     response.ok({ message: "Data Berhasil Didapatkan", data })
   }
 
   public async getDivision({ request, response }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
+    const dateStart = DateTime.now().toMillis()
+   CreateRouteHist(statusRoutes.START, dateStart)
     const { keyword = "" } = request.qs()
     try {
       const data = await Division.query()
         .whereILike('name', `%${keyword}%`)
         .orderBy('name')
 
-      CreateRouteHist(request, statusRoutes.FINISH)
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Get Data Success", data })
     } catch (error) {
-      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
+      CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error)
       console.log(error);
       response.badRequest(error)
     }
   }
 
   public async store({ request, response }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
+    const dateStart = DateTime.now().toMillis()
+   CreateRouteHist(statusRoutes.START, dateStart)
     const createNewDivisionSchema = schema.create({
       name: schema.string({ trim: true }, [
         rules.minLength(2)
@@ -53,17 +57,18 @@ export default class DivisionsController {
 
     try {
       const data = await Division.create(payload)
-      CreateRouteHist(request, statusRoutes.FINISH)
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Create data success", data })
     } catch (error) {
-      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
+      CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error)
       console.log(error);
       return response.internalServerError(error)
     }
   }
 
-  public async show({ request, params, response }: HttpContextContract) {
-    CreateRouteHist(request, statusRoutes.START)
+  public async show({ params, response }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis()
+   CreateRouteHist(statusRoutes.START, dateStart)
     const { id } = params
 
     try {
@@ -75,10 +80,10 @@ export default class DivisionsController {
         .where('id', id)
         .firstOrFail()
 
-      CreateRouteHist(request, statusRoutes.FINISH)
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Get data success", data })
     } catch (error) {
-      CreateRouteHist(request, statusRoutes.ERROR, error.message || error)
+      CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error)
       console.log(error);
       return response.internalServerError(error)
     }

@@ -226,6 +226,8 @@ export default class BillingsController {
       nis: string | null,
       nisn: string | null,
       name: string | null,
+      class: any,
+      accounts: any[],
       payments: {
         spp: any[]
         bp: any[]
@@ -247,6 +249,8 @@ export default class BillingsController {
       nis: "",
       nisn: "",
       name: "",
+      class: {},
+      accounts: [],
       payments: { spp: [], bp: [], bwt: [] },
       billings: { spp: [], bp: [], bwt: [] },
       total_tagihan_spp: 0,
@@ -278,12 +282,14 @@ export default class BillingsController {
         .where('id', id)
         .select('id', 'nis', 'nisn', 'name', 'class_id')
         .preload('class', qClass => qClass.select('name'))
-        .preload('accounts')
+        .preload('accounts', a => a.select('number', 'type'))
         .firstOrFail()
 
       data.nis = student.nis
       data.nisn = student.nisn
       data.name = student.name
+      data.accounts = student.accounts
+      data.class = student.class
 
       const billings = await Billing.query()
         .whereHas('account', a => a.whereHas('student', s => s.where('id', student.id)))

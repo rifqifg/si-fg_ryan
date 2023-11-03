@@ -9,9 +9,10 @@ import fs from "fs";
 import Account from '../../Models/Account';
 import { validator } from '@ioc:Adonis/Core/Validator'
 import { HttpContext } from '@adonisjs/core/build/standalone';
-import { BillingStatus } from '../../lib/enums';
+import { BillingStatus, BillingType } from '../../lib/enums';
 import { DateTime } from 'luxon';
 import AcademicYear from 'App/Modules/Academic/Models/AcademicYear';
+import Student from 'App/Modules/Academic/Models/Student';
 
 export default class BillingsController {
   public async index({ request, response }: HttpContextContract) {
@@ -19,7 +20,7 @@ export default class BillingsController {
 
     try {
       let academicYearBegin: string,
-          academicYearEnd: string
+        academicYearEnd: string
 
       if (academic_year_id) {
         const academicYear = await AcademicYear.find(academic_year_id)
@@ -214,5 +215,171 @@ export default class BillingsController {
     }))
 
     return { "billings": formattedJson }
+  }
+
+  public async recapBilling({ params, request, response }: HttpContextContract) {
+    const { id } = params;
+    const { academic_year_id } = request.qs();
+    let ayStart, ayEnd
+
+    interface dataFormat {
+      nis: string | null,
+      nisn: string | null,
+      name: string | null,
+      payments: {
+        spp: any[]
+        bp: any[]
+        bwt: any[]
+      },
+      billings: {
+        spp: any[]
+        bp: any[]
+        bwt: any[]
+      },
+      total_tagihan_spp: number,
+      total_tagihan_bp: number,
+      total_tagihan_bwt: number,
+      total_tunggakan: number,
+      total: number
+    }
+
+    const data: dataFormat = {
+      nis: "",
+      nisn: "",
+      name: "",
+      payments: { spp: [], bp: [], bwt: [] },
+      billings: { spp: [], bp: [], bwt: [] },
+      total_tagihan_spp: 0,
+      total_tagihan_bp: 0,
+      total_tagihan_bwt: 0,
+      total_tunggakan: 0,
+      total: 0
+    }
+
+    if (!uuidValidation(id)) {
+      return response.badRequest({ message: "ID tidak valid" });
+    }
+
+    try {
+      if (academic_year_id) {
+        const academicYear = await AcademicYear.findOrFail(academic_year_id)
+
+        if (academicYear){
+          [ayStart, ayEnd] = academicYear.year.split(' - ')
+        }
+      } else {
+        const academicYear = await AcademicYear.findByOrFail('active', true)
+
+        if (academicYear){
+          [ayStart, ayEnd] = academicYear.year.split(' - ')
+        }
+      }
+      const student = await Student.query()
+        .where('id', id)
+        .select('id', 'nis', 'nisn', 'name', 'class_id')
+        .preload('class', qClass => qClass.select('name'))
+        .preload('accounts')
+        .firstOrFail()
+
+      data.nis = student.nis
+      data.nisn = student.nisn
+      data.name = student.name
+
+      const billings = await Billing.query()
+        .whereHas('account', a => a.whereHas('student', s => s.where('id', student.id)))
+        .andWhereBetween('due_date', [`${ayStart}-07-01`, `${ayEnd}-06-30`])
+        .preload('transactions', t => t.pivotColumns(['amount']))
+        .orderBy('due_date', 'asc')
+
+      const debts = await Billing.query()
+        .whereHas('account', a => a.whereHas('student', s => s.where('id', student.id)))
+        .andWhere('due_date', '<', `${ayStart}-07-01`)
+        .preload('transactions', t => t.pivotColumns(['amount']))
+
+      let totalSpp = 0
+      let totalBwt = 0
+      let totalBp = 0
+
+      billings.map(bill => {
+        const totalPaid = bill.transactions.reduce((sum, current) => sum + current.$extras.pivot_amount, 0)
+
+        bill.$extras.remaining_amount = bill.amount - totalPaid
+
+        if (bill.$extras.remaining_amount > 0) bill.$extras.status = BillingStatus.PAID_PARTIAL
+        if (bill.$extras.remaining_amount === bill.amount) bill.$extras.status = BillingStatus.UNPAID
+        if (bill.$extras.remaining_amount <= 0) bill.$extras.status = BillingStatus.PAID_FULL
+
+        const diff = bill.createdAt.diffNow('milliseconds').toObject().milliseconds!
+        if (diff <= 0) bill.$extras.due_note = "Sudah Jatuh Tempo"
+
+        if (bill.type === BillingType.SPP) {
+          const payload = {
+            bulan: bill.dueDate.toFormat("MMMM", {locale: 'id'}),
+            nominal_tagihan: bill.amount,
+            status: bill.$extras.status,
+            keterangan: bill.$extras.due_note
+          }
+
+          if (bill.transactions.length > 0) {
+            const payloadPayment = {
+              bulan: bill.dueDate.toFormat("MMMM", {locale: 'id'}),
+              tanggal_bayar: bill.transactions[bill.transactions.length - 1].createdAt.toSQLDate(),
+              nominal_bayar: totalPaid,
+              status: bill.$extras.status
+            }
+
+            data.payments.spp.push(payloadPayment)
+          }
+
+          totalSpp += bill.$extras.remaining_amount
+          data.billings.spp.push(payload)
+        } else if (bill.type === BillingType.BP || bill.type === BillingType.BWT) {
+          const payload = {
+            nominal_tagihan: bill.amount,
+            status: bill.$extras.status,
+          }
+
+          if (bill.transactions.length > 0) {
+            const payloadPayment = {
+              tanggal_bayar: bill.transactions[bill.transactions.length - 1].createdAt.toSQLDate(),
+              nominal_bayar: totalPaid,
+            }
+
+            data.payments[bill.type].push(payloadPayment)
+          }
+          
+          if (bill.type === BillingType.BP) {
+            totalBp += bill.$extras.remaining_amount
+          } else if (bill.type === BillingType.BWT) {
+            totalBwt += bill.$extras.remaining_amount
+          }
+          data.billings[bill.type].push(payload)
+        }
+      })
+
+      let totalDebt = 0
+      debts.map(debt => {
+        const totalPaid = debt.transactions.reduce((sum, current) => sum + current.$extras.pivot_amount, 0)
+
+        debt.$extras.remaining_amount = debt.amount - totalPaid
+        totalDebt += debt.$extras.remaining_amount
+      })
+      data.total_tunggakan = totalDebt
+      data.total_tagihan_bp = totalBp
+      data.total_tagihan_bwt = totalBwt
+      data.total_tagihan_spp = totalSpp
+      data.total = totalDebt + totalBp + totalBwt + totalSpp
+
+      response.ok({ message: "Berhasil mengambil data", data })
+    } catch (error) {
+      const message = "FBIL-REK: " + error.message || error;
+      console.log(error);
+      response.badRequest({
+        message: "Gagal mengambil data",
+        error: message,
+        error_data: error,
+      });
+    }
+
   }
 }

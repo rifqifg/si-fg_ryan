@@ -15,9 +15,14 @@ import AcademicYear from 'App/Modules/Academic/Models/AcademicYear';
 import Student from 'App/Modules/Academic/Models/Student';
 import { schema } from "@ioc:Adonis/Core/Validator";
 import Env from "@ioc:Adonis/Core/Env"
+import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist';
+import { statusRoutes } from 'App/Modules/Log/lib/enum';
 
 export default class BillingsController {
   public async index({ request, response }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart)
+
     const { page = 1, limit = 10, keyword = "", status, mode = "page", student_id, academic_year_id } = request.qs();
 
     try {
@@ -65,9 +70,11 @@ export default class BillingsController {
         if (billing.$extras.remaining_amount <= 0) billing.$extras.status = BillingStatus.PAID_FULL
       }))
 
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil mengambil data", data })
     } catch (error) {
       const message = "FBIL-INDEX: " + error.message || error;
+      CreateRouteHist(statusRoutes.ERROR, dateStart, message)
       console.log(error);
       response.badRequest({
         message: "Gagal mengambil data",
@@ -78,14 +85,20 @@ export default class BillingsController {
   }
 
   public async store({ request, response }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart)
+
     const billingValidator = new CreateBillingValidator(HttpContext.get()!, request.body())
     const payload = await request.validate(billingValidator)
 
     try {
       const data = await Billing.createMany(payload.billings)
+
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.created({ message: "Berhasil menyimpan data", data })
     } catch (error) {
       const message = "FBIL-STORE: " + error.message || error;
+      CreateRouteHist(statusRoutes.ERROR, dateStart, message)
       console.log(error);
       response.badRequest({
         message: "Gagal menyimpan data",
@@ -96,6 +109,9 @@ export default class BillingsController {
   }
 
   public async show({ params, response }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart)
+
     const { id } = params;
 
     if (!uuidValidation(id)) {
@@ -112,9 +128,11 @@ export default class BillingsController {
       if (billing.$extras.remaining_amount === billing.amount) billing.$extras.status = BillingStatus.UNPAID
       if (billing.$extras.remaining_amount <= 0) billing.$extras.status = BillingStatus.PAID_FULL
 
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil mengambil data", data: { ...billing.$attributes, ...billing.$extras, related_transaction: relatedTransaction } });
     } catch (error) {
       const message = "FBIL-SHO: " + error.message || error;
+      CreateRouteHist(statusRoutes.ERROR, dateStart, message)
       console.log(error);
       response.badRequest({
         message: "Gagal mengambil data",
@@ -125,12 +143,18 @@ export default class BillingsController {
   }
 
   public async update({ request, response }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart)
+
     try {
       const payload = await request.validate(UpdateBillingValidator)
       const data = await Billing.updateOrCreateMany("id", payload.billings)
+
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil mengubah data", data });
     } catch (error) {
       const message = "FBIL-UPD: " + error.message || error;
+      CreateRouteHist(statusRoutes.ERROR, dateStart, message)
       console.log(error);
       response.badRequest({
         message: "Gagal mengubah data",
@@ -141,6 +165,9 @@ export default class BillingsController {
   }
 
   public async destroy({ params, response }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart)
+
     const { id } = params;
     if (!uuidValidation(id)) {
       return response.badRequest({ message: "ID tidak valid" });
@@ -149,9 +176,12 @@ export default class BillingsController {
     try {
       const data = await Billing.findOrFail(id);
       await data.delete();
+
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil menghapus data" });
     } catch (error) {
       const message = "FBIL-DEL: " + error.message || error;
+      CreateRouteHist(statusRoutes.ERROR, dateStart, message)
       console.log(error);
       response.badRequest({
         message: "Gagal menghapus data",
@@ -162,6 +192,9 @@ export default class BillingsController {
   }
 
   public async import({ request, response }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart)
+
     let payload = await request.validate(UploadSpreadsheetBillingValidator)
 
     const excelBuffer = fs.readFileSync(payload.upload.tmpPath?.toString()!);
@@ -175,9 +208,11 @@ export default class BillingsController {
     try {
       const data = await Billing.createMany(payloadBilling.billings)
 
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.created({ message: "Berhasil import data", data })
     } catch (error) {
       const message = "FBIL-IMP: " + error.message || error;
+      CreateRouteHist(statusRoutes.ERROR, dateStart, message)
       response.badRequest({
         message: "Gagal import data",
         error: message,
@@ -220,6 +255,9 @@ export default class BillingsController {
   }
 
   public async recapBilling({ params, request, response }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart)
+
     const { id } = params;
     const { academic_year_id } = request.qs();
     let ayStart, ayEnd
@@ -378,9 +416,11 @@ export default class BillingsController {
       data.total_tagihan_spp = totalSpp
       data.total = totalDebt + totalBp + totalBwt + totalSpp
 
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil mengambil data", data })
     } catch (error) {
       const message = "FBIL-REK: " + error.message || error;
+      CreateRouteHist(statusRoutes.ERROR, dateStart, message)
       console.log(error);
       response.badRequest({
         message: "Gagal mengambil data",
@@ -388,11 +428,13 @@ export default class BillingsController {
         error_data: error,
       });
     }
-
   }
 
   // untuk generate excel yg digunakan saat broadcast whatsapp oleh keuangan
   public async generateBillingBroadacstFormat({ request, response }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart)
+
     const validator = schema.create({
       grade: schema.enum(['X', 'XI', 'XII'])
     })
@@ -423,9 +465,11 @@ export default class BillingsController {
         return student
       })
 
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil mengambil data", data })
     } catch (error) {
       const message = "FBIL-GEN: " + error.message || error;
+      CreateRouteHist(statusRoutes.ERROR, dateStart, message)
       response.badRequest({
         message: "Gagal import data",
         error: message,

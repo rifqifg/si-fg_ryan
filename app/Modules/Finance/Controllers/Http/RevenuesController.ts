@@ -10,9 +10,15 @@ import { RevenueStatus } from '../../lib/enums';
 import Revenue from '../../Models/Revenue';
 import { validate as uuidValidation } from "uuid"
 import UpdateRevenueValidator from '../../Validators/UpdateRevenueValidator';
+import { DateTime } from 'luxon';
+import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist';
+import { statusRoutes } from 'App/Modules/Log/lib/enum';
 
 export default class RevenuesController {
   public async index({ request, response }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart)
+
     const { page = 1, limit = 10, keyword = "", mode = "page" } = request.qs();
 
     try {
@@ -50,10 +56,11 @@ export default class RevenuesController {
         revenue.$extras.current_balance = revenue.amount - totalRevenueUsed
       })
 
-
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
       const message = "FRE-IND: " + error.message || error;
+      CreateRouteHist(statusRoutes.ERROR, dateStart, message)
       console.log(error);
       response.badRequest({
         message: "Gagal mengambil data",
@@ -64,6 +71,9 @@ export default class RevenuesController {
   }
 
   public async show({ params, response }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart)
+
     const { id } = params;
 
     if (!uuidValidation(id)) {
@@ -93,8 +103,10 @@ export default class RevenuesController {
       })
       data.$extras.current_balance = data.amount - totalRevenueUsed
 
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Data Berhasil Didapatkan", data })
     } catch (error) {
+      CreateRouteHist(statusRoutes.ERROR, dateStart, error.message)
       response.badRequest({
         message: "FRE-IND: Gagal mengambil data",
         error: error.message,
@@ -103,12 +115,17 @@ export default class RevenuesController {
   }
 
   public async update({ request, response }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart)
+
     try {
       const payload = await request.validate(UpdateRevenueValidator)
       const data = await Revenue.updateOrCreateMany("id", payload.revenues)
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil mengubah data", data });
     } catch (error) {
       const message = "FRE-UPD: " + error.message || error;
+      CreateRouteHist(statusRoutes.ERROR, dateStart, message)
       console.log(error);
       response.badRequest({
         message: "Gagal mengubah data",
@@ -119,6 +136,9 @@ export default class RevenuesController {
   }
 
   public async destroy({ params, response }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart)
+
     const { id } = params;
     if (!uuidValidation(id)) {
       return response.badRequest({ message: "ID tidak valid" });
@@ -127,9 +147,11 @@ export default class RevenuesController {
     try {
       const data = await Revenue.findOrFail(id);
       await data.delete();
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil menghapus data" });
     } catch (error) {
       const message = "FBIL-DEL: " + error.message || error;
+      CreateRouteHist(statusRoutes.ERROR, dateStart, message)
       console.log(error);
       response.badRequest({
         message: "Gagal menghapus data",
@@ -140,6 +162,8 @@ export default class RevenuesController {
   }
 
   public async import({ request, response }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart)
 
     const excelSchema = schema.create({ upload: schema.file({ extnames: ['xlsx', 'csv'] }) })
 
@@ -158,9 +182,11 @@ export default class RevenuesController {
     try {
       const data = await Revenue.createMany(payloadRevenue.revenues)
 
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.created({ message: "Berhasil import data", data })
     } catch (error) {
       const message = "FRE-IMP: " + error.message || error;
+      CreateRouteHist(statusRoutes.ERROR, dateStart, message)
       response.badRequest({
         message: "Gagal import data",
         error: message,

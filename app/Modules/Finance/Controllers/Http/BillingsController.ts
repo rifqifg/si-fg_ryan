@@ -13,8 +13,7 @@ import { BillingStatus, BillingType } from '../../lib/enums';
 import { DateTime } from 'luxon';
 import AcademicYear from 'App/Modules/Academic/Models/AcademicYear';
 import Student from 'App/Modules/Academic/Models/Student';
-import { ClassMajor, StudentProgram } from 'App/Modules/Academic/lib/enums';
-import { schema, rules } from "@ioc:Adonis/Core/Validator";
+import { schema } from "@ioc:Adonis/Core/Validator";
 import Env from "@ioc:Adonis/Core/Env"
 
 export default class BillingsController {
@@ -411,6 +410,7 @@ export default class BillingsController {
         })
         .preload('class')
         .preload('accounts', a => a.select('number'))
+        .orderBy('name', 'asc')
 
       const serialized = students.map(student => student.serialize())
       const data = serialized.map(student => {

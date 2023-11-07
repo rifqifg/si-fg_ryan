@@ -30,7 +30,7 @@ export default class UpdateClassValidator {
       rules.exists({ table: 'public.employees', column: 'id' })
     ]),
     is_graduated: schema.boolean.optional(),
-    kelasJurusan: schema.string.optional()
+    kelasJurusan: schema.string.optional([rules.exists({table: 'academic.jurusans', column: 'kode',})])
   })
 
   /**

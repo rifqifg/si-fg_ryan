@@ -13,6 +13,9 @@ import { BillingStatus, BillingType } from '../../lib/enums';
 import { DateTime } from 'luxon';
 import AcademicYear from 'App/Modules/Academic/Models/AcademicYear';
 import Student from 'App/Modules/Academic/Models/Student';
+import { ClassMajor, StudentProgram } from 'App/Modules/Academic/lib/enums';
+import { schema, rules } from "@ioc:Adonis/Core/Validator";
+import Env from "@ioc:Adonis/Core/Env"
 
 export default class BillingsController {
   public async index({ request, response }: HttpContextContract) {
@@ -387,5 +390,46 @@ export default class BillingsController {
       });
     }
 
+  }
+
+  // untuk generate excel yg digunakan saat broadcast whatsapp oleh keuangan
+  public async generateBillingBroadacstFormat({ request, response }: HttpContextContract) {
+    const validator = schema.create({
+      grade: schema.enum(['X', 'XI', 'XII'])
+    })
+
+    const payload = await request.validate({ schema: validator });
+
+    try {
+      const students = await Student.query()
+        .select('id', 'name', 'program', 'class_id', 'birth_day', 'phone')
+        .whereHas('class', c => {
+          c.whereILike('name', `${payload.grade} %`)
+        })
+        .orWhereHas('accounts', a => {
+          a.where('type', BillingType.SPP)
+        })
+        .preload('class')
+        .preload('accounts', a => a.select('number'))
+
+      const serialized = students.map(student => student.serialize())
+      const data = serialized.map(student => {
+        if (student.accounts.length > 0) {
+          student.link = `${Env.get('BE_URL')}/auth/login-parent?va_number=${student.accounts[0].number}&birthdate=${student.birth_day}`
+        } else {
+          student.link = "No link: tidak ada data rekening siswa di database"
+        }
+
+        return student
+      })
+
+      response.ok({ message: "Berhasil mengambil data", data })
+    } catch (error) {
+      const message = "FBIL-GEN: " + error.message || error;
+      response.badRequest({
+        message: "Gagal import data",
+        error: message,
+      })
+    }
   }
 }

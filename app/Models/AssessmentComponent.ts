@@ -4,7 +4,7 @@ import { AssessmentCategory } from 'App/lib/enum'
 import { v4 as uuidv4 } from "uuid";
 let newId = "";
 
-export default class AssesmentComponent extends BaseModel {
+export default class AssessmentComponent extends BaseModel {
   @column({ isPrimary: true })
   public id: string
 
@@ -21,13 +21,13 @@ export default class AssesmentComponent extends BaseModel {
   public updatedAt: DateTime
 
   @beforeCreate()
-  public static assignUuid(AssesmentComponent: AssesmentComponent) {
+  public static assignUuid(AssessmentComponent: AssessmentComponent) {
     newId = uuidv4();
-    AssesmentComponent.id = newId;
+    AssessmentComponent.id = newId;
   }
 
   @afterCreate()
-  public static setNewId(AssesmentComponent: AssesmentComponent) {
-    AssesmentComponent.id = newId;
+  public static setNewId(AssessmentComponent: AssessmentComponent) {
+    AssessmentComponent.id = newId;
   }
 }

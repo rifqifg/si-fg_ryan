@@ -11,10 +11,10 @@ export default class Triwulan extends BaseModel {
   public name: string
 
   @column.date()
-  public from_date: DateTime
+  public fromDate: DateTime
 
   @column.date()
-  public to_date: DateTime
+  public toDate: DateTime
 
   @column()
   public description: string | null

@@ -1,7 +1,7 @@
 import { DateTime } from 'luxon'
 import { BaseModel, BelongsTo, afterCreate, beforeCreate, belongsTo, column } from '@ioc:Adonis/Lucid/Orm'
 import TriwulanEmployee from './TriwulanEmployee';
-import AssesmentComponent from './AssesmentComponent';
+import AssesmentComponent from './AssessmentComponent';
 import { v4 as uuidv4 } from "uuid";
 let newId = "";
 

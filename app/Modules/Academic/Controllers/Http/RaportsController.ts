@@ -12,6 +12,8 @@ export default class RaportsController {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
     try {
+
+      
       const data = await Raport.query()
       .preload('class', c => (c.select('id', 'name', 'kelas_jurusan'), c.preload('jurusan', j => j.select('id', 'kode', 'nama'))))
       .preload('academicYear', ay => ay.select('id', 'year', 'description'))
@@ -49,7 +51,7 @@ export default class RaportsController {
 
     try {
 
-      const data = await Raport.query().where('id', id)
+      const data = await Raport.findOrFail(id)
     
       response.ok({message: 'Berhasil mengambil data', data})
     } catch (error) {

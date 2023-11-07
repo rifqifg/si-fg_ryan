@@ -107,8 +107,10 @@ export default class BukuNilaisController {
         type: bn.type,
         prosemDetailId: bn.programSemesterDetailId,
         materi: bn.material,
-        tanggalPengambilanNilai: bn.tanggalPengambilanNilai,
+        // tanggalPengambilanNilai: bn.tanggalPengambilanNilai,
       }));
+
+      const tanggalPengambilanNilai = bukuNilaiData.map(bn => ({tanggalPengambilanNilai: bn.tanggalPengambilanNilai, materi: bn.material}))
 
       const students = bukuNilaiData.map((bn) => bn.students); // ekstrak students
 
@@ -131,7 +133,7 @@ export default class BukuNilaisController {
         // @ts-ignore
       )?.map(JSON.parse);
 
-
+// return uniqueTypeOfBukuNilai
       const data = {
         students: uniquesStudents.sort((a, b) =>
           a?.name?.localeCompare(b?.name)
@@ -174,7 +176,7 @@ export default class BukuNilaisController {
                 name: aspekPenilaian === "SIKAP" ? "SIKAP" : t.type,
                 materi: t.materi,
                 materi_prosem: b?.materi,
-                tanggal_pengambilan_nilai: t?.tanggalPengambilanNilai,
+                tanggal_pengambilan_nilai: tanggalPengambilanNilai.find(tpn => tpn.materi == t.materi)?.tanggalPengambilanNilai,
                 nilai: nilais
                   .filter((n) => n.materi === t.materi)
                   .map((nilai) => ({

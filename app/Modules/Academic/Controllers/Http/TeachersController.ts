@@ -15,13 +15,15 @@ export default class TeachersController {
     const { page = 1, limit = 10, keyword = "", mode = "page" } = request.qs();
 
     try {
-      let data = {};
+      let data: any = {};
       if (mode === "page") {
         data = await Teacher.query()
           .whereHas("employee", (e) => e.whereILike("name", `%${keyword}%`))
           .orWhereHas("teaching", (t) =>
-            t.whereHas("class", (c) => c.whereILike("name", `%${keyword}%`))
-          )
+            t.whereHas("class", (c) => (c.whereILike("name", `%${keyword}%`)))
+          ).orWhereHas("teaching", (t) =>
+          t.whereHas("class", (c) => ( c.where('is_graduated', false)))
+        )
           .orWhereHas("teaching", (t) =>
             t.whereHas("subject", (s) => s.whereILike("name", `%${keyword}%`))
           )
@@ -29,12 +31,13 @@ export default class TeachersController {
           .preload("teaching", (t) =>
             t
               .select("id", "class_id", "subject_id")
-              .preload("class", (c) => c.select("id", "name"))
+              .preload("class", (c) => c.select("id", "name", "is_graduated"))
               .preload("subject", (s) =>
                 s.select("id", "name", "is_extracurricular")
               )
           )
           .paginate(page, limit);
+
       } else if (mode === "list") {
         data = await Teacher.query()
           .whereHas("employee", (e) => e.whereILike("name", `%${keyword}%`))
@@ -59,6 +62,7 @@ export default class TeachersController {
         });
       }
 
+      
       CreateRouteHist(statusRoutes.FINISH, dateStart);
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {

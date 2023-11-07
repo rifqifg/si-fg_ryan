@@ -5,7 +5,7 @@ export default class extends BaseSchema {
 
   public async up () {
     this.schema.withSchema('academic').createTable(this.tableName, (table) => {
-      table.uuid('id').primary().notNullable().unique().defaultTo(this.raw("gen_random_uuid()"))
+      table.uuid('id').primary().notNullable().unique()
       table.string('name')
       table.date('from_date')
       table.date('to_date')
@@ -22,6 +22,6 @@ export default class extends BaseSchema {
   }
 
   public async down () {
-    this.schema.dropTable(this.tableName)
+    this.schema.withSchema('academic').dropTable(this.tableName)
   }
 }

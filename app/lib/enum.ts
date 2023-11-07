@@ -28,3 +28,10 @@ export enum LeaveStatuses {
   CUTI = 'cuti',
   SAKIT = 'sakit'
 }
+
+export enum AssessmentCategory {
+  ASPEK_TEKNIS_PEKERJAAN = 'ASPEK TEKNIS PEKERJAAN',
+  ASPEK_NON_TEKNIS = 'ASPEK NON TEKNIS',
+  ASPEK_KEPRIBADIAN = 'ASPEK KEPRIBADIAN',
+  ASPEK_KEPEMIMPINAN = 'ASPEK KEPEMIMPINAN',
+}

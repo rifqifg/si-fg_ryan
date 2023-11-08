@@ -16,7 +16,7 @@ export default class RaportsController {
       
       const data = await Raport.query()
       .preload('class', c => (c.select('id', 'name', 'kelas_jurusan'), c.preload('jurusan', j => j.select('id', 'kode', 'nama'))))
-      .preload('academicYear', ay => ay.select('id', 'year', 'description'))
+      .preload('academicYear', ay => ay.select('id', 'year', 'description')).preload('semester', s => s.select('id', 'semester_name', 'is_active', 'description'))
       response.ok({message: 'Berhasil mengambil data', data})
     } catch (error) {
       CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error)

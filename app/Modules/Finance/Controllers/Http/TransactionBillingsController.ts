@@ -4,9 +4,14 @@ import UpdateTransactionBillingValidator from '../../Validators/UpdateTransactio
 import Transaction from '../../Models/Transaction';
 import Billing from '../../Models/Billing';
 import DeleteTransactionBillingValidator from '../../Validators/DeleteTransactionBillingValidator';
+import { DateTime } from 'luxon';
+import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist';
+import { statusRoutes } from 'App/Modules/Log/lib/enum';
 
 export default class TransactionBillingsController {
     public async index({ request, response }: HttpContextContract) {
+        const dateStart = DateTime.now().toMillis()
+        CreateRouteHist(statusRoutes.START, dateStart)
         const { page = 1, limit = 10, transaction_id, billing_id, mode = "page" } = request.qs()
 
         try {
@@ -20,9 +25,11 @@ export default class TransactionBillingsController {
                 data = await TransactionBilling.query()
             }
 
+            CreateRouteHist(statusRoutes.FINISH, dateStart)
             response.ok({ message: "Berhasil mengambil data", data })
         } catch (error) {
             const message = "FBIL-INDEX: " + error.message || error;
+            CreateRouteHist(statusRoutes.ERROR, dateStart, message)
             console.log(error);
             response.badRequest({
                 message: "Gagal mengambil data",
@@ -33,9 +40,10 @@ export default class TransactionBillingsController {
     }
 
     public async update({ request, response }: HttpContextContract) {
+        const dateStart = DateTime.now().toMillis()
+        CreateRouteHist(statusRoutes.START, dateStart)
         const payload = await request.validate(UpdateTransactionBillingValidator);
 
-        // if (JSON.stringify(payload) === "{}" || payload.transaction_billings.length <= 0) {
         if (JSON.stringify(payload) === "{}") {
             return response.badRequest({ message: "Data tidak boleh kosong" });
         }
@@ -51,9 +59,11 @@ export default class TransactionBillingsController {
                 .andWhere('billing_id', payload.billing_id)
                 .firstOrFail()
 
+            CreateRouteHist(statusRoutes.FINISH, dateStart)
             response.ok({ message: "Berhasil mengubah data", data });
         } catch (error) {
             const message = "FTB-IND: " + error.message || error;
+            CreateRouteHist(statusRoutes.ERROR, dateStart, message)
             console.log(error);
             response.badRequest({
                 message: "Gagal mengambil data",
@@ -64,6 +74,8 @@ export default class TransactionBillingsController {
     }
 
     public async destroy({ request, response }: HttpContextContract) {
+        const dateStart = DateTime.now().toMillis()
+        CreateRouteHist(statusRoutes.START, dateStart)
         const payload = await request.validate(DeleteTransactionBillingValidator);
 
         try {
@@ -72,9 +84,11 @@ export default class TransactionBillingsController {
 
             await transaction.related('billings').detach([billing.id])
 
+            CreateRouteHist(statusRoutes.FINISH, dateStart)
             response.ok({ message: "Berhasil menghapus data" })
         } catch (error) {
             const message = "FTB-DES: " + error.message || error
+            CreateRouteHist(statusRoutes.ERROR, dateStart, message)
             console.log(error)
             response.badRequest({
                 message: "Gagal menghapus data",

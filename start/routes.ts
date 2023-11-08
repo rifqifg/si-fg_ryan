@@ -40,7 +40,7 @@ Route.get('/wilayah-all/:keyword', 'System/WilayahsController.getAllByKel')
 
 Route.post('/password-encrypt', 'System/UsersController.password_encrypt').as('passwordEncrypt')
 Route.post('/auth/login', 'System/UsersController.login').as('auth.login')
-Route.post('/auth/login-parent', 'System/UsersController.loginParent').as('auth.loginParent')
+Route.get('/auth/login-parent', 'System/UsersController.loginParent').as('auth.loginParent')
 Route.post('/auth/google', 'System/UsersController.googleCallback').as('auth.googleSignIn')
 Route.post('/auth/logout', 'System/UsersController.logout').as('auth.logout').middleware('auth')
 Route.post('/auth/logout-parent', 'System/UsersController.logoutParent').as('auth.logoutParent').middleware('auth:parent_api')

@@ -12,8 +12,7 @@ export default class extends BaseSchema {
 
       table.uuid('employee_id').references('employees.id').onUpdate('cascade').onDelete('restrict')
       table.uuid('triwulan_id').references('triwulans.id').onUpdate('cascade').onDelete('cascade')
-      table.specificType('direct_supervisor', 'integer').references('employee_divisions.id').onUpdate('cascade').onDelete('cascade')
-      table.integer('indirect_supervisor').references('employee_divisions.id').onUpdate('cascade').onDelete('cascade')
+
       /**
        * Uses timestamptz for PostgreSQL and DATETIME2 for MSSQL
        */

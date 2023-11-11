@@ -6,6 +6,12 @@ import { v4 as uuidv4 } from "uuid";
 let newId = "";
 
 export default class TriwulanEmployeeDetail extends BaseModel {
+  public serializeExtras() {
+    return {
+      total_skor: this.$extras.total_skor,
+    }
+  }
+
   @column({ isPrimary: true })
   public id: string
 
@@ -23,6 +29,9 @@ export default class TriwulanEmployeeDetail extends BaseModel {
 
   @column()
   public assessmentComponentId: string
+
+  @column()
+  public directSupervisor: boolean
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime

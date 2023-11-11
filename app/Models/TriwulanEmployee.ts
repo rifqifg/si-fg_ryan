@@ -1,12 +1,20 @@
 import { DateTime } from 'luxon'
-import { BaseModel, BelongsTo, afterCreate, beforeCreate, belongsTo, column } from '@ioc:Adonis/Lucid/Orm'
+import { BaseModel, BelongsTo, HasMany, afterCreate, beforeCreate, belongsTo, column, hasMany } from '@ioc:Adonis/Lucid/Orm'
 import Employee from './Employee'
 import Triwulan from './Triwulan'
-import EmployeeDivision from './EmployeeDivision'
 import { v4 as uuidv4 } from "uuid";
+import AssessmentComponent from './AssessmentComponent';
+import TriwulanEmployeeDetail from './TriwulanEmployeeDetail';
 let newId = "";
 
 export default class TriwulanEmployee extends BaseModel {
+  public serializeExtras() {
+    return {
+      total_skor: this.$extras.total_skor,
+      ranking: this.$extras.ranking,
+    }
+  }
+
   @column({ isPrimary: true })
   public id: string
 
@@ -31,17 +39,8 @@ export default class TriwulanEmployee extends BaseModel {
   @belongsTo(() => Triwulan)
   public triwulan: BelongsTo<typeof Triwulan>;
 
-  @column()
-  public directSupervisorId: number[]
-
-  @belongsTo(() => EmployeeDivision)
-  public directSupervisor: BelongsTo<typeof EmployeeDivision>;
-
-  @column()
-  public indirectSupervisorId: number
-
-  @belongsTo(() => EmployeeDivision)
-  public indirectSupervisor: BelongsTo<typeof EmployeeDivision>;
+  @hasMany(() => TriwulanEmployeeDetail)
+  public triwulanEmployeeDetail: HasMany<typeof TriwulanEmployeeDetail>
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
@@ -56,7 +55,29 @@ export default class TriwulanEmployee extends BaseModel {
   }
 
   @afterCreate()
-  public static setNewId(TriwulanEmployee: TriwulanEmployee) {
-    TriwulanEmployee.id = newId;
+  public static async insertTriwulanEmployeeDetail(TriwulanEmployee: TriwulanEmployee) {
+    try {
+      const assesmentComponentId = await AssessmentComponent.query()
+        .select('id')
+      const assesmentComponentIdObject = JSON.parse(JSON.stringify(assesmentComponentId))
+      assesmentComponentIdObject.map(async value => {
+        await TriwulanEmployeeDetail.create({
+          assessmentComponentId: value.id,
+          directSupervisor: true,
+          triwulanEmployeeId: TriwulanEmployee.id,
+          skor: 0
+        })
+      })
+      assesmentComponentIdObject.map(async value => {
+        await TriwulanEmployeeDetail.create({
+          assessmentComponentId: value.id,
+          directSupervisor: false,
+          triwulanEmployeeId: TriwulanEmployee.id,
+          skor: 0
+        })
+      })
+    } catch (error) {
+      console.log(error);
+    }
   }
 }

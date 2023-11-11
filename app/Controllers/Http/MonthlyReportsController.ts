@@ -4,10 +4,10 @@ import MonthlyReport from 'App/Models/MonthlyReport'
 import CreateMonthlyReportValidator from 'App/Validators/CreateMonthlyReportValidator'
 import UpdateMonthlyReportValidator from 'App/Validators/UpdateMonthlyReportValidator'
 import { validate as uuidValidation } from "uuid"
-import { destructurMonthlyReport } from './MonthlyReportEmployeesController'
 import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist'
 import { statusRoutes } from 'App/Modules/Log/lib/enum'
 import { DateTime } from 'luxon'
+import { MonthlyReportHelper } from 'App/Helpers/MonthlyReportHelper'
 
 export default class MonthlyReportsController {
   public async index({ request, response }: HttpContextContract) {
@@ -135,7 +135,7 @@ export default class MonthlyReportsController {
         }
         let datas: any = []
         for (let i = 0; i < dataArrayObject.monthlyReportEmployees.length; i++) {
-          const result = await destructurMonthlyReport(dataArrayObject.monthlyReportEmployees[i])
+          const result = await MonthlyReportHelper(dataArrayObject.monthlyReportEmployees[i])
           const dataEmployee = result.dataEmployee
           const monthlyReportEmployeeDetail = result.monthlyReportEmployeeDetail
           const monthlyReportEmployee = result.monthlyReportEmployee
@@ -194,7 +194,7 @@ export default class MonthlyReportsController {
 
         const dataObject = JSON.parse(JSON.stringify(data)).monthlyReportEmployees[0]
 
-        const result = await destructurMonthlyReport(dataObject)
+        const result = await MonthlyReportHelper(dataObject)
         const dataEmployee = result.dataEmployee
         const monthlyReportEmployeeDetail = result.monthlyReportEmployeeDetail
         const monthlyReportEmployee = result.monthlyReportEmployee

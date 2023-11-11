@@ -11,6 +11,7 @@ export default class extends BaseSchema {
       table.uuid('triwulan_employee_id').references('triwulan_employees.id').onUpdate('cascade').onDelete('cascade')
       table.uuid('assessment_component_id').references('assessment_components.id').onUpdate('cascade').onDelete('cascade')
 
+      table.boolean('direct_supervisor')
       /**
        * Uses timestamptz for PostgreSQL and DATETIME2 for MSSQL
        */

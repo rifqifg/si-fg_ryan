@@ -175,12 +175,44 @@ export default class RevenuesController {
     if (jsonData == 0) return response.badRequest({ message: "Data tidak boleh kosong" })
 
     const wrappedJson = { "revenues": jsonData }
-
     const manyRevenueValidator = new CreateManyRevenueValidator(HttpContext.get()!, wrappedJson)
     const payloadRevenue = await validator.validate(manyRevenueValidator)
 
+    // TODO: ambil account_id dari payload (duplicate gpp)
+    // nanti buat whereIn di accounts
+
+    const totalRevenuePerAccount = payloadRevenue.revenues.reduce((accumulator, current) => {
+      if (!accumulator[current.from_account]) {
+        accumulator[current.from_account] = 0;
+      }
+    
+      accumulator[current.from_account] += current.amount;
+      return accumulator;
+    }, {});
+
+    const totalRevenueArray = Object.keys(totalRevenuePerAccount).map(account => ({
+      account_id: account,
+      total: totalRevenuePerAccount[account]
+    }))
+
+    const accountIds = totalRevenueArray.map(account => account.account_id)
+
     try {
       const data = await Revenue.createMany(payloadRevenue.revenues)
+
+      const accounts = await Account.query()
+        .whereIn('id', accountIds)
+
+      let mergePayload: any[] = []
+      totalRevenueArray.forEach(revenue => {
+        accounts.forEach(account => {
+          if (account.id === revenue.account_id) {
+            const newBalance = account.balance + revenue.total
+            mergePayload.push({ id: account.id, balance: newBalance })
+          }
+        })
+      })
+      await Account.updateOrCreateMany('id', mergePayload)
 
       CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.created({ message: "Berhasil import data", data })

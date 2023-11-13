@@ -117,7 +117,7 @@ export default class TriwulansController {
         datas.push({ triwulanEmployee, triwulanEmployeeDetail })
       }
 
-      response.ok({ message: "Data Berhasil Didapatkan", triwulan, data })
+      response.ok({ message: "Data Berhasil Didapatkan", triwulan, data: datas })
     } catch (error) {
       const message = "HRDTW03: " + error.message || error;
       // CreateRouteHist(statusRoutes.ERROR, dateStart, message)

@@ -146,7 +146,13 @@ export default class RevenuesController {
 
     try {
       const data = await Revenue.findOrFail(id);
+      const account = await Account.findOrFail(data.fromAccount)
+
+      const newBalance = account.balance - data.amount
+
+      await account.merge({balance: newBalance}).save()
       await data.delete();
+
       CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil menghapus data" });
     } catch (error) {
@@ -177,9 +183,6 @@ export default class RevenuesController {
     const wrappedJson = { "revenues": jsonData }
     const manyRevenueValidator = new CreateManyRevenueValidator(HttpContext.get()!, wrappedJson)
     const payloadRevenue = await validator.validate(manyRevenueValidator)
-
-    // TODO: ambil account_id dari payload (duplicate gpp)
-    // nanti buat whereIn di accounts
 
     const totalRevenuePerAccount = payloadRevenue.revenues.reduce((accumulator, current) => {
       if (!accumulator[current.from_account]) {

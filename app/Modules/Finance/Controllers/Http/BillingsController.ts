@@ -457,7 +457,7 @@ export default class BillingsController {
       const serialized = students.map(student => student.serialize())
       const data = serialized.map(student => {
         if (student.accounts.length > 0) {
-          student.link = `${Env.get('BE_URL')}/auth/login-parent?va_number=${student.accounts[0].number}&birthdate=${student.birth_day}`
+          student.link = `${Env.get('FE_URL')}/financeparent?va_number=${student.accounts[0].number}&birthdate=${student.birth_day}`
         } else {
           student.link = "No link: tidak ada data rekening siswa di database"
         }

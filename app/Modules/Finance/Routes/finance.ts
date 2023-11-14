@@ -6,7 +6,7 @@ Route.group(() => {
 
     Route.resource('master-billings', 'MasterBillingsController').apiOnly().middleware({ '*': ['auth'] })
     Route.resource('coas', 'CoasController').apiOnly().middleware({ '*': ['auth:api'] })
-    Route.get('billings/recap-billing/:id', 'BillingsController.recapBilling').middleware(['auth'])
+    Route.get('billings/recap-billing/:id', 'BillingsController.recapBilling').middleware(['auth:api,parent_api'])
     Route.post('billings/generate-broadcast-data', 'BillingsController.generateBillingBroadacstFormat').middleware(['auth'])
     Route.resource('billings', 'BillingsController').apiOnly().except(['update']).middleware({ '*': ['auth:api,parent_api'] })
     Route.put('billings', 'BillingsController.update').middleware(['auth'])

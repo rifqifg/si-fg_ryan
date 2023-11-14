@@ -35,8 +35,8 @@ export default class Transaction extends BaseModel {
   @column()
   public documentId: string | null
 
-  // @column()
-  // public accountId: string | null
+  @column()
+  public accountId: string | null
 
   @column()
   public tellerId: string | null

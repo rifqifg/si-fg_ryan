@@ -50,18 +50,19 @@ export default class Revenue extends BaseModel {
   public updatedAt: DateTime
 
   @beforeCreate()
-  public static assignUuid(revenue: Revenue) {
+  public static async assignUuid(revenue: Revenue) {
     newId = uuidv4()
     revenue.id = newId
-  }
 
-  @beforeSave()
-  public static async updateAccountBalance(revenue: Revenue) {
     const account = await Account.findByOrFail('id', revenue.fromAccount)
     const newAccountBalance = account.balance + revenue.amount
 
     await account.merge({ balance: newAccountBalance }).save()
   }
+
+  // @beforeSave()
+  // public static async updateAccountBalance(revenue: Revenue) {
+  // }
 
   @beforeDelete()
   public static async reduceAccountBalance(revenue: Revenue) {

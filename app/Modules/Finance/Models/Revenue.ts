@@ -1,5 +1,5 @@
 import { DateTime } from 'luxon'
-import { BaseModel, BelongsTo, HasMany, afterCreate, beforeCreate, belongsTo, column, hasMany } from '@ioc:Adonis/Lucid/Orm'
+import { BaseModel, BelongsTo, HasMany, afterCreate, beforeCreate, beforeDelete, beforeSave, belongsTo, column, hasMany } from '@ioc:Adonis/Lucid/Orm'
 import { v4 as uuidv4 } from 'uuid'
 import { RevenueStatus } from '../lib/enums';
 import Account from './Account';
@@ -53,6 +53,22 @@ export default class Revenue extends BaseModel {
   public static assignUuid(revenue: Revenue) {
     newId = uuidv4()
     revenue.id = newId
+  }
+
+  @beforeSave()
+  public static async updateAccountBalance(revenue: Revenue) {
+    const account = await Account.findByOrFail('id', revenue.fromAccount)
+    const newAccountBalance = account.balance + revenue.amount
+
+    await account.merge({ balance: newAccountBalance }).save()
+  }
+
+  @beforeDelete()
+  public static async reduceAccountBalance(revenue: Revenue) {
+    const account = await Account.findByOrFail('id', revenue.fromAccount)
+    const newAccountBalance = account.balance - revenue.amount
+
+    await account.merge({ balance: newAccountBalance }).save()
   }
 
   @afterCreate()

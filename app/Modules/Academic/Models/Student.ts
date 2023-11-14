@@ -22,6 +22,7 @@ import { hasMany } from "@ioc:Adonis/Lucid/Orm";
 import StudentParent from "./StudentParent";
 import SubjectMember from "Academic/Models/SubjectMember";
 import Account from "App/Modules/Finance/Models/Account";
+import BukuNilai from "./BukuNilai";
 let newId = "";
 
 export default class Student extends BaseModel {
@@ -209,6 +210,9 @@ export default class Student extends BaseModel {
 
   @column()
   public nat_exam_no: string | null;
+
+  @hasMany(() => BukuNilai)
+  public bukuNilai: HasMany<typeof BukuNilai>
 
   @hasMany(() => StudentParent)
   public parents: HasMany<typeof StudentParent>;

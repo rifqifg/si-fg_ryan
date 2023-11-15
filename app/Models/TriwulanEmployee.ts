@@ -12,6 +12,8 @@ export default class TriwulanEmployee extends BaseModel {
     return {
       total_skor: this.$extras.total_skor,
       ranking: this.$extras.ranking,
+      total_skor_direct_supervisor: this.$extras.total_skor_direct_supervisor,
+      total_skor_indirect_supervisor: this.$extras.total_skor_indirect_supervisor,
     }
   }
 

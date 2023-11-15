@@ -90,6 +90,7 @@ export default class TriwulansController {
                 .select(Database.raw(`SUM(ted.skor) AS total_skor`))
                 .select(Database.raw(`(select sum(skor) from triwulan_employee_details where triwulan_id = '${id}' and direct_supervisor = true and triwulan_employee_id = te.id) as total_skor_direct_supervisor`))
                 .select(Database.raw(`(select sum(skor) from triwulan_employee_details where triwulan_id = '${id}' and direct_supervisor = false and triwulan_employee_id = te.id) as total_skor_indirect_supervisor`))
+                .select(Database.raw(`(select TO_CHAR(from_date, 'Mon') || ' - ' || TO_CHAR(to_date, 'Mon YY') FROM triwulans where id = '${id}') AS period_of_assessment`))
                 .select(Database.raw(`RANK() OVER (ORDER BY SUM(ted.skor) DESC) AS ranking`))
                 .select(Database.raw(`(select name from employees e where id = te.employee_id) as employee_name`))
                 .from(`triwulan_employees as te`)
@@ -122,7 +123,7 @@ export default class TriwulansController {
         let datas: any = []
         for (let i = 0; i < dataArrayObject.triwulanEmployee.length; i++) {
           const result = await TriwulanHelper(dataArrayObject.triwulanEmployee[i])
-          const dataEmployee = result.dataEmployee
+          const dataEmployee = {...result.dataEmployee, triwulan: dataArrayObject.name}
           const triwulanEmployee = result.triwulanEmployee
           const triwulanEmployeeDetail = result.triwulanEmployeeDetail
           datas.push({ dataEmployee, triwulanEmployee, triwulanEmployeeDetail })
@@ -141,6 +142,7 @@ export default class TriwulansController {
                 .select(Database.raw(`SUM(ted.skor) AS total_skor`))
                 .select(Database.raw(`(select sum(skor) from triwulan_employee_details where triwulan_id = '${id}' and direct_supervisor = true and triwulan_employee_id = te.id) as total_skor_direct_supervisor`))
                 .select(Database.raw(`(select sum(skor) from triwulan_employee_details where triwulan_id = '${id}' and direct_supervisor = false and triwulan_employee_id = te.id) as total_skor_indirect_supervisor`))
+                .select(Database.raw(`(select TO_CHAR(from_date, 'Mon') || ' - ' || TO_CHAR(to_date, 'Mon YY') FROM triwulans where id = '${id}') AS period_of_assessment`))
                 .select(Database.raw(`RANK() OVER (ORDER BY SUM(ted.skor) DESC) AS ranking`))
                 .select(Database.raw(`(select name from employees e where id = te.employee_id) as employee_name`))
                 .from(`triwulan_employees as te`)
@@ -165,7 +167,7 @@ export default class TriwulansController {
         let datas: any = []
         for (let i = 0; i < dataArrayObject.triwulanEmployee.length; i++) {
           const result = await TriwulanHelper(dataArrayObject.triwulanEmployee[i])
-          const dataEmployee = result.dataEmployee
+          const dataEmployee = {...result.dataEmployee, triwulan: dataArrayObject.name}
           const triwulanEmployee = result.triwulanEmployee
           const triwulanEmployeeDetail = result.triwulanEmployeeDetail
           datas.push({ dataEmployee, triwulanEmployee, triwulanEmployeeDetail })

@@ -14,7 +14,8 @@ export const TriwulanHelper = (dataArrayObject) => {
     id: dataArrayObject.employee.id,
     name: dataArrayObject.employee.name,
     nik: dataArrayObject.employee.nik,
-    period_of_work: dataArrayObject.employee.period_of_work
+    period_of_work: dataArrayObject.employee.period_of_work,
+    period_of_assessment: dataArrayObject.period_of_assessment,
   }
 //   "employee": {
 //     "name": "AJRI MAULUDI, S. Pd",

@@ -9,6 +9,7 @@ export default class TriwulanEmployeeDetail extends BaseModel {
   public serializeExtras() {
     return {
       total_skor: this.$extras.total_skor,
+      ranking: this.$extras.ranking,
     }
   }
 

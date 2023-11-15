@@ -40,7 +40,7 @@ export const TriwulanHelper = (dataArrayObject) => {
       id: value.id,
       skor: value.skor,
       direct_supervisor: value.direct_supervisor,
-      assessmentComponent: value.assessmentComponent.name
+      assessment_component: value.assessmentComponent.name
     })
   })
 

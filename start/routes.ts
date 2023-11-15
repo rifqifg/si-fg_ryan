@@ -94,6 +94,7 @@ Route.shallowResource('triwulans', 'TriwulansController').apiOnly().middleware({
 Route.shallowResource('assessment-components', 'AssessmentComponentsController').apiOnly().middleware({ '*': ['auth', 'checkRole:admin'] })
 Route.shallowResource('triwulan-employees', 'TriwulanEmployeesController').apiOnly().middleware({ '*': ['auth', 'checkRole:admin'] })
 Route.shallowResource('triwulan-employee-details', 'TriwulanEmployeeDetailsController').apiOnly().middleware({ '*': ['auth', 'checkRole:admin'] })
+Route.get('triwulans/:id/recaps', 'TriwulansController.recaps').as('triwulan.recaps').middleware(['auth', 'checkRole:admin'])
 
 Route.group(() => {
   Route.get('activities', 'UserBehaviorHrdsController.activity').middleware(['auth'])

@@ -1,112 +1,143 @@
-import { DateTime } from 'luxon'
-import { BaseModel, BelongsTo, afterCreate, beforeCreate, belongsTo, column } from '@ioc:Adonis/Lucid/Orm'
-import Student from './Student'
-import { HttpContext } from '@adonisjs/core/build/standalone';
-import { v4 as uuidv4 } from 'uuid'
-import Class from './Class';
-import Teaching from './Teaching';
-import StudentRaportDetail from './StudentRaportDetail';
-import BukuNilai from './BukuNilai';
-let newId = ""
+import { DateTime } from "luxon";
+import {
+  BaseModel,
+  BelongsTo,
+  afterCreate,
+  beforeCreate,
+  belongsTo,
+  column,
+} from "@ioc:Adonis/Lucid/Orm";
+import Student from "./Student";
+import { HttpContext } from "@adonisjs/core/build/standalone";
+import { v4 as uuidv4 } from "uuid";
+import Class from "./Class";
+import Teaching from "./Teaching";
+import StudentRaportDetail from "./StudentRaportDetail";
+import BukuNilai from "./BukuNilai";
+let newId = "";
 export default class StudentRaport extends BaseModel {
   public static table = "academic.student_raports";
-  
+
   @column({ isPrimary: true })
-  public id: string
+  public id: string;
 
   @column()
-  public studentId: string
+  public studentId: string;
 
   @column()
-  public raportId: string
+  public raportId: string;
 
   @belongsTo(() => Student)
-  public students: BelongsTo<typeof Student>
+  public students: BelongsTo<typeof Student>;
 
   @beforeCreate()
   public static assignUuid(studentRaport: StudentRaport) {
-    newId = uuidv4()
-    studentRaport.id = newId
+    newId = uuidv4();
+    studentRaport.id = newId;
   }
-
 
   @afterCreate()
   public static async insertStudentRaportDetail(studentRaport: StudentRaport) {
-    const {request} = HttpContext.get()!
+    const { request } = HttpContext.get()!;
 
-    function n(data: any, type: string) {
-      const harianData = data.filter((item) => item?.type === "HARIAN");
-      const utsData = data.filter((item) => item?.type === "UTS");
-      const uasData = data.filter((item) => item?.type === "UAS");
+    const kelas = await Class.findByOrFail("id", request.body().classId);
+    const teaching = await Teaching.query()
+      .where("class_id", kelas.id)
+      .preload("subject", (s) => (s.select("*"), s.preload("bukuNilai")));
+    const bukuNilai = await BukuNilai.query().select("id","nilai","type","aspekPenilaian","nilaiSikap","tanggalPengambilanNilai","studentId","subjectId").where("classId", kelas.id).whereBetween("tanggalPengambilanNilai", [request.body().fromDate,request.body().toDate,]);
 
-      const harianSum = harianData.reduce(
-        (sum, item) => sum + parseFloat(type === 'nilaiKeterampilan' ? item?.nilaiKeterampilan : item?.nilaiPengetahuan),
-        0
-      );
-      const utsSum = utsData.reduce(
-        (sum, item) => sum + parseFloat(type === 'nilaiKeterampilan' ? item?.nilaiKeterampilan : item?.nilaiPengetahuan),
-        0
-      );
-      const uasWeightedSum =
-        0.7 * ((harianSum + utsSum) / (harianData.length + utsData.length)) +
-        0.3 * parseFloat(type === 'nilaiKeterampilan' ? uasData[0]?.nilaiKeterampilan : uasData[0]?.nilaiPengetahuan);
+    const groupedData = bukuNilai.filter(bn => bn.studentId === studentRaport.studentId).map(bn => ({subjectId: bn.subjectId, type: bn.type, aspekPenilaian: bn.aspekPenilaian, nilai: +bn.nilai, nilaiSikap: bn.nilaiSikap})).reduce((acc, item) => {
+      const key = `${item.subjectId}-${item.aspekPenilaian}`;
+      if (!acc[key]) {
+        acc[key] = [];
+      }
+      acc[key].push(item);
+      return acc;
+    }, {});
 
-      return uasWeightedSum
-    }
 
-    const menghitunNilai = (nilai: any) => {
-      const nilaiPengetahuanItems = nilai?.filter(
-        (item) => "nilaiPengetahuan" in item
-      );
-      const nilaiKeterampilanItems = nilai?.filter(
-        (item) => "nilaiKeterampilan" in item
-      );
-      const nilaiSikapItem = nilai?.filter(
-        (item) => "nilaiSikap" in item
-      );
+    const bahasaSunda = teaching.filter(teach => teach.subject.name?.toLowerCase() === 'bahasa sunda' ).map(teach => ({subjectId: teach.subjectId, subject_name: teach.subject.name}))
+    const rumpunPai = teaching.filter(teach => teach.subject.name?.toLowerCase() == 'akhlak' || teach.subject.name?.toLowerCase() == 'aqidah' || teach.subject.name?.toLowerCase() == 'fiqh' || teach.subject.name?.toLowerCase() == 'manhaj' || teach.subject.name?.toLowerCase() == 'siroh wa tarikh' ).map(teach => ({subjectId: teach.subjectId, subject_name: teach.subject.name}))
+    const seniBudaya = teaching.filter(teach => teach.subject.name?.toLowerCase() == 'seni budaya').map(teach => ({subjectId: teach.subjectId, subject_name: teach.subject.name}))
+    
+    // console.log(bahasaSunda)
 
-      return {nilaiPengetahuan: n(nilaiPengetahuanItems, 'nilaiPengetahuan'),
-        nilaiKeterampilan: n(nilaiKeterampilanItems, 'nilaiKeterampilan'), nilaiSikap: nilaiSikapItem[0]?.nilaiSikap
-      };
-    };
-    const res: any[] = []
-    const kelas = await Class.findByOrFail('id', request.body().classId)
-    const students = await Student.query().where('classId',  kelas.id)
-    const teaching = await Teaching.query().where('class_id', kelas.id).preload('subject', s => (s.select('*'), s.preload('bukuNilai')))
-    const bukuNilai = await BukuNilai.query().select('id', 'nilai', 'type', 'aspekPenilaian', 'nilaiSikap', 'tanggalPengambilanNilai', 'studentId', 'subjectId').where('classId', kelas.id).whereBetween('tanggalPengambilanNilai', [request.body().fromDate, request.body().toDate])
-    students.map(s => {
-      res.push({studentId: s.id})
-      teaching.map(t => {
-        res.push({subjectId: t.subjectId})
-        bukuNilai.map(bn => {
-          if(bn.studentId == s.id && bn.subjectId == t.subjectId && bn !== undefined) {
-            res.push({nilai: [{nilai: bn.nilai, aspekPenilaian: bn.aspekPenilaian, nilaiSikap: bn.nilaiSikap}]})
-            // console.log({
-            //   subjectId: t.subjectId,
-            //   studentId: s.id,
-            //   nilai: [
-            //     {
-            //       nilai: bn.nilai,
-            //       aspekPenilaian: bn.aspekPenilaian,
-            //       nilaiSikap: bn.nilaiSikap,
-            //     },
-            //   ],
-            // })
-          }
-        })
-      })
+    const result: any = Object.keys(groupedData).map(key => {
+      const group = groupedData[key];
+      const harianSum = group.reduce((sum, item) => {
+        if (item.type === 'HARIAN') {
+          return sum + parseFloat(item.nilai);
+        }
+        return sum;
+      }, 0);
+    
+      const utsSum = group.reduce((sum, item) => {
+        if (item.type === 'UTS') {
+          return sum + parseFloat(item.nilai);
+        }
+        return sum;
+      }, 0);
+    
+      const uasSum = group.reduce((sum, item) => {
+        if (item.type === 'UAS') {
+          return sum + (0.3 * parseFloat(item.nilai));
+        }
+        return sum;
+      }, 0);
+    
+      const totalSum = harianSum + utsSum;
+      const weightedAverage = 0.7 * (totalSum / group.length) + uasSum;
+      
+
+      if (group[0]?.aspekPenilaian == 'PENGETAHUAN'  ) {
+        return {
+          subjectId: group[0].subjectId,
+          // aspekPenilaian: group[0].aspekPenilaian,
+          nilaiPengetahuan:  weightedAverage.toFixed(2),
+        };
+      } else if (group[0]?.aspekPenilaian == 'KETERAMPILAN') {
+        return {
+          subjectId: group[0].subjectId,
+          // aspekPenilaian: group[0].aspekPenilaian,
+          nilaiKeterampilan:  weightedAverage.toFixed(2),
+        }
+      }
+       else {
+        return {
+          subjectId: group[0].subjectId,
+          // aspekPenilaian: group[0].aspekPenilaian,
+          nilaiSikap:   group[0]?.nilaiSikap
+        };
+      }
+    });
+
+    const data: any[] = result.reduce((res, current) => {
+      const existingItem = res.find(item => item.subjectId === current.subjectId);
+    
+      if (existingItem) {
+        Object.assign(existingItem, current);
+      } else {
+        res.push({ ...current });
+      }
+    
+      return res;
+    }, [])
+
+// console.log(bahasaSunda)
+
+    teaching.map(async t => {
+      if (t.subjectId == bahasaSunda[0]?.subjectId) {
+        await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: 85 , nilaiPengetahuan: 85 , nilaiSikap: "B" })
+      }
+      data.filter(res => res.subjectId == t.subjectId).map(async (res) => {
+        await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: res.nilaiKeterampilan , nilaiPengetahuan: res.nilaiPengetahuan , nilaiSikap: res.nilaiSikap })
+      }) 
     })
-    if (kelas.name == "XI MIPA 1" && kelas.kelasJurusan == "MIPA") {
-      // teaching.map(async t => await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id}))
-      // console.log('XI MIPA 1', teaching.map((t, i) => ({id: t.subjectId, name: t.subject.name, ke: i+1})))
-      // console.log('data', data)
-    }
-
-    console.log(res)
-  }
+    
+}
   @column.dateTime({ autoCreate: true })
-  public createdAt: DateTime
+  public createdAt: DateTime;
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
-  public updatedAt: DateTime
+  public updatedAt: DateTime;
 }

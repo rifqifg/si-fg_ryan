@@ -26,7 +26,7 @@ export default class StudentRaportsController {
             "class_id",
             
           ), s.preload("class", (c) => c.select("id", "name")))
-        );
+        )
 
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {

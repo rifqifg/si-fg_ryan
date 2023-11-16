@@ -1,11 +1,12 @@
 import { DateTime } from 'luxon'
-import { BaseModel, BelongsTo, ManyToMany, afterCreate, beforeCreate, belongsTo, column, manyToMany } from '@ioc:Adonis/Lucid/Orm'
+import { BaseModel, BelongsTo, ManyToMany, afterCreate, beforeCreate, beforeDelete, belongsTo, column, manyToMany } from '@ioc:Adonis/Lucid/Orm'
 import { TransactionMethods, TransactionStatus, TransactionTypes } from '../lib/enums';
 import { v4 as uuidv4 } from 'uuid'
 import Billing from './Billing';
 import Employee from 'App/Models/Employee';
 import TransactionDocument from './TransactionDocument';
 import Revenue from './Revenue';
+import Account from './Account';
 
 let newId = ""
 
@@ -14,9 +15,7 @@ export default class Transaction extends BaseModel {
 
   public serializeExtras() {
     return {
-      remaining_amount: this.$extras.remaining_amount,
       pivot_amount: this.$extras.pivot_amount,
-      amount: this.$extras.amount,
     }
   }
 
@@ -29,9 +28,6 @@ export default class Transaction extends BaseModel {
   @column()
   public revenueId: string | null
 
-  // @column()
-  // public billingId: string | null
-
   @column()
   public documentId: string | null
 
@@ -41,14 +37,11 @@ export default class Transaction extends BaseModel {
   @column()
   public tellerId: string | null
 
-  // @column()
-  // public amount: number
+  @column()
+  public amount: number
 
   @column()
   public method: TransactionMethods | null
-
-  // @column.dateTime({ autoCreate: true })
-  // public date: DateTime
 
   @column()
   public type: TransactionTypes | null
@@ -59,9 +52,6 @@ export default class Transaction extends BaseModel {
   @column()
   public description: string | null
 
-  // @belongsTo(() => Billing)
-  // public billing: BelongsTo<typeof Billing>
-
   @belongsTo(() => TransactionDocument)
   public document: BelongsTo<typeof TransactionDocument>
 
@@ -70,9 +60,6 @@ export default class Transaction extends BaseModel {
     localKey: 'id'
   })
   public teller: BelongsTo<typeof Employee>
-
-  // @hasMany(() => TransactionBilling)
-  // public transactionBillings: HasMany<typeof TransactionBilling>
 
   @belongsTo(() => Revenue)
   public revenue: BelongsTo<typeof Revenue>
@@ -94,6 +81,42 @@ export default class Transaction extends BaseModel {
   public static assignUuid(transaction: Transaction) {
     newId = uuidv4()
     transaction.id = newId
+  }
+  
+  @beforeCreate()
+  public static async updateRevenueAmount(transaction: Transaction) {
+    if (transaction.revenueId) {
+      const revenue = await Revenue.findOrFail(transaction.revenueId)
+      const newCurrentBalance = revenue.currentBalance - transaction.amount
+
+      await revenue.merge({currentBalance: newCurrentBalance}).save()
+    }
+  }
+
+  @beforeCreate()
+  public static async updateAccountBalance(transaction: Transaction) {
+    const account = await Account.findOrFail(transaction.accountId)
+    const newBalance = account.balance - transaction.amount
+
+    await account.merge({balance: newBalance}).save()
+  }
+
+  @beforeDelete()
+  public static async increaseRevenueAmount(transaction: Transaction) {
+    if (transaction.revenueId) {
+      const revenue = await Revenue.findOrFail(transaction.revenueId)
+      const newCurrentBalance = revenue.currentBalance + transaction.amount
+
+      await revenue.merge({currentBalance: newCurrentBalance}).save()
+    }
+  }
+
+  @beforeDelete()
+  public static async increaseAccountBalance(transaction: Transaction) {
+    const account = await Account.findOrFail(transaction.accountId)
+    const newBalance = account.balance + transaction.amount
+
+    await account.merge({balance: newBalance}).save()
   }
 
   @afterCreate()

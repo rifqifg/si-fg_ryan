@@ -7,6 +7,7 @@ import { BillingStatus } from '../../lib/enums';
 import { DateTime } from 'luxon';
 import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist';
 import { statusRoutes } from 'App/Modules/Log/lib/enum';
+import Billing from '../../Models/Billing';
 
 export default class TransactionsController {
   public async index({ request, response }: HttpContextContract) {
@@ -43,10 +44,10 @@ export default class TransactionsController {
       }
 
       // TODO: refactor, gabungin query related billings ke query atas
-      await Promise.all(data.map(async transaction => {
-        const relatedBillings = await transaction.related('billings').query().pivotColumns(['amount'])
-        transaction.$extras.amount = relatedBillings.reduce((sum, current) => sum + current.$extras.pivot_amount, 0)
-      }))
+      // await Promise.all(data.map(async transaction => {
+      //   const relatedBillings = await transaction.related('billings').query().pivotColumns(['amount'])
+      //   transaction.$extras.amount = relatedBillings.reduce((sum, current) => sum + current.$extras.pivot_amount, 0)
+      // }))
 
       CreateRouteHist(statusRoutes.FINISH, dateStartLog)
       response.ok({ message: "Berhasil mengambil data", data });
@@ -69,19 +70,42 @@ export default class TransactionsController {
     const payload = await request.validate(CreateTransactionValidator)
 
     const { items: paidItems, ...transactionPayload } = payload
+    const totalPaid = paidItems.reduce((sum, next) => sum += next.amount, 0)
 
     // hapus item yg amountnya dibawah 0
     const filteredPaidItems = paidItems.filter(item => item.amount > 0)
 
     try {
-      const transactionData: Transaction = await Transaction.create(transactionPayload)
+      const transactionData: Transaction = await Transaction.create({...transactionPayload, amount: totalPaid})
 
       const attachBill = filteredPaidItems.reduce((result, item) => {
         result[item.billing_id] = { amount: item.amount }
         return result
       }, {})
 
+      // TODO: cari decorator utk attach,
+      // lalu pindahkan kode utk update remaining amount billing kesana
       await transactionData.related('billings').attach(attachBill)
+
+      const mergeArray: any[] = []
+      const billings = await transactionData.related('billings').query().pivotColumns(['amount'])
+
+      billings.forEach(bill => {
+        const newRemainingAmount = bill.remainingAmount - bill.$extras.pivot_amount
+        let newStatus: BillingStatus = bill.status
+
+        if (newRemainingAmount > 0) newStatus = BillingStatus.PAID_PARTIAL
+        if (newRemainingAmount === bill.amount) newStatus = BillingStatus.UNPAID
+        if (newRemainingAmount <= 0) newStatus = BillingStatus.PAID_FULL
+
+        mergeArray.push({
+          id: bill.id,
+          remainingAmount: newRemainingAmount,
+          status: newStatus
+        })
+      })
+
+      await Billing.updateOrCreateMany('id', mergeArray)
 
       const data = await Transaction.query()
         .where('id', transactionData.id)
@@ -120,9 +144,6 @@ export default class TransactionsController {
         })
         .preload('teller', qEmployee => qEmployee.select('name'))
         .firstOrFail()
-
-      const relatedBillings = await data.related('billings').query().pivotColumns(['amount'])
-      data.$extras.amount = relatedBillings.reduce((sum, current) => sum + current.$extras.pivot_amount, 0)
 
       data.billings.forEach(bill => {
         bill.$extras.remaining_amount = bill.amount - bill.$extras.pivot_amount
@@ -186,9 +207,26 @@ export default class TransactionsController {
     try {
       const data = await Transaction.findOrFail(id)
 
-      // hapus dulu semua data di tabel pivot
+      const mergeArray: any[] = []
+      const billings = await data.related('billings').query().pivotColumns(['amount'])
+
+      billings.forEach(bill => {
+        const newRemainingAmount = bill.remainingAmount + bill.$extras.pivot_amount
+        let newStatus: BillingStatus = bill.status
+
+        if (newRemainingAmount > 0) newStatus = BillingStatus.PAID_PARTIAL
+        if (newRemainingAmount === bill.amount) newStatus = BillingStatus.UNPAID
+        if (newRemainingAmount <= 0) newStatus = BillingStatus.PAID_FULL
+
+        mergeArray.push({
+          id: bill.id,
+          remainingAmount: newRemainingAmount,
+          status: newStatus
+        })
+      })
+
+      await Billing.updateOrCreateMany('id', mergeArray)
       await data.related('billings').detach()
-      
       await data.delete()
 
       CreateRouteHist(statusRoutes.FINISH, dateStart)

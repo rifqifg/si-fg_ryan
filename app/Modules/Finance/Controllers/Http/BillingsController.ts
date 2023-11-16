@@ -9,7 +9,7 @@ import fs from "fs";
 import Account from '../../Models/Account';
 import { validator } from '@ioc:Adonis/Core/Validator'
 import { HttpContext } from '@adonisjs/core/build/standalone';
-import { BillingStatus, BillingType } from '../../lib/enums';
+import { BillingType } from '../../lib/enums';
 import { DateTime } from 'luxon';
 import AcademicYear from 'App/Modules/Academic/Models/AcademicYear';
 import Student from 'App/Modules/Academic/Models/Student';
@@ -48,6 +48,7 @@ export default class BillingsController {
               qWhere.orWhereHas('account', (a) => a.whereILike("account_name", `%${keyword}%`))
             })
           })
+          // TODO: fix ay range
           .if(academic_year_id, q => {
             q.andWhereBetween('due_date', [`${academicYearBegin}-07-01`, `${academicYearEnd}-06-01`])
           })
@@ -57,18 +58,6 @@ export default class BillingsController {
       } else {
         data = await Billing.query().whereILike('name', `%${keyword}%`)
       }
-
-      // TODO: refactor, gabungin query related transactions ke query atas
-      await Promise.all(data.map(async billing => {
-        const relatedTransaction = await billing.related('transactions').query().pivotColumns(['amount'])
-        const totalPaid = relatedTransaction.reduce((sum, current) => sum + current.$extras.pivot_amount, 0)
-
-        billing.$extras.remaining_amount = billing.amount - totalPaid
-
-        if (billing.$extras.remaining_amount > 0) billing.$extras.status = BillingStatus.PAID_PARTIAL
-        if (billing.$extras.remaining_amount === billing.amount) billing.$extras.status = BillingStatus.UNPAID
-        if (billing.$extras.remaining_amount <= 0) billing.$extras.status = BillingStatus.PAID_FULL
-      }))
 
       CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil mengambil data", data })
@@ -113,23 +102,15 @@ export default class BillingsController {
     CreateRouteHist(statusRoutes.START, dateStart)
 
     const { id } = params;
-
-    if (!uuidValidation(id)) {
-      return response.badRequest({ message: "ID tidak valid" });
-    }
+    if (!uuidValidation(id)) { return response.badRequest({ message: "ID tidak valid" }) }
 
     try {
-      const billing = await Billing.findOrFail(id)
-      const relatedTransaction = await billing.related('transactions').query().pivotColumns(['amount']).preload('revenue', q => q.preload('account'))
-      const totalPaid = relatedTransaction.reduce((sum, current) => sum + current.$extras.pivot_amount, 0)
-      billing.$extras.remaining_amount = billing.amount - totalPaid
-
-      if (billing.$extras.remaining_amount > 0) billing.$extras.status = BillingStatus.PAID_PARTIAL
-      if (billing.$extras.remaining_amount === billing.amount) billing.$extras.status = BillingStatus.UNPAID
-      if (billing.$extras.remaining_amount <= 0) billing.$extras.status = BillingStatus.PAID_FULL
+      const data = await Billing.query()
+        .where('id', id)
+        .preload('account', qAccount => qAccount.select('account_name', 'number', 'student_id'))
 
       CreateRouteHist(statusRoutes.FINISH, dateStart)
-      response.ok({ message: "Berhasil mengambil data", data: { ...billing.$attributes, ...billing.$extras, related_transaction: relatedTransaction } });
+      response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
       const message = "FBIL-SHO: " + error.message || error;
       CreateRouteHist(statusRoutes.ERROR, dateStart, message)
@@ -165,6 +146,9 @@ export default class BillingsController {
   }
 
   public async destroy({ params, response }: HttpContextContract) {
+    // NOTE: jika billing di delete, maka billing yg dipakai di tabel pivot di set ke null
+    // jika ingin hapus data pivotnya, pakai delete transaction
+    // atau delete transactionBillings kalau mau spesifik
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
 
@@ -308,13 +292,13 @@ export default class BillingsController {
       if (academic_year_id) {
         const academicYear = await AcademicYear.findOrFail(academic_year_id)
 
-        if (academicYear){
+        if (academicYear) {
           [ayStart, ayEnd] = academicYear.year.split(' - ')
         }
       } else {
         const academicYear = await AcademicYear.findByOrFail('active', true)
 
-        if (academicYear){
+        if (academicYear) {
           [ayStart, ayEnd] = academicYear.year.split(' - ')
         }
       }
@@ -340,6 +324,7 @@ export default class BillingsController {
       const debts = await Billing.query()
         .whereHas('account', a => a.whereHas('student', s => s.where('id', student.id)))
         .andWhere('due_date', '<', `${ayStart}-07-01`)
+        // TODO: and where lebih dari YY-06-30
         .preload('transactions', t => t.pivotColumns(['amount']))
 
       let totalSpp = 0
@@ -349,40 +334,35 @@ export default class BillingsController {
       billings.map(bill => {
         const totalPaid = bill.transactions.reduce((sum, current) => sum + current.$extras.pivot_amount, 0)
 
-        bill.$extras.remaining_amount = bill.amount - totalPaid
-
-        if (bill.$extras.remaining_amount > 0) bill.$extras.status = BillingStatus.PAID_PARTIAL
-        if (bill.$extras.remaining_amount === bill.amount) bill.$extras.status = BillingStatus.UNPAID
-        if (bill.$extras.remaining_amount <= 0) bill.$extras.status = BillingStatus.PAID_FULL
-
         const diff = bill.createdAt.diffNow('milliseconds').toObject().milliseconds!
         if (diff <= 0) bill.$extras.due_note = "Sudah Jatuh Tempo"
+        if (bill.remainingAmount <= 0) bill.$extras.due_note = "Lunas"
 
         if (bill.type === BillingType.SPP) {
           const payload = {
-            bulan: bill.dueDate.toFormat("MMMM", {locale: 'id'}),
+            bulan: bill.dueDate.toFormat("MMMM", { locale: 'id' }),
             nominal_tagihan: bill.amount,
-            status: bill.$extras.status,
+            status: bill.status,
             keterangan: bill.$extras.due_note
           }
 
           if (bill.transactions.length > 0) {
             const payloadPayment = {
-              bulan: bill.dueDate.toFormat("MMMM", {locale: 'id'}),
+              bulan: bill.dueDate.toFormat("MMMM", { locale: 'id' }),
               tanggal_bayar: bill.transactions[bill.transactions.length - 1].createdAt.toSQLDate(),
               nominal_bayar: totalPaid,
-              status: bill.$extras.status
+              status: bill.status
             }
 
             data.payments.spp.push(payloadPayment)
           }
 
-          totalSpp += bill.$extras.remaining_amount
+          totalSpp += bill.remainingAmount
           data.billings.spp.push(payload)
         } else if (bill.type === BillingType.BP || bill.type === BillingType.BWT) {
           const payload = {
             nominal_tagihan: bill.amount,
-            status: bill.$extras.status,
+            status: bill.status,
           }
 
           if (bill.transactions.length > 0) {
@@ -393,11 +373,11 @@ export default class BillingsController {
 
             data.payments[bill.type].push(payloadPayment)
           }
-          
+
           if (bill.type === BillingType.BP) {
-            totalBp += bill.$extras.remaining_amount
+            totalBp += bill.remainingAmount
           } else if (bill.type === BillingType.BWT) {
-            totalBwt += bill.$extras.remaining_amount
+            totalBwt += bill.remainingAmount
           }
           data.billings[bill.type].push(payload)
         }
@@ -407,8 +387,8 @@ export default class BillingsController {
       debts.map(debt => {
         const totalPaid = debt.transactions.reduce((sum, current) => sum + current.$extras.pivot_amount, 0)
 
-        debt.$extras.remaining_amount = debt.amount - totalPaid
-        totalDebt += debt.$extras.remaining_amount
+        debt.remainingAmount = debt.amount - totalPaid
+        totalDebt += debt.remainingAmount
       })
       data.total_tunggakan = totalDebt
       data.total_tagihan_bp = totalBp

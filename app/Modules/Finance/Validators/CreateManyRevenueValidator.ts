@@ -18,7 +18,7 @@ export default class CreateManyRevenueValidator {
         amount: schema.number([
           rules.unsigned(),
         ]),
-        // current_balance: schema.number(),
+        current_balance: schema.number(),
         ref_no: schema.string([
           rules.unique({ table: 'finance.revenues', column: 'ref_no' })
         ]),

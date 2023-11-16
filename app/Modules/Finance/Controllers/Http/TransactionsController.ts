@@ -43,12 +43,6 @@ export default class TransactionsController {
           })
       }
 
-      // TODO: refactor, gabungin query related billings ke query atas
-      // await Promise.all(data.map(async transaction => {
-      //   const relatedBillings = await transaction.related('billings').query().pivotColumns(['amount'])
-      //   transaction.$extras.amount = relatedBillings.reduce((sum, current) => sum + current.$extras.pivot_amount, 0)
-      // }))
-
       CreateRouteHist(statusRoutes.FINISH, dateStartLog)
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
@@ -144,14 +138,6 @@ export default class TransactionsController {
         })
         .preload('teller', qEmployee => qEmployee.select('name'))
         .firstOrFail()
-
-      data.billings.forEach(bill => {
-        bill.$extras.remaining_amount = bill.amount - bill.$extras.pivot_amount
-
-        if (bill.$extras.remaining_amount > 0) bill.$extras.status = BillingStatus.PAID_PARTIAL
-        if (bill.$extras.remaining_amount === bill.amount) bill.$extras.status = BillingStatus.UNPAID
-        if (bill.$extras.remaining_amount <= 0) bill.$extras.status = BillingStatus.PAID_FULL
-      })
 
       CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil mengambil data", data });

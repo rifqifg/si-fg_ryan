@@ -45,17 +45,6 @@ export default class RevenuesController {
         return revenue
       })
 
-      // data.map(revenue => {
-      //   let totalRevenueUsed = 0
-
-      //   revenue.transactions.forEach(transaction => {
-      //     const subTotalRevenueUsed = transaction.billings.reduce((sum, current) => sum + current.$extras.pivot_amount, 0)
-      //     totalRevenueUsed += subTotalRevenueUsed
-      //   })
-
-      //   revenue.$extras.current_balance = revenue.amount - totalRevenueUsed
-      // })
-
       CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
@@ -95,13 +84,6 @@ export default class RevenuesController {
         if (data.account.student) { data.account.owner = data.account.student.name }
         if (data.account.employee) { data.account.owner = data.account.employee.name }
       }
-
-      // let totalRevenueUsed = 0
-      // data.transactions.forEach(transaction => {
-      //   const subTotalRevenueUsed = transaction.billings.reduce((sum, current) => sum + current.$extras.pivot_amount, 0)
-      //   totalRevenueUsed += subTotalRevenueUsed
-      // })
-      // data.$extras.current_balance = data.amount - totalRevenueUsed
 
       CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Data Berhasil Didapatkan", data })

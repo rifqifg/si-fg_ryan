@@ -27,7 +27,7 @@ export default class StudentRaportDetailsController {
             "students",
             (s) => (
               s.select("id", "name", "classId", 'nis', 'nisn'),
-              s.preload("class", (c) => (c.select("id", "name", 'employeeId'), c.preload('homeroomTeacher')))
+              s.preload("class", (c) => (c.select("id", "name", 'employeeId'), c.preload('homeroomTeacher'))), s.preload('dailyAttendance')
             )
           ), sr.preload('raport', r =>( r.preload('semester'), r.preload('academicYear'))))
         );
@@ -64,7 +64,11 @@ export default class StudentRaportDetailsController {
                 })),
             },
           ],
-          // data: data.filter(res => res.subject.isExtracurricular == false).map(res => ({eksul: false, predikat: 'Sangat bermartabat'}))
+          ketidakHadiran: {
+            sakit: data[0]?.studentRaports.students.dailyAttendance.filter(item => item.status == 'sick').length,
+            izin: data[0]?.studentRaports.students.dailyAttendance.filter(item => item.status == 'permission').length,
+            alpha: data[0]?.studentRaports.students.dailyAttendance.filter(item => item.status == 'absent').length
+          }
         },
       });
     } catch (error) {

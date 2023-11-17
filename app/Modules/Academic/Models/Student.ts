@@ -23,6 +23,7 @@ import StudentParent from "./StudentParent";
 import SubjectMember from "Academic/Models/SubjectMember";
 import Account from "App/Modules/Finance/Models/Account";
 import BukuNilai from "./BukuNilai";
+import DailyAttendance from "./DailyAttendance";
 let newId = "";
 
 export default class Student extends BaseModel {
@@ -216,6 +217,9 @@ export default class Student extends BaseModel {
 
   @hasMany(() => StudentParent)
   public parents: HasMany<typeof StudentParent>;
+
+  @hasMany(() => DailyAttendance)
+  public dailyAttendance: HasMany<typeof DailyAttendance>
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime | null;

@@ -1,20 +1,40 @@
 import Division from "App/Models/Division";
 
 export const TriwulanHelper = async (dataArrayObject) => {
-  const directSupervisor = await Division.query()
-    .select('id', 'name')
-    .whereIn('id', dataArrayObject.direct_supervisor)
-  const directSupervisorArrayObject = JSON.parse(JSON.stringify(directSupervisor))
+  // const directSupervisor = await Division.query()
+  //   .select('id', 'name')
+  //   .whereIn('id', dataArrayObject.direct_supervisor)
+  // const directSupervisorArrayObject = JSON.parse(JSON.stringify(directSupervisor))
 
-  const indirectSupervisor = await Division.query()
+  // const indirectSupervisor = await Division.query()
+  //   .select('id', 'name')
+  //   .where('id', dataArrayObject.indirect_supervisor)
+  //   .firstOrFail()
+  // const indirectSupervisorArrayObject = JSON.parse(JSON.stringify(indirectSupervisor))
+
+  // const penilai = {
+  //   direct_supervisor: directSupervisorArrayObject,
+  //   indirect_supervisor: indirectSupervisorArrayObject
+  // }
+
+  const divisiHrd = await Division.query()
     .select('id', 'name')
-    .where('id', dataArrayObject.indirect_supervisor)
+    .whereILike('name', `%hrd%`)
     .firstOrFail()
-  const indirectSupervisorArrayObject = JSON.parse(JSON.stringify(indirectSupervisor))
+  const divisiHrdObject = JSON.parse(JSON.stringify(divisiHrd))
+
+  let direct_supervisor: any = []
+  dataArrayObject.employee.divisions.map(value => {
+    if (value.title == 'member') {
+      direct_supervisor.push({id: value.division.id, name: value.division.name})
+    }else {
+      direct_supervisor.push(divisiHrdObject)
+    }
+  })
 
   const penilai = {
-    direct_supervisor: directSupervisorArrayObject,
-    indirect_supervisor: indirectSupervisorArrayObject
+    direct_supervisor: direct_supervisor,
+    indirect_supervisor: divisiHrdObject
   }
 
   const triwulanEmployee = {

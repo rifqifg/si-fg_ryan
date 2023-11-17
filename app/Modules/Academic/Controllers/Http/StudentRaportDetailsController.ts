@@ -23,28 +23,28 @@ export default class StudentRaportDetailsController {
         .where("studentRaportId", studentRaportId)
         .preload("subject")
         .preload("studentRaports", (sr) =>
-          sr.preload(
+          (sr.preload(
             "students",
             (s) => (
               s.select("id", "name", "classId"),
-              s.preload("class", (c) => c.select("id", "name"))
+              s.preload("class", (c) => (c.select("id", "name", 'employeeId'), c.preload('homeroomTeacher')))
             )
-          )
+          ), sr.preload('raport', r =>( r.preload('semester'), r.preload('academicYear'))))
         );
-
+              console.info('walas', data[0]?.studentRaports.students.class.homeroomTeacher.name)
       response.ok({
         message: "Berhasil mengambil data",
         umum: {
           identitasRaport: {
             school_name: "SMA FUTURE GATE",
-            address: "Jl. Yhudistira",
-            student_name: "Jamal",
-            nis: "101010",
-            nisn: "202020",
-            kelas: "XII MIPA 1",
-            semester: "Genap",
-            tahun: "2022-2023",
-            wali_kelas: "Ir. H. Darmawan",
+            address: "Jl. Yudhistira Komp. Pemda Jatiasih",
+            student_name: data[0]?.studentRaports.students.name,
+            nis: data[0]?.studentRaports.students.nis,
+            nisn: data[0]?.studentRaports.students.nisn,
+            kelas: data[0]?.studentRaports.students.class.name,
+            semester: data[0]?.studentRaports.raport.semester.semesterName,
+            tahun: data[0]?.studentRaports.raport.academicYear.year,
+            wali_kelas: data[0]?.studentRaports.students.class.homeroomTeacher.name,
             kepala_sekolah: "M. Zubair Abdurrohman, S.T",
           },
           data: [

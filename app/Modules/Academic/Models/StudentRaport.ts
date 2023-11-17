@@ -14,6 +14,7 @@ import Class from "./Class";
 import Teaching from "./Teaching";
 import StudentRaportDetail from "./StudentRaportDetail";
 import BukuNilai from "./BukuNilai";
+import Raport from "./Raport";
 let newId = "";
 export default class StudentRaport extends BaseModel {
   public static table = "academic.student_raports";
@@ -30,6 +31,9 @@ export default class StudentRaport extends BaseModel {
   @belongsTo(() => Student)
   public students: BelongsTo<typeof Student>;
 
+  @belongsTo(() => Raport)
+  public raport: BelongsTo<typeof Raport>
+
   @beforeCreate()
   public static assignUuid(studentRaport: StudentRaport) {
     newId = uuidv4();
@@ -43,8 +47,14 @@ export default class StudentRaport extends BaseModel {
     const kelas = await Class.findByOrFail("id", request.body().classId);
     const teaching = await Teaching.query()
       .where("class_id", kelas.id)
-      .preload("subject", (s) => (s.select("*"), s.preload("bukuNilai")));
-    const bukuNilai = await BukuNilai.query().select("id","nilai","type","aspekPenilaian","nilaiSikap","tanggalPengambilanNilai","studentId","subjectId").where("classId", kelas.id).whereBetween("tanggalPengambilanNilai", [request.body().fromDate,request.body().toDate,]);
+      .preload("subject");
+    const bukuNilai = await BukuNilai.query().select('*').andWhere(q => (q.where('classId', kelas.id), q.whereBetween('tanggalPengambilanNilai', [request.body().fromDate, request.body().toDate]), q.where('studentId', studentRaport.studentId)))
+    
+    const bahasaSunda = teaching.filter(teach => teach.subject.name?.toLowerCase() === 'bahasa sunda' ).map(teach => ({subjectId: teach.subjectId, subject_name: teach.subject.name}))
+    const rumpunPai = teaching.filter(teach => teach.subject.name?.toLowerCase() == 'akhlak' || teach.subject.name?.toLowerCase() == 'aqidah' || teach.subject.name?.toLowerCase() == 'fiqh' || teach.subject.name?.toLowerCase() == 'manhaj' || teach.subject.name?.toLowerCase() == 'siroh wa tarikh' ).map(teach => ({subjectId: teach.subjectId, name: teach.subject.name}))
+    const pai = teaching.filter(teach => teach.subject.name?.toLowerCase() == 'pendidikan agama dan budi pekerti' || teach.subject.name == 'Pendidikan Agama dan Budi Pekerti')
+    const seniBudaya = teaching.filter(teach => teach.subject.name?.toLowerCase() == 'seni budaya').map(teach => ({subjectId: teach.subjectId, subject_name: teach.subject.name}))
+    const informatika = teaching.filter(teach => teach.subject.name?.toLowerCase() === 'informatika' || teach.subject.name?.toLowerCase() == 'tik').map(teach => ({subjectId: teach.subjectId, subject_name: teach.subject.name}))
 
     const groupedData = bukuNilai.filter(bn => bn.studentId === studentRaport.studentId).map(bn => ({subjectId: bn.subjectId, type: bn.type, aspekPenilaian: bn.aspekPenilaian, nilai: +bn.nilai, nilaiSikap: bn.nilaiSikap})).reduce((acc, item) => {
       const key = `${item.subjectId}-${item.aspekPenilaian}`;
@@ -53,14 +63,9 @@ export default class StudentRaport extends BaseModel {
       }
       acc[key].push(item);
       return acc;
-    }, {});
+    }, {})
 
-
-    const bahasaSunda = teaching.filter(teach => teach.subject.name?.toLowerCase() === 'bahasa sunda' ).map(teach => ({subjectId: teach.subjectId, subject_name: teach.subject.name}))
-    const rumpunPai = teaching.filter(teach => teach.subject.name?.toLowerCase() == 'akhlak' || teach.subject.name?.toLowerCase() == 'aqidah' || teach.subject.name?.toLowerCase() == 'fiqh' || teach.subject.name?.toLowerCase() == 'manhaj' || teach.subject.name?.toLowerCase() == 'siroh wa tarikh' ).map(teach => ({subjectId: teach.subjectId, subject_name: teach.subject.name}))
-    const seniBudaya = teaching.filter(teach => teach.subject.name?.toLowerCase() == 'seni budaya').map(teach => ({subjectId: teach.subjectId, subject_name: teach.subject.name}))
     
-    // console.log(bahasaSunda)
 
     const result: any = Object.keys(groupedData).map(key => {
       const group = groupedData[key];
@@ -92,26 +97,24 @@ export default class StudentRaport extends BaseModel {
       if (group[0]?.aspekPenilaian == 'PENGETAHUAN'  ) {
         return {
           subjectId: group[0].subjectId,
-          // aspekPenilaian: group[0].aspekPenilaian,
           nilaiPengetahuan:  weightedAverage.toFixed(2),
         };
       } else if (group[0]?.aspekPenilaian == 'KETERAMPILAN') {
         return {
           subjectId: group[0].subjectId,
-          // aspekPenilaian: group[0].aspekPenilaian,
           nilaiKeterampilan:  weightedAverage.toFixed(2),
         }
       }
        else {
         return {
           subjectId: group[0].subjectId,
-          // aspekPenilaian: group[0].aspekPenilaian,
           nilaiSikap:   group[0]?.nilaiSikap
         };
       }
     });
 
-    const data: any[] = result.reduce((res, current) => {
+
+    const merged: any[] = result.reduce((res, current) => {
       const existingItem = res.find(item => item.subjectId === current.subjectId);
     
       if (existingItem) {
@@ -123,11 +126,29 @@ export default class StudentRaport extends BaseModel {
       return res;
     }, [])
 
-// console.log(bahasaSunda)
+    
+    const data = merged.filter(item => !rumpunPai.map(item => item.subjectId).includes(item.subjectId))
+    
+    function avgPai(dataNilai: any[]) {
+      const rumpun = dataNilai.filter(item => rumpunPai.map(item => item.subjectId).includes(item.subjectId))
+      const nilaiPengetahuan = rumpun.map(item => +item.nilaiPengetahuan)
+      const nilaiKeterampilan = rumpun.map(item => +item.nilaiKeterampilan)
 
+      const avgPengetahuan = nilaiPengetahuan.reduce((acc, curr) => acc + curr, 0) / nilaiPengetahuan.length
+      const avgKeterampilan = nilaiKeterampilan.reduce((acc, curr) => acc + curr, 0) / nilaiKeterampilan.length
+      
+      data.push({subjectId: pai[0]?.subjectId ,nilaiPengetahuan: avgPengetahuan, nilaiKeterampilan: avgKeterampilan, nilaiSikap: rumpun.find(item => item.subjectId === rumpunPai.find(rp => rp.name?.toLowerCase() == 'siroh wa tarikh')?.subjectId).nilaiSikap})
+      // return {subjectId: pai[0]?.subjectId ,nilaiPengetahuan: avgPengetahuan, nilaiKeterampilan: avgKeterampilan, nilaiSikap: rumpun.find(item => item.subjectId === rumpunPai.find(rp => rp.name?.toLowerCase() == 'siroh wa tarikh')?.subjectId).nilaiSikap}
+      return data
+    }
+
+    avgPai(merged)
+    
     teaching.map(async t => {
       if (t.subjectId == bahasaSunda[0]?.subjectId) {
         await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: 85 , nilaiPengetahuan: 85 , nilaiSikap: "B" })
+      } else if (t.subjectId == seniBudaya[0]?.subjectId) {
+        await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: data.find(res => res.subjectId === informatika[0]?.subjectId).nilaiKeterampilan , nilaiPengetahuan: data.find(res => res.subjectId === informatika[0]?.subjectId).nilaiPengetahuan , nilaiSikap: data.find(res => res.subjectId === informatika[0]?.subjectId).nilaiSikap })
       }
       data.filter(res => res.subjectId == t.subjectId).map(async (res) => {
         await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: res.nilaiKeterampilan , nilaiPengetahuan: res.nilaiPengetahuan , nilaiSikap: res.nilaiSikap })
@@ -141,3 +162,4 @@ export default class StudentRaport extends BaseModel {
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   public updatedAt: DateTime;
 }
+ 

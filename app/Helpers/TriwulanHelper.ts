@@ -54,6 +54,7 @@ export const TriwulanHelper = async (dataArrayObject) => {
     nik: dataArrayObject.employee.nik,
     period_of_work: dataArrayObject.employee.period_of_work,
     period_of_assessment: dataArrayObject.period_of_assessment,
+    divisions: dataArrayObject.employee.divisions,
   }
 
   const triwulanEmployeeDetail: any = []

@@ -123,10 +123,11 @@ export default class TriwulansController {
         let datas: any = []
         for (let i = 0; i < dataArrayObject.triwulanEmployee.length; i++) {
           const result = await TriwulanHelper(dataArrayObject.triwulanEmployee[i])
-          const dataEmployee = {...result.dataEmployee, triwulan: dataArrayObject.name}
+          const dataEmployee = { ...result.dataEmployee, triwulan: dataArrayObject.name }
           const triwulanEmployee = result.triwulanEmployee
           const triwulanEmployeeDetail = result.triwulanEmployeeDetail
-          datas.push({ dataEmployee, triwulanEmployee, triwulanEmployeeDetail })
+          const penilai = result.penilai
+          datas.push({ dataEmployee, triwulanEmployee, triwulanEmployeeDetail, penilai })
         }
 
         CreateRouteHist(statusRoutes.FINISH, dateStart)
@@ -167,15 +168,16 @@ export default class TriwulansController {
         let datas: any = []
         for (let i = 0; i < dataArrayObject.triwulanEmployee.length; i++) {
           const result = await TriwulanHelper(dataArrayObject.triwulanEmployee[i])
-          const dataEmployee = {...result.dataEmployee, triwulan: dataArrayObject.name}
+          const dataEmployee = { ...result.dataEmployee, triwulan: dataArrayObject.name }
           const triwulanEmployee = result.triwulanEmployee
           const triwulanEmployeeDetail = result.triwulanEmployeeDetail
-          datas.push({ dataEmployee, triwulanEmployee, triwulanEmployeeDetail })
+          const penilai = result.penilai
+          datas.push({ dataEmployee, triwulanEmployee, triwulanEmployeeDetail, penilai })
         }
-        const { dataEmployee, triwulanEmployee, triwulanEmployeeDetail } = datas[0]
+        const { dataEmployee, triwulanEmployee, triwulanEmployeeDetail, penilai } = datas[0]
 
         CreateRouteHist(statusRoutes.FINISH, dateStart)
-        return response.ok({ message: "Data Berhasil Didapatkan", dataEmployee, triwulanEmployee, triwulanEmployeeDetail })
+        return response.ok({ message: "Data Berhasil Didapatkan", dataEmployee, triwulanEmployee, triwulanEmployeeDetail, penilai })
       }
     } catch (error) {
       const message = "HRDTW03: " + error.message || error;

@@ -1,4 +1,22 @@
-export const TriwulanHelper = (dataArrayObject) => {
+import Division from "App/Models/Division";
+
+export const TriwulanHelper = async (dataArrayObject) => {
+  const directSupervisor = await Division.query()
+    .select('id', 'name')
+    .whereIn('id', dataArrayObject.direct_supervisor)
+  const directSupervisorArrayObject = JSON.parse(JSON.stringify(directSupervisor))
+
+  const indirectSupervisor = await Division.query()
+    .select('id', 'name')
+    .where('id', dataArrayObject.indirect_supervisor)
+    .firstOrFail()
+  const indirectSupervisorArrayObject = JSON.parse(JSON.stringify(indirectSupervisor))
+
+  const penilai = {
+    direct_supervisor: directSupervisorArrayObject,
+    indirect_supervisor: indirectSupervisorArrayObject
+  }
+
   const triwulanEmployee = {
     id: dataArrayObject.id,
     other_achievements_worth_noting: dataArrayObject.other_achievements_worth_noting,
@@ -17,30 +35,6 @@ export const TriwulanHelper = (dataArrayObject) => {
     period_of_work: dataArrayObject.employee.period_of_work,
     period_of_assessment: dataArrayObject.period_of_assessment,
   }
-//   "employee": {
-//     "name": "AJRI MAULUDI, S. Pd",
-//     "id": "70167fc9-76fd-45de-8e22-4487060b1dd7",
-//     "divisions": [
-//         {
-//             "title": "member",
-//             "division_id": "56c75d90-e1da-4f2f-95f7-ebb9b73d6a8c",
-//             "employee_id": "70167fc9-76fd-45de-8e22-4487060b1dd7",
-//             "division": {
-//                 "name": "IT",
-//                 "id": "56c75d90-e1da-4f2f-95f7-ebb9b73d6a8c"
-//             }
-//         },
-//         {
-//             "title": "member",
-//             "division_id": "53228118-8fc4-48b8-8582-df93444928d6",
-//             "employee_id": "70167fc9-76fd-45de-8e22-4487060b1dd7",
-//             "division": {
-//                 "name": "Duty Teacher",
-//                 "id": "53228118-8fc4-48b8-8582-df93444928d6"
-//             }
-//         }
-//     ]
-// },
 
   const triwulanEmployeeDetail: any = []
   dataArrayObject.triwulanEmployeeDetail.map(value => {
@@ -52,5 +46,5 @@ export const TriwulanHelper = (dataArrayObject) => {
     })
   })
 
-  return { triwulanEmployee, triwulanEmployeeDetail, dataEmployee }
+  return { triwulanEmployee, triwulanEmployeeDetail, dataEmployee, penilai }
 }

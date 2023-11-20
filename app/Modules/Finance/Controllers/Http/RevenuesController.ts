@@ -201,7 +201,8 @@ export default class RevenuesController {
       // Seharusnya yg tampil tetap, tidak dikurangi 3000."
       const fixedNominal = data["Nominal"] + 3000
 
-      const noPembayaran = data["No Pembayaran"].toString()
+      // klo nggak ada kolom "No Pembayaran" isi dgn impossible value
+      const noPembayaran = data["No Pembayaran"] ? data["No Pembayaran"].toString() : "-1"
       const account = await Account.query().where('number', noPembayaran).first()
       const accountId = account ? account.id : "-1" // there is no account id with negative value, right.. right?
 

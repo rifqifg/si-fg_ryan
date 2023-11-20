@@ -323,8 +323,10 @@ export default class BillingsController {
 
       const debts = await Billing.query()
         .whereHas('account', a => a.whereHas('student', s => s.where('id', student.id)))
-        .andWhere('due_date', '<', `${ayStart}-07-01`)
-        // TODO: and where lebih dari YY-06-30
+        .andWhere(qWhere => {
+          qWhere.andWhere('due_date', '<', `${ayStart}-07-01`)
+          qWhere.orWhere('due_date', '>', `${ayEnd}-06-30`)
+        })
         .preload('transactions', t => t.pivotColumns(['amount']))
 
       let totalSpp = 0

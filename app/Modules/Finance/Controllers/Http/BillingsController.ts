@@ -48,9 +48,8 @@ export default class BillingsController {
               qWhere.orWhereHas('account', (a) => a.whereILike("account_name", `%${keyword}%`))
             })
           })
-          // TODO: fix ay range
           .if(academic_year_id, q => {
-            q.andWhereBetween('due_date', [`${academicYearBegin}-07-01`, `${academicYearEnd}-06-01`])
+            q.andWhereBetween('due_date', [`${academicYearBegin}-07-01`, `${academicYearEnd}-06-30`])
           })
           .preload('account', qAccount => qAccount.select('account_name', 'number', 'student_id'))
           .orderBy('due_date', 'asc')

@@ -11,6 +11,7 @@ export default class extends BaseSchema {
       table.decimal('nilai_keterampilan')
       table.string('nilai_sikap')
       table.string('keterangan_dalam_ekstrakulikuler')
+      
       table.uuid('student_raport_id').references('id').inTable('academic.student_raports').onUpdate('cascade').onDelete('cascade')
 
       /**

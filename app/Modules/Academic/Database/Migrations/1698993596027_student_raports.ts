@@ -9,6 +9,7 @@ export default class extends BaseSchema {
       table.uuid('student_id').references('id').inTable('academic.students').onUpdate('cascade').onDelete('cascade')
       table.uuid('raport_id').references('id').inTable('academic.raports').onUpdate('cascade').onDelete('cascade')
       table.string('deskripsi_sikap_antarmapel')
+      
       /**
        * Uses timestamptz for PostgreSQL and DATETIME2 for MSSQL
        */

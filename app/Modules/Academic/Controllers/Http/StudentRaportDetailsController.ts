@@ -4,7 +4,7 @@ import { CreateRouteHist } from "App/Modules/Log/Helpers/createRouteHist";
 import { statusRoutes } from "App/Modules/Log/lib/enum";
 import { DateTime } from "luxon";
 import StudentRaportDetail from "../../Models/StudentRaportDetail";
-import { predikatHalUmum, predikatHelper } from "App/Helpers/predikat";
+import { predikatHalUmum } from "App/Helpers/predikat";
 
 export default class StudentRaportDetailsController {
   public async index({ response, params }: HttpContextContract) {

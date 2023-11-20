@@ -541,7 +541,6 @@ export default class BukuNilaisController {
     }
 
     if (JSON.stringify(payload) === "{}") {
-      console.log("data update kosong");
       return response.badRequest({ message: "Data tidak boleh kosong" });
     }
 

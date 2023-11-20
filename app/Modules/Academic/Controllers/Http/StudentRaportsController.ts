@@ -4,6 +4,7 @@ import StudentRaport from "App/Modules/Academic/Models/StudentRaport";
 import { CreateRouteHist } from "App/Modules/Log/Helpers/createRouteHist";
 import { statusRoutes } from "App/Modules/Log/lib/enum";
 import { DateTime } from "luxon";
+import UpdateStudentRaportValidator from "../../Validators/UpdateStudentRaportValidator";
 
 export default class StudentRaportsController {
   public async index({ response, params }: HttpContextContract) {
@@ -42,7 +43,29 @@ export default class StudentRaportsController {
 
   public async show({}: HttpContextContract) {}
 
-  public async update({}: HttpContextContract) {}
+  public async update({request, response, params}: HttpContextContract) {
+    const {id} = params
+
+    if (!uuidValidation(id)) {
+      return response.badRequest({ message: "Student Raport ID tidak valid" });
+    }
+
+    const payload = await request.validate(UpdateStudentRaportValidator)
+
+    if (JSON.stringify(payload) === "{}") {
+      return response.badRequest({ message: "Data tidak boleh kosong" });
+    }
+
+    try {
+      const studentRaport = await StudentRaport.findOrFail(id)
+      const data = await studentRaport.merge(payload).save()
+      
+      response.ok({ message: "Berhasil memperbarui data", data });
+    } catch (error) {
+      response.badRequest({message: 'Gagal memperbarui data', error: error.message || error})
+    }
+
+  }
 
   public async destroy({}: HttpContextContract) {}
 }

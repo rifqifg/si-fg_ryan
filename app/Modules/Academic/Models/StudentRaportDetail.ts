@@ -30,9 +30,6 @@ export default class StudentRaportDetail extends BaseModel {
   @column()
   public studentRaportId: string
 
-  @column()
-  public deskripsi_sikap_antarmapel: string
-
   @belongsTo(() => StudentRaport)
   public studentRaports: BelongsTo<typeof StudentRaport>
 

@@ -54,10 +54,13 @@ export default class StudentRaport extends BaseModel {
     const bukuNilai = await BukuNilai.query().select('*').andWhere(q => (q.where('classId', kelas.id), q.whereBetween('tanggalPengambilanNilai', [request.body().fromDate, request.body().toDate]), q.where('studentId', studentRaport.studentId)))
     
     const bahasaSunda = teaching.filter(teach => teach.subject.name?.toLowerCase() === 'bahasa sunda' ).map(teach => ({subjectId: teach.subjectId, subject_name: teach.subject.name}))
-    const rumpunPai = teaching.filter(teach => teach.subject.name?.toLowerCase() == 'akhlak' || teach.subject.name?.toLowerCase() == 'aqidah' || teach.subject.name?.toLowerCase() == 'fiqh' || teach.subject.name?.toLowerCase() == 'manhaj' || teach.subject.name?.toLowerCase() == 'siroh wa tarikh' ).map(teach => ({subjectId: teach.subjectId, name: teach.subject.name}))
+    const rumpunPai = teaching.filter(teach => teach.subject.name?.toLowerCase() == 'akhlak' || teach.subject.name?.toLowerCase() == 'aqidah' || teach.subject.name?.toLowerCase() == 'fiqh' || teach.subject.name?.toLowerCase() == 'manhaj' || teach.subject.name?.toLowerCase() == 'siroh wa tarikh' || teach.subject.name?.toLowerCase() == 'tafsir' ).map(teach => ({subjectId: teach.subjectId, name: teach.subject.name}))
     const pai = teaching.filter(teach => teach.subject.name?.toLowerCase() == 'pendidikan agama dan budi pekerti' || teach.subject.name == 'Pendidikan Agama dan Budi Pekerti')
     const seniBudaya = teaching.filter(teach => teach.subject.name?.toLowerCase() == 'seni budaya').map(teach => ({subjectId: teach.subjectId, subject_name: teach.subject.name}))
     const informatika = teaching.filter(teach => teach.subject.name?.toLowerCase() === 'informatika' || teach.subject.name?.toLowerCase() == 'tik').map(teach => ({subjectId: teach.subjectId, subject_name: teach.subject.name}))
+    const quran = teaching.filter(teach => teach.subject.name?.toLowerCase() === 'pendidikan al quran' || teach.subject.name === 'Pendidikan Al Quran').map(teach => ({subjectId: teach.subjectId, subject_name: teach.subject.name}))
+    const rumpunQuran = teaching.filter(teach => teach.subject.name?.toLowerCase() == 'halaqah' || teach.subject.name?.toLowerCase() == 'tahfidz').map(teach => ({subjectId: teach.subjectId, subject_name: teach.subject.name}))
+
 
     const groupedData = bukuNilai.filter(bn => bn.studentId === studentRaport.studentId).map(bn => ({subjectId: bn.subjectId, type: bn.type, aspekPenilaian: bn.aspekPenilaian, nilai: +bn.nilai, nilaiSikap: bn.nilaiSikap})).reduce((acc, item) => {
       const key = `${item.subjectId}-${item.aspekPenilaian}`;
@@ -129,8 +132,8 @@ export default class StudentRaport extends BaseModel {
       return res;
     }, [])
 
-    
-    const data = merged.filter(item => !rumpunPai.map(item => item.subjectId).includes(item.subjectId))
+    const data = merged.filter(item => !rumpunPai.map(item => item.subjectId).includes(item.subjectId)).filter(item => !rumpunQuran.map(item => item.subjectId).includes(item.subjectId))
+    // console.log('quran', quran)
     
     function avgPai(dataNilai: any[]) {
       const rumpun = dataNilai.filter(item => rumpunPai.map(item => item.subjectId).includes(item.subjectId))
@@ -151,7 +154,9 @@ export default class StudentRaport extends BaseModel {
       if (t.subjectId == bahasaSunda[0]?.subjectId) {
         await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: 85 , nilaiPengetahuan: 85 , nilaiSikap: "B" })
       } else if (t.subjectId == seniBudaya[0]?.subjectId) {
-        await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: data.find(res => res.subjectId === informatika[0]?.subjectId).nilaiKeterampilan , nilaiPengetahuan: data.find(res => res.subjectId === informatika[0]?.subjectId).nilaiPengetahuan , nilaiSikap: data.find(res => res.subjectId === informatika[0]?.subjectId).nilaiSikap })
+        await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: data.find(res => res.subjectId === informatika[0]?.subjectId)?.nilaiKeterampilan , nilaiPengetahuan: data.find(res => res.subjectId === informatika[0]?.subjectId)?.nilaiPengetahuan , nilaiSikap: data.find(res => res.subjectId === informatika[0]?.subjectId).nilaiSikap })
+      } else if (t.subjectId == quran[0]?.subjectId) {
+        await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: merged.find(item => item.subjectId == rumpunQuran[0]?.subjectId)?.nilaiKeterampilan, nilaiPengetahuan: merged.find(item => item.subjectId == rumpunQuran[0].subjectId)?.nilaiPengetahuan, nilaiSikap: merged.find(item => item.subjectId == rumpunQuran[0]?.subjectId)?.nilaiSikap})
       }
       data.filter(res => res.subjectId == t.subjectId).map(async (res) => {
         await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: res.nilaiKeterampilan , nilaiPengetahuan: res.nilaiPengetahuan , nilaiSikap: res.nilaiSikap })

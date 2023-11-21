@@ -50,7 +50,7 @@ export default class StudentRaportDetailsController {
           data: [
             {
               ekskul: false,
-              predikat: "SANGAT BERMARTABAT",
+              predikat: data[0]?.studentRaports.deskripsiSikapAntarmapel,
               mapel: data
                 .filter((res) => res.subject.isExtracurricular == false)
                 .map((res) => ({

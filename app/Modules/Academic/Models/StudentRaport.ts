@@ -62,78 +62,68 @@ export default class StudentRaport extends BaseModel {
     const rumpunQuran = teaching.filter(teach => teach.subject.name?.toLowerCase() == 'halaqah' || teach.subject.name?.toLowerCase() == 'tahfidz').map(teach => ({subjectId: teach.subjectId, subject_name: teach.subject.name}))
 
 
-    const groupedData = bukuNilai.filter(bn => bn.studentId === studentRaport.studentId).map(bn => ({subjectId: bn.subjectId, type: bn.type, aspekPenilaian: bn.aspekPenilaian, nilai: +bn.nilai, nilaiSikap: bn.nilaiSikap})).reduce((acc, item) => {
-      const key = `${item.subjectId}-${item.aspekPenilaian}`;
-      if (!acc[key]) {
-        acc[key] = [];
-      }
-      acc[key].push(item);
-      return acc;
-    }, {})
-
+    const data: any[] = []
+    const rawPayload: any[] = []
     
-
-    const result: any = Object.keys(groupedData).map(key => {
-      const group = groupedData[key];
-      const harianSum = group.reduce((sum, item) => {
-        if (item.type === 'HARIAN') {
-          return sum + parseFloat(item.nilai);
+    teaching.map(teach => {
+      return bukuNilai.filter(bn => bn.subjectId == teach.subjectId).map(bn => ({subjectId: bn.subjectId, type: bn.type, aspekPenilaian: bn.aspekPenilaian, nilai: +bn.nilai, nilaiSikap: bn.nilaiSikap})).map(item => {
+        if (item.subjectId == teach.subjectId) {
+          if (item.aspekPenilaian == "PENGETAHUAN") {
+            data.push({ subjectId: teach.subjectId, nilaiPengetahuan: item.nilai, type: item.type })
+            return { subjectId: teach.subjectId, nilaiPengetahuan: item.nilai, type: item.type };
+          } else if (item.aspekPenilaian == "KETERAMPILAN") {
+            data.push({subjectId: teach.subjectId, nilaiKeterampilan: item.nilai, type: item.type })
+            return {subjectId: teach.subjectId, nilaiKeterampilan: item.nilai, type: item.type };
+          } else {
+            data.push({subjectId: teach.subjectId, nilaiSikap: item.nilaiSikap, type: item.type })
+            return {subjectId: teach.subjectId, nilaiSikap: item.nilaiSikap, type: item.type };
+          }
         }
-        return sum;
-      }, 0);
-    
-      const utsSum = group.reduce((sum, item) => {
-        if (item.type === 'UTS') {
-          return sum + parseFloat(item.nilai);
-        }
-        return sum;
-      }, 0);
-    
-      const uasSum = group.reduce((sum, item) => {
-        if (item.type === 'UAS') {
-          return sum + (0.3 * parseFloat(item.nilai));
-        }
-        return sum;
-      }, 0);
-    
-      const totalSum = harianSum + utsSum;
-      const weightedAverage = 0.7 * (totalSum / group.length) + uasSum;
-      
+      })
+    })
 
-      if (group[0]?.aspekPenilaian == 'PENGETAHUAN'  ) {
-        return {
-          subjectId: group[0].subjectId,
-          nilaiPengetahuan:  weightedAverage.toFixed(2),
-        };
-      } else if (group[0]?.aspekPenilaian == 'KETERAMPILAN') {
-        return {
-          subjectId: group[0].subjectId,
-          nilaiKeterampilan:  weightedAverage.toFixed(2),
-        }
-      }
-       else {
-        return {
-          subjectId: group[0].subjectId,
-          nilaiSikap:   group[0]?.nilaiSikap
-        };
-      }
-    });
+    function n(data: any, type: string) {
+      const harianData = data.filter((item) => item?.type === "HARIAN");
+      const utsData = data.filter((item) => item?.type === "UTS");
+      const uasData = data.filter((item) => item?.type === "UAS");
 
+      const harianSum = harianData.reduce(
+        (sum, item) => sum + parseFloat(type === 'nilaiKeterampilan' ? item?.nilaiKeterampilan : item?.nilaiPengetahuan),
+        0
+      );
+      const utsSum = utsData.reduce(
+        (sum, item) => sum + parseFloat(type === 'nilaiKeterampilan' ? item?.nilaiKeterampilan : item?.nilaiPengetahuan),
+        0
+      );
+      const uasWeightedSum =
+        0.7 * ((harianSum + utsSum) / (harianData.length + utsData.length)) +
+        0.3 * parseFloat(type === 'nilaiKeterampilan' ? uasData[0]?.nilaiKeterampilan : uasData[0]?.nilaiPengetahuan);
 
-    const merged: any[] = result.reduce((res, current) => {
-      const existingItem = res.find(item => item.subjectId === current.subjectId);
-    
-      if (existingItem) {
-        Object.assign(existingItem, current);
-      } else {
-        res.push({ ...current });
-      }
-    
-      return res;
-    }, [])
+      return uasWeightedSum
+    }
 
-    const data = merged.filter(item => !rumpunPai.map(item => item.subjectId).includes(item.subjectId)).filter(item => !rumpunQuran.map(item => item.subjectId).includes(item.subjectId))
-    // console.log('quran', quran)
+    const menghitunNilai = (nilai: any[], subjectId: string) => {
+      const nilaiPengetahuanItems = nilai?.filter(bn => bn.subjectId == subjectId)?.filter(
+        (item) => "nilaiPengetahuan" in item
+      );
+      const nilaiKeterampilanItems = nilai?.filter(bn => bn.subjectId == subjectId)?.filter(
+        (item) => "nilaiKeterampilan" in item
+      );
+      const nilaiSikapItem = nilai?.filter(bn => bn.subjectId == subjectId)?.filter(
+        (item) => "nilaiSikap" in item
+      );
+
+      rawPayload.push({subjectId ,nilaiPengetahuan: n(nilaiPengetahuanItems, 'nilaiPengetahuan'), nilaiKeterampilan: n(nilaiKeterampilanItems, 'nilaiKeterampilan'), nilaiSikap: nilaiSikapItem[0]?.nilaiSikap, studentId: studentRaport.studentId})
+      return {subjectId ,nilaiPengetahuan: n(nilaiPengetahuanItems, 'nilaiPengetahuan'),
+        nilaiKeterampilan: n(nilaiKeterampilanItems, 'nilaiKeterampilan'), nilaiSikap: nilaiSikapItem[0]?.nilaiSikap
+      };
+    };
+
+    teaching.map(teach => {
+      return menghitunNilai(data, teach.subjectId)
+    })
+
+    const payload: any[] = rawPayload.filter(item => !rumpunPai.map(item => item.subjectId).includes(item.subjectId)).filter(item => !rumpunQuran.map(item => item.subjectId).includes(item.subjectId)).filter(res => res.subjectId != seniBudaya[0]?.subjectId).filter(res => res.subjectId != quran[0]?.subjectId).filter(res => res.subjectId != bahasaSunda[0]?.subjectId)
     
     function avgPai(dataNilai: any[]) {
       const rumpun = dataNilai.filter(item => rumpunPai.map(item => item.subjectId).includes(item.subjectId))
@@ -143,22 +133,25 @@ export default class StudentRaport extends BaseModel {
       const avgPengetahuan = nilaiPengetahuan.reduce((acc, curr) => acc + curr, 0) / nilaiPengetahuan.length
       const avgKeterampilan = nilaiKeterampilan.reduce((acc, curr) => acc + curr, 0) / nilaiKeterampilan.length
       
-      data.push({subjectId: pai[0]?.subjectId ,nilaiPengetahuan: avgPengetahuan, nilaiKeterampilan: avgKeterampilan, nilaiSikap: rumpun.find(item => item.subjectId === rumpunPai.find(rp => rp.name?.toLowerCase() == 'siroh wa tarikh')?.subjectId).nilaiSikap})
+      // payload.push({subjectId: pai[0]?.subjectId ,nilaiPengetahuan: avgPengetahuan, nilaiKeterampilan: avgKeterampilan, nilaiSikap: rumpun.find(item => item.subjectId === rumpunPai.find(rp => rp.name?.toLowerCase() == 'siroh wa tarikh')?.subjectId).nilaiSikap})
+      payload.find(item => item.subjectId == pai[0]?.subjectId).nilaiPengetahuan = avgPengetahuan
+      payload.find(item => item.subjectId == pai[0]?.subjectId).nilaiKeterampilan = avgKeterampilan
+      payload.find(item => item.subjectId == pai[0]?.subjectId).nilaiSikap = rumpun.find(item => item.subjectId === rumpunPai.find(rp => rp.name?.toLowerCase() == 'siroh wa tarikh')?.subjectId).nilaiSikap
       // return {subjectId: pai[0]?.subjectId ,nilaiPengetahuan: avgPengetahuan, nilaiKeterampilan: avgKeterampilan, nilaiSikap: rumpun.find(item => item.subjectId === rumpunPai.find(rp => rp.name?.toLowerCase() == 'siroh wa tarikh')?.subjectId).nilaiSikap}
-      return data
+      return payload
     }
 
-    avgPai(merged)
+    console.log('data',avgPai(rawPayload))
     
     teaching.map(async t => {
       if (t.subjectId == bahasaSunda[0]?.subjectId) {
         await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: 85 , nilaiPengetahuan: 85 , nilaiSikap: "B" })
       } else if (t.subjectId == seniBudaya[0]?.subjectId) {
-        await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: data.find(res => res.subjectId === informatika[0]?.subjectId)?.nilaiKeterampilan , nilaiPengetahuan: data.find(res => res.subjectId === informatika[0]?.subjectId)?.nilaiPengetahuan , nilaiSikap: data.find(res => res.subjectId === informatika[0]?.subjectId).nilaiSikap })
+        await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: payload.find(res => res.subjectId === informatika[0]?.subjectId)?.nilaiKeterampilan , nilaiPengetahuan: payload.find(res => res.subjectId === informatika[0]?.subjectId)?.nilaiPengetahuan , nilaiSikap: payload.find(res => res.subjectId === informatika[0]?.subjectId).nilaiSikap })
       } else if (t.subjectId == quran[0]?.subjectId) {
-        await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: merged.find(item => item.subjectId == rumpunQuran[0]?.subjectId)?.nilaiKeterampilan, nilaiPengetahuan: merged.find(item => item.subjectId == rumpunQuran[0].subjectId)?.nilaiPengetahuan, nilaiSikap: merged.find(item => item.subjectId == rumpunQuran[0]?.subjectId)?.nilaiSikap})
+        await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: rawPayload.find(item => item.subjectId == rumpunQuran[0]?.subjectId)?.nilaiKeterampilan, nilaiPengetahuan: rawPayload.find(item => item.subjectId == rumpunQuran[0].subjectId)?.nilaiPengetahuan, nilaiSikap: rawPayload.find(item => item.subjectId == rumpunQuran[0]?.subjectId)?.nilaiSikap})
       }
-      data.filter(res => res.subjectId == t.subjectId).map(async (res) => {
+      payload.filter(res => res.subjectId == t.subjectId).map(async (res) => {
         await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: res.nilaiKeterampilan , nilaiPengetahuan: res.nilaiPengetahuan , nilaiSikap: res.nilaiSikap })
       }) 
     })

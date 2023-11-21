@@ -2,6 +2,7 @@ import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Database from '@ioc:Adonis/Lucid/Database'
 import { TriwulanHelper } from 'App/Helpers/TriwulanHelper'
 import Triwulan from 'App/Models/Triwulan'
+import TriwulanEmployee from 'App/Models/TriwulanEmployee'
 import TriwulanEmployeeDetail from 'App/Models/TriwulanEmployeeDetail'
 import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist'
 import { statusRoutes } from 'App/Modules/Log/lib/enum'
@@ -70,7 +71,7 @@ export default class TriwulansController {
   public async show({ request, response, params }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
-    const { keyword = "", employeeId } = request.qs()
+    const { page = 1, limit = 10, keyword = "", employeeId } = request.qs()
 
     const { id } = params;
     if (!uuidValidation(id)) {
@@ -81,48 +82,43 @@ export default class TriwulansController {
 
     try {
       if (!employeeId) {
-        data = await Triwulan.query()
+        const triwulan = await Triwulan.query()
           .where('id', id)
-          .preload('triwulanEmployee', te => te
-            .with('AggregatedData', query => {
-              query
-                .select('te.*')
-                .select(Database.raw(`SUM(ted.skor) AS total_skor`))
-                .select(Database.raw(`(select sum(skor) from triwulan_employee_details where triwulan_id = '${id}' and direct_supervisor = true and triwulan_employee_id = te.id) as total_skor_direct_supervisor`))
-                .select(Database.raw(`(select sum(skor) from triwulan_employee_details where triwulan_id = '${id}' and direct_supervisor = false and triwulan_employee_id = te.id) as total_skor_indirect_supervisor`))
-                .select(Database.raw(`(select TO_CHAR(from_date, 'Mon') || ' - ' || TO_CHAR(to_date, 'Mon YY') FROM triwulans where id = '${id}') AS period_of_assessment`))
-                .select(Database.raw(`RANK() OVER (ORDER BY SUM(ted.skor) DESC) AS ranking`))
-                .select(Database.raw(`(select name from employees e where id = te.employee_id) as employee_name`))
-                .from(`triwulan_employees as te`)
-                .where('triwulan_id', id)
-                .joinRaw(`LEFT JOIN triwulan_employee_details ted ON ted.triwulan_employee_id = te.id`)
-                .groupBy('te.id')
-            })
-            .preload('employee', e => e
-              .select('id', 'name', 'nik')
-              .select(Database.raw(`EXTRACT(YEAR FROM AGE((select to_date from triwulans where id = '${id}'), "date_in")) || ' tahun ' || EXTRACT(MONTH FROM AGE((select to_date from triwulans where id = '${id}'), "date_in")) || ' bulan' AS period_of_work`))
-              .preload('divisions', ds => ds.select("title", "divisionId")
-                .preload('division', d => d.select('name'))))
-            .preload('triwulanEmployeeDetail', ted => ted
-              .preload('assessmentComponent', ac => ac.select('name')))
-            .select('*')
-            .from('AggregatedData')
-            .whereILike('employee_name', `%${keyword}%`)
-            .orderBy('employee_name'))
           .firstOrFail()
 
+        data = await TriwulanEmployee.query()
+          .with('AggregatedData', query => {
+            query
+              .select('te.*')
+              .select(Database.raw(`SUM(ted.skor) AS total_skor`))
+              .select(Database.raw(`(select sum(skor) from triwulan_employee_details where triwulan_id = '${id}' and direct_supervisor = true and triwulan_employee_id = te.id) as total_skor_direct_supervisor`))
+              .select(Database.raw(`(select sum(skor) from triwulan_employee_details where triwulan_id = '${id}' and direct_supervisor = false and triwulan_employee_id = te.id) as total_skor_indirect_supervisor`))
+              .select(Database.raw(`(select TO_CHAR(from_date, 'Mon') || ' - ' || TO_CHAR(to_date, 'Mon YY') FROM triwulans where id = '${id}') AS period_of_assessment`))
+              .select(Database.raw(`RANK() OVER (ORDER BY SUM(ted.skor) DESC) AS ranking`))
+              .select(Database.raw(`(select name from employees e where id = te.employee_id) as employee_name`))
+              .from(`triwulan_employees as te`)
+              .where('triwulan_id', id)
+              .joinRaw(`LEFT JOIN triwulan_employee_details ted ON ted.triwulan_employee_id = te.id`)
+              .groupBy('te.id')
+          })
+          .preload('employee', e => e
+            .select('id', 'name', 'nik')
+            .select(Database.raw(`EXTRACT(YEAR FROM AGE((select to_date from triwulans where id = '${id}'), "date_in")) || ' tahun ' || EXTRACT(MONTH FROM AGE((select to_date from triwulans where id = '${id}'), "date_in")) || ' bulan' AS period_of_work`))
+            .preload('divisions', ds => ds.select("title", "divisionId")
+              .preload('division', d => d.select('name'))))
+          .preload('triwulanEmployeeDetail', ted => ted
+            .preload('assessmentComponent', ac => ac.select('name')))
+          .select('*')
+          .from('AggregatedData')
+          .whereILike('employee_name', `%${keyword}%`)
+          .orderBy('employee_name')
+          .paginate(page, limit)
+
         const dataArrayObject = JSON.parse(JSON.stringify(data))
-        const triwulan = {
-          id: dataArrayObject.id,
-          name: dataArrayObject.name,
-          from_date: dataArrayObject.from_date,
-          to_date: dataArrayObject.to_date,
-          description: dataArrayObject.description,
-        }
 
         let datas: any = []
-        for (let i = 0; i < dataArrayObject.triwulanEmployee.length; i++) {
-          const result = await TriwulanHelper(dataArrayObject.triwulanEmployee[i])
+        for (let i = 0; i < dataArrayObject.data.length; i++) {
+          const result = await TriwulanHelper(dataArrayObject.data[i])
           const dataEmployee = { ...result.dataEmployee, triwulan: dataArrayObject.name }
           const triwulanEmployee = result.triwulanEmployee
           const triwulanEmployeeDetail = result.triwulanEmployeeDetail
@@ -131,43 +127,40 @@ export default class TriwulansController {
         }
 
         CreateRouteHist(statusRoutes.FINISH, dateStart)
-        return response.ok({ message: "Data Berhasil Didapatkan", triwulan, data: datas })
+        return response.ok({ message: "Data Berhasil Didapatkan", triwulan, data: { meta: dataArrayObject.meta, data: datas } })
       } else {
-        //buat module profile
-        data = await Triwulan.query()
-          .where('id', id)
-          .preload('triwulanEmployee', te => te
-            .with('AggregatedData', query => {
-              query
-                .select('te.*')
-                .select(Database.raw(`SUM(ted.skor) AS total_skor`))
-                .select(Database.raw(`(select sum(skor) from triwulan_employee_details where triwulan_id = '${id}' and direct_supervisor = true and triwulan_employee_id = te.id) as total_skor_direct_supervisor`))
-                .select(Database.raw(`(select sum(skor) from triwulan_employee_details where triwulan_id = '${id}' and direct_supervisor = false and triwulan_employee_id = te.id) as total_skor_indirect_supervisor`))
-                .select(Database.raw(`(select TO_CHAR(from_date, 'Mon') || ' - ' || TO_CHAR(to_date, 'Mon YY') FROM triwulans where id = '${id}') AS period_of_assessment`))
-                .select(Database.raw(`RANK() OVER (ORDER BY SUM(ted.skor) DESC) AS ranking`))
-                .select(Database.raw(`(select name from employees e where id = te.employee_id) as employee_name`))
-                .from(`triwulan_employees as te`)
-                .where('triwulan_id', id)
-                .joinRaw(`LEFT JOIN triwulan_employee_details ted ON ted.triwulan_employee_id = te.id`)
-                .groupBy('te.id')
-            })
-            .preload('employee', e => e
-              .select('name', 'nik')
-              .select(Database.raw(`EXTRACT(YEAR FROM AGE((select to_date from triwulans where id = '${id}'), "date_in")) || ' tahun ' || EXTRACT(MONTH FROM AGE((select to_date from triwulans where id = '${id}'), "date_in")) || ' bulan' AS period_of_work`))
-              .preload('divisions', ds => ds.select("title", "divisionId")
-                .preload('division', d => d.select('name'))))
-            .preload('triwulanEmployeeDetail', ted => ted
-              .preload('assessmentComponent', ac => ac.select('name')))
-            .select('*')
-            .from('AggregatedData')
-            .where('employee_id', employeeId))
-          .firstOrFail()
+        //buat module profile dan triwulan employee detail
+        data = await TriwulanEmployee.query()
+          .with('AggregatedData', query => {
+            query
+              .select('te.*')
+              .select(Database.raw(`SUM(ted.skor) AS total_skor`))
+              .select(Database.raw(`(select sum(skor) from triwulan_employee_details where triwulan_id = '${id}' and direct_supervisor = true and triwulan_employee_id = te.id) as total_skor_direct_supervisor`))
+              .select(Database.raw(`(select sum(skor) from triwulan_employee_details where triwulan_id = '${id}' and direct_supervisor = false and triwulan_employee_id = te.id) as total_skor_indirect_supervisor`))
+              .select(Database.raw(`(select TO_CHAR(from_date, 'Mon') || ' - ' || TO_CHAR(to_date, 'Mon YY') FROM triwulans where id = '${id}') AS period_of_assessment`))
+              .select(Database.raw(`RANK() OVER (ORDER BY SUM(ted.skor) DESC) AS ranking`))
+              .select(Database.raw(`(select name from employees e where id = te.employee_id) as employee_name`))
+              .from(`triwulan_employees as te`)
+              .where('triwulan_id', id)
+              .joinRaw(`LEFT JOIN triwulan_employee_details ted ON ted.triwulan_employee_id = te.id`)
+              .groupBy('te.id')
+          })
+          .preload('employee', e => e
+            .select('name', 'nik')
+            .select(Database.raw(`EXTRACT(YEAR FROM AGE((select to_date from triwulans where id = '${id}'), "date_in")) || ' tahun ' || EXTRACT(MONTH FROM AGE((select to_date from triwulans where id = '${id}'), "date_in")) || ' bulan' AS period_of_work`))
+            .preload('divisions', ds => ds.select("title", "divisionId")
+              .preload('division', d => d.select('name'))))
+          .preload('triwulanEmployeeDetail', ted => ted
+            .preload('assessmentComponent', ac => ac.select('name')))
+          .select('*')
+          .from('AggregatedData')
+          .where('employee_id', employeeId)
 
         const dataArrayObject = JSON.parse(JSON.stringify(data))
 
         let datas: any = []
-        for (let i = 0; i < dataArrayObject.triwulanEmployee.length; i++) {
-          const result = await TriwulanHelper(dataArrayObject.triwulanEmployee[i])
+        for (let i = 0; i < dataArrayObject.length; i++) {
+          const result = await TriwulanHelper(dataArrayObject[i])
           const dataEmployee = { ...result.dataEmployee, triwulan: dataArrayObject.name }
           const triwulanEmployee = result.triwulanEmployee
           const triwulanEmployeeDetail = result.triwulanEmployeeDetail

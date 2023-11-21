@@ -52,7 +52,7 @@ export default class ProgramSemestersController {
           .select("*")
           .withCount("programSemesterDetail", (q) => q.as("total_pertemuan"))
           .preload("teachers", (t) =>(
-            t.preload("employee", (e) => e.select("name")), t.preload('teaching', teach => teach.select('id')))
+            t.preload("employee", (e) => e.select("name")), t.preload('teaching', teach => teach.select('*')))
           )
           .preload("class", (c) => c.select("name", "id"))
           .preload("mapel", (m) => m.select("name"))

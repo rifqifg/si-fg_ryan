@@ -236,7 +236,7 @@ export default class ProgramSemestersController {
         .where("id", id)
         .preload("mapel", (m) => m.select("name"))
         .preload("teachers", (t) =>
-          t.preload("employee", (e) => e.select("name"))
+          (t.preload("employee", (e) => e.select("name")), t.preload('teaching'))
         )
         .preload("programSemesterDetail", (prosemDetail) =>
           prosemDetail.select("*")

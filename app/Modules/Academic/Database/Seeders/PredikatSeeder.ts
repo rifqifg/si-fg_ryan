@@ -8,7 +8,7 @@ export default class extends BaseSeeder {
 
     await Predikat.createMany([
       {
-        scoreMinimum: 50,
+        scoreMinimum: 0,
         scoreMaximum: 74,
         type: 'DESCRIPTION',
         category: 'PENGETAHUAN',
@@ -36,7 +36,7 @@ export default class extends BaseSeeder {
         description: 'Sangat baik, sudah memahami seluruh kompetensi yang diajarkan'
       },
       {
-        scoreMinimum: 50,
+        scoreMinimum: 0,
         scoreMaximum: 74,
         type: 'DESCRIPTION',
         category: 'KETERAMPILAN',
@@ -81,6 +81,30 @@ export default class extends BaseSeeder {
         type: 'DESCRIPTION',
         category: 'SIKAP',
         description:  'Sudah sangat konsisten menunjukkan sikap beriman, bertaqwa, jujur, disiplin, bertanggung jawab, dan bekerja sama'
+      },
+      {
+        scoreMinimum: 0,
+        scoreMaximum: 74,
+        type: 'PREDIKAT',
+        description: 'D'
+      },
+      {
+        scoreMinimum: 75,
+        scoreMaximum: 82,
+        type: 'PREDIKAT',
+        description: 'C'
+      },
+      {
+        scoreMinimum: 82.5,
+        scoreMaximum: 91,
+        type: 'PREDIKAT',
+        description: 'B'
+      },
+      {
+        scoreMinimum: 91.5,
+        scoreMaximum: 100,
+        type: 'PREDIKAT',
+        description: 'A'
       }
   ])
     console.log(">>> DONE seeding table: academic.predikats");

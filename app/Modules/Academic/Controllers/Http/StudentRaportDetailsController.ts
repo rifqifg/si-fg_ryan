@@ -4,10 +4,11 @@ import { CreateRouteHist } from "App/Modules/Log/Helpers/createRouteHist";
 import { statusRoutes } from "App/Modules/Log/lib/enum";
 import { DateTime } from "luxon";
 import StudentRaportDetail from "../../Models/StudentRaportDetail";
-import { predikatHalUmum } from "App/Helpers/predikat";
+import Predikat from "../../Models/Predikat";
 
 export default class StudentRaportDetailsController {
-  public async index({ response, params }: HttpContextContract) {
+  public async index({request, response, params }: HttpContextContract) {
+    const {description = false} = request.qs()
     const dateStart = DateTime.now().toMillis();
     CreateRouteHist(statusRoutes.START, dateStart);
 
@@ -17,7 +18,10 @@ export default class StudentRaportDetailsController {
       return response.badRequest({ message: "Student Raport ID tidak valid" });
     }
 
+    const raportDescription = description == 'true' || description == true ? true : false
     try {
+      const predikat = await Predikat.query().select('*')
+
       const data = await StudentRaportDetail.query()
         .select("*")
         .where("studentRaportId", studentRaportId)
@@ -32,6 +36,43 @@ export default class StudentRaportDetailsController {
           ), sr.preload('raport', r =>( r.preload('semester'), r.preload('academicYear'))))
         );
 
+      if (raportDescription) {
+        CreateRouteHist(statusRoutes.FINISH, dateStart)
+        return response.ok({message: 'Berhasil mengambil data', deskripsi: {
+          identitasRaport: {
+            school_name: "SMA FUTURE GATE",
+            address: "Jl. Yudhistira Komp. Pemda Jatiasih",
+            student_name: data[0]?.studentRaports.students.name,
+            nis: data[0]?.studentRaports.students?.nis || "",
+            nisn: data[0]?.studentRaports.students?.nisn || "",
+            kelas: data[0]?.studentRaports.students.class.name,
+            semester: data[0]?.studentRaports.raport.semester.semesterName,
+            tahun: data[0]?.studentRaports.raport.academicYear.year,
+            wali_kelas: data[0]?.studentRaports.students.class.homeroomTeacher.name,
+            kepala_sekolah: "M. Zubair Abdurrohman, S.T",
+          },
+          data: data.filter(item => item.subject.isExtracurricular == false).map(item => ({
+            subject_name: item.subject.name,
+            subject_id: item.subjectId,
+            komepetensi: [
+              {
+                name: 'Pengetahuan',
+                catatan: predikat.find(res => Math.round(item.nilaiPengetahuan) >= res.scoreMinimum && Math.round(item.nilaiPengetahuan) <= res.scoreMaximum && res.type == 'DESCRIPTION' && res.category == 'PENGETAHUAN')?.description
+              },
+              {
+                name: 'Keterampilan',
+                catatan: predikat.find(res => Math.round(item.nilaiKeterampilan) >= res.scoreMinimum && Math.round(item.nilaiKeterampilan) <= res.scoreMaximum && res.type == 'DESCRIPTION' && res.category == 'KETERAMPILAN')?.description
+              },
+              {
+                name: 'sikap spiritual dan sosial',
+                catatan: predikat.find(res => item.nilaiSikap == res.scoreSikap)?.description
+              }
+            ]
+          }))
+        }})
+      }
+
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({
         message: "Berhasil mengambil data",
         umum: {
@@ -56,10 +97,10 @@ export default class StudentRaportDetailsController {
                 .map((res) => ({
                   subject_name: res.subject.name,
                   subject_id: res.subjectId,
-                  nilai_pengetahuan: res.nilaiPengetahuan,
-                  nilai_keterampilan: res.nilaiKeterampilan,
-                  predikat_pengetahuan: predikatHalUmum(res.nilaiPengetahuan),
-                  predikat_keterampilan: predikatHalUmum(res.nilaiKeterampilan),
+                  nilai_pengetahuan: Math.round(res.nilaiPengetahuan),
+                  nilai_keterampilan: Math.round(res.nilaiKeterampilan),
+                  predikat_pengetahuan: predikat.find(item => res.nilaiPengetahuan >= item.scoreMinimum  && res.nilaiPengetahuan <= item.scoreMaximum && item.type == 'PREDIKAT')?.description ,
+                  predikat_keterampilan: predikat.find(item => res.nilaiKeterampilan >= item.scoreMinimum  && res.nilaiKeterampilan <= item.scoreMaximum && item.type == 'PREDIKAT')?.description,
                   sikap_dalam_mapel: res.nilaiSikap,
                 })),
             },

@@ -31,6 +31,7 @@ export default class StudentRaportsController {
           )
         );
 
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({
         message: "Berhasil mengambil data",
         data: data.sort((a, b) => {

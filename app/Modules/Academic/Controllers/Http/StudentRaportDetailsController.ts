@@ -5,6 +5,7 @@ import { statusRoutes } from "App/Modules/Log/lib/enum";
 import { DateTime } from "luxon";
 import StudentRaportDetail from "../../Models/StudentRaportDetail";
 import Predikat from "../../Models/Predikat";
+import { nilaiEkskul } from "App/Helpers/ekskul-helper";
 
 export default class StudentRaportDetailsController {
   public async index({request, response, params }: HttpContextContract) {
@@ -28,27 +29,29 @@ export default class StudentRaportDetailsController {
         .preload("subject")
         .preload("studentRaports", (sr) =>
           (sr.preload(
-            "students",
+            "student",
             (s) => (
               s.select("id", "name", "classId", 'nis', 'nisn'),
+              s.preload('subjectMembers', sm => sm.preload('subjects', s => s.preload('bukuNilai', bn => bn.select('nilaiEkskul', 'id', 'studentId', 'subjectId')))),
               s.preload("class", (c) => (c.select("id", "name", 'employeeId'), c.preload('homeroomTeacher'))), s.preload('dailyAttendance')
             )
           ), sr.preload('raport', r =>( r.preload('semester'), r.preload('academicYear'))))
         );
-
+// return data
+        
       if (raportDescription) {
         CreateRouteHist(statusRoutes.FINISH, dateStart)
         return response.ok({message: 'Berhasil mengambil data', deskripsi: {
           identitasRaport: {
             school_name: "SMA FUTURE GATE",
             address: "Jl. Yudhistira Komp. Pemda Jatiasih",
-            student_name: data[0]?.studentRaports.students.name,
-            nis: data[0]?.studentRaports.students?.nis || "",
-            nisn: data[0]?.studentRaports.students?.nisn || "",
-            kelas: data[0]?.studentRaports.students.class.name,
+            student_name: data[0]?.studentRaports.student.name,
+            nis: data[0]?.studentRaports.student?.nis || "",
+            nisn: data[0]?.studentRaports.student?.nisn || "",
+            kelas: data[0]?.studentRaports.student.class.name,
             semester: data[0]?.studentRaports.raport.semester.semesterName,
             tahun: data[0]?.studentRaports.raport.academicYear.year,
-            wali_kelas: data[0]?.studentRaports.students.class.homeroomTeacher.name,
+            wali_kelas: data[0]?.studentRaports.student.class.homeroomTeacher.name,
             kepala_sekolah: "M. Zubair Abdurrohman, S.T",
           },
           data: data.filter(item => item.subject.isExtracurricular == false).map(item => ({
@@ -79,13 +82,13 @@ export default class StudentRaportDetailsController {
           identitasRaport: {
             school_name: "SMA FUTURE GATE",
             address: "Jl. Yudhistira Komp. Pemda Jatiasih",
-            student_name: data[0]?.studentRaports.students.name,
-            nis: data[0]?.studentRaports.students?.nis || "",
-            nisn: data[0]?.studentRaports.students?.nisn || "",
-            kelas: data[0]?.studentRaports.students.class.name,
+            student_name: data[0]?.studentRaports.student.name,
+            nis: data[0]?.studentRaports.student?.nis || "",
+            nisn: data[0]?.studentRaports.student?.nisn || "",
+            kelas: data[0]?.studentRaports.student.class.name,
             semester: data[0]?.studentRaports.raport.semester.semesterName,
             tahun: data[0]?.studentRaports.raport.academicYear.year,
-            wali_kelas: data[0]?.studentRaports.students.class.homeroomTeacher.name,
+            wali_kelas: data[0]?.studentRaports.student.class.homeroomTeacher.name,
             kepala_sekolah: "M. Zubair Abdurrohman, S.T",
           },
           data: [
@@ -104,11 +107,15 @@ export default class StudentRaportDetailsController {
                   sikap_dalam_mapel: res.nilaiSikap,
                 })),
             },
+            {
+              ekskul: true,
+              mapel: data[0].studentRaports.student.subjectMembers.filter(sm => sm.studentId == data[0]?.studentRaports.studentId).map(sm => ({name: sm.subjects.name, keterangan: nilaiEkskul(sm.subjects.bukuNilai.find(bn => bn.subjectId == sm.subjectId && bn.studentId == data[0]?.studentRaports.studentId)?.nilaiEkskul)  }))
+            }
           ],
           ketidakHadiran: {
-            sakit: data[0]?.studentRaports.students.dailyAttendance.filter(item => item.status == 'sick').length,
-            izin: data[0]?.studentRaports.students.dailyAttendance.filter(item => item.status == 'permission').length,
-            alpha: data[0]?.studentRaports.students.dailyAttendance.filter(item => item.status == 'absent').length
+            sakit: data[0]?.studentRaports.student.dailyAttendance.filter(item => item.status == 'sick').length,
+            izin: data[0]?.studentRaports.student.dailyAttendance.filter(item => item.status == 'permission').length,
+            alpha: data[0]?.studentRaports.student.dailyAttendance.filter(item => item.status == 'absent').length
           }
         },
       });

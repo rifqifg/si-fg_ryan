@@ -64,19 +64,20 @@ export default class BukuNilaisController {
       //     message: "Anda tidak bisa melihat data pengguna lain",
       //   });
 
-      if (!teacherId || !classId || !subjectId) {
+      if (!teacherId || !subjectId) {
         return response.badRequest({
           message:
-            "Untuk menampilkan nilai harus ada subjectId, classId dan teacherId",
+            "Untuk menampilkan nilai harus ada subjectId dan teacherId",
         });
       }
 
       const bukuNilaiData = await BukuNilai.query()
         .if(type, (q) => q.whereILike("type", `%${type}%`))
-        .where("class_id", classId)
-        .andWhere("subject_id", subjectId)
+        .where("subject_id", subjectId)
+        // .andWhere("subject_id", subjectId)
         .andWhere("teacher_id", teacherId)
         .andWhere("aspekPenilaian", aspekPenilaian)
+        // .if(classId, q => q.andWhere('classId', classId))
         .whereHas("students", (s) => s.whereILike("name", `%${keyword}%`))
         .whereHas("semester", (s) => s.where("is_active", true))
         .andWhereHas("academicYear", (y) => y.where("active", true))
@@ -95,7 +96,7 @@ export default class BukuNilaisController {
         )
         .preload("semester", (s) => s.select("*"))
         .preload("academicYear", (ay) => ay.select("*"));
-      // return bukuNilaiData
+      return bukuNilaiData
       const nilais = bukuNilaiData.map((bn) => ({
         id: bn.id,
         studentId: bn.studentId,
@@ -133,7 +134,6 @@ export default class BukuNilaisController {
         // @ts-ignore
       )?.map(JSON.parse);
 
-// return uniqueTypeOfBukuNilai
       const data = {
         students: uniquesStudents.sort((a, b) =>
           a?.name?.localeCompare(b?.name)
@@ -255,7 +255,8 @@ export default class BukuNilaisController {
             academicYearId: schema.number(),
             semesterId: schema.string(),
             nilaiSikap: schema.string.optional(),
-            aspekPenilaian: schema.string(),
+            nilaiEkskul: schema.string.optional(),
+            aspekPenilaian: schema.string.optional(),
             studentId: schema.string([
               rules.uuid({ version: 4 }),
               rules.exists({
@@ -263,7 +264,7 @@ export default class BukuNilaisController {
                 column: "id",
               }),
             ]),
-            classId: schema.string([
+            classId: schema.string.optional([
               rules.uuid({ version: 4 }),
               rules.exists({
                 table: "academic.classes",
@@ -317,7 +318,8 @@ export default class BukuNilaisController {
             academicYearId: schema.number(),
             semesterId: schema.string(),
             nilaiSikap: schema.string.optional(),
-            aspekPenilaian: schema.string(),
+            nilaiEkskul: schema.string.optional(),
+            aspekPenilaian: schema.string.optional(),
             studentId: schema.string([
               rules.uuid({ version: 4 }),
               rules.exists({
@@ -325,7 +327,7 @@ export default class BukuNilaisController {
                 column: "id",
               }),
             ]),
-            classId: schema.string([
+            classId: schema.string.optional([
               rules.uuid({ version: 4 }),
               rules.exists({
                 table: "academic.classes",

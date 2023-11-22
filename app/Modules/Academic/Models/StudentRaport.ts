@@ -32,7 +32,7 @@ export default class StudentRaport extends BaseModel {
   public deskripsiSikapAntarmapel: string
 
   @belongsTo(() => Student)
-  public students: BelongsTo<typeof Student>;
+  public student: BelongsTo<typeof Student>;
 
   @belongsTo(() => Raport)
   public raport: BelongsTo<typeof Raport>

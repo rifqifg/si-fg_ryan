@@ -212,6 +212,9 @@ export default class Student extends BaseModel {
   @column()
   public nat_exam_no: string | null;
 
+  @hasMany(() => SubjectMember)
+  public subjectMembers: HasMany<typeof SubjectMember>
+  
   @hasMany(() => BukuNilai)
   public bukuNilai: HasMany<typeof BukuNilai>
 

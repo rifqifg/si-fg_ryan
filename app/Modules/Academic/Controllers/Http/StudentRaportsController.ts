@@ -22,9 +22,9 @@ export default class StudentRaportsController {
       const data = await StudentRaport.query()
         .select("*")
         .where("raportId", raportId)
-        .whereHas("students", q => q.whereILike('name', `%${keyword}%`))
+        .whereHas("student", q => q.whereILike('name', `%${keyword}%`))
         .preload(
-          "students",
+          "student",
           (s) => (
             s.select("id", "name", "class_id"),
             s.preload("class", (c) => c.select("id", "name"))
@@ -35,8 +35,8 @@ export default class StudentRaportsController {
       response.ok({
         message: "Berhasil mengambil data",
         data: data.sort((a, b) => {
-          const nameA = a!.students!.name!.toUpperCase();
-          const nameB = b!.students!.name!.toUpperCase();
+          const nameA = a!.student!.name!.toUpperCase();
+          const nameB = b!.student!.name!.toUpperCase();
 
           if (nameA < nameB) {
             return -1;

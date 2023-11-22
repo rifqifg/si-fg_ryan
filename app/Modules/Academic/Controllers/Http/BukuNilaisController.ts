@@ -67,17 +67,16 @@ export default class BukuNilaisController {
       if (!teacherId || !subjectId) {
         return response.badRequest({
           message:
-            "Untuk menampilkan nilai harus ada subjectId dan teacherId",
+            "Untuk menampilkan nilai harus ada subjectId, classId dan teacherId",
         });
       }
 
       const bukuNilaiData = await BukuNilai.query()
         .if(type, (q) => q.whereILike("type", `%${type}%`))
-        .where("subject_id", subjectId)
-        // .andWhere("subject_id", subjectId)
+        .where("class_id", classId)
+        .andWhere("subject_id", subjectId)
         .andWhere("teacher_id", teacherId)
         .andWhere("aspekPenilaian", aspekPenilaian)
-        // .if(classId, q => q.andWhere('classId', classId))
         .whereHas("students", (s) => s.whereILike("name", `%${keyword}%`))
         .whereHas("semester", (s) => s.where("is_active", true))
         .andWhereHas("academicYear", (y) => y.where("active", true))
@@ -96,7 +95,7 @@ export default class BukuNilaisController {
         )
         .preload("semester", (s) => s.select("*"))
         .preload("academicYear", (ay) => ay.select("*"));
-      return bukuNilaiData
+      // return bukuNilaiData
       const nilais = bukuNilaiData.map((bn) => ({
         id: bn.id,
         studentId: bn.studentId,

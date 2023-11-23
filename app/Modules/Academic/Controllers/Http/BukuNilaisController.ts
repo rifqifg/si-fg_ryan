@@ -64,19 +64,21 @@ export default class BukuNilaisController {
       //     message: "Anda tidak bisa melihat data pengguna lain",
       //   });
 
-      if (!teacherId || !subjectId) {
-        return response.badRequest({
-          message:
-            "Untuk menampilkan nilai harus ada subjectId, classId dan teacherId",
-        });
-      }
+      // if (!teacherId || !classId || !subjectId) {
+      //   return response.badRequest({
+      //     message:
+      //       "Untuk menampilkan nilai harus ada subjectId, classId dan teacherId",
+      //   });
+      // }
 
       const bukuNilaiData = await BukuNilai.query()
         .if(type, (q) => q.whereILike("type", `%${type}%`))
-        .where("class_id", classId)
-        .andWhere("subject_id", subjectId)
+        // .where("class_id", classId)
+        .where("subject_id", subjectId)
         .andWhere("teacher_id", teacherId)
-        .andWhere("aspekPenilaian", aspekPenilaian)
+        .if(classId, q => q.andWhere('classId', classId))
+        .if(aspekPenilaian, q => q.andWhere("aspekPenilaian", aspekPenilaian))
+        // .andWhere("aspekPenilaian", aspekPenilaian)
         .whereHas("students", (s) => s.whereILike("name", `%${keyword}%`))
         .whereHas("semester", (s) => s.where("is_active", true))
         .andWhereHas("academicYear", (y) => y.where("active", true))
@@ -89,7 +91,7 @@ export default class BukuNilaisController {
           )
         )
         .preload("mapels", (m) => m.select("id", "name"))
-        .preload("students", (s) => s.select("id", "name"))
+        .preload("students", (s) => (s.select("id", "name", "classId"), s.preload('class')))
         .preload("programSemesterDetail", (psd) =>
           psd.select("kompetensi_dasar", "kompetensi_dasar_index", "materi")
         )
@@ -99,7 +101,7 @@ export default class BukuNilaisController {
       const nilais = bukuNilaiData.map((bn) => ({
         id: bn.id,
         studentId: bn.studentId,
-        value: aspekPenilaian !== "SIKAP" ? bn.nilai : bn.nilaiSikap,
+        value: aspekPenilaian !== "SIKAP" ? bn.nilaiEkskul || bn.nilai : bn.nilaiSikap,
         materi: bn.material,
       }));
 
@@ -112,7 +114,7 @@ export default class BukuNilaisController {
 
       const tanggalPengambilanNilai = bukuNilaiData.map(bn => ({tanggalPengambilanNilai: bn.tanggalPengambilanNilai, materi: bn.material}))
 
-      const students = bukuNilaiData.map((bn) => bn.students); // ekstrak students
+      const students = bukuNilaiData.map((bn) => ({id: bn.students.id, name: bn.students.name, class: bn.students.class.name})); // ekstrak students
 
       const prosemDetail = bukuNilaiData.map((bn) => bn.programSemesterDetail); // ekstrak prosemDetail
 
@@ -138,9 +140,9 @@ export default class BukuNilaisController {
           a?.name?.localeCompare(b?.name)
         ),
         data: {
-          teacher_name: bukuNilaiData[0]?.teachers.employee.name,
+          teacher_name: bukuNilaiData[0]?.teachers.employee?.name,
           teacher_id: bukuNilaiData[0]?.teachers.id,
-          class_name: bukuNilaiData[0]?.classes.name,
+          class_name: bukuNilaiData[0]?.classes?.name || "ekskul",
           class_id: bukuNilaiData[0]?.classId,
           subject_id: bukuNilaiData[0]?.subjectId,
           subject_name: bukuNilaiData[0]?.mapels.name,

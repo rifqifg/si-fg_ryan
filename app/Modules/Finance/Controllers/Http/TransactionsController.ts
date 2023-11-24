@@ -5,9 +5,14 @@ import { validate as uuidValidation } from "uuid";
 import UpdateTransactionValidator from '../../Validators/UpdateTransactionValidator';
 import { BillingStatus } from '../../lib/enums';
 import { DateTime } from 'luxon';
+import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist';
+import { statusRoutes } from 'App/Modules/Log/lib/enum';
 
 export default class TransactionsController {
   public async index({ request, response }: HttpContextContract) {
+    const dateStartLog = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStartLog)
+
     const { page = 1, limit = 10, mode = "page", date_start, date_end } = request.qs();
     let dateStart: string, dateEnd: string
 
@@ -43,9 +48,11 @@ export default class TransactionsController {
         transaction.$extras.amount = relatedBillings.reduce((sum, current) => sum + current.$extras.pivot_amount, 0)
       }))
 
+      CreateRouteHist(statusRoutes.FINISH, dateStartLog)
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
       const message = "FTR-IND: " + error.message || error;
+      CreateRouteHist(statusRoutes.ERROR, dateStartLog, message)
       console.log(error);
       response.badRequest({
         message: "Gagal mengambil data",
@@ -56,6 +63,9 @@ export default class TransactionsController {
   }
 
   public async store({ request, response }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart)
+
     const payload = await request.validate(CreateTransactionValidator)
 
     const { items: paidItems, ...transactionPayload } = payload
@@ -76,9 +86,11 @@ export default class TransactionsController {
       const data = await Transaction.query()
         .where('id', transactionData.id)
         .preload('billings')
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.created({ message: "Berhasil menyimpan data", data })
     } catch (error) {
       const message = "FTR-STO: " + error.message || error;
+      CreateRouteHist(statusRoutes.ERROR, dateStart, message)
       response.badRequest({
         message: "Gagal menyimpan data",
         error: message,
@@ -87,6 +99,8 @@ export default class TransactionsController {
   }
 
   public async show({ params, response }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart)
     const { id } = params;
 
     if (!uuidValidation(id)) {
@@ -118,9 +132,11 @@ export default class TransactionsController {
         if (bill.$extras.remaining_amount <= 0) bill.$extras.status = BillingStatus.PAID_FULL
       })
 
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
       const message = "FTR-SHO: " + error.message || error;
+      CreateRouteHist(statusRoutes.ERROR, dateStart, message)
       console.log(error);
       response.badRequest({
         message: "Gagal mengambil data",
@@ -131,6 +147,9 @@ export default class TransactionsController {
   }
 
   public async update({ params, request, response }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart)
+
     const { id } = params;
     const payload = await request.validate(UpdateTransactionValidator);
     if (JSON.stringify(payload) === "{}") {
@@ -141,9 +160,11 @@ export default class TransactionsController {
       const transaction = await Transaction.findOrFail(id);
       const data = await transaction.merge(payload).save();
 
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil mengubah data", data });
     } catch (error) {
       const message = "FTR-UPD: " + error.message || error;
+      CreateRouteHist(statusRoutes.ERROR, dateStart, message)
       console.log(error);
       response.badRequest({
         message: "Gagal mengubah data",
@@ -154,6 +175,9 @@ export default class TransactionsController {
   }
 
   public async destroy({ params, response }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart)
+
     const { id } = params
     if (!uuidValidation(id)) {
       return response.badRequest({ message: "ID tidak valid" })
@@ -167,9 +191,11 @@ export default class TransactionsController {
       
       await data.delete()
 
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil menghapus data" })
     } catch (error) {
       const message = "FMB-DES: " + error.message || error
+      CreateRouteHist(statusRoutes.ERROR, dateStart, message)
       console.log(error)
       response.badRequest({
         message: "Gagal menghapus data",

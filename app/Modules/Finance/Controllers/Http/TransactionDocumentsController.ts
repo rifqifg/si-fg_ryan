@@ -7,9 +7,13 @@ import Env from "@ioc:Adonis/Core/Env"
 import Drive from '@ioc:Adonis/Core/Drive'
 import { validate as uuidValidation } from "uuid"
 import UpdateTransactionDocumentValidator from '../../Validators/UpdateTransactionDocumentValidator'
+import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist'
+import { statusRoutes } from 'App/Modules/Log/lib/enum'
 
 export default class TransactionDocumentsController {
   public async index({ request, response }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart)
     const { student_id, page = 1, limit = 10 } = request.qs()
 
     try {
@@ -25,8 +29,10 @@ export default class TransactionDocumentsController {
         tDoc.file = beHost + signedUrl
       }))
 
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Data Berhasil Didapatkan", data })
     } catch (error) {
+      CreateRouteHist(statusRoutes.ERROR, dateStart, error.message)
       response.badRequest({
         message: "TDOC-IND: Gagal mengambil data",
         error: error.message,
@@ -35,6 +41,8 @@ export default class TransactionDocumentsController {
   }
 
   public async store({ request, response, auth }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart)
     const userAccountId = auth.use('parent_api').user!.id
 
     const account = await Account.query()
@@ -63,11 +71,13 @@ export default class TransactionDocumentsController {
 
       data.file = signedUrl
 
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({
         message: "Upload Success",
         data
       })
     } catch (error) {
+      CreateRouteHist(statusRoutes.ERROR, dateStart, error.message)
       response.badRequest({
         message: "TDOC-STO: Gagal menyimpan data",
         error: error.message,
@@ -76,6 +86,9 @@ export default class TransactionDocumentsController {
   }
 
   public async show({ params, response }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart)
+
     const { id } = params;
 
     if (!uuidValidation(id)) {
@@ -93,8 +106,10 @@ export default class TransactionDocumentsController {
       const signedUrl = await financeDrive.getSignedUrl('transaction-documents/' + data.file, { expiresIn: '30mins' })
       data.file = beHost + signedUrl
 
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Data Berhasil Didapatkan", data })
     } catch (error) {
+      CreateRouteHist(statusRoutes.ERROR, dateStart, error.message)
       response.badRequest({
         message: "TDOC-IND: Gagal mengambil data",
         error: error.message,
@@ -103,6 +118,8 @@ export default class TransactionDocumentsController {
   }
 
   public async update({ request, response, params }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart)
     const { id } = params
 
     if (!uuidValidation(id)) {
@@ -115,9 +132,11 @@ export default class TransactionDocumentsController {
       const transactionDoc = await TransactionDocument.findOrFail(id)
       const data = await transactionDoc.merge(payload).save()
 
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil mengubah data", data });
     } catch (error) {
       const message = "TDOC-UPD: " + error.message || error;
+      CreateRouteHist(statusRoutes.ERROR, dateStart, message)
       console.log(error);
       response.badRequest({
         message: "Gagal mengubah data",
@@ -128,6 +147,8 @@ export default class TransactionDocumentsController {
   }
 
   public async destroy({ params, response }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart)
     const { id } = params;
     if (!uuidValidation(id)) {
       return response.badRequest({ message: "ID tidak valid" });
@@ -136,9 +157,11 @@ export default class TransactionDocumentsController {
     try {
       const data = await TransactionDocument.findOrFail(id);
       await data.delete();
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil menghapus data" });
     } catch (error) {
       const message = "TDOC-DES: " + error.message || error;
+      CreateRouteHist(statusRoutes.ERROR, dateStart, message)
       console.log(error);
       response.badRequest({
         message: "Gagal menghapus data",

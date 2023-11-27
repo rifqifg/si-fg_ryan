@@ -84,19 +84,19 @@ export default class extends BaseSeeder {
       },
       {
         scoreMinimum: 0,
-        scoreMaximum: 74,
+        scoreMaximum: 74.99,
         type: 'PREDIKAT',
         description: 'D'
       },
       {
         scoreMinimum: 75,
-        scoreMaximum: 82,
+        scoreMaximum: 82.49,
         type: 'PREDIKAT',
         description: 'C'
       },
       {
         scoreMinimum: 82.5,
-        scoreMaximum: 91,
+        scoreMaximum: 91.49,
         type: 'PREDIKAT',
         description: 'B'
       },

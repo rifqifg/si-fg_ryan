@@ -45,7 +45,7 @@ export default class StudentRaport extends BaseModel {
 
   @afterCreate()
   public static async insertStudentRaportDetail(studentRaport: StudentRaport) {
-    const { request } = HttpContext.get()!;
+    const { request, response } = HttpContext.get()!;
 
     const kelas = await Class.findByOrFail("id", request.body().classId);
     const teaching = await Teaching.query()
@@ -143,18 +143,24 @@ export default class StudentRaport extends BaseModel {
 
     console.log('data',avgPai(rawPayload))
     
-    teaching.map(async t => {
-      if (t.subjectId == bahasaSunda[0]?.subjectId) {
-        await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: 85 , nilaiPengetahuan: 85 , nilaiSikap: "B" })
-      } else if (t.subjectId == seniBudaya[0]?.subjectId) {
-        await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: payload.find(res => res.subjectId === informatika[0]?.subjectId)?.nilaiKeterampilan , nilaiPengetahuan: payload.find(res => res.subjectId === informatika[0]?.subjectId)?.nilaiPengetahuan , nilaiSikap: payload.find(res => res.subjectId === informatika[0]?.subjectId).nilaiSikap })
-      } else if (t.subjectId == quran[0]?.subjectId) {
-        await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: rawPayload.find(item => item.subjectId == rumpunQuran[0]?.subjectId)?.nilaiKeterampilan, nilaiPengetahuan: rawPayload.find(item => item.subjectId == rumpunQuran[0].subjectId)?.nilaiPengetahuan, nilaiSikap: rawPayload.find(item => item.subjectId == rumpunQuran[0]?.subjectId)?.nilaiSikap})
-      }
-      payload.filter(res => res.subjectId == t.subjectId).map(async (res) => {
-        await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: res.nilaiKeterampilan , nilaiPengetahuan: res.nilaiPengetahuan , nilaiSikap: res.nilaiSikap })
-      }) 
-    })
+    try {
+      
+      teaching.map(async t => {
+        if (t.subjectId == bahasaSunda[0]?.subjectId) {
+          await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: 85 , nilaiPengetahuan: 85 , nilaiSikap: "B" })
+        } else if (t.subjectId == seniBudaya[0]?.subjectId) {
+          await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: payload.find(res => res.subjectId === informatika[0]?.subjectId)?.nilaiKeterampilan , nilaiPengetahuan: payload.find(res => res.subjectId === informatika[0]?.subjectId)?.nilaiPengetahuan , nilaiSikap: payload.find(res => res.subjectId === informatika[0]?.subjectId).nilaiSikap })
+        } else if (t.subjectId == quran[0]?.subjectId) {
+          await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: rawPayload.find(item => item.subjectId == rumpunQuran[0]?.subjectId)?.nilaiKeterampilan, nilaiPengetahuan: rawPayload.find(item => item.subjectId == rumpunQuran[0].subjectId)?.nilaiPengetahuan, nilaiSikap: rawPayload.find(item => item.subjectId == rumpunQuran[0]?.subjectId)?.nilaiSikap})
+        }
+        payload.filter(res => res.subjectId == t.subjectId).map(async (res) => {
+          await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: res.nilaiKeterampilan , nilaiPengetahuan: res.nilaiPengetahuan , nilaiSikap: res.nilaiSikap })
+        }) 
+      })
+    } catch (error) {
+      console.warn(error)
+      response.badRequest({message: 'Gagal membuat raport, pastikan anda sudah menginput semua nilai', error})
+    }
     
 }
   @column.dateTime({ autoCreate: true })

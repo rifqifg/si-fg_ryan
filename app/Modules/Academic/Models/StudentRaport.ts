@@ -15,6 +15,7 @@ import Teaching from "./Teaching";
 import StudentRaportDetail from "./StudentRaportDetail";
 import BukuNilai from "./BukuNilai";
 import Raport from "./Raport";
+import { calculateRumpun, calcutaleRaportResult } from "App/Helpers/generate-raport-helper";
 let newId = "";
 export default class StudentRaport extends BaseModel {
   public static table = "academic.student_raports";
@@ -49,22 +50,30 @@ export default class StudentRaport extends BaseModel {
 
     const kelas = await Class.findByOrFail("id", request.body().classId);
     const teaching = await Teaching.query()
-      .where("class_id", kelas.id)
-      .preload("subject");
+    .where("class_id", kelas.id)
+    .preload("subject");
     const bukuNilai = await BukuNilai.query().select('*').andWhere(q => (q.where('classId', kelas.id), q.whereBetween('tanggalPengambilanNilai', [request.body().fromDate, request.body().toDate]), q.where('studentId', studentRaport.studentId)))
     
-    const bahasaSunda = teaching.filter(teach => teach.subject.name?.toLowerCase() === 'bahasa sunda' ).map(teach => ({subjectId: teach.subjectId, subject_name: teach.subject.name}))
+    const bahasaSunda = teaching.filter(teach => teach.subject.name?.toLowerCase() === 'bahasa sunda' ).map(teach => ({subjectId: teach.subjectId, name: teach.subject.name}))
     const rumpunPai = teaching.filter(teach => teach.subject.name?.toLowerCase() == 'akhlak' || teach.subject.name?.toLowerCase() == 'aqidah' || teach.subject.name?.toLowerCase() == 'fiqh' || teach.subject.name?.toLowerCase() == 'manhaj' || teach.subject.name?.toLowerCase() == 'siroh wa tarikh' || teach.subject.name?.toLowerCase() == 'tafsir' ).map(teach => ({subjectId: teach.subjectId, name: teach.subject.name}))
     const pai = teaching.filter(teach => teach.subject.name?.toLowerCase() == 'pendidikan agama dan budi pekerti' || teach.subject.name == 'Pendidikan Agama dan Budi Pekerti')
-    const seniBudaya = teaching.filter(teach => teach.subject.name?.toLowerCase() == 'seni budaya').map(teach => ({subjectId: teach.subjectId, subject_name: teach.subject.name}))
-    const informatika = teaching.filter(teach => teach.subject.name?.toLowerCase() === 'informatika' || teach.subject.name?.toLowerCase() == 'tik').map(teach => ({subjectId: teach.subjectId, subject_name: teach.subject.name}))
-    const quran = teaching.filter(teach => teach.subject.name?.toLowerCase() === 'pendidikan al quran' || teach.subject.name === 'Pendidikan Al Quran').map(teach => ({subjectId: teach.subjectId, subject_name: teach.subject.name}))
-    const rumpunQuran = teaching.filter(teach => teach.subject.name?.toLowerCase() == 'halaqah' || teach.subject.name?.toLowerCase() == 'tahfidz').map(teach => ({subjectId: teach.subjectId, subject_name: teach.subject.name}))
-
-
+    const seniBudaya = teaching.filter(teach => teach.subject.name?.toLowerCase() == 'seni budaya').map(teach => ({subjectId: teach.subjectId, name: teach.subject.name}))
+    const informatika = teaching.filter(teach => teach.subject.name?.toLowerCase() === 'informatika' || teach.subject.name?.toLowerCase() == 'tik').map(teach => ({subjectId: teach.subjectId, name: teach.subject.name}))
+    const quran = teaching.filter(teach => teach.subject.name?.toLowerCase() === 'pendidikan al quran' || teach.subject.name === 'Pendidikan Al Quran').map(teach => ({subjectId: teach.subjectId, name: teach.subject.name}))
+    const rumpunQuran = teaching.filter(teach => teach.subject.name?.toLowerCase() == 'halaqah' || teach.subject.name?.toLowerCase() == 'tahfidz').map(teach => ({subjectId: teach.subjectId, name: teach.subject.name}))
+    const rumpunBahasa = teaching.filter(teach => teach?.subject.name?.toLowerCase() == 'nahwu' || teach.subject.name?.toLowerCase() == 'shorof' || teach.subject.name?.toLowerCase() == 'tabir' || teach.subject.name?.toLowerCase() == 'balaghah' || teach.subject.name?.toLowerCase() == 'mufradaat' || teach.subject.name?.toLowerCase() == 'muhadatsah' || teach.subject.name?.toLowerCase() == 'aby').map(teach => ({subjectId: teach.subjectId, name: teach.subject.name}))
+    const bahasaArab = teaching.filter(teach => teach.subject.name?.toLowerCase() == 'bahasa arab').map(teach => ({subjectId: teach.subjectId, name: teach.subject.name}))
+    const bahasaIndonesia = teaching.filter(teach => teach.subject.name?.toLowerCase() == 'bahasa indonesia').map(teach => ({subjectId: teach.subjectId, name: teach.subject.name}))
+    const bahasaInggris = teaching.filter(teach => teach.subject.name?.toLowerCase() == 'bahasa inggris').map(teach => ({subjectId: teach.subjectId, name: teach.subject.name}))
+    const sastraIndonesia = teaching.filter(teach => teach.subject.name?.toLowerCase() == 'bahasa dan sastra indonesia').map(teach => ({subjectId: teach.subjectId, name: teach.subject.name}))
+    const sastraInggris = teaching.filter(teach => teach.subject.name?.toLowerCase() == 'bahasa dan sastra inggris').map(teach => ({subjectId: teach.subjectId, name: teach.subject.name}))
+    const ekonomi = teaching.filter(teach => teach.subject.name?.toLowerCase() == 'ekonomi').map(teach => ({subjectId: teach.subjectId, name: teach.subject.name}))
+    const antropologi = teaching.filter(teach => teach.subject.name?.toLowerCase() == 'antropologi').map(teach => ({subjectId: teach.subjectId, name: teach.subject.name}))
+    const matematika = teaching.filter(teach => teach.subject.name?.toLowerCase() == 'matematika wajib').map(teach => ({subjectId: teach.subjectId, name: teach.subject.name}))
     const data: any[] = []
     const rawPayload: any[] = []
     
+    // console.log(kelas.kelasJurusan)
     teaching.map(teach => {
       return bukuNilai.filter(bn => bn.subjectId == teach.subjectId).map(bn => ({subjectId: bn.subjectId, type: bn.type, aspekPenilaian: bn.aspekPenilaian, nilai: +bn.nilai, nilaiSikap: bn.nilaiSikap})).map(item => {
         if (item.subjectId == teach.subjectId) {
@@ -82,86 +91,65 @@ export default class StudentRaport extends BaseModel {
       })
     })
 
-    function n(data: any, type: string) {
-      const harianData = data.filter((item) => item?.type === "HARIAN");
-      const utsData = data.filter((item) => item?.type === "UTS");
-      const uasData = data.filter((item) => item?.type === "UAS");
-
-      const harianSum = harianData.reduce(
-        (sum, item) => sum + parseFloat(type === 'nilaiKeterampilan' ? item?.nilaiKeterampilan : item?.nilaiPengetahuan),
-        0
-      );
-      const utsSum = utsData.reduce(
-        (sum, item) => sum + parseFloat(type === 'nilaiKeterampilan' ? item?.nilaiKeterampilan : item?.nilaiPengetahuan),
-        0
-      );
-      const uasWeightedSum =
-        0.7 * ((harianSum + utsSum) / (harianData.length + utsData.length)) +
-        0.3 * parseFloat(type === 'nilaiKeterampilan' ? uasData[0]?.nilaiKeterampilan : uasData[0]?.nilaiPengetahuan);
-
-      return uasWeightedSum
-    }
-
-    const menghitunNilai = (nilai: any[], subjectId: string) => {
-      const nilaiPengetahuanItems = nilai?.filter(bn => bn.subjectId == subjectId)?.filter(
-        (item) => "nilaiPengetahuan" in item
-      );
-      const nilaiKeterampilanItems = nilai?.filter(bn => bn.subjectId == subjectId)?.filter(
-        (item) => "nilaiKeterampilan" in item
-      );
-      const nilaiSikapItem = nilai?.filter(bn => bn.subjectId == subjectId)?.filter(
-        (item) => "nilaiSikap" in item
-      );
-
-      rawPayload.push({subjectId ,nilaiPengetahuan: n(nilaiPengetahuanItems, 'nilaiPengetahuan'), nilaiKeterampilan: n(nilaiKeterampilanItems, 'nilaiKeterampilan'), nilaiSikap: nilaiSikapItem[0]?.nilaiSikap, studentId: studentRaport.studentId})
-      return {subjectId ,nilaiPengetahuan: n(nilaiPengetahuanItems, 'nilaiPengetahuan'),
-        nilaiKeterampilan: n(nilaiKeterampilanItems, 'nilaiKeterampilan'), nilaiSikap: nilaiSikapItem[0]?.nilaiSikap
-      };
-    };
-
     teaching.map(teach => {
-      return menghitunNilai(data, teach.subjectId)
+      return calcutaleRaportResult(data, teach.subjectId, rawPayload)
     })
 
-    const payload: any[] = rawPayload.filter(item => !rumpunPai.map(item => item.subjectId).includes(item.subjectId)).filter(item => !rumpunQuran.map(item => item.subjectId).includes(item.subjectId)).filter(res => res.subjectId != seniBudaya[0]?.subjectId).filter(res => res.subjectId != quran[0]?.subjectId).filter(res => res.subjectId != bahasaSunda[0]?.subjectId)
-    
-    function avgPai(dataNilai: any[]) {
-      const rumpun = dataNilai.filter(item => rumpunPai.map(item => item.subjectId).includes(item.subjectId))
-      const nilaiPengetahuan = rumpun.map(item => +item.nilaiPengetahuan)
-      const nilaiKeterampilan = rumpun.map(item => +item.nilaiKeterampilan)
-
-      const avgPengetahuan = nilaiPengetahuan.reduce((acc, curr) => acc + curr, 0) / nilaiPengetahuan.length
-      const avgKeterampilan = nilaiKeterampilan.reduce((acc, curr) => acc + curr, 0) / nilaiKeterampilan.length
+    let payload: any[] = rawPayload.filter(item => !rumpunPai.map(item => item.subjectId).includes(item.subjectId)).filter(item => !rumpunQuran.map(item => item.subjectId).includes(item.subjectId)).filter(res => res.subjectId != seniBudaya[0]?.subjectId).filter(res => res.subjectId != quran[0]?.subjectId).filter(res => res.subjectId != bahasaSunda[0]?.subjectId) 
+    // console.log('data',calculateRumpun(rawPayload, rumpunPai, payload, pai, 'pai'))
+    // console.info('data', rumpunPai)
+    if (kelas.kelasJurusan == 'BHS') {
+      payload = payload.filter(item => !rumpunBahasa.map(item => item.subjectId).includes(item.subjectId)).filter(res => res.subjectId != ekonomi[0]?.subjectId).filter(res => res.subjectId != antropologi[0]?.subjectId).filter(res => res.subjectId != sastraIndonesia[0]?.subjectId).filter(res => res.subjectId != sastraInggris[0]?.subjectId)
+      calculateRumpun(rawPayload, rumpunPai, payload, pai, 'pai')
+      calculateRumpun(rawPayload, rumpunBahasa, payload, bahasaArab, 'bahasa')
+      try {
       
-      // payload.push({subjectId: pai[0]?.subjectId ,nilaiPengetahuan: avgPengetahuan, nilaiKeterampilan: avgKeterampilan, nilaiSikap: rumpun.find(item => item.subjectId === rumpunPai.find(rp => rp.name?.toLowerCase() == 'siroh wa tarikh')?.subjectId).nilaiSikap})
-      payload.find(item => item.subjectId == pai[0]?.subjectId).nilaiPengetahuan = avgPengetahuan
-      payload.find(item => item.subjectId == pai[0]?.subjectId).nilaiKeterampilan = avgKeterampilan
-      payload.find(item => item.subjectId == pai[0]?.subjectId).nilaiSikap = rumpun.find(item => item.subjectId === rumpunPai.find(rp => rp.name?.toLowerCase() == 'siroh wa tarikh')?.subjectId).nilaiSikap
-      // return {subjectId: pai[0]?.subjectId ,nilaiPengetahuan: avgPengetahuan, nilaiKeterampilan: avgKeterampilan, nilaiSikap: rumpun.find(item => item.subjectId === rumpunPai.find(rp => rp.name?.toLowerCase() == 'siroh wa tarikh')?.subjectId).nilaiSikap}
-      return payload
-    }
+        teaching.map(async t => {
+          if (t.subjectId == bahasaSunda[0]?.subjectId) {
+            await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: 85 , nilaiPengetahuan: 85 , nilaiSikap: "B" })
+          } else if (t.subjectId == seniBudaya[0]?.subjectId) {
+            await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: payload.find(res => res.subjectId === informatika[0]?.subjectId)?.nilaiKeterampilan , nilaiPengetahuan: payload.find(res => res.subjectId === informatika[0]?.subjectId)?.nilaiPengetahuan , nilaiSikap: payload.find(res => res.subjectId === informatika[0]?.subjectId).nilaiSikap })
+          } else if (t.subjectId == quran[0]?.subjectId) {
+            await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: rawPayload.find(item => item.subjectId == rumpunQuran[0]?.subjectId)?.nilaiKeterampilan, nilaiPengetahuan: rawPayload.find(item => item.subjectId == rumpunQuran[0].subjectId)?.nilaiPengetahuan, nilaiSikap: rawPayload.find(item => item.subjectId == rumpunQuran[0]?.subjectId)?.nilaiSikap})
+          } else if (t.subjectId == antropologi[0]?.subjectId) {
+            await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: 85 , nilaiPengetahuan: 85 , nilaiSikap: "B" })
+          } else if (t.subjectId == sastraIndonesia[0]?.subjectId) {
+            await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: payload.find(res => res.subjectId === bahasaIndonesia[0]?.subjectId)?.nilaiKeterampilan , nilaiPengetahuan: payload.find(res => res.subjectId === bahasaIndonesia[0]?.subjectId)?.nilaiPengetahuan , nilaiSikap: payload.find(res => res.subjectId === bahasaIndonesia[0]?.subjectId).nilaiSikap })
+          } else if (t.subjectId == sastraInggris[0]?.subjectId) {
+            await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: payload.find(res => res.subjectId === bahasaInggris[0]?.subjectId)?.nilaiKeterampilan , nilaiPengetahuan: payload.find(res => res.subjectId === bahasaInggris[0]?.subjectId)?.nilaiPengetahuan , nilaiSikap: payload.find(res => res.subjectId === bahasaInggris[0]?.subjectId).nilaiSikap })
+          } else if (t.subjectId == ekonomi[0]?.subjectId) {
+            await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: payload.find(res => res.subjectId === matematika[0]?.subjectId)?.nilaiKeterampilan , nilaiPengetahuan: payload.find(res => res.subjectId === matematika[0]?.subjectId)?.nilaiPengetahuan , nilaiSikap: payload.find(res => res.subjectId === matematika[0]?.subjectId).nilaiSikap })
+          }
 
-    console.log('data',avgPai(rawPayload))
-    
-    try {
+          payload.filter(res => res.subjectId == t.subjectId).map(async (res) => {
+            await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: res.nilaiKeterampilan , nilaiPengetahuan: res.nilaiPengetahuan , nilaiSikap: res.nilaiSikap })
+          }) 
+        })
+      } catch (error) {
+        console.warn(error)
+        return response.badRequest({message: 'Gagal membuat raport, pastikan anda sudah menginput semua nilai', error})
+      }
+    } else {
+      calculateRumpun(rawPayload, rumpunPai, payload, pai, 'pai')
+      try {
       
-      teaching.map(async t => {
-        if (t.subjectId == bahasaSunda[0]?.subjectId) {
-          await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: 85 , nilaiPengetahuan: 85 , nilaiSikap: "B" })
-        } else if (t.subjectId == seniBudaya[0]?.subjectId) {
-          await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: payload.find(res => res.subjectId === informatika[0]?.subjectId)?.nilaiKeterampilan , nilaiPengetahuan: payload.find(res => res.subjectId === informatika[0]?.subjectId)?.nilaiPengetahuan , nilaiSikap: payload.find(res => res.subjectId === informatika[0]?.subjectId).nilaiSikap })
-        } else if (t.subjectId == quran[0]?.subjectId) {
-          await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: rawPayload.find(item => item.subjectId == rumpunQuran[0]?.subjectId)?.nilaiKeterampilan, nilaiPengetahuan: rawPayload.find(item => item.subjectId == rumpunQuran[0].subjectId)?.nilaiPengetahuan, nilaiSikap: rawPayload.find(item => item.subjectId == rumpunQuran[0]?.subjectId)?.nilaiSikap})
-        }
-        payload.filter(res => res.subjectId == t.subjectId).map(async (res) => {
-          await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: res.nilaiKeterampilan , nilaiPengetahuan: res.nilaiPengetahuan , nilaiSikap: res.nilaiSikap })
-        }) 
-      })
-    } catch (error) {
-      console.warn(error)
-      response.badRequest({message: 'Gagal membuat raport, pastikan anda sudah menginput semua nilai', error})
+        teaching.map(async t => {
+          if (t.subjectId == bahasaSunda[0]?.subjectId) {
+            await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: 85 , nilaiPengetahuan: 85 , nilaiSikap: "B" })
+          } else if (t.subjectId == seniBudaya[0]?.subjectId) {
+            await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: payload.find(res => res.subjectId === informatika[0]?.subjectId)?.nilaiKeterampilan , nilaiPengetahuan: payload.find(res => res.subjectId === informatika[0]?.subjectId)?.nilaiPengetahuan , nilaiSikap: payload.find(res => res.subjectId === informatika[0]?.subjectId).nilaiSikap })
+          } else if (t.subjectId == quran[0]?.subjectId) {
+            await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: rawPayload.find(item => item.subjectId == rumpunQuran[0]?.subjectId)?.nilaiKeterampilan, nilaiPengetahuan: rawPayload.find(item => item.subjectId == rumpunQuran[0].subjectId)?.nilaiPengetahuan, nilaiSikap: rawPayload.find(item => item.subjectId == rumpunQuran[0]?.subjectId)?.nilaiSikap})
+          }
+          payload.filter(res => res.subjectId == t.subjectId).map(async (res) => {
+            await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: res.nilaiKeterampilan , nilaiPengetahuan: res.nilaiPengetahuan , nilaiSikap: res.nilaiSikap })
+          }) 
+        })
+      } catch (error) {
+        console.warn(error)
+        return response.badRequest({message: 'Gagal membuat raport, pastikan anda sudah menginput semua nilai', error})
+      }
     }
-    
 }
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime;

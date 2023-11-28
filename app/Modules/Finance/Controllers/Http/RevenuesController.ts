@@ -13,6 +13,7 @@ import UpdateRevenueValidator from '../../Validators/UpdateRevenueValidator';
 import { DateTime } from 'luxon';
 import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist';
 import { statusRoutes } from 'App/Modules/Log/lib/enum';
+import AcademicYear from 'App/Modules/Academic/Models/AcademicYear';
 
 export default class RevenuesController {
   public async index({ request, response }: HttpContextContract) {
@@ -142,6 +143,73 @@ export default class RevenuesController {
         error_data: error,
       });
     }
+  }
+
+  public async report({ request, response }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart)
+
+    const { academic_year_id } = request.qs();
+
+      let academicYearBegin: string,
+        academicYearEnd: string
+
+      if (academic_year_id) {
+        const academicYear = await AcademicYear.find(academic_year_id)
+
+        if (academicYear) {
+          [academicYearBegin, academicYearEnd] = academicYear.year.split(' - ')
+        }
+      }
+
+    try {
+      const revenues = await Revenue.query()
+        .preload('account', qAccount => qAccount.select('number', 'account_name', 'type'))
+        .if(academic_year_id, q => {
+          q.andWhereBetween('time_received', [`${academicYearBegin}-07-01`, `${academicYearEnd}-06-30`])
+        })
+        .orderBy('time_received', 'asc')
+
+      const data: any = {}
+
+      revenues.forEach(revenue => {
+        const month = revenue.timeReceived.toFormat("MMMM", { locale: 'id' })
+        const year = revenue.timeReceived.year
+        const group = `${month} ${year}`
+        
+        if (!data[group]) {
+          data[group] = {}
+          data[group].items = []
+        }
+
+        data[group].items.push(revenue)
+      })
+
+      // loop again to count subtotals and grand total
+      let grandTotal = 0
+      for (let monthYear in data) {
+        const subTotal = data[monthYear].items.reduce((sum, next) => sum += next.amount, 0)
+
+        data[monthYear].sub_total = subTotal
+        grandTotal += subTotal
+      }
+
+      // don't forget to assign the grand total value
+      data.grand_total = grandTotal
+
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
+      response.ok({ message: "Berhasil mengambil data", data })
+    } catch (error) {
+      const message = "FRE-REP: " + error.message || error;
+      CreateRouteHist(statusRoutes.ERROR, dateStart, message)
+      console.log(error);
+      response.badRequest({
+        message: "Gagal mengambil data",
+        error: message,
+        error_data: error,
+      });
+    }
+
   }
 
   public async import({ request, response }: HttpContextContract) {

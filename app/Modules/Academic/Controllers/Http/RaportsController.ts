@@ -107,4 +107,22 @@ export default class RaportsController {
       response.badRequest({message: 'Gagal menghapus data', error: error.message || error})
     }
   }
+
+  public async hitungUlang({request, response, params}: HttpContextContract) {
+    const {id} = params
+    const payload = await request.validate(CreateRaportValidator)
+
+    try {
+
+      const raport = await Raport.findOrFail(id)
+      await raport.delete()
+
+      const data = await Raport.create(payload)
+
+      response.ok({message: 'Berhasil menghitung ulang raport', data})
+      
+    } catch (error) {
+      response.badRequest({message: 'Gagal menghitung ulang', error: error.message || error})
+    }
+  }
 }

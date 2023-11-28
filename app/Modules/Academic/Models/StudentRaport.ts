@@ -108,21 +108,21 @@ export default class StudentRaport extends BaseModel {
           if (t.subjectId == bahasaSunda[0]?.subjectId) {
             await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: 85 , nilaiPengetahuan: 85 , nilaiSikap: "B" })
           } else if (t.subjectId == seniBudaya[0]?.subjectId) {
-            await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: payload.find(res => res.subjectId === informatika[0]?.subjectId)?.nilaiKeterampilan , nilaiPengetahuan: payload.find(res => res.subjectId === informatika[0]?.subjectId)?.nilaiPengetahuan , nilaiSikap: payload.find(res => res.subjectId === informatika[0]?.subjectId).nilaiSikap })
+            await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: payload.find(res => res.subjectId === informatika[0]?.subjectId)?.nilaiKeterampilan || 0 , nilaiPengetahuan: payload.find(res => res.subjectId === informatika[0]?.subjectId)?.nilaiPengetahuan || 0, nilaiSikap: payload.find(res => res.subjectId === informatika[0]?.subjectId).nilaiSikap })
           } else if (t.subjectId == quran[0]?.subjectId) {
-            await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: rawPayload.find(item => item.subjectId == rumpunQuran[0]?.subjectId)?.nilaiKeterampilan, nilaiPengetahuan: rawPayload.find(item => item.subjectId == rumpunQuran[0].subjectId)?.nilaiPengetahuan, nilaiSikap: rawPayload.find(item => item.subjectId == rumpunQuran[0]?.subjectId)?.nilaiSikap})
+            await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: rawPayload.find(item => item.subjectId == rumpunQuran[0]?.subjectId)?.nilaiKeterampilan || 0, nilaiPengetahuan: rawPayload.find(item => item.subjectId == rumpunQuran[0].subjectId)?.nilaiPengetahuan || 0, nilaiSikap: rawPayload.find(item => item.subjectId == rumpunQuran[0]?.subjectId)?.nilaiSikap})
           } else if (t.subjectId == antropologi[0]?.subjectId) {
             await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: 85 , nilaiPengetahuan: 85 , nilaiSikap: "B" })
           } else if (t.subjectId == sastraIndonesia[0]?.subjectId) {
-            await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: payload.find(res => res.subjectId === bahasaIndonesia[0]?.subjectId)?.nilaiKeterampilan , nilaiPengetahuan: payload.find(res => res.subjectId === bahasaIndonesia[0]?.subjectId)?.nilaiPengetahuan , nilaiSikap: payload.find(res => res.subjectId === bahasaIndonesia[0]?.subjectId).nilaiSikap })
+            await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: payload.find(res => res.subjectId === bahasaIndonesia[0]?.subjectId)?.nilaiKeterampilan || 0 , nilaiPengetahuan: payload.find(res => res.subjectId === bahasaIndonesia[0]?.subjectId)?.nilaiPengetahuan || 0, nilaiSikap: payload.find(res => res.subjectId === bahasaIndonesia[0]?.subjectId).nilaiSikap })
           } else if (t.subjectId == sastraInggris[0]?.subjectId) {
-            await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: payload.find(res => res.subjectId === bahasaInggris[0]?.subjectId)?.nilaiKeterampilan , nilaiPengetahuan: payload.find(res => res.subjectId === bahasaInggris[0]?.subjectId)?.nilaiPengetahuan , nilaiSikap: payload.find(res => res.subjectId === bahasaInggris[0]?.subjectId).nilaiSikap })
+            await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: payload.find(res => res.subjectId === bahasaInggris[0]?.subjectId)?.nilaiKeterampilan || 0, nilaiPengetahuan: payload.find(res => res.subjectId === bahasaInggris[0]?.subjectId)?.nilaiPengetahuan || 0, nilaiSikap: payload.find(res => res.subjectId === bahasaInggris[0]?.subjectId).nilaiSikap })
           } else if (t.subjectId == ekonomi[0]?.subjectId) {
-            await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: payload.find(res => res.subjectId === matematika[0]?.subjectId)?.nilaiKeterampilan , nilaiPengetahuan: payload.find(res => res.subjectId === matematika[0]?.subjectId)?.nilaiPengetahuan , nilaiSikap: payload.find(res => res.subjectId === matematika[0]?.subjectId).nilaiSikap })
+            await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: payload.find(res => res.subjectId === matematika[0]?.subjectId)?.nilaiKeterampilan || 0, nilaiPengetahuan: payload.find(res => res.subjectId === matematika[0]?.subjectId)?.nilaiPengetahuan || 0, nilaiSikap: payload.find(res => res.subjectId === matematika[0]?.subjectId).nilaiSikap })
           }
 
           payload.filter(res => res.subjectId == t.subjectId).map(async (res) => {
-            await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: res.nilaiKeterampilan , nilaiPengetahuan: res.nilaiPengetahuan , nilaiSikap: res.nilaiSikap })
+            await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: res.nilaiKeterampilan || 0, nilaiPengetahuan: res.nilaiPengetahuan || 0, nilaiSikap: res.nilaiSikap })
           }) 
         })
       } catch (error) {
@@ -131,18 +131,19 @@ export default class StudentRaport extends BaseModel {
       }
     } else {
       calculateRumpun(rawPayload, rumpunPai, payload, pai, 'pai')
+      // console.log(calculateRumpun(rawPayload, rumpunPai, payload, pai, 'pai'))
       try {
       
         teaching.map(async t => {
           if (t.subjectId == bahasaSunda[0]?.subjectId) {
             await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: 85 , nilaiPengetahuan: 85 , nilaiSikap: "B" })
           } else if (t.subjectId == seniBudaya[0]?.subjectId) {
-            await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: payload.find(res => res.subjectId === informatika[0]?.subjectId)?.nilaiKeterampilan , nilaiPengetahuan: payload.find(res => res.subjectId === informatika[0]?.subjectId)?.nilaiPengetahuan , nilaiSikap: payload.find(res => res.subjectId === informatika[0]?.subjectId).nilaiSikap })
+            await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: payload.find(res => res.subjectId === informatika[0]?.subjectId)?.nilaiKeterampilan || 0 , nilaiPengetahuan: payload.find(res => res.subjectId === informatika[0]?.subjectId)?.nilaiPengetahuan || 0, nilaiSikap: payload.find(res => res.subjectId === informatika[0]?.subjectId).nilaiSikap })
           } else if (t.subjectId == quran[0]?.subjectId) {
-            await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: rawPayload.find(item => item.subjectId == rumpunQuran[0]?.subjectId)?.nilaiKeterampilan, nilaiPengetahuan: rawPayload.find(item => item.subjectId == rumpunQuran[0].subjectId)?.nilaiPengetahuan, nilaiSikap: rawPayload.find(item => item.subjectId == rumpunQuran[0]?.subjectId)?.nilaiSikap})
+            await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: rawPayload.find(item => item.subjectId == rumpunQuran[0]?.subjectId)?.nilaiKeterampilan || 0, nilaiPengetahuan: rawPayload.find(item => item.subjectId == rumpunQuran[0].subjectId)?.nilaiPengetahuan || 0, nilaiSikap: rawPayload.find(item => item.subjectId == rumpunQuran[0]?.subjectId)?.nilaiSikap})
           }
           payload.filter(res => res.subjectId == t.subjectId).map(async (res) => {
-            await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: res.nilaiKeterampilan , nilaiPengetahuan: res.nilaiPengetahuan , nilaiSikap: res.nilaiSikap })
+            await StudentRaportDetail.create({subjectId: t.subjectId, studentRaportId: studentRaport.id, nilaiKeterampilan: res.nilaiKeterampilan || 0, nilaiPengetahuan: res.nilaiPengetahuan || 0, nilaiSikap: res.nilaiSikap })
           }) 
         })
       } catch (error) {

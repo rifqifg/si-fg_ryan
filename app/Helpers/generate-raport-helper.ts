@@ -5,17 +5,17 @@ export function calculateRumpun(dataNilai: any[], subjectRumpun: any[], payload:
 
     const avgPengetahuan = nilaiPengetahuan.reduce((acc, curr) => acc + curr, 0) / nilaiPengetahuan.length
     const avgKeterampilan = nilaiKeterampilan.reduce((acc, curr) => acc + curr, 0) / nilaiKeterampilan.length
-    // return rumpun
+    
     // payload.push({subjectId: pai[0]?.subjectId ,nilaiPengetahuan: avgPengetahuan, nilaiKeterampilan: avgKeterampilan, nilaiSikap: rumpun.find(item => item.subjectId === rumpunPai.find(rp => rp.name?.toLowerCase() == 'siroh wa tarikh')?.subjectId).nilaiSikap})
     if (type == 'pai' ) {
-        payload!.find(item => item.subjectId == target[0]?.subjectId)!.nilaiPengetahuan = avgPengetahuan
-        payload!.find(item => item.subjectId == target[0]?.subjectId)!.nilaiKeterampilan = avgKeterampilan
-        payload!.find(item => item.subjectId == target[0]?.subjectId)!.nilaiSikap = rumpun?.find(item => item?.subjectId === subjectRumpun?.find(rp => rp.name?.toLowerCase() == 'siroh wa tarikh')?.subjectId)!.nilaiSikap
+        payload!.find(item => item.subjectId == target[0]?.subjectId)!.nilaiPengetahuan = avgPengetahuan || 0
+        payload!.find(item => item.subjectId == target[0]?.subjectId)!.nilaiKeterampilan = avgKeterampilan || 0
+        payload!.find(item => item.subjectId == target[0]?.subjectId)!.nilaiSikap = rumpun?.find(item => item?.subjectId === subjectRumpun?.find(rp => rp.name?.toLowerCase() == 'siroh wa tarikh')?.subjectId)!.nilaiSikap || 'C'
     } 
     if (type == 'bahasa') {
-        payload!.find(item => item.subjectId == target[0]?.subjectId)!.nilaiPengetahuan = avgPengetahuan
-        payload!.find(item => item.subjectId == target[0]?.subjectId)!.nilaiKeterampilan = avgKeterampilan
-        payload!.find(item => item.subjectId == target[0]?.subjectId)!.nilaiSikap = rumpun?.find(item => item?.subjectId === subjectRumpun?.find(rp => rp.name?.toLowerCase() == 'muhadatsah' || rp!.name?.toLowerCase() == 'aby' )?.subjectId)!.nilaiSikap
+        payload!.find(item => item.subjectId == target[0]?.subjectId)!.nilaiPengetahuan = avgPengetahuan || 0
+        payload!.find(item => item.subjectId == target[0]?.subjectId)!.nilaiKeterampilan = avgKeterampilan || 0
+        payload!.find(item => item.subjectId == target[0]?.subjectId)!.nilaiSikap = rumpun?.find(item => item?.subjectId === subjectRumpun?.find(rp => rp.name?.toLowerCase() == 'muhadatsah' || rp!.name?.toLowerCase() == 'aby' )?.subjectId)!.nilaiSikap || "C"
     }
     // return {subjectId: pai[0]?.subjectId ,nilaiPengetahuan: avgPengetahuan, nilaiKeterampilan: avgKeterampilan, nilaiSikap: rumpun.find(item => item.subjectId === rumpunPai.find(rp => rp.name?.toLowerCase() == 'siroh wa tarikh')?.subjectId).nilaiSikap}
     return payload
@@ -38,7 +38,7 @@ export function calculateRumpun(dataNilai: any[], subjectRumpun: any[], payload:
       0.7 * ((harianSum + utsSum) / (harianData.length + utsData.length)) +
       0.3 * parseFloat(type === 'nilaiKeterampilan' ? uasData[0]?.nilaiKeterampilan : uasData[0]?.nilaiPengetahuan);
 
-    return uasWeightedSum
+    return uasWeightedSum || 0
   }
 
 export const calcutaleRaportResult = (nilai: any[], subjectId: string, rawPayload: any[]) => {

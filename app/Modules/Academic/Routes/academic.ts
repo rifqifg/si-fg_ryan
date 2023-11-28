@@ -23,7 +23,7 @@ Route.group(() => {
   Route.shallowResource("program-semester.program-semester-detail","ProgramSemesterDetailsController").apiOnly().middleware({store: ["auth"],destroy: ["auth"],update: ["auth"],show: ["auth"],})
   Route.shallowResource("rencana-pengambilan-nilai","RencanaPengambilanNilaisController").apiOnly().middleware({ "*": ["auth"] });
   Route.shallowResource("buku-nilai", "BukuNilaisController").apiOnly().middleware({ "*": ["auth"] });
-  Route.post('generate-uts', 'BukuNilaisController.generateUts')
+  Route.post('generate-uts', 'BukuNilaisController.generateUts').middleware("auth")
   Route.shallowResource("import-students", "ImportStudentsController").only(["store"]).apiOnly().middleware({ "*": ["auth"] });
   Route.shallowResource("mutating-many-students","MutatingManyStudentsController").only(["update"]).apiOnly().middleware({ "*": ["auth"] });
   Route.shallowResource("subjects.members", "SubjectMembersController").apiOnly().middleware({ "*": ["auth"] });
@@ -31,6 +31,7 @@ Route.group(() => {
   Route.shallowResource("agendas", "AgendasController").middleware({ "*": ["auth"] }).apiOnly();
   Route.shallowResource('semesters', 'SemestersController').apiOnly().only(['index'])
   Route.shallowResource('raports', 'RaportsController').apiOnly().middleware({ "*": ["auth"] })
+  Route.post('raports/:id/hitung-ulang', 'RaportsController.hitungUlang' ).middleware("auth")
   Route.shallowResource('raports.student-raports', 'StudentRaportsController').apiOnly().middleware({ "*": ["auth"] })
   Route.shallowResource('student-raports.student-raport-details', 'StudentRaportDetailsController').apiOnly().middleware({ "*": ["auth"] })
 })

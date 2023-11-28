@@ -22,6 +22,19 @@ export default class RevenuesController {
 
     const { page = 1, limit = 10, keyword = "", mode = "page" } = request.qs();
 
+    const { academic_year_id } = request.qs();
+
+    let academicYearBegin: string,
+      academicYearEnd: string
+
+    if (academic_year_id) {
+      const academicYear = await AcademicYear.find(academic_year_id)
+
+      if (academicYear) {
+        [academicYearBegin, academicYearEnd] = academicYear.year.split(' - ')
+      }
+    }
+
     try {
       let data: Revenue[]
       if (mode === 'page') {
@@ -30,6 +43,9 @@ export default class RevenuesController {
             qAccount.preload('student', qStudent => {
               qStudent.select('name')
             })
+          })
+          .if(academic_year_id, q => {
+            q.andWhereBetween('time_received', [`${academicYearBegin}-07-01`, `${academicYearEnd}-06-30`])
           })
           .preload('transactions', qTransaction => qTransaction.preload('billings', qBilling => qBilling.pivotColumns(['amount'])))
           .paginate(page, limit);
@@ -151,16 +167,16 @@ export default class RevenuesController {
 
     const { academic_year_id } = request.qs();
 
-      let academicYearBegin: string,
-        academicYearEnd: string
+    let academicYearBegin: string,
+      academicYearEnd: string
 
-      if (academic_year_id) {
-        const academicYear = await AcademicYear.find(academic_year_id)
+    if (academic_year_id) {
+      const academicYear = await AcademicYear.find(academic_year_id)
 
-        if (academicYear) {
-          [academicYearBegin, academicYearEnd] = academicYear.year.split(' - ')
-        }
+      if (academicYear) {
+        [academicYearBegin, academicYearEnd] = academicYear.year.split(' - ')
       }
+    }
 
     try {
       const revenues = await Revenue.query()

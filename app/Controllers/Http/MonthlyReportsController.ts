@@ -88,6 +88,7 @@ export default class MonthlyReportsController {
         data = await MonthlyReportEmployee.query()
           .select('*')
           .select(Database.raw(`(select name from employees e where id = employee_id) as employee_name`))
+          .whereHas('monthlyReport', mr => mr.where('id', id))
           .preload('monthlyReport', mr => mr.select('name', 'from_date', 'to_date', 'red_dates'))
           .whereHas('employee', e => e.whereILike('name', `%${keyword}%`))
           .preload('employee', e => e

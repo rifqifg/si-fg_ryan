@@ -73,12 +73,10 @@ export default class BukuNilaisController {
 
       const bukuNilaiData = await BukuNilai.query()
         .if(type, (q) => q.whereILike("type", `%${type}%`))
-        // .where("class_id", classId)
         .where("subject_id", subjectId)
         .andWhere("teacher_id", teacherId)
         .if(classId, q => q.andWhere('classId', classId))
         .if(aspekPenilaian, q => q.andWhere("aspekPenilaian", aspekPenilaian))
-        // .andWhere("aspekPenilaian", aspekPenilaian)
         .whereHas("students", (s) => s.whereILike("name", `%${keyword}%`))
         .whereHas("semester", (s) => s.where("is_active", true))
         .andWhereHas("academicYear", (y) => y.where("active", true))
@@ -109,10 +107,8 @@ export default class BukuNilaisController {
         type: bn.type,
         prosemDetailId: bn.programSemesterDetailId,
         materi: bn.material,
-        // tanggalPengambilanNilai: bn.tanggalPengambilanNilai,
+        tanggalPengambilanNilai: bn.tanggalPengambilanNilai,
       }));
-
-      const tanggalPengambilanNilai = bukuNilaiData.map(bn => ({tanggalPengambilanNilai: bn.tanggalPengambilanNilai, materi: bn.material}))
 
       const students = bukuNilaiData.map((bn) => ({id: bn.students.id, name: bn.students.name, class: bn.students.class.name})); // ekstrak students
 
@@ -177,7 +173,7 @@ export default class BukuNilaisController {
                 name: aspekPenilaian === "SIKAP" ? "SIKAP" : t.type,
                 materi: t.materi,
                 materi_prosem: b?.materi,
-                tanggal_pengambilan_nilai: tanggalPengambilanNilai.find(tpn => tpn.materi == t.materi)?.tanggalPengambilanNilai,
+                tanggal_pengambilan_nilai: t.tanggalPengambilanNilai,
                 nilai: nilais
                   .filter((n) => n.materi === t.materi)
                   .map((nilai) => ({
@@ -185,7 +181,12 @@ export default class BukuNilaisController {
                     studentId: nilai?.studentId,
                     value: nilai?.value,
                   })),
-              })),
+              })).sort((a, b) => {
+                const dateA: any = new Date(a.tanggal_pengambilan_nilai);
+                const dateB: any= new Date(b.tanggal_pengambilan_nilai);
+            
+                return dateA - dateB;
+            })
           })),
       };
 

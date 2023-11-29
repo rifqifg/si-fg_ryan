@@ -55,7 +55,7 @@ export default class StudentRaport extends BaseModel {
     const bukuNilai = await BukuNilai.query().select('*').andWhere(q => (q.where('classId', kelas.id), q.whereBetween('tanggalPengambilanNilai', [request.body().fromDate, request.body().toDate]), q.where('studentId', studentRaport.studentId)))
     
     const bahasaSunda = teaching.filter(teach => teach.subject.name?.toLowerCase() === 'bahasa sunda' ).map(teach => ({subjectId: teach.subjectId, name: teach.subject.name}))
-    const rumpunPai = teaching.filter(teach => teach.subject.name?.toLowerCase() == 'akhlak' || teach.subject.name?.toLowerCase() == 'aqidah' || teach.subject.name?.toLowerCase() == 'fiqh' || teach.subject.name?.toLowerCase() == 'manhaj' || teach.subject.name?.toLowerCase() == 'siroh wa tarikh' || teach.subject.name?.toLowerCase() == 'tafsir' ).map(teach => ({subjectId: teach.subjectId, name: teach.subject.name}))
+    const rumpunPai = teaching.filter(teach => teach.subject.name?.toLowerCase() == 'akhlak' || teach.subject.name?.toLowerCase() == 'aqidah' || teach.subject.name?.toLowerCase() == 'fiqh' || teach.subject.name?.toLowerCase() == 'manhaj' || teach.subject.name?.toLowerCase() == 'siroh wa tarikh' || teach.subject.name?.toLowerCase() == 'tafsir' || teach.subject.name?.toLowerCase() == 'ulumul hadits' || teach.subject.name?.toLowerCase() == 'ushul fiqih').map(teach => ({subjectId: teach.subjectId, name: teach.subject.name}))
     const pai = teaching.filter(teach => teach.subject.name?.toLowerCase() == 'pendidikan agama dan budi pekerti' || teach.subject.name == 'Pendidikan Agama dan Budi Pekerti')
     const seniBudaya = teaching.filter(teach => teach.subject.name?.toLowerCase() == 'seni budaya').map(teach => ({subjectId: teach.subjectId, name: teach.subject.name}))
     const informatika = teaching.filter(teach => teach.subject.name?.toLowerCase() === 'informatika' || teach.subject.name?.toLowerCase() == 'tik').map(teach => ({subjectId: teach.subjectId, name: teach.subject.name}))
@@ -70,6 +70,7 @@ export default class StudentRaport extends BaseModel {
     const ekonomi = teaching.filter(teach => teach.subject.name?.toLowerCase() == 'ekonomi').map(teach => ({subjectId: teach.subjectId, name: teach.subject.name}))
     const antropologi = teaching.filter(teach => teach.subject.name?.toLowerCase() == 'antropologi').map(teach => ({subjectId: teach.subjectId, name: teach.subject.name}))
     const matematika = teaching.filter(teach => teach.subject.name?.toLowerCase() == 'matematika wajib').map(teach => ({subjectId: teach.subjectId, name: teach.subject.name}))
+    
     const data: any[] = []
     const rawPayload: any[] = []
     
@@ -101,6 +102,8 @@ export default class StudentRaport extends BaseModel {
     if (kelas.kelasJurusan == 'BHS') {
       payload = payload.filter(item => !rumpunBahasa.map(item => item.subjectId).includes(item.subjectId)).filter(res => res.subjectId != ekonomi[0]?.subjectId).filter(res => res.subjectId != antropologi[0]?.subjectId).filter(res => res.subjectId != sastraIndonesia[0]?.subjectId).filter(res => res.subjectId != sastraInggris[0]?.subjectId)
       calculateRumpun(rawPayload, rumpunPai, payload, pai, 'pai')
+      // console.info(calculateRumpun(rawPayload, rumpunPai, payload, pai, 'pai'))
+      // console.log(calculateRumpun(rawPayload, rumpunBahasa, payload, bahasaArab, 'bahasa'))
       calculateRumpun(rawPayload, rumpunBahasa, payload, bahasaArab, 'bahasa')
       try {
       
@@ -130,6 +133,7 @@ export default class StudentRaport extends BaseModel {
         return response.badRequest({message: 'Gagal membuat raport, pastikan anda sudah menginput semua nilai', error})
       }
     } else {
+
       calculateRumpun(rawPayload, rumpunPai, payload, pai, 'pai')
       // console.log(calculateRumpun(rawPayload, rumpunPai, payload, pai, 'pai'))
       try {

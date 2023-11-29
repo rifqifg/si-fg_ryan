@@ -5,8 +5,7 @@ export function calculateRumpun(dataNilai: any[], subjectRumpun: any[], payload:
 
     const avgPengetahuan = nilaiPengetahuan.reduce((acc, curr) => acc + curr, 0) / nilaiPengetahuan.length
     const avgKeterampilan = nilaiKeterampilan.reduce((acc, curr) => acc + curr, 0) / nilaiKeterampilan.length
-    
-    // payload.push({subjectId: pai[0]?.subjectId ,nilaiPengetahuan: avgPengetahuan, nilaiKeterampilan: avgKeterampilan, nilaiSikap: rumpun.find(item => item.subjectId === rumpunPai.find(rp => rp.name?.toLowerCase() == 'siroh wa tarikh')?.subjectId).nilaiSikap})
+    // return rumpun?.find(item => item?.subjectId === subjectRumpun?.find(rp => rp.name?.toLowerCase() == 'muhadatsah' || rp.name?.toLowerCase() == 'aby' || rp.name?.toLowerCase() == 'balaghah')?.subjectId)
     if (type == 'pai' ) {
         payload!.find(item => item.subjectId == target[0]?.subjectId)!.nilaiPengetahuan = avgPengetahuan || 0
         payload!.find(item => item.subjectId == target[0]?.subjectId)!.nilaiKeterampilan = avgKeterampilan || 0
@@ -15,7 +14,7 @@ export function calculateRumpun(dataNilai: any[], subjectRumpun: any[], payload:
     if (type == 'bahasa') {
         payload!.find(item => item.subjectId == target[0]?.subjectId)!.nilaiPengetahuan = avgPengetahuan || 0
         payload!.find(item => item.subjectId == target[0]?.subjectId)!.nilaiKeterampilan = avgKeterampilan || 0
-        payload!.find(item => item.subjectId == target[0]?.subjectId)!.nilaiSikap = rumpun?.find(item => item?.subjectId === subjectRumpun?.find(rp => rp.name?.toLowerCase() == 'muhadatsah' || rp!.name?.toLowerCase() == 'aby' )?.subjectId)!.nilaiSikap || "C"
+        payload!.find(item => item.subjectId == target[0]?.subjectId)!.nilaiSikap = rumpun?.find(item => item?.subjectId === subjectRumpun?.find(rp => rp.name?.toLowerCase() == 'muhadatsah' || rp.name?.toLowerCase() == 'aby' || rp.name?.toLowerCase() == 'balaghah')?.subjectId)!.nilaiSikap || "C"
     }
     // return {subjectId: pai[0]?.subjectId ,nilaiPengetahuan: avgPengetahuan, nilaiKeterampilan: avgKeterampilan, nilaiSikap: rumpun.find(item => item.subjectId === rumpunPai.find(rp => rp.name?.toLowerCase() == 'siroh wa tarikh')?.subjectId).nilaiSikap}
     return payload

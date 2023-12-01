@@ -47,7 +47,7 @@ export default class StudentRaport extends BaseModel {
   @afterCreate()
   public static async insertStudentRaportDetail(studentRaport: StudentRaport) {
     const { request, response } = HttpContext.get()!;
-
+    
     const kelas = await Class.findByOrFail("id", request.body().classId);
     const teaching = await Teaching.query()
     .where("class_id", kelas.id)
@@ -101,11 +101,11 @@ export default class StudentRaport extends BaseModel {
     // console.info('data', rumpunPai)
     if (kelas.kelasJurusan == 'BHS') {
       payload = payload.filter(item => !rumpunBahasa.map(item => item.subjectId).includes(item.subjectId)).filter(res => res.subjectId != ekonomi[0]?.subjectId).filter(res => res.subjectId != antropologi[0]?.subjectId).filter(res => res.subjectId != sastraIndonesia[0]?.subjectId).filter(res => res.subjectId != sastraInggris[0]?.subjectId)
-      calculateRumpun(rawPayload, rumpunPai, payload, pai, 'pai')
       // console.info(calculateRumpun(rawPayload, rumpunPai, payload, pai, 'pai'))
       // console.log(calculateRumpun(rawPayload, rumpunBahasa, payload, bahasaArab, 'bahasa'))
-      calculateRumpun(rawPayload, rumpunBahasa, payload, bahasaArab, 'bahasa')
       try {
+        calculateRumpun(rawPayload, rumpunPai, payload, pai, 'pai')
+        calculateRumpun(rawPayload, rumpunBahasa, payload, bahasaArab, 'bahasa')
       
         teaching.map(async t => {
           if (t.subjectId == bahasaSunda[0]?.subjectId) {
@@ -134,9 +134,9 @@ export default class StudentRaport extends BaseModel {
       }
     } else {
 
-      calculateRumpun(rawPayload, rumpunPai, payload, pai, 'pai')
       // console.log(calculateRumpun(rawPayload, rumpunPai, payload, pai, 'pai'))
       try {
+        calculateRumpun(rawPayload, rumpunPai, payload, pai, 'pai')
       
         teaching.map(async t => {
           if (t.subjectId == bahasaSunda[0]?.subjectId) {

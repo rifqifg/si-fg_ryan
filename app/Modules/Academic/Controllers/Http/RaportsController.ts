@@ -6,17 +6,21 @@ import { validate as uuidValidation } from "uuid"
 import { statusRoutes } from 'App/Modules/Log/lib/enum'
 import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist'
 import UpdateRaportValidator from '../../Validators/UpdateRaportValidator'
+import StudentRaport from '../../Models/StudentRaport'
+import HitungUlangStudentRaportValidator from '../../Validators/HitungUlangStudentRaportValidator'
 
 export default class RaportsController {
   public async index({ response }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
     try {
-
       
       const data = await Raport.query()
       .preload('class', c => (c.select('id', 'name', 'kelas_jurusan'), c.preload('jurusan', j => j.select('id', 'kode', 'nama'))))
       .preload('academicYear', ay => ay.select('id', 'year', 'description')).preload('semester', s => s.select('id', 'semester_name', 'is_active', 'description'))
+      .preload('studentRaports')
+      .orderBy('createdAt', 'desc')
+
       response.ok({message: 'Berhasil mengambil data', data})
     } catch (error) {
       CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error)
@@ -110,14 +114,14 @@ export default class RaportsController {
 
   public async hitungUlang({request, response, params}: HttpContextContract) {
     const {id} = params
-    const payload = await request.validate(CreateRaportValidator)
+    const payload = await request.validate(HitungUlangStudentRaportValidator)
 
     try {
 
       const raport = await Raport.findOrFail(id)
       await raport.delete()
 
-      const data = await Raport.create(payload)
+      const data = await Raport.create({name: payload.name, fromDate: payload.fromDate, toDate: payload.toDate, semesterId: payload.semesterId, academicYearId: payload.academicYearId, classId: payload.classId})
 
       response.ok({message: 'Berhasil menghitung ulang raport', data})
       

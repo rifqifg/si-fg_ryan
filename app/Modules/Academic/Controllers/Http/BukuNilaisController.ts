@@ -95,7 +95,7 @@ export default class BukuNilaisController {
         )
         .preload("semester", (s) => s.select("*"))
         .preload("academicYear", (ay) => ay.select("*"));
-      // return bukuNilaiData
+      
       const nilais = bukuNilaiData.map((bn) => ({
         id: bn.id,
         studentId: bn.studentId,
@@ -109,10 +109,18 @@ export default class BukuNilaisController {
         materi: bn.material,
         tanggalPengambilanNilai: bn.tanggalPengambilanNilai,
       }));
+      const tanngalPengambilanNilaiHarian = bukuNilaiData.filter(item => item.type == 'HARIAN' ).map(item => item.tanggalPengambilanNilai).sort()
 
       const students = bukuNilaiData.map((bn) => ({id: bn.students.id, name: bn.students.name, class: bn.students.class.name})); // ekstrak students
 
       const prosemDetail = bukuNilaiData.map((bn) => bn.programSemesterDetail); // ekstrak prosemDetail
+
+      const uniqueTanggalPengambilanNilaiHarian = Array.from(
+        // menghilangkan data student yg duplikat
+        // @ts-ignore
+        new Set(tanngalPengambilanNilaiHarian?.map(JSON.stringify))
+        // @ts-ignore
+      )?.map(JSON.parse)
 
       const uniquesStudents = Array.from(
         // menghilangkan data student yg duplikat
@@ -147,15 +155,17 @@ export default class BukuNilaisController {
             bukuNilaiData[0]?.semester.description +
             " / " +
             bukuNilaiData[0]?.academicYear.description,
+          fromDate: uniqueTanggalPengambilanNilaiHarian[0],
+          toDate: uniqueTanggalPengambilanNilaiHarian[uniqueTanggalPengambilanNilaiHarian.length - 1]
         },
         bab: uniqueProsemDetails
           .sort((a, b) => {
             if (a === null && b !== null) {
-              return 1; // Place null values after non-null values
+              return 1; 
             } else if (a !== null && b === null) {
-              return -1; // Place non-null values before null values
+              return -1;
             } else {
-              return 0; // Keep the order unchanged
+              return 0; 
             }
           })
           .map((b) => ({

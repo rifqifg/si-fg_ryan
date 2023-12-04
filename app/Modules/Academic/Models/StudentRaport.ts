@@ -52,8 +52,10 @@ export default class StudentRaport extends BaseModel {
     const teaching = await Teaching.query()
     .where("class_id", kelas.id)
     .preload("subject");
+    // select buku nilai berdasarkan kelasId dan tanggal dibuatnya raport
     const bukuNilai = await BukuNilai.query().select('*').andWhere(q => (q.where('classId', kelas.id), q.whereBetween('tanggalPengambilanNilai', [request.body().fromDate, request.body().toDate]), q.where('studentId', studentRaport.studentId)))
     
+    // pengelompokkan mapel berdasarkan rumpun dan mapel yang memiliki perhitungan khusus
     const bahasaSunda = teaching.filter(teach => teach.subject.name?.toLowerCase() === 'bahasa sunda' ).map(teach => ({subjectId: teach.subjectId, name: teach.subject.name}))
     const rumpunPai = teaching.filter(teach => teach.subject.name?.toLowerCase() == 'akhlak' || teach.subject.name?.toLowerCase() == 'aqidah' || teach.subject.name?.toLowerCase() == 'fiqh' || teach.subject.name?.toLowerCase() == 'manhaj' || teach.subject.name?.toLowerCase() == 'siroh wa tarikh' || teach.subject.name?.toLowerCase() == 'tafsir' || teach.subject.name?.toLowerCase() == 'ulumul hadits' || teach.subject.name?.toLowerCase() == 'ushul fiqih').map(teach => ({subjectId: teach.subjectId, name: teach.subject.name}))
     const pai = teaching.filter(teach => teach.subject.name?.toLowerCase() == 'pendidikan agama dan budi pekerti' || teach.subject.name == 'Pendidikan Agama dan Budi Pekerti')
@@ -74,7 +76,7 @@ export default class StudentRaport extends BaseModel {
     const data: any[] = []
     const rawPayload: any[] = []
     
-    // console.log(kelas.kelasJurusan)
+    // pengelompokkan nilai berdasarkan mapel dan aspek penilaian
     teaching.map(teach => {
       return bukuNilai.filter(bn => bn.subjectId == teach.subjectId).map(bn => ({subjectId: bn.subjectId, type: bn.type, aspekPenilaian: bn.aspekPenilaian, nilai: +bn.nilai, nilaiSikap: bn.nilaiSikap})).map(item => {
         if (item.subjectId == teach.subjectId) {
@@ -92,17 +94,16 @@ export default class StudentRaport extends BaseModel {
       })
     })
 
+    // menghitung rata2 nilai di tiap aspek penilaian
     teaching.map(teach => {
       return calcutaleRaportResult(data, teach.subjectId, rawPayload)
     })
 
+    // filtering mapel yang akan ditampilkan di hal umum raport
     let payload: any[] = rawPayload.filter(item => !rumpunPai.map(item => item.subjectId).includes(item.subjectId)).filter(item => !rumpunQuran.map(item => item.subjectId).includes(item.subjectId)).filter(res => res.subjectId != seniBudaya[0]?.subjectId).filter(res => res.subjectId != quran[0]?.subjectId).filter(res => res.subjectId != bahasaSunda[0]?.subjectId) 
-    // console.log('data',calculateRumpun(rawPayload, rumpunPai, payload, pai, 'pai'))
-    // console.info('data', rumpunPai)
+    
     if (kelas.kelasJurusan == 'BHS') {
       payload = payload.filter(item => !rumpunBahasa.map(item => item.subjectId).includes(item.subjectId)).filter(res => res.subjectId != ekonomi[0]?.subjectId).filter(res => res.subjectId != antropologi[0]?.subjectId).filter(res => res.subjectId != sastraIndonesia[0]?.subjectId).filter(res => res.subjectId != sastraInggris[0]?.subjectId)
-      // console.info(calculateRumpun(rawPayload, rumpunPai, payload, pai, 'pai'))
-      // console.log(calculateRumpun(rawPayload, rumpunBahasa, payload, bahasaArab, 'bahasa'))
       try {
         calculateRumpun(rawPayload, rumpunPai, payload, pai, 'pai')
         calculateRumpun(rawPayload, rumpunBahasa, payload, bahasaArab, 'bahasa')
@@ -133,8 +134,6 @@ export default class StudentRaport extends BaseModel {
         return response.badRequest({message: 'Gagal membuat raport, pastikan anda sudah menginput semua nilai', error})
       }
     } else {
-
-      // console.log(calculateRumpun(rawPayload, rumpunPai, payload, pai, 'pai'))
       try {
         calculateRumpun(rawPayload, rumpunPai, payload, pai, 'pai')
       

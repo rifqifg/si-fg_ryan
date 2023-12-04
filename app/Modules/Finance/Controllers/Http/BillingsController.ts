@@ -174,6 +174,77 @@ export default class BillingsController {
     }
   }
 
+  public async report({ request, response }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart)
+
+    const { academic_year_id } = request.qs();
+
+    try {
+      let academicYearBegin: string,
+        academicYearEnd: string
+
+      if (academic_year_id) {
+        const academicYear = await AcademicYear.find(academic_year_id)
+
+        if (academicYear) {
+          [academicYearBegin, academicYearEnd] = academicYear.year.split(' - ')
+        }
+      }
+
+      const billings = await Billing.query()
+        .preload('account', qAccount => qAccount.select('number', 'account_name'))
+        .if(academic_year_id, q => {
+          q.andWhereBetween('due_date', [`${academicYearBegin}-07-01`, `${academicYearEnd}-06-30`])
+        })
+        .orderBy('due_date', 'asc')
+      
+      const data : any = {}
+
+      billings.forEach(bill => {
+        const month = bill.createdAt.toFormat("MMMM", { locale: 'id' })
+        const year = bill.createdAt.year
+        const group = `${month} ${year}`
+
+        if (!data[group]) {
+          data[group] = {}
+          data[group].items = []
+        }
+
+        data[group].items.push(bill)
+      })
+
+      // loop again to count subtotals and grand total
+      let grandTotalBill = 0
+      let grandTotalRemaining = 0
+      for (let monthYear in data) {
+        const subTotalBill = data[monthYear].items.reduce((sum, next) => sum += next.amount, 0)
+        const subTotalRemaining = data[monthYear].items.reduce((sum, next) => sum += next.remainingAmount, 0)
+
+        data[monthYear].sub_total_billing = subTotalBill
+        data[monthYear].sub_total_remaining = subTotalRemaining
+        grandTotalBill += subTotalBill
+        grandTotalRemaining += subTotalRemaining
+      }
+
+      // don't forget to assign the grand total value
+      data.grand_total_bill = grandTotalBill
+      data.grand_total_remaining = grandTotalRemaining
+
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
+      response.ok({ message: "Berhasil mengambil data", data })
+    } catch (error) {
+      const message = "FBIL-REPORT: " + error.message || error;
+      CreateRouteHist(statusRoutes.ERROR, dateStart, message)
+      console.log(error);
+      response.badRequest({
+        message: "Gagal mengambil data",
+        error: message,
+        error_data: error,
+      });
+    }
+  }
+
   public async import({ request, response }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)

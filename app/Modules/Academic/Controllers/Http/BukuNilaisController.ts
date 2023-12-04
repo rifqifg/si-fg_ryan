@@ -96,20 +96,13 @@ export default class BukuNilaisController {
         .preload("semester", (s) => s.select("*"))
         .preload("academicYear", (ay) => ay.select("*"));
       
-      const nilais = bukuNilaiData.map((bn) => ({
-        id: bn.id,
-        studentId: bn.studentId,
-        value: aspekPenilaian !== "SIKAP" ? bn.nilaiEkskul || bn.nilai : bn.nilaiSikap,
-        materi: bn.material,
-      }));
-
       const types = bukuNilaiData.map((bn) => ({
         type: bn.type,
         prosemDetailId: bn.programSemesterDetailId,
         materi: bn.material,
         tanggalPengambilanNilai: bn.tanggalPengambilanNilai,
       }));
-      const tanngalPengambilanNilaiHarian = bukuNilaiData.filter(item => item.type == 'HARIAN' ).map(item => item.tanggalPengambilanNilai).sort()
+      const tanggalPengambilanNilai = bukuNilaiData.filter(item => item.type == 'HARIAN' ).map(item => item.tanggalPengambilanNilai).sort()
 
       const students = bukuNilaiData.map((bn) => ({id: bn.students.id, name: bn.students.name, class: bn.students.class.name})); // ekstrak students
 
@@ -118,7 +111,7 @@ export default class BukuNilaisController {
       const uniqueTanggalPengambilanNilaiHarian = Array.from(
         // menghilangkan data student yg duplikat
         // @ts-ignore
-        new Set(tanngalPengambilanNilaiHarian?.map(JSON.stringify))
+        new Set(tanggalPengambilanNilai?.map(JSON.stringify))
         // @ts-ignore
       )?.map(JSON.parse)
 
@@ -184,12 +177,12 @@ export default class BukuNilaisController {
                 materi: t.materi,
                 materi_prosem: b?.materi,
                 tanggal_pengambilan_nilai: t.tanggalPengambilanNilai,
-                nilai: nilais
-                  .filter((n) => n.materi === t.materi)
+                nilai: bukuNilaiData
+                  .filter((n) =>  new Date(n.tanggalPengambilanNilai.toString()).toISOString().split('T')[0] === new Date(t.tanggalPengambilanNilai).toISOString().split('T')[0])
                   .map((nilai) => ({
                     id: nilai?.id,
                     studentId: nilai?.studentId,
-                    value: nilai?.value,
+                    value: nilai?.nilai,
                   })),
               })).sort((a, b) => {
                 const dateA: any = new Date(a.tanggal_pengambilan_nilai);
@@ -624,8 +617,8 @@ export default class BukuNilaisController {
             and bn.tanggal_pengambilan_nilai between '${fromDate}' and '${toDate}'
           group by bn.student_id, bn.subject_id, bn.class_id, bn.teacher_id, bn.aspek_penilaian, bn.semester_id, bn.academic_year_id
           order by bn.student_id
-          `);
-    // return utsData
+          `)
+
     if (Boolean(bukuNilaiData.find((bn) => bn.type == "UTS"))) {
       const updateUts = utsData.rows.map((uts) => ({
         nilai: uts?.uts,

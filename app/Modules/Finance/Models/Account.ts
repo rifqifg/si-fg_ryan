@@ -6,6 +6,7 @@ import Employee from 'App/Models/Employee';
 import { v4 as uuidv4 } from 'uuid'
 import Billing from './Billing';
 import { BillingType } from '../lib/enums';
+import Revenue from './Revenue';
 
 let newId = ""
 
@@ -57,8 +58,13 @@ export default class Account extends BaseModel {
   @belongsTo(() => Employee)
   public employee: BelongsTo<typeof Employee>
 
-  @hasMany(() => Billing )
+  @hasMany(() => Billing)
   public billings: HasMany<typeof Billing>
+
+  @hasMany(() => Revenue, {
+    foreignKey: 'fromAccount'
+  })
+  public revenues: HasMany<typeof Revenue>
   
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime

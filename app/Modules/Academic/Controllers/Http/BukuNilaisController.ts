@@ -10,6 +10,7 @@ import { statusRoutes } from "App/Modules/Log/lib/enum";
 import GenerateUtValidator from "../../Validators/GenerateUtsValidator";
 
 import { DateTime } from "luxon";
+import { formatDate } from "App/Helpers/academic-helper";
 
 export default class BukuNilaisController {
   public async index({ request, response, auth }: HttpContextContract) {
@@ -178,11 +179,11 @@ export default class BukuNilaisController {
                 materi_prosem: b?.materi,
                 tanggal_pengambilan_nilai: t.tanggalPengambilanNilai,
                 nilai: bukuNilaiData
-                  .filter((n) =>  new Date(n.tanggalPengambilanNilai.toString()).toISOString().split('T')[0] === new Date(t.tanggalPengambilanNilai).toISOString().split('T')[0])
+                  .filter((n) => n.material == t.materi && formatDate(n.tanggalPengambilanNilai.toString()) === formatDate(t.tanggalPengambilanNilai) || formatDate(n.tanggalPengambilanNilai.toString()) === formatDate(t.tanggalPengambilanNilai))
                   .map((nilai) => ({
                     id: nilai?.id,
                     studentId: nilai?.studentId,
-                    value: nilai?.nilai,
+                    value: nilai.nilai || nilai.nilaiEkskul || nilai.nilaiSikap,
                   })),
               })).sort((a, b) => {
                 const dateA: any = new Date(a.tanggal_pengambilan_nilai);
@@ -234,6 +235,7 @@ export default class BukuNilaisController {
     const adminAcademic = userObject.roles?.find(
       (role) => role.name == "admin_academic"
     );
+    const bukuNilai = await BukuNilai.query().select('*')
 
     if (
       (teacher && !superAdmin) ||
@@ -294,6 +296,13 @@ export default class BukuNilaisController {
         ),
       });
       payload = await request.validate({ schema: schemaForTeacher });
+
+      const existingBukuNilai = bukuNilai.find(item => item.tanggalPengambilanNilai == payload.bukuNilai[0]?.tanggalPengambilanNilai && item.aspekPenilaian == payload.bukuNilai[0]?.aspekPenilaian && item.teacherId == payload.bukuNilai[0]?.teacherId && item.subjectId == payload.bukuNilai[0]?.subjectId && item.programSemesterDetailId == payload.bukuNilai[0]?.programSemesterDetailId && item.material == payload.bukuNilai[0]?.material && item.type == payload?.bukuNilai[0]?.type || item.aspekPenilaian == payload.bukuNilai[0]?.aspekPenilaian && item.tanggalPengambilanNilai == payload.bukuNilai[0]?.tanggalPengambilanNilai && item.teacherId == payload.bukuNilai[0]?.teacherId && item.subjectId == payload.bukuNilai[0]?.subjectId && item.type == payload.bukuNilai[0]?.type && item.material == payload.bukuNilai[0]?.material || item.aspekPenilaian == payload.bukuNilai[0]?.aspekPenilaian && item.tanggalPengambilanNilai == payload.bukuNilai[0]?.tanggalPengambilanNilai && item.teacherId == payload.bukuNilai[0]?.teacherId && item.subjectId == payload.bukuNilai[0]?.subjectId && item.type == payload.bukuNilai[0]?.type || item.tanggalPengambilanNilai == payload.bukuNilai[0]?.tanggalPengambilanNilai && item.teacherId == payload.bukuNilai[0]?.teacherId && item.subjectId == payload.bukuNilai[0]?.subjectId && item.type == payload.bukuNilai[0]?.type)
+
+      if (existingBukuNilai) {
+        return response.badRequest({message: 'nilai dengan materi dan tanggal pengambilan nilai sudah tersedia'})
+      }
+
       try {
       } catch (error) {
         CreateRouteHist(statusRoutes.ERROR, dateStart,  error.message || error);
@@ -303,6 +312,8 @@ export default class BukuNilaisController {
         });
       }
     } else {
+
+
       const schemaForAdmin = schema.create({
         bukuNilai: schema.array().members(
           schema.object().members({
@@ -354,6 +365,11 @@ export default class BukuNilaisController {
         ),
       });
       payload = await request.validate({ schema: schemaForAdmin });
+      const existingBukuNilai = bukuNilai.find(item => item.tanggalPengambilanNilai == payload.bukuNilai[0]?.tanggalPengambilanNilai && item.aspekPenilaian == payload.bukuNilai[0]?.aspekPenilaian && item.teacherId == payload.bukuNilai[0]?.teacherId && item.subjectId == payload.bukuNilai[0]?.subjectId && item.programSemesterDetailId == payload.bukuNilai[0]?.programSemesterDetailId && item.material == payload.bukuNilai[0]?.material && item.type == payload?.bukuNilai[0]?.type || item.aspekPenilaian == payload.bukuNilai[0]?.aspekPenilaian && item.tanggalPengambilanNilai == payload.bukuNilai[0]?.tanggalPengambilanNilai && item.teacherId == payload.bukuNilai[0]?.teacherId && item.subjectId == payload.bukuNilai[0]?.subjectId && item.type == payload.bukuNilai[0]?.type && item.material == payload.bukuNilai[0]?.material || item.aspekPenilaian == payload.bukuNilai[0]?.aspekPenilaian && item.tanggalPengambilanNilai == payload.bukuNilai[0]?.tanggalPengambilanNilai && item.teacherId == payload.bukuNilai[0]?.teacherId && item.subjectId == payload.bukuNilai[0]?.subjectId && item.type == payload.bukuNilai[0]?.type || item.tanggalPengambilanNilai == payload.bukuNilai[0]?.tanggalPengambilanNilai && item.teacherId == payload.bukuNilai[0]?.teacherId && item.subjectId == payload.bukuNilai[0]?.subjectId && item.type == payload.bukuNilai[0]?.type)
+
+      if (existingBukuNilai) {
+        return response.badRequest({message: 'nilai dengan materi dan tanggal pengambilan nilai sudah tersedia'})
+      }
     }
 
     try {

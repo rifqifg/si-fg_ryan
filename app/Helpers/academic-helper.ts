@@ -1,3 +1,18 @@
+export function formatDate(date: string) {
+    return new Date(date).toISOString().split('T')[0] // return format yyyy-MM-dd
+}
+export function nilaiEkskul(nilai: string | undefined) {
+    if (nilai == 'A') {
+        return 'Sangat Baik'
+    } else if (nilai == 'B') {
+        return 'Baik'
+    } else if (nilai == 'C') {
+        return 'Cukup'
+    } else {
+        return 'Format nilai tidak valid'
+    }
+}
+
 export function calculateRumpun(dataNilai: any[], subjectRumpun: any[], payload: any[], target: any[], type: string) {
     const rumpun = dataNilai.filter(item => subjectRumpun.map(item => item.subjectId).includes(item.subjectId))
     const nilaiPengetahuan = rumpun.map(item => +item.nilaiPengetahuan)

@@ -5,7 +5,7 @@ import { statusRoutes } from "App/Modules/Log/lib/enum";
 import { DateTime } from "luxon";
 import StudentRaportDetail from "../../Models/StudentRaportDetail";
 import Predikat from "../../Models/Predikat";
-import { nilaiEkskul } from "App/Helpers/ekskul-helper";
+import { nilaiEkskul } from "App/Helpers/academic-helper";
 
 export default class StudentRaportDetailsController {
   public async index({request, response, params }: HttpContextContract) {

@@ -6,7 +6,6 @@ import { validate as uuidValidation } from "uuid"
 import { statusRoutes } from 'App/Modules/Log/lib/enum'
 import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist'
 import UpdateRaportValidator from '../../Validators/UpdateRaportValidator'
-import StudentRaport from '../../Models/StudentRaport'
 import HitungUlangStudentRaportValidator from '../../Validators/HitungUlangStudentRaportValidator'
 
 export default class RaportsController {

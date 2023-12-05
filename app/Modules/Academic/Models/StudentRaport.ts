@@ -15,7 +15,8 @@ import Teaching from "./Teaching";
 import StudentRaportDetail from "./StudentRaportDetail";
 import BukuNilai from "./BukuNilai";
 import Raport from "./Raport";
-import { calculateRumpun, calcutaleRaportResult } from "App/Helpers/generate-raport-helper";
+import { calculateRumpun, calcutaleRaportResult } from "App/Helpers/academic-helper";
+
 let newId = "";
 export default class StudentRaport extends BaseModel {
   public static table = "academic.student_raports";

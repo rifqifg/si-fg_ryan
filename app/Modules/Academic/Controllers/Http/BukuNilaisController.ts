@@ -504,6 +504,7 @@ export default class BukuNilaisController {
           type: schema.enum.optional(["HARIAN", "UTS", "UAS"]),
           academicYearId: schema.number.optional(),
           semesterId: schema.string.optional(),
+          nilaiEkskul: schema.string.optional(),
           nilaiSikap: schema.string.optional(),
           aspekPenilaian: schema.string.optional(),
           tanggalPengambilanNilai: schema.date.optional({
@@ -542,6 +543,7 @@ export default class BukuNilaisController {
         ]),
         academicYearId: schema.number.optional(),
         semesterId: schema.string.optional(),
+        nilaiEkskul: schema.string.optional(),
         nilaiSikap: schema.string.optional(),
         aspekPenilaian: schema.string.optional(),
         teacherId: schema.string.optional([

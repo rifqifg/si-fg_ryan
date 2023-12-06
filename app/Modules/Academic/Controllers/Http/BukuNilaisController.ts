@@ -11,6 +11,7 @@ import GenerateUtValidator from "../../Validators/GenerateUtsValidator";
 
 import { DateTime } from "luxon";
 import { formatDate } from "App/Helpers/academic-helper";
+import DeleteManyBukuNilaiValidator from "../../Validators/DeleteManyBukuNilaiValidator";
 
 export default class BukuNilaisController {
   public async index({ request, response, auth }: HttpContextContract) {
@@ -183,7 +184,7 @@ export default class BukuNilaisController {
                   .map((nilai) => ({
                     id: nilai?.id,
                     studentId: nilai?.studentId,
-                    value: nilai.nilai || nilai.nilaiEkskul || nilai.nilaiSikap,
+                    value:  aspekPenilaian == 'SIKAP'? nilai.nilaiSikap : aspekPenilaian && aspekPenilaian != 'SIKAP' ? nilai.nilai : nilai.nilaiEkskul,
                   })),
               })).sort((a, b) => {
                 const dateA: any = new Date(a.tanggal_pengambilan_nilai);
@@ -698,6 +699,19 @@ export default class BukuNilaisController {
           error,
         });
       }
+    }
+  }
+
+  public async deleteManyBukuNilai({request, response}: HttpContextContract) {
+    const payload = await request.validate(DeleteManyBukuNilaiValidator)
+
+    try {
+      const bukuNilaiIds = payload.bukuNilai.map(bn => bn.id)
+      const bukuNilai = await BukuNilai.query().whereIn('id', bukuNilaiIds).delete()
+      
+      response.ok({message: 'Berhasil menghapus buku nilai'})
+    } catch (error) {
+      response.badRequest({message: 'Gagal menghapus buku nilai'})
     }
   }
 }

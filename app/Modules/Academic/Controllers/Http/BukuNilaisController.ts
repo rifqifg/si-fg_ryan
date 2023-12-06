@@ -180,11 +180,11 @@ export default class BukuNilaisController {
                 materi_prosem: b?.materi,
                 tanggal_pengambilan_nilai: t.tanggalPengambilanNilai,
                 nilai: bukuNilaiData
-                  .filter((n) => n.material == t.materi && formatDate(n.tanggalPengambilanNilai.toString()) === formatDate(t.tanggalPengambilanNilai) || formatDate(n.tanggalPengambilanNilai.toString()) === formatDate(t.tanggalPengambilanNilai))
+                  .filter((n) => n.material == t.materi && formatDate(n.tanggalPengambilanNilai.toString()) === formatDate(t.tanggalPengambilanNilai) && n.aspekPenilaian == aspekPenilaian || formatDate(n.tanggalPengambilanNilai.toString()) === formatDate(t.tanggalPengambilanNilai) && n.aspekPenilaian == aspekPenilaian)
                   .map((nilai) => ({
                     id: nilai?.id,
                     studentId: nilai?.studentId,
-                    value:  aspekPenilaian == 'SIKAP'? nilai.nilaiSikap :  aspekPenilaian != 'SIKAP' ? nilai.nilai : nilai.nilaiEkskul,
+                    value:  nilai?.nilai || nilai.nilaiEkskul || nilai.nilaiSikap
                   })),
               })).sort((a, b) => {
                 const dateA: any = new Date(a.tanggal_pengambilan_nilai);

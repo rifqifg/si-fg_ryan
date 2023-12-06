@@ -80,6 +80,27 @@ export default class BillingsController {
     const payload = await request.validate(billingValidator)
 
     try {
+      const billings = await Billing.query().preload('account')
+
+      // validasi data duplikat utk no. rekening, tipe, dan due date (bulan & tahun) yg sama
+      for (let iPayload = 0; iPayload < payload.billings.length; iPayload++) {
+        for (let iBilling = 0; iBilling < billings.length; iBilling++) {
+          const billingType = billings[iBilling].type
+          const billingAccountNo = billings[iBilling].account.number
+          const billingAccountId = billings[iBilling].account.id
+          const billingDate = billings[iBilling].dueDate.toFormat('MMMM yyyy')
+
+          if (
+              billingType === payload.billings[iPayload].type &&
+              billingAccountId === payload.billings[iPayload].account_id &&
+              billingDate === payload.billings[iPayload].due_date?.toFormat('MMMM yyyy')
+            ) {
+              throw new Error(`Tagihan dengan no. rekening "${billingAccountNo}", tipe "${billingType}"` +
+                ` dan periode "${billingDate}" yang sama sudah ada di database.`)
+            }
+        }
+      }
+
       const data = await Billing.createMany(payload.billings)
 
       CreateRouteHist(statusRoutes.FINISH, dateStart)
@@ -260,6 +281,29 @@ export default class BillingsController {
     const payloadBilling = await validator.validate(manyBillingValidator)
 
     try {
+      const billings = await Billing.query().preload('account')
+
+      // validasi data duplikat utk no. rekening, tipe, dan due date (bulan & tahun) yg sama
+      for (let iJsonData = 0; iJsonData < jsonData.billings.length; iJsonData++) {
+        for (let iBilling = 0; iBilling < billings.length; iBilling++) {
+          const billingType = billings[iBilling].type
+          const billingAccountNo = billings[iBilling].account.number
+          const billingAccountId = billings[iBilling].account.id
+          const billingDate = billings[iBilling].dueDate.toFormat('MMMM yyyy')
+
+          if (
+              billingType === jsonData.billings[iJsonData].type &&
+              billingAccountId === jsonData.billings[iJsonData].account_id &&
+              billingDate === jsonData.billings[iJsonData].due_date?.toFormat('MMMM yyyy')
+            ) {
+              throw new Error(`Tagihan dengan no. rekening "${billingAccountNo}", tipe "${billingType}"` +
+                ` dan periode "${billingDate}" yang sama sudah ada di database.`)
+            }
+        }
+      }
+
+      return "ok"
+
       const data = await Billing.createMany(payloadBilling.billings)
 
       CreateRouteHist(statusRoutes.FINISH, dateStart)

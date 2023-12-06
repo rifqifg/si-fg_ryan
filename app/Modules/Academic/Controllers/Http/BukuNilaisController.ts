@@ -180,7 +180,7 @@ export default class BukuNilaisController {
                 materi_prosem: b?.materi,
                 tanggal_pengambilan_nilai: t.tanggalPengambilanNilai,
                 nilai: bukuNilaiData
-                  .filter((n) => n.material == t.materi && formatDate(n.tanggalPengambilanNilai.toString()) === formatDate(t.tanggalPengambilanNilai) && n.aspekPenilaian == aspekPenilaian || formatDate(n.tanggalPengambilanNilai.toString()) === formatDate(t.tanggalPengambilanNilai) && n.aspekPenilaian == aspekPenilaian)
+                  .filter((n) => n.material == t.materi && formatDate(n.tanggalPengambilanNilai.toString()) === formatDate(t.tanggalPengambilanNilai) || formatDate(n.tanggalPengambilanNilai.toString()) === formatDate(t.tanggalPengambilanNilai) ).filter(bn => aspekPenilaian && aspekPenilaian == bn.aspekPenilaian)
                   .map((nilai) => ({
                     id: nilai?.id,
                     studentId: nilai?.studentId,

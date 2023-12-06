@@ -184,7 +184,7 @@ export default class BukuNilaisController {
                   .map((nilai) => ({
                     id: nilai?.id,
                     studentId: nilai?.studentId,
-                    value:  aspekPenilaian == 'SIKAP'? nilai.nilaiSikap : aspekPenilaian && aspekPenilaian != 'SIKAP' ? nilai.nilai : nilai.nilaiEkskul,
+                    value:  aspekPenilaian == 'SIKAP'? nilai.nilaiSikap :  aspekPenilaian != 'SIKAP' ? nilai.nilai : nilai.nilaiEkskul,
                   })),
               })).sort((a, b) => {
                 const dateA: any = new Date(a.tanggal_pengambilan_nilai);

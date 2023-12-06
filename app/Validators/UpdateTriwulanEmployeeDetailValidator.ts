@@ -24,7 +24,7 @@ export default class UpdateTriwulanEmployeeDetailValidator {
    *    ```
    */
   public schema = schema.create({
-    skor: schema.number([
+    skor: schema.number.nullableAndOptional([
       rules.range(0, 20)
     ])
   })

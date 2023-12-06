@@ -24,13 +24,13 @@ export default class UpdateTriwulanEmployeeValidator {
    *    ```
    */
   public schema = schema.create({
-    other_achievements_worth_noting: schema.string.optional([
+    other_achievements_worth_noting: schema.string.nullableAndOptional([
       rules.minLength(3)
     ]),
-    specific_indiscipline_that_needs_to_be_noted: schema.string.optional([
+    specific_indiscipline_that_needs_to_be_noted: schema.string.nullableAndOptional([
       rules.minLength(3)
     ]),
-    suggestions_and_improvements: schema.string.optional([
+    suggestions_and_improvements: schema.string.nullableAndOptional([
       rules.minLength(3)
     ]),
   })

@@ -33,7 +33,7 @@ export default class UpdateTriwulanValidator {
     toDate: schema.date.optional({
       format: 'yyyy-MM-dd'
     }),
-    description: schema.string.optional([
+    description: schema.string.nullableAndOptional([
       rules.minLength(3)
     ]),
   })

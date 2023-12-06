@@ -24,7 +24,9 @@ export default class UpdateMonthlyReportEmployeeDetailValidator {
    *    ```
    */
   public schema = schema.create({
-    skor: schema.number.nullableAndOptional(),
+    skor: schema.number.nullableAndOptional([
+      rules.range(0, 100)
+    ]),
     note: schema.string.nullableAndOptional([
       rules.minLength(3)
     ]),

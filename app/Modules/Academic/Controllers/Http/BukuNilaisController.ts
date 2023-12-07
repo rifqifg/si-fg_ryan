@@ -302,7 +302,7 @@ export default class BukuNilaisController {
 
       
       if (existingBukuNilai) {
-        return response.badRequest({message: 'nilai dengan materi dan tanggal pengambilan nilai sudah tersedia'})
+        return response.status(406).notAcceptable({message: 'nilai dengan materi dan tanggal pengambilan nilai sudah tersedia'})
       }
 
       try {
@@ -372,7 +372,7 @@ export default class BukuNilaisController {
 
       
       if (existingBukuNilai) {
-        return response.badRequest({message: 'nilai dengan materi dan tanggal pengambilan nilai sudah tersedia'})
+        return response.status(406).notAcceptable({message: 'nilai dengan materi dan tanggal pengambilan nilai sudah tersedia'})
       }
     }
 

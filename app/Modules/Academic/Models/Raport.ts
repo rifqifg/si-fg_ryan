@@ -1,5 +1,5 @@
 import { DateTime } from 'luxon'
-import { BaseModel, BelongsTo, HasMany, afterCreate, beforeCreate, belongsTo, column, hasMany } from '@ioc:Adonis/Lucid/Orm'
+import { BaseModel, BelongsTo, HasMany, afterCreate, afterUpdate, beforeCreate, beforeUpdate, belongsTo, column, hasMany } from '@ioc:Adonis/Lucid/Orm'
 import { v4 as uuidv4 } from 'uuid'
 import Class from './Class';
 import AcademicYear from './AcademicYear';
@@ -75,9 +75,51 @@ export default class Raport extends BaseModel {
         console.log(error)
         response.badRequest({message: 'Gagal me-generate raport'})
       }
-    }
+    } 
+  }
 
+  @beforeUpdate() 
+  public static async deleteStudentRaport() {
+    const { request } = HttpContext.get()!
+    const { id } = request.params()
+    const {fromDate, toDate} = JSON.parse(request.raw()!)
+
+    try {
+
+      if (fromDate || toDate)  {
+        await StudentRaport.query().where('raportId', id).delete()
+      }
+      
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  @afterUpdate()
+  public static async updateStudentRaport() {
+    const {request, response} = HttpContext.get()!
+    const { id } = request.params()
+    const {fromDate, toDate} = request.body()
+    const studentRaports: any[] = request.body().studentRaports
+
+    const raport = await Raport.query().where('id', id).firstOrFail()
+
+    const students = await Student.query().where('classId',  raport.classId)
     
+
+    try {
+    if (fromDate || toDate) {
+        
+        students.map(async sr => await StudentRaport.create({studentId: sr.id, raportId: id, deskripsiSikapAntarmapel: studentRaports.find(item => item?.student_id == sr.id)?.deskripsi_sikap_antarmapel}))
+        
+        response.ok({message: 'berhasil me-generate raport'})
+      }
+    } catch (error) {
+      
+      console.log(error)
+      response.badRequest({message: 'Gagal me-generate raport'})
+    }
+  
   }
 
   @column.dateTime({ autoCreate: true })

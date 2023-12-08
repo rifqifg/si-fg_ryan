@@ -87,7 +87,7 @@ export default class RaportsController {
       response.ok({message: 'Berhasil memperbarui data', data})
 
     } catch (error) {
-      response.badRequest({message: 'Gagal memperbarui data', error})
+      response.badRequest({message: 'Gagal memperbarui data', error: error.message || error})
     }
 
   }

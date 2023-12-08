@@ -48,13 +48,25 @@ export default class StudentRaport extends BaseModel {
   @afterCreate()
   public static async insertStudentRaportDetail(studentRaport: StudentRaport) {
     const { request, response } = HttpContext.get()!;
+    const { id } = request.params()
     
-    const kelas = await Class.findByOrFail("id", request.body().classId);
+    let kelas;
+    
+    let raport
+    if (id) {
+      raport = await Raport.findByOrFail('id', id)
+      kelas = await Class.findByOrFail('id', raport.classId)
+    } else {
+
+      kelas = await Class.findByOrFail("id", request.body().classId!)
+    }
+
+    // console.log(id)
     const teaching = await Teaching.query()
     .where("class_id", kelas.id)
     .preload("subject");
     // select buku nilai berdasarkan kelasId dan tanggal dibuatnya raport
-    const bukuNilai = await BukuNilai.query().select('*').andWhere(q => (q.where('classId', kelas.id), q.whereBetween('tanggalPengambilanNilai', [request.body().fromDate, request.body().toDate]), q.where('studentId', studentRaport.studentId)))
+    const bukuNilai = await BukuNilai.query().select('*').andWhere(q => (q.where('classId', kelas.id), q.whereBetween('tanggalPengambilanNilai', [id ? raport.fromDate : request.body().fromDate, id ? raport.toDate : request.body().toDate]), q.where('studentId', studentRaport.studentId)))
     
     // pengelompokkan mapel berdasarkan rumpun dan mapel yang memiliki perhitungan khusus
     const bahasaSunda = teaching.filter(teach => teach.subject.name?.toLowerCase() === 'bahasa sunda' ).map(teach => ({subjectId: teach.subjectId, name: teach.subject.name}))

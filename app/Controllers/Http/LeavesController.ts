@@ -16,6 +16,9 @@ export default class LeavesController {
     try {
       let data
       if (fromDate && toDate) {
+        if (DateTime.fromISO(fromDate) > DateTime.fromISO(toDate)) {
+          return response.badRequest({ message: "INVALID_DATE_RANGE" })
+        }
         data = await Leave.query()
           .select('id', 'employee_id', 'status', 'reason', 'from_date', 'to_date', 'type', 'leaveStatus')
           .preload('employee', em => em.select('name'))
@@ -60,7 +63,11 @@ export default class LeavesController {
   public async store({ request, response }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
+
     const payload = await request.validate(CreateLeaveValidator)
+    if (payload.fromDate! > payload.toDate!) {
+      return response.badRequest({ message: "INVALID_DATE_RANGE" })
+    }
 
     try {
       const data = await Leave.create(payload);
@@ -115,6 +122,10 @@ export default class LeavesController {
       console.log("data update kosong");
       return response.badRequest({ message: "Data tidak boleh kosong" });
     }
+    if (payload.fromDate! > payload.toDate!) {
+      return response.badRequest({ message: "INVALID_DATE_RANGE" })
+    }
+
     try {
       const leave = await Leave.findOrFail(id);
       const data = await leave.merge(payload).save();

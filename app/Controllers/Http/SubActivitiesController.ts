@@ -51,6 +51,9 @@ export default class SubActivitiesController {
     let data;
 
     if (fromDate && toDate) {
+      if (DateTime.fromISO(fromDate) > DateTime.fromISO(toDate)) {
+        return response.badRequest({ message: "INVALID_DATE_RANGE" })
+      }
       const splittedFromDate = fromDate.split(" ")[0];
       const splittedToDate = toDate.split(" ")[0];
 

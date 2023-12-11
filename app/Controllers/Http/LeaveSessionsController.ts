@@ -16,6 +16,9 @@ export default class LeaveSessionsController {
     try {
       let data
       if (fromDate && toDate) {
+        if (DateTime.fromISO(fromDate) > DateTime.fromISO(toDate)) {
+          return response.badRequest({ message: "INVALID_DATE_RANGE" })
+        }
         data = await LeaveSession.query()
           .preload('employee', em => em.select('name'))
           .whereHas('employee', e => e.whereILike('name', `%${keyword}%`))

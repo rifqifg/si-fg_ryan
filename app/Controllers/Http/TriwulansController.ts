@@ -20,6 +20,9 @@ export default class TriwulansController {
     try {
       let data
       if (fromDate && toDate) {
+        if (DateTime.fromISO(fromDate) > DateTime.fromISO(toDate)) {
+          return response.badRequest({ message: "INVALID_DATE_RANGE" })
+        }
         data = await Triwulan.query()
           .whereILike('name', `%${keyword}%`)
           .andWhere(query => {
@@ -51,6 +54,10 @@ export default class TriwulansController {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
     const payload = await request.validate(CreateTriwulanValidator)
+
+    if (payload.fromDate > payload.toDate) {
+      return response.badRequest({ message: "INVALID_DATE_RANGE" })
+    }
 
     try {
       const data = await Triwulan.create(payload);
@@ -197,6 +204,10 @@ export default class TriwulansController {
       console.log("data update kosong");
       return response.badRequest({ message: "Data tidak boleh kosong" });
     }
+    if (payload.fromDate! > payload.toDate!) {
+      return response.badRequest({ message: "INVALID_DATE_RANGE" })
+    }
+
     try {
       const triwulan = await Triwulan.findOrFail(id);
       const data = await triwulan.merge(payload).save();

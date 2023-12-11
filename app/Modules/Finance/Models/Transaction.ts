@@ -95,10 +95,12 @@ export default class Transaction extends BaseModel {
 
   @beforeCreate()
   public static async updateAccountBalance(transaction: Transaction) {
-    const account = await Account.findOrFail(transaction.accountId)
-    const newBalance = account.balance - transaction.amount
+    if (transaction.accountId) {
+      const account = await Account.findOrFail(transaction.accountId)
+      const newBalance = account.balance - transaction.amount
 
-    await account.merge({balance: newBalance}).save()
+      await account.merge({ balance: newBalance }).save()
+    }
   }
 
   @beforeDelete()
@@ -107,7 +109,7 @@ export default class Transaction extends BaseModel {
       const revenue = await Revenue.findOrFail(transaction.revenueId)
       const newCurrentBalance = revenue.currentBalance + transaction.amount
 
-      await revenue.merge({currentBalance: newCurrentBalance}).save()
+      await revenue.merge({ currentBalance: newCurrentBalance }).save()
     }
   }
 
@@ -116,7 +118,7 @@ export default class Transaction extends BaseModel {
     const account = await Account.findOrFail(transaction.accountId)
     const newBalance = account.balance + transaction.amount
 
-    await account.merge({balance: newBalance}).save()
+    await account.merge({ balance: newBalance }).save()
   }
 
   @afterCreate()

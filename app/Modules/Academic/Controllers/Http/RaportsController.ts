@@ -9,7 +9,8 @@ import UpdateRaportValidator from '../../Validators/UpdateRaportValidator'
 import HitungUlangStudentRaportValidator from '../../Validators/HitungUlangStudentRaportValidator'
 
 export default class RaportsController {
-  public async index({ response }: HttpContextContract) {
+  public async index({request, response }: HttpContextContract) {
+    const {keyword = "", tahunAjaran = "", semester = ""} = request.qs()
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
     try {
@@ -18,6 +19,8 @@ export default class RaportsController {
       .preload('class', c => (c.select('id', 'name', 'kelas_jurusan'), c.preload('jurusan', j => j.select('id', 'kode', 'nama'))))
       .preload('academicYear', ay => ay.select('id', 'year', 'description')).preload('semester', s => s.select('id', 'semester_name', 'is_active', 'description'))
       .preload('studentRaports')
+      .whereILike('name', `%${keyword}%`)
+      .whereHas('academicYear', ay => ay.whereLike('year', `%${tahunAjaran}%`)).andWhereHas('semester', s => s.whereILike('semesterName', `%${semester}%`))
       .orderBy('createdAt', 'desc')
 
       response.ok({message: 'Berhasil mengambil data', data})

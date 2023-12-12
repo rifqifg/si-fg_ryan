@@ -210,7 +210,8 @@ export default class ActivityMembersController {
       const dataEmployees = await Employee.query()
         .select('id', 'name')
         .whereNotIn('id', employeeMemberIds)
-        .whereILike('name', `%${keyword}%`)
+        .andWhereILike('name', `%${keyword}%`)
+        .andWhereNull('date_out')
         .orderBy('name', 'asc')
 
       const dataEmployeesObject = JSON.parse(JSON.stringify(dataEmployees))

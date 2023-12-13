@@ -36,8 +36,8 @@ export default class StudentRaportDetailsController {
               s.preload("class", (c) => (c.select("id", "name", 'employeeId'), c.preload('homeroomTeacher'))), s.preload('dailyAttendance')
             )
           ), sr.preload('raport', r =>( r.preload('semester'), r.preload('academicYear'))))
-        );
-// return data
+        ) || [];
+
         
       if (raportDescription) {
         CreateRouteHist(statusRoutes.FINISH, dateStart)
@@ -75,27 +75,29 @@ export default class StudentRaportDetailsController {
         }})
       }
 
+
+
       CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({
         message: "Berhasil mengambil data",
-        umum: {
+        umum:  {
           identitasRaport: {
             school_name: "SMA FUTURE GATE",
             address: "Jl. Yudhistira Komp. Pemda Jatiasih",
-            student_name: data[0]?.studentRaports?.student.name,
-            nis: data[0]?.studentRaports?.student?.nis || "",
-            nisn: data[0]?.studentRaports?.student?.nisn || "",
-            kelas: data[0]?.studentRaports?.student.class.name,
-            semester: data[0]?.studentRaports?.raport.semester.semesterName,
-            tahun: data[0]?.studentRaports?.raport.academicYear.year,
-            wali_kelas: data[0]?.studentRaports?.student.class.homeroomTeacher.name,
+            student_name: data.length > 0 && data[0]?.studentRaports?.student?.name || null,
+            nis: data.length > 0 && data[0]?.studentRaports?.student?.nis || null,
+            nisn: data.length > 0 && data[0]?.studentRaports?.student?.nisn || null,
+            kelas: data.length > 0 && data[0]?.studentRaports?.student?.class?.name || null,
+            semester: data.length > 0 && data[0]?.studentRaports?.raport?.semester?.semesterName || null,
+            tahun: data.length > 0 && data[0]?.studentRaports?.raport?.academicYear?.year || null,
+            wali_kelas: data && data[0]?.studentRaports?.student?.class?.homeroomTeacher?.name || null,
             kepala_sekolah: "M. Zubair Abdurrohman, S.T",
-          },
+          } ,
           data: [
             {
               ekskul: false,
-              predikat: data[0]?.studentRaports?.deskripsiSikapAntarmapel,
-              mapel: data
+              predikat: data.length > 0 && data[0]?.studentRaports?.deskripsiSikapAntarmapel || null,
+              mapel: data.length > 0 && data
                 .filter((res) => res.subject.isExtracurricular == false)
                 .map((res) => ({
                   subject_name: res.subject.name,
@@ -105,19 +107,19 @@ export default class StudentRaportDetailsController {
                   predikat_pengetahuan: predikat.find(item => res.nilaiPengetahuan >= item.scoreMinimum  && res.nilaiPengetahuan <= item.scoreMaximum && item.type == 'PREDIKAT')?.description || "D",
                   predikat_keterampilan: predikat.find(item => res.nilaiKeterampilan >= item.scoreMinimum  && res.nilaiKeterampilan <= item.scoreMaximum && item.type == 'PREDIKAT')?.description || "D",
                   sikap_dalam_mapel: res.nilaiSikap,
-                })),
+                })) || null,
             },
             {
               ekskul: true,
-              mapel: data[0].studentRaports?.student.subjectMembers.filter(sm => sm.studentId == data[0]?.studentRaports?.studentId).map(sm => ({name: sm.subjects.name, keterangan: nilaiEkskul(sm.subjects.bukuNilai.find(bn => bn.subjectId == sm.subjectId && bn.studentId == data[0]?.studentRaports?.studentId)?.nilaiEkskul)  }))
+              mapel: data.length > 0 && data[0].studentRaports?.student?.subjectMembers?.filter(sm => sm.studentId == data[0]?.studentRaports?.studentId).map(sm => ({name: sm.subjects.name, keterangan: nilaiEkskul(sm.subjects.bukuNilai.find(bn => bn.subjectId == sm.subjectId && bn.studentId == data[0]?.studentRaports?.studentId)?.nilaiEkskul)  || null }))
             }
           ],
           ketidakHadiran: {
-            sakit: data[0]?.studentRaports?.student.dailyAttendance.filter(item => item.status == 'sick').length,
-            izin: data[0]?.studentRaports?.student.dailyAttendance.filter(item => item.status == 'permission').length,
-            alpha: data[0]?.studentRaports?.student.dailyAttendance.filter(item => item.status == 'absent').length
+            sakit: data.length > 0 && data[0]?.studentRaports?.student?.dailyAttendance?.filter(item => item.status == 'sick').length || 0,
+            izin: data.length > 0 && data[0]?.studentRaports?.student?.dailyAttendance?.filter(item => item.status == 'permission').length || 0,
+            alpha: data.length > 0 && data[0]?.studentRaports?.student?.dailyAttendance?.filter(item => item.status == 'absent').length || 0
           }
-        },
+        } ,
       });
     } catch (error) {
       CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error);

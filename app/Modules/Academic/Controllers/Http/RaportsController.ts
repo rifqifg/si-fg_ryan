@@ -23,28 +23,28 @@ export default class RaportsController {
       .whereHas('academicYear', ay => (ay.whereLike('year', `%${tahunAjaran}%`), ay.orderBy('year', 'desc')))
       .andWhereHas('semester', s => s.whereILike('semesterName', `%${semester}%`))
       
-
-      response.ok({message: 'Berhasil mengambil data', data: data && data.sort((a, b) => {
-        // Sort by year in academicYear
-        const yearA = parseInt(a.academicYear.year.split(' ')[0]); // Extract year from the academicYear's year string
-        const yearB = parseInt(b.academicYear.year.split(' ')[0]);
+      response.ok({message: 'Berhasil mengambil data', data})
+      // response.ok({message: 'Berhasil mengambil data', data: data && data.sort((a, b) => {
+      //   // Sort by year in academicYear
+      //   const yearA = parseInt(a.academicYear.year.split(' ')[0]); // Extract year from the academicYear's year string
+      //   const yearB = parseInt(b.academicYear.year.split(' ')[0]);
       
-        if (yearA !== yearB) {
-          return yearA - yearB; // Sort by year
-        }
+      //   if (yearA !== yearB) {
+      //     return yearA - yearB; // Sort by year
+      //   }
       
-        // If the years are the same, sort by name in class
-        const nameA = a.class.name!.toUpperCase(); // Convert to uppercase for case-insensitive comparison
-        const nameB = b.class.name!.toUpperCase();
+      //   // If the years are the same, sort by name in class
+      //   const nameA = a.class.name!.toUpperCase(); // Convert to uppercase for case-insensitive comparison
+      //   const nameB = b.class.name!.toUpperCase();
       
-        if (nameA < nameB) {
-          return -1; // Name A comes before name B
-        }
-        if (nameA > nameB) {
-          return 1; // Name B comes before name A
-        }
-        return 0; // Names are equal
-      }) || []})
+      //   if (nameA < nameB) {
+      //     return -1; // Name A comes before name B
+      //   }
+      //   if (nameA > nameB) {
+      //     return 1; // Name B comes before name A
+      //   }
+      //   return 0; // Names are equal
+      // }) || []})
     } catch (error) {
       CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error)
       response.badRequest({message: "Gagal mengambil data", error: error.message || error})

@@ -111,7 +111,7 @@ export default class StudentRaportDetailsController {
             },
             {
               ekskul: true,
-              mapel: data.length > 0 && data[0].studentRaports?.student?.subjectMembers?.filter(sm => sm.studentId == data[0]?.studentRaports?.studentId).map(sm => ({name: sm.subjects.name, keterangan: nilaiEkskul(sm.subjects.bukuNilai.find(bn => bn.subjectId == sm.subjectId && bn.studentId == data[0]?.studentRaports?.studentId)?.nilaiEkskul)  || [] }))
+              mapel: data.length > 0 && data[0].studentRaports?.student?.subjectMembers?.filter(sm => sm.studentId == data[0]?.studentRaports?.studentId).map(sm => ({name: sm.subjects.name, keterangan: nilaiEkskul(sm.subjects.bukuNilai.find(bn => bn.subjectId == sm.subjectId && bn.studentId == data[0]?.studentRaports?.studentId)?.nilaiEkskul)  })) || []
             }
           ],
           ketidakHadiran: {

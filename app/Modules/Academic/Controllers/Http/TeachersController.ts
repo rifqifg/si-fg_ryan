@@ -15,7 +15,7 @@ export default class TeachersController {
     const { page = 1, limit = 10, keyword = "", mode = "page" } = request.qs();
 
     try {
-      let data: any = {};
+      let data: any[] = [];
       if (mode === "page") {
         data = await Teacher.query()
           .whereHas("employee", (e) => e.whereILike("name", `%${keyword}%`))
@@ -64,7 +64,18 @@ export default class TeachersController {
 
       
       CreateRouteHist(statusRoutes.FINISH, dateStart);
-      response.ok({ message: "Berhasil mengambil data", data });
+      response.ok({ message: "Berhasil mengambil data", data: data.sort((a, b) => {
+        const nameA = a.employee.name!.toUpperCase(); // Convert to uppercase for case-insensitive comparison
+        const nameB = b.employee.name!.toUpperCase();
+      
+        if (nameA < nameB) {
+          return -1; // Name A comes before name B
+        }
+        if (nameA > nameB) {
+          return 1; // Name B comes before name A
+        }
+        return 0; // Names are equal
+      }) });
     } catch (error) {
       const message = "ACSU46: " + error.message || error;
       console.log(error);

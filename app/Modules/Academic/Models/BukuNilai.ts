@@ -57,6 +57,9 @@ export default class BukuNilai extends BaseModel {
   @column()
   public material: string | null;
 
+  @column()
+  public nilaiEkskul: string;
+
   @belongsTo(() => Semester)
   public semester: BelongsTo<typeof Semester>;
 

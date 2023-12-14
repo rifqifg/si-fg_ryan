@@ -141,6 +141,7 @@ export default class StudentsController {
         .preload("kota")
         .preload("provinsi")
         .where("id", id)
+        .preload('parents')
         .firstOrFail();
 
       CreateRouteHist(statusRoutes.FINISH, dateStart);

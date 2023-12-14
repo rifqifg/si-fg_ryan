@@ -9,6 +9,7 @@ import {
 } from "@ioc:Adonis/Lucid/Orm";
 import { v4 as uuidv4 } from "uuid";
 import Teaching from "./Teaching";
+import BukuNilai from "./BukuNilai";
 let newId = "";
 
 export default class Subject extends BaseModel {
@@ -31,6 +32,9 @@ export default class Subject extends BaseModel {
 
   @hasMany(() => Teaching)
   public teaching: HasMany<typeof Teaching>;
+
+  @hasMany(() => BukuNilai)
+  public bukuNilai: HasMany<typeof BukuNilai>
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime;

@@ -1,8 +1,8 @@
 import { schema, CustomMessages, rules } from '@ioc:Adonis/Core/Validator'
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 
-export default class UpdateClassValidator {
-  constructor(protected ctx: HttpContextContract) { }
+export default class UpdateStudentRaportValidator {
+  constructor(protected ctx: HttpContextContract) {}
 
   /*
    * Define schema to validate the "shape", "type", "formatting" and "integrity" of data.
@@ -24,13 +24,7 @@ export default class UpdateClassValidator {
    *    ```
    */
   public schema = schema.create({
-    name: schema.string.optional(),
-    description: schema.string.nullableAndOptional(),
-    employeeId: schema.string.nullableAndOptional({}, [
-      rules.exists({ table: 'public.employees', column: 'id' })
-    ]),
-    is_graduated: schema.boolean.optional(),
-    kelasJurusan: schema.string.optional([rules.exists({table: 'academic.jurusans', column: 'kode',})])
+    deskripsiSikapAntarmapel: schema.string.optional([rules.trim()])
   })
 
   /**

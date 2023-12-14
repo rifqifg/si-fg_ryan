@@ -60,12 +60,13 @@ export default class Raport extends BaseModel {
     const students = await Student.query().where('classId',  classId)
     
     if (hitungUlang){
-      try {    
-        students.map(async (student) => await StudentRaport.create({studentId: student.id, raportId: newId, deskripsiSikapAntarmapel: studentRaports.find(item => item.student_id == student.id)?.deskripsi_sikap_antarmapel}))
+      try {
+        console.info(students.map(student => studentRaports.find(item => item?.student_id == student?.id))            )
+        students.map(async (student) => await StudentRaport.create({studentId: student.id, raportId: newId, deskripsiSikapAntarmapel: studentRaports.find(item => item?.student_id == student?.id)?.deskripsi_sikap_antarmapel}))
         response.ok({message: 'berhasil hitung ulang raport'})
       } catch (error) {
-        console.log(error)
-        response.badRequest({message: 'Gagal me-generate raport'})
+        console.log(error.message)
+        return response.badRequest({message: 'Gagal me-generate raport', error: error.message || error})
       }
     } else {
       try {
@@ -73,7 +74,7 @@ export default class Raport extends BaseModel {
         response.ok({message: 'berhasil me-generate raport'})
       } catch (error) {
         console.log(error)
-        response.badRequest({message: 'Gagal me-generate raport'})
+        return response.badRequest({message: 'Gagal me-generate raport'})
       }
     } 
   }

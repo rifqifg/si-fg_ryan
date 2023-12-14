@@ -24,7 +24,8 @@ export default class RaportsController {
       .andWhereHas('semester', s => s.whereILike('semesterName', `%${semester}%`))
       
       // response.ok({message: 'Berhasil mengambil data', data})
-      response.ok({message: 'Berhasil mengambil data', data: data && data.sort((a, b) => {
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
+      response.ok({message: 'Berhasil mengambil data', data: data.length > 0 && data.sort((a, b) => {
         // Sort by year in academicYear
         const yearA = parseInt(a.academicYear.year!.split(' ')[0]); // Extract year from the academicYear's year string
         const yearB = parseInt(b.academicYear.year!.split(' ')[0]);

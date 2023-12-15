@@ -51,8 +51,8 @@ export default class ProgramSemestersController {
         data = await ProgramSemester.query()
           .select("*")
           .withCount("programSemesterDetail", (q) => q.as("total_pertemuan"))
-          .preload("teachers", (t) =>
-            t.preload("employee", (e) => e.select("name"))
+          .preload("teachers", (t) =>(
+            t.preload("employee", (e) => e.select("name")), t.preload('teaching', teach => teach.select('*')))
           )
           .preload("class", (c) => c.select("name", "id"))
           .preload("mapel", (m) => m.select("name"))
@@ -67,8 +67,8 @@ export default class ProgramSemestersController {
         data = await ProgramSemester.query()
           .select("*")
           .withCount("programSemesterDetail", (q) => q.as("total_pertemuan"))
-          .preload("teachers", (t) =>
-            t.preload("employee", (e) => e.select("name"))
+          .preload("teachers", (t) =>(
+            t.preload("employee", (e) => e.select("name")), t.preload('teaching', teach => teach.select('id')))
           )
           .preload("class", (c) => c.select("name", "id"))
           .if(subjectId, (q) => q.where("subjectId", subjectId))
@@ -236,7 +236,7 @@ export default class ProgramSemestersController {
         .where("id", id)
         .preload("mapel", (m) => m.select("name"))
         .preload("teachers", (t) =>
-          t.preload("employee", (e) => e.select("name"))
+          (t.preload("employee", (e) => e.select("name")), t.preload('teaching'))
         )
         .preload("programSemesterDetail", (prosemDetail) =>
           prosemDetail.select("*")

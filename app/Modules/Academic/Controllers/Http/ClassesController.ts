@@ -21,7 +21,7 @@ export default class ClassesController {
       if (mode === "page") {
         data = await Class
           .query()
-          .preload('homeroomTeacher', query => query.select('name', 'nip'))
+          .preload('homeroomTeacher', query => query.select('name', 'nip')).preload('jurusan')
           .withCount('students')
           .whereILike('name', `%${keyword}%`)
           .if(typeof is_graduated === 'boolean', query => query.where('is_graduated', '=', is_graduated))

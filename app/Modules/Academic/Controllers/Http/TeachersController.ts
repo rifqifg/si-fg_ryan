@@ -15,13 +15,15 @@ export default class TeachersController {
     const { page = 1, limit = 10, keyword = "", mode = "page" } = request.qs();
 
     try {
-      let data = {};
+      let data: any[] = [];
       if (mode === "page") {
         data = await Teacher.query()
           .whereHas("employee", (e) => e.whereILike("name", `%${keyword}%`))
           .orWhereHas("teaching", (t) =>
-            t.whereHas("class", (c) => c.whereILike("name", `%${keyword}%`))
-          )
+            t.whereHas("class", (c) => (c.whereILike("name", `%${keyword}%`)))
+          ).orWhereHas("teaching", (t) =>
+          t.whereHas("class", (c) => ( c.where('is_graduated', false)))
+        )
           .orWhereHas("teaching", (t) =>
             t.whereHas("subject", (s) => s.whereILike("name", `%${keyword}%`))
           )
@@ -29,12 +31,13 @@ export default class TeachersController {
           .preload("teaching", (t) =>
             t
               .select("id", "class_id", "subject_id")
-              .preload("class", (c) => c.select("id", "name"))
+              .preload("class", (c) => c.select("id", "name", "is_graduated"))
               .preload("subject", (s) =>
                 s.select("id", "name", "is_extracurricular")
               )
           )
           .paginate(page, limit);
+
       } else if (mode === "list") {
         data = await Teacher.query()
           .whereHas("employee", (e) => e.whereILike("name", `%${keyword}%`))
@@ -59,8 +62,20 @@ export default class TeachersController {
         });
       }
 
+      
       CreateRouteHist(statusRoutes.FINISH, dateStart);
-      response.ok({ message: "Berhasil mengambil data", data });
+      response.ok({ message: "Berhasil mengambil data", data: data.sort((a, b) => {
+        const nameA = a.employee.name!.toUpperCase(); // Convert to uppercase for case-insensitive comparison
+        const nameB = b.employee.name!.toUpperCase();
+      
+        if (nameA < nameB) {
+          return -1; // Name A comes before name B
+        }
+        if (nameA > nameB) {
+          return 1; // Name B comes before name A
+        }
+        return 0; // Names are equal
+      }) });
     } catch (error) {
       const message = "ACSU46: " + error.message || error;
       console.log(error);

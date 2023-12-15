@@ -16,9 +16,7 @@ export default class CreateBillingValidator {
         ]),
         name: schema.string(),
         amount: schema.number(),
-        // schema.string([
-        //   rules.regex(new RegExp("^[1-9][0-9]*$")),
-        // ]),
+        remaining_amount: schema.number.optional(),
         due_date: schema.date.optional(),
         description: schema.string.optional(),
         type: schema.enum.optional(Object.values(BillingType)),

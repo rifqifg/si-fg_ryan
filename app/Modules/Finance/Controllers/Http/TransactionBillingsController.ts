@@ -7,6 +7,9 @@ import DeleteTransactionBillingValidator from '../../Validators/DeleteTransactio
 import { DateTime } from 'luxon';
 import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist';
 import { statusRoutes } from 'App/Modules/Log/lib/enum';
+import Revenue from '../../Models/Revenue';
+import { BillingStatus } from '../../lib/enums';
+import Account from '../../Models/Account';
 
 export default class TransactionBillingsController {
     public async index({ request, response }: HttpContextContract) {
@@ -79,8 +82,43 @@ export default class TransactionBillingsController {
         const payload = await request.validate(DeleteTransactionBillingValidator);
 
         try {
-            const transaction = await Transaction.findOrFail(payload.transaction_id)
-            const billing = await Billing.findOrFail(payload.billing_id)
+            const transaction = await Transaction.query()
+                .where('id', payload.transaction_id)
+                .preload('revenue')
+                .firstOrFail()
+
+            const billing = await Billing.query()
+                .where('id', payload.billing_id)
+                .preload('account')
+                .firstOrFail()
+
+            const transactionBilling = await TransactionBilling.query()
+                .where('transaction_id', payload.transaction_id)
+                .andWhere('billing_id', payload.billing_id)
+                .firstOrFail()
+
+            const account = await Account.findOrFail(billing.account.id)
+
+            const newAccountBalance = account.balance + transactionBilling.amount
+            const newTransactionAmount = transaction.amount - transactionBilling.amount
+            const newBillingRemainingAmount = billing.remainingAmount + transactionBilling.amount
+
+            let newStatus: BillingStatus = billing.status
+
+            if (newBillingRemainingAmount > 0) newStatus = BillingStatus.PAID_PARTIAL
+            if (newBillingRemainingAmount === billing.amount) newStatus = BillingStatus.UNPAID
+            if (newBillingRemainingAmount <= 0) newStatus = BillingStatus.PAID_FULL
+
+            account.merge({ balance: newAccountBalance }).save()
+            billing.merge({ remainingAmount: newBillingRemainingAmount, status: newStatus }).save()
+            transaction.merge({ amount: newTransactionAmount }).save()
+
+            if (transaction.revenue !== undefined) {
+                const revenue = await Revenue.findOrFail(transaction.revenue.id)
+                const newRevenueCurrentBalance = revenue.currentBalance + transactionBilling.amount
+
+                revenue.merge({ currentBalance: newRevenueCurrentBalance }).save()
+            }
 
             await transaction.related('billings').detach([billing.id])
 

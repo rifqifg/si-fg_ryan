@@ -1,5 +1,7 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import { RolesHelper } from 'App/Helpers/rolesHelper'
 import Leave from 'App/Models/Leave'
+import User from 'App/Models/User'
 import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist'
 import { statusRoutes } from 'App/Modules/Log/lib/enum'
 import CreateLeaveValidator from 'App/Validators/CreateLeaveValidator'
@@ -8,26 +10,38 @@ import { DateTime } from 'luxon'
 import { validate as uuidValidation } from "uuid"
 
 export default class LeavesController {
-  public async index({ request, response }: HttpContextContract) {
+  public async index({ request, response, auth }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
     const { page = 1, limit = 10, keyword = "", fromDate = "", toDate = "", employeeId } = request.qs()
 
+    //cek fromDate dan toDate
+    if (DateTime.fromISO(fromDate) > DateTime.fromISO(toDate)) {
+      return response.badRequest({ message: "INVALID_DATE_RANGE" })
+    }
+
     try {
       let data
-      if (fromDate && toDate) {
-        if (DateTime.fromISO(fromDate) > DateTime.fromISO(toDate)) {
-          return response.badRequest({ message: "INVALID_DATE_RANGE" })
-        }
+
+      // cek role
+      const user = await User.query().preload('roles', r => r.preload('role')).where('id', auth.use('api').user!.id).firstOrFail()
+      const userObject = JSON.parse(JSON.stringify(user))
+
+      const roles = RolesHelper(userObject)
+
+      if (roles.includes('super_admin') || roles.includes('admin_hrd')) {
         data = await Leave.query()
           .select('id', 'employee_id', 'status', 'reason', 'from_date', 'to_date', 'type', 'leaveStatus')
           .preload('employee', em => em.select('name'))
           .whereHas('employee', e => e.whereILike('name', `%${keyword}%`))
           .andWhere(query => {
-            query.whereBetween('from_date', [fromDate, toDate])
-            query.orWhereBetween('to_date', [fromDate, toDate])
+            if (fromDate && toDate) {
+              query.whereBetween('from_date', [fromDate, toDate])
+              query.orWhereBetween('to_date', [fromDate, toDate])
+            }
           })
           .andWhere(query => {
+            //TODO: menghilangkan parameter employeeId
             if (employeeId) {
               query.where('employee_id', employeeId)
             }
@@ -39,9 +53,13 @@ export default class LeavesController {
           .preload('employee', em => em.select('name'))
           .whereHas('employee', e => e.whereILike('name', `%${keyword}%`))
           .andWhere(query => {
-            if (employeeId) {
-              query.where('employee_id', employeeId)
+            if (fromDate && toDate) {
+              query.whereBetween('from_date', [fromDate, toDate])
+              query.orWhereBetween('to_date', [fromDate, toDate])
             }
+          })
+          .andWhere(query => {
+            query.where('employee_id', userObject.employee_id)
           })
           .paginate(page, limit)
       }

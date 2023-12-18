@@ -160,6 +160,77 @@ export default class AccountsController {
     }
   }
 
+  public async report({ request, response }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart)
+
+    const { academic_year_id } = request.qs();
+
+    try {
+      let academicYearBegin: string,
+        academicYearEnd: string
+
+      if (academic_year_id) {
+        const academicYear = await AcademicYear.find(academic_year_id)
+
+        if (academicYear) {
+          [academicYearBegin, academicYearEnd] = academicYear.year.split(' - ')
+        }
+      }
+
+      const accounts = await Account.query()
+        .preload('revenues', qRevenue => {
+          qRevenue
+            .select('amount', 'time_received')
+            .if(academic_year_id, q => {
+              q.andWhereBetween('time_received', [`${academicYearBegin}-07-01`, `${academicYearEnd}-06-30`])
+            })
+            .orderBy('time_received', 'asc')
+        })
+        .preload('billings', qBilling => {
+          qBilling
+            .if(academic_year_id, q => {
+              q.andWhereBetween('created_at', [`${academicYearBegin}-07-01`, `${academicYearEnd}-06-30`])
+            })
+            .whereHas('transactions', qTransaction => qTransaction.pivotColumns(['amount']))
+            .preload('transactions', qTransaction => qTransaction.pivotColumns(['amount']))
+        })
+
+      const serializedAccounts = accounts.map(account => account.serialize())
+
+      const data = serializedAccounts.map(account => {
+        let reportBalance = 0
+
+        if (account.revenues.length > 0) {
+          reportBalance += account.revenues.reduce((sum, next) => sum += next.amount, 0)
+        }
+
+        // ingat bahwa billings ini pasti yg ada data transaksinya
+        if (account.billings.length > 0) {
+          account.billings.forEach(billing => {
+            reportBalance -= billing.transactions.reduce((sum, next) => sum += next.amount, 0)
+          })
+        }
+
+        account.report_balance = reportBalance
+
+        return account
+      })
+
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
+      response.ok({ message: "Berhasil mengambil data", data })
+    } catch (error) {
+      const message = "FAC-REPORT: " + error.message || error;
+      CreateRouteHist(statusRoutes.ERROR, dateStart, message)
+      console.log(error);
+      response.badRequest({
+        message: "Gagal mengambil data",
+        error: message,
+        error_data: error,
+      });
+    }
+  }
+
   public async import({ request, response }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)

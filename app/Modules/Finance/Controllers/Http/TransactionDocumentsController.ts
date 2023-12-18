@@ -12,13 +12,20 @@ import { statusRoutes } from 'App/Modules/Log/lib/enum'
 
 export default class TransactionDocumentsController {
   public async index({ request, response }: HttpContextContract) {
-    const dateStart = DateTime.now().toMillis()
-    CreateRouteHist(statusRoutes.START, dateStart)
-    const { student_id, page = 1, limit = 10 } = request.qs()
+    const dateStartLog = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStartLog)
+
+    const { name, date_start, date_end, page = 1, limit = 10 } = request.qs()
+    let dateStart: string, dateEnd: string
+
+    if (date_start) dateStart = DateTime.fromSQL(date_start).startOf('day').toString()
+    if (date_end) dateEnd = DateTime.fromSQL(date_end).endOf('day').toString()
 
     try {
       const data = await TransactionDocument.query()
-        .if(student_id, query => query.where('student_id', student_id))
+        .if(name, query => query.whereHas('student', studentQuery => studentQuery.whereILike('name', `%${name}%`)))
+        .if(date_start, qDateStart => qDateStart.where('createdAt', '>=', dateStart))
+        .if(date_end, qDateEnd => qDateEnd.andWhere('createdAt', '<=', dateEnd))
         .preload('student', qStudent => qStudent.select('nisn', 'name'))
         .paginate(page, limit)
 
@@ -29,10 +36,10 @@ export default class TransactionDocumentsController {
         tDoc.file = beHost + signedUrl
       }))
 
-      CreateRouteHist(statusRoutes.FINISH, dateStart)
+      CreateRouteHist(statusRoutes.FINISH, dateStartLog)
       response.ok({ message: "Data Berhasil Didapatkan", data })
     } catch (error) {
-      CreateRouteHist(statusRoutes.ERROR, dateStart, error.message)
+      CreateRouteHist(statusRoutes.ERROR, dateStartLog, error.message)
       response.badRequest({
         message: "TDOC-IND: Gagal mengambil data",
         error: error.message,

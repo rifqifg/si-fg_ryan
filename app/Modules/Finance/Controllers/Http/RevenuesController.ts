@@ -13,6 +13,7 @@ import UpdateRevenueValidator from '../../Validators/UpdateRevenueValidator';
 import { DateTime } from 'luxon';
 import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist';
 import { statusRoutes } from 'App/Modules/Log/lib/enum';
+import AcademicYear from 'App/Modules/Academic/Models/AcademicYear';
 
 export default class RevenuesController {
   public async index({ request, response }: HttpContextContract) {
@@ -20,6 +21,19 @@ export default class RevenuesController {
     CreateRouteHist(statusRoutes.START, dateStart)
 
     const { page = 1, limit = 10, keyword = "", mode = "page" } = request.qs();
+
+    const { academic_year_id } = request.qs();
+
+    let academicYearBegin: string,
+      academicYearEnd: string
+
+    if (academic_year_id) {
+      const academicYear = await AcademicYear.find(academic_year_id)
+
+      if (academicYear) {
+        [academicYearBegin, academicYearEnd] = academicYear.year.split(' - ')
+      }
+    }
 
     try {
       let data: Revenue[]
@@ -29,6 +43,9 @@ export default class RevenuesController {
             qAccount.preload('student', qStudent => {
               qStudent.select('name')
             })
+          })
+          .if(academic_year_id, q => {
+            q.andWhereBetween('time_received', [`${academicYearBegin}-07-01`, `${academicYearEnd}-06-30`])
           })
           .preload('transactions', qTransaction => qTransaction.preload('billings', qBilling => qBilling.pivotColumns(['amount'])))
           .paginate(page, limit);
@@ -43,17 +60,6 @@ export default class RevenuesController {
         }
 
         return revenue
-      })
-
-      data.map(revenue => {
-        let totalRevenueUsed = 0
-
-        revenue.transactions.forEach(transaction => {
-          const subTotalRevenueUsed = transaction.billings.reduce((sum, current) => sum + current.$extras.pivot_amount, 0)
-          totalRevenueUsed += subTotalRevenueUsed
-        })
-
-        revenue.$extras.current_balance = revenue.amount - totalRevenueUsed
       })
 
       CreateRouteHist(statusRoutes.FINISH, dateStart)
@@ -95,13 +101,6 @@ export default class RevenuesController {
         if (data.account.student) { data.account.owner = data.account.student.name }
         if (data.account.employee) { data.account.owner = data.account.employee.name }
       }
-
-      let totalRevenueUsed = 0
-      data.transactions.forEach(transaction => {
-        const subTotalRevenueUsed = transaction.billings.reduce((sum, current) => sum + current.$extras.pivot_amount, 0)
-        totalRevenueUsed += subTotalRevenueUsed
-      })
-      data.$extras.current_balance = data.amount - totalRevenueUsed
 
       CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Data Berhasil Didapatkan", data })
@@ -147,6 +146,7 @@ export default class RevenuesController {
     try {
       const data = await Revenue.findOrFail(id);
       await data.delete();
+
       CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil menghapus data" });
     } catch (error) {
@@ -159,6 +159,73 @@ export default class RevenuesController {
         error_data: error,
       });
     }
+  }
+
+  public async report({ request, response }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart)
+
+    const { academic_year_id } = request.qs();
+
+    let academicYearBegin: string,
+      academicYearEnd: string
+
+    if (academic_year_id) {
+      const academicYear = await AcademicYear.find(academic_year_id)
+
+      if (academicYear) {
+        [academicYearBegin, academicYearEnd] = academicYear.year.split(' - ')
+      }
+    }
+
+    try {
+      const revenues = await Revenue.query()
+        .preload('account', qAccount => qAccount.select('number', 'account_name', 'type'))
+        .if(academic_year_id, q => {
+          q.andWhereBetween('time_received', [`${academicYearBegin}-07-01`, `${academicYearEnd}-06-30`])
+        })
+        .orderBy('time_received', 'asc')
+
+      const data: any = {}
+
+      revenues.forEach(revenue => {
+        const month = revenue.timeReceived.toFormat("MMMM", { locale: 'id' })
+        const year = revenue.timeReceived.year
+        const group = `${month} ${year}`
+        
+        if (!data[group]) {
+          data[group] = {}
+          data[group].items = []
+        }
+
+        data[group].items.push(revenue)
+      })
+
+      // loop again to count subtotals and grand total
+      let grandTotal = 0
+      for (let monthYear in data) {
+        const subTotal = data[monthYear].items.reduce((sum, next) => sum += next.amount, 0)
+
+        data[monthYear].sub_total = subTotal
+        grandTotal += subTotal
+      }
+
+      // don't forget to assign the grand total value
+      data.grand_total = grandTotal
+
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
+      response.ok({ message: "Berhasil mengambil data", data })
+    } catch (error) {
+      const message = "FRE-REP: " + error.message || error;
+      CreateRouteHist(statusRoutes.ERROR, dateStart, message)
+      console.log(error);
+      response.badRequest({
+        message: "Gagal mengambil data",
+        error: message,
+        error_data: error,
+      });
+    }
+
   }
 
   public async import({ request, response }: HttpContextContract) {
@@ -175,7 +242,6 @@ export default class RevenuesController {
     if (jsonData == 0) return response.badRequest({ message: "Data tidak boleh kosong" })
 
     const wrappedJson = { "revenues": jsonData }
-
     const manyRevenueValidator = new CreateManyRevenueValidator(HttpContext.get()!, wrappedJson)
     const payloadRevenue = await validator.validate(manyRevenueValidator)
 
@@ -219,13 +285,15 @@ export default class RevenuesController {
       // Seharusnya yg tampil tetap, tidak dikurangi 3000."
       const fixedNominal = data["Nominal"] + 3000
 
-      const noPembayaran = data["No Pembayaran"].toString()
+      // klo nggak ada kolom "No Pembayaran" isi dgn impossible value
+      const noPembayaran = data["No Pembayaran"] ? data["No Pembayaran"].toString() : "-1"
       const account = await Account.query().where('number', noPembayaran).first()
       const accountId = account ? account.id : "-1" // there is no account id with negative value, right.. right?
 
       return {
         from_account: accountId,
         time_received: jsDate,
+        current_balance: fixedNominal,
         amount: fixedNominal,
         status: RevenueStatus.NEW,
         ref_no: data["Ref"]

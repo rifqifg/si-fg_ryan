@@ -1,5 +1,5 @@
 import { DateTime } from 'luxon'
-import { BaseModel, BelongsTo, HasMany, afterCreate, beforeCreate, belongsTo, column, hasMany } from '@ioc:Adonis/Lucid/Orm'
+import { BaseModel, BelongsTo, HasMany, afterCreate, beforeCreate, beforeDelete, belongsTo, column, hasMany } from '@ioc:Adonis/Lucid/Orm'
 import { v4 as uuidv4 } from 'uuid'
 import { RevenueStatus } from '../lib/enums';
 import Account from './Account';
@@ -10,11 +10,11 @@ let newId = ""
 export default class Revenue extends BaseModel {
   public static table = 'finance.revenues';
 
-  public serializeExtras() {
-    return {
-      current_balance: this.$extras.current_balance,
-    }
-  }
+  // public serializeExtras() {
+  //   return {
+  //     current_balance: this.$extras.current_balance,
+  //   }
+  // }
 
   @hasMany(() => Transaction)
   public transactions: HasMany<typeof Transaction>
@@ -30,6 +30,9 @@ export default class Revenue extends BaseModel {
 
   @column()
   amount: number
+
+  @column()
+  currentBalance: number
 
   @column.dateTime()
   timeReceived: DateTime
@@ -50,9 +53,22 @@ export default class Revenue extends BaseModel {
   public updatedAt: DateTime
 
   @beforeCreate()
-  public static assignUuid(revenue: Revenue) {
+  public static async assignUuid(revenue: Revenue) {
     newId = uuidv4()
     revenue.id = newId
+
+    const account = await Account.findByOrFail('id', revenue.fromAccount)
+    const newAccountBalance = account.balance + revenue.amount
+
+    await account.merge({ balance: newAccountBalance }).save()
+  }
+
+  @beforeDelete()
+  public static async reduceAccountBalance(revenue: Revenue) {
+    const account = await Account.findByOrFail('id', revenue.fromAccount)
+    const newAccountBalance = account.balance - revenue.amount
+
+    await account.merge({ balance: newAccountBalance }).save()
   }
 
   @afterCreate()

@@ -12,12 +12,12 @@ export default class CreateTransactionValidator {
     document_id: schema.string.optional({}, [
       rules.exists({ table: 'finance.transaction_documents', column: 'id' })
     ]),
+    account_id: schema.string.optional({}, [
+      rules.exists({ table: 'finance.accounts', column: 'id' })
+    ]),
     teller_id: schema.string({}, [
       rules.exists({ table: 'public.employees', column: 'id' })
     ]),
-    // amount: schema.string([
-    //   rules.regex(new RegExp("^[1-9][0-9]*$")),
-    // ]),
     method: schema.enum(Object.values(TransactionMethods)),
     type: schema.enum(Object.values(TransactionTypes)),
     description: schema.string.optional(),

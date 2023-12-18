@@ -23,11 +23,11 @@ export default class RaportsController {
       .whereHas('academicYear', ay => (ay.whereLike('year', `%${tahunAjaran}%`), ay.orderBy('year', 'desc')))
       .andWhereHas('semester', s => s.whereILike('semesterName', `%${semester}%`))
       
-
-      response.ok({message: 'Berhasil mengambil data', data: data && data.sort((a, b) => {
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
+      response.ok({message: 'Berhasil mengambil data', data: data.length > 0 && data.sort((a, b) => {
         // Sort by year in academicYear
-        const yearA = parseInt(a.academicYear.year.split(' ')[0]); // Extract year from the academicYear's year string
-        const yearB = parseInt(b.academicYear.year.split(' ')[0]);
+        const yearA = parseInt(a.academicYear.year!.split(' ')[0]); // Extract year from the academicYear's year string
+        const yearB = parseInt(b.academicYear.year!.split(' ')[0]);
       
         if (yearA !== yearB) {
           return yearA - yearB; // Sort by year

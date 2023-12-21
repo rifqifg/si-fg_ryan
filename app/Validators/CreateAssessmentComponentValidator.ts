@@ -1,7 +1,8 @@
 import { schema, CustomMessages, rules } from '@ioc:Adonis/Core/Validator'
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import { AssessmentCategory } from 'App/lib/enum'
 
-export default class UpdateMonthlyReportEmployeeDetailValidator {
+export default class CreateAssessmentComponentValidator {
   constructor(protected ctx: HttpContextContract) {}
 
   /*
@@ -24,12 +25,10 @@ export default class UpdateMonthlyReportEmployeeDetailValidator {
    *    ```
    */
   public schema = schema.create({
-    skor: schema.number.nullableAndOptional([
-      rules.range(0, 100)
-    ]),
-    note: schema.string.nullableAndOptional([
+    name: schema.string({}, [
       rules.minLength(3)
     ]),
+    category: schema.enum(Object.values(AssessmentCategory))
   })
 
   /**

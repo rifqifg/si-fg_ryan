@@ -1,5 +1,7 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import { RolesHelper } from 'App/Helpers/rolesHelper'
 import LeaveSession from 'App/Models/LeaveSession'
+import User from 'App/Models/User'
 import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist'
 import { statusRoutes } from 'App/Modules/Log/lib/enum'
 import CreateLeaveSessionValidator from 'App/Validators/CreateLeaveSessionValidator'
@@ -8,21 +10,35 @@ import { DateTime } from 'luxon'
 import { validate as uuidValidation } from "uuid"
 
 export default class LeaveSessionsController {
-  public async index({ request, response }: HttpContextContract) {
+  public async index({ request, response, auth }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
     const { page = 1, limit = 10, keyword = "", fromDate = "", toDate = "", employeeId } = request.qs()
 
+    if (DateTime.fromISO(fromDate) > DateTime.fromISO(toDate)) {
+      return response.badRequest({ message: "INVALID_DATE_RANGE" })
+    }
+
     try {
       let data
-      if (fromDate && toDate) {
+
+      // cek role
+      const user = await User.query().preload('roles', r => r.preload('role')).where('id', auth.use('api').user!.id).firstOrFail()
+      const userObject = JSON.parse(JSON.stringify(user))
+
+      const roles = RolesHelper(userObject)
+
+      if (roles.includes('super_admin') || roles.includes('admin_hrd')) {
         data = await LeaveSession.query()
           .preload('employee', em => em.select('name'))
           .whereHas('employee', e => e.whereILike('name', `%${keyword}%`))
           .andWhere(query => {
-            query.whereBetween('date', [fromDate, toDate])
+            if (fromDate && toDate) {
+              query.whereBetween('date', [fromDate, toDate])
+            }
           })
           .andWhere(query => {
+            //TODO: menghilangkan parameter employeeId
             if (employeeId) {
               query.where('employee_id', employeeId)
             }
@@ -33,9 +49,12 @@ export default class LeaveSessionsController {
           .preload('employee', em => em.select('name'))
           .whereHas('employee', e => e.whereILike('name', `%${keyword}%`))
           .andWhere(query => {
-            if (employeeId) {
-              query.where('employee_id', employeeId)
+            if (fromDate && toDate) {
+              query.whereBetween('date', [fromDate, toDate])
             }
+          })
+          .andWhere(query => {
+              query.where('employee_id', userObject.employee_id)
           })
           .paginate(page, limit)
       }

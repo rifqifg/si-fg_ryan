@@ -20,7 +20,7 @@ export default class MonthlyReport extends BaseModel {
   public toDate: DateTime
 
   @column()
-  public redDates: number
+  public redDates: number | null
 
   @hasMany(() => MonthlyReportEmployee)
   public monthlyReportEmployees: HasMany<typeof MonthlyReportEmployee>

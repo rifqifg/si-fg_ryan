@@ -4,20 +4,24 @@ import MonthlyReport from 'App/Models/MonthlyReport'
 import CreateMonthlyReportValidator from 'App/Validators/CreateMonthlyReportValidator'
 import UpdateMonthlyReportValidator from 'App/Validators/UpdateMonthlyReportValidator'
 import { validate as uuidValidation } from "uuid"
-import { destructurMonthlyReport } from './MonthlyReportEmployeesController'
 import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist'
 import { statusRoutes } from 'App/Modules/Log/lib/enum'
 import { DateTime } from 'luxon'
+import { MonthlyReportHelper } from 'App/Helpers/MonthlyReportHelper'
+import MonthlyReportEmployee from 'App/Models/MonthlyReportEmployee'
 
 export default class MonthlyReportsController {
   public async index({ request, response }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
-   CreateRouteHist(statusRoutes.START, dateStart)
+    CreateRouteHist(statusRoutes.START, dateStart)
     const { page = 1, limit = 10, keyword = "", fromDate = "", toDate = "" } = request.qs()
 
     try {
       let data
       if (fromDate && toDate) {
+        if (DateTime.fromISO(fromDate) > DateTime.fromISO(toDate)) {
+          return response.badRequest({ message: "INVALID_DATE_RANGE" })
+        }
         data = await MonthlyReport.query()
           .whereILike('name', `%${keyword}%`)
           .andWhere(query => {
@@ -47,8 +51,12 @@ export default class MonthlyReportsController {
 
   public async store({ request, response }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
-   CreateRouteHist(statusRoutes.START, dateStart)
+    CreateRouteHist(statusRoutes.START, dateStart)
     const payload = await request.validate(CreateMonthlyReportValidator)
+
+    if (payload.fromDate > payload.toDate) {
+      return response.badRequest({ message: "INVALID_DATE_RANGE" })
+    }
 
     try {
       const data = await MonthlyReport.create(payload);
@@ -68,8 +76,8 @@ export default class MonthlyReportsController {
 
   public async show({ params, response, request }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
-   CreateRouteHist(statusRoutes.START, dateStart)
-    const { keyword = "", employeeId } = request.qs()
+    CreateRouteHist(statusRoutes.START, dateStart)
+    const { page = 1, limit = 10, keyword = "", employeeId } = request.qs()
 
     const { id } = params;
     if (!uuidValidation(id)) {
@@ -79,63 +87,64 @@ export default class MonthlyReportsController {
     try {
       let data
       if (!employeeId) {
-        data = await MonthlyReport.query()
+        const monthlyReport = await MonthlyReport.query()
+          .select('name', 'from_date', 'to_date', 'red_dates')
           .where("id", id)
-          .preload('monthlyReportEmployees', mre => mre
-            .preload('monthlyReport', mr => mr.select('name', 'from_date', 'to_date', 'red_dates'))
-            .whereHas('employee', e => e.whereILike('name', `%${keyword}%`))
-            .preload('employee', e => e
-              .select('name', 'nik', 'status')
-              .select(Database.raw(`EXTRACT(YEAR FROM AGE((select to_date from monthly_reports where id = '${id}'), "date_in")) || ' tahun ' || EXTRACT(MONTH FROM AGE((select to_date from monthly_reports where id = '${id}'), "date_in")) || ' bulan' AS period_of_work`))
-              .preload('divisions', ds => ds.select("title", "divisionId").preload('division', d => d.select('name'))))
-            .preload('monthlyReportEmployeesFixedTime', mreft => mreft
-              .select('*')
-              .select(Database.raw(`(case
+          .firstOrFail();
+
+        data = await MonthlyReportEmployee.query()
+          .select('*')
+          .select(Database.raw(`(select name from employees e where id = employee_id) as employee_name`))
+          .whereHas('monthlyReport', mr => mr.where('id', id))
+          .preload('monthlyReport', mr => mr.select('name', 'from_date', 'to_date', 'red_dates'))
+          .whereHas('employee', e => e.whereILike('name', `%${keyword}%`))
+          .preload('employee', e => e
+            .select('name', 'nik', 'status')
+            .select(Database.raw(`EXTRACT(YEAR FROM AGE((select to_date from monthly_reports where id = '${id}'), "date_in")) || ' tahun ' || EXTRACT(MONTH FROM AGE((select to_date from monthly_reports where id = '${id}'), "date_in")) || ' bulan' AS period_of_work`))
+            .preload('divisions', ds => ds.select("title", "divisionId").preload('division', d => d.select('name'))))
+          .preload('monthlyReportEmployeesFixedTime', mreft => mreft
+            .select('*')
+            .select(Database.raw(`(case
                 when skor * 100 / NULLIF((select default_presence from public.employees where id = (select employee_id from monthly_report_employees where id = monthly_report_employee_id)) - (select red_dates from monthly_reports where id = '${id}'), 0) > 100 then 100
                 when skor * 100 / NULLIF((select default_presence from public.employees where id = (select employee_id from monthly_report_employees where id = monthly_report_employee_id)) - (select red_dates from monthly_reports where id = '${id}'), 0) <= 0 then 0
                 else skor * 100 / NULLIF((select default_presence from public.employees where id = (select employee_id from monthly_report_employees where id = monthly_report_employee_id)) - (select red_dates from monthly_reports where id = '${id}'), 0)
                 end) as percentage`))
-              .select(Database.raw(`(select default_presence from public.employees where id= (select employee_id from monthly_report_employees where id = monthly_report_employee_id)) - (select red_dates from monthly_reports where id = '${id}') as "default"`))
-              .whereHas('activity', ac => ac.where('activity_type', 'fixed_time').andWhere('assessment', true))
-              .preload('activity', a => a.select('id', 'name', 'category_activity_id')
-                .preload('categoryActivity', ca => ca.select('name'))))
-            .preload('monthlyReportEmployeesNotFixedTime', mrenft => mrenft
-              .select('*')
-              .select(Database.raw(`(case
+            .select(Database.raw(`(select default_presence from public.employees where id= (select employee_id from monthly_report_employees where id = monthly_report_employee_id)) - (select red_dates from monthly_reports where id = '${id}') as "default"`))
+            .whereHas('activity', ac => ac.where('activity_type', 'fixed_time').andWhere('assessment', true))
+            .preload('activity', a => a.select('id', 'name', 'category_activity_id')
+              .preload('categoryActivity', ca => ca.select('name'))))
+          .preload('monthlyReportEmployeesNotFixedTime', mrenft => mrenft
+            .select('*')
+            .select(Database.raw(`(case
                 when skor * 100 / NULLIF((select "default" from public.activities where id=activity_id), 0) > 100 then 100
                 else skor * 100 / NULLIF((select "default" from public.activities where id=activity_id), 0)
                 end) as percentage`))
-              .select(Database.raw(`(select "default" from public.activities where id=activity_id) as "default"`))
-              .whereHas('activity', ac => ac.where('activity_type', 'not_fixed_time').andWhere('assessment', true))
-              .preload('activity', a => a.select('id', 'name', 'category_activity_id')
-                .preload('categoryActivity', ca => ca.select('name'))))
-            .preload('monthlyReportEmployeesLeave', mrel => mrel
-              .select('*')
-              .where('is_leave', true))
-            .preload('monthlyReportEmployeesLeaveSession', mrel => mrel
-              .select('*')
-              .where('is_leave_session', true))
-            .preload('monthlyReportEmployeesTeaching', mret => mret
-              .select('*')
-              .select(Database.raw(`(case
+            .select(Database.raw(`(select "default" from public.activities where id=activity_id) as "default"`))
+            .whereHas('activity', ac => ac.where('activity_type', 'not_fixed_time').andWhere('assessment', true))
+            .preload('activity', a => a.select('id', 'name', 'category_activity_id')
+              .preload('categoryActivity', ca => ca.select('name'))))
+          .preload('monthlyReportEmployeesLeave', mrel => mrel
+            .select('*')
+            .where('is_leave', true))
+          .preload('monthlyReportEmployeesLeaveSession', mrel => mrel
+            .select('*')
+            .where('is_leave_session', true))
+          .preload('monthlyReportEmployeesTeaching', mret => mret
+            .select('*')
+            .select(Database.raw(`(case
                 when skor * 100 / NULLIF((select total_mengajar from academic.teachers where employee_id =(select employee_id from monthly_report_employees where id = monthly_report_employee_id)), 0) > 100 then 100
                 else skor * 100 / NULLIF((select total_mengajar from academic.teachers where employee_id =(select employee_id from monthly_report_employees where id = monthly_report_employee_id)), 0)
                 end) as percentage`))
-              .select(Database.raw(`(select total_mengajar from academic.teachers where employee_id =(select employee_id from monthly_report_employees where id = monthly_report_employee_id)) as "default"`))
-              .where('is_teaching', true)))
-          .firstOrFail();
+            .select(Database.raw(`(select total_mengajar from academic.teachers where employee_id =(select employee_id from monthly_report_employees where id = monthly_report_employee_id)) as "default"`))
+            .where('is_teaching', true))
+          .orderBy('employee_name')
+          .paginate(page, limit)
 
         const dataArrayObject = JSON.parse(JSON.stringify(data))
-        const monthlyReport = {
-          id: dataArrayObject.id,
-          name: dataArrayObject.name,
-          from_date: dataArrayObject.from_date,
-          to_date: dataArrayObject.to_date,
-          red_dates: dataArrayObject.red_dates
-        }
+
         let datas: any = []
-        for (let i = 0; i < dataArrayObject.monthlyReportEmployees.length; i++) {
-          const result = await destructurMonthlyReport(dataArrayObject.monthlyReportEmployees[i])
+        for (let i = 0; i < dataArrayObject.data.length; i++) {
+          const result = await MonthlyReportHelper(dataArrayObject.data[i])
           const dataEmployee = result.dataEmployee
           const monthlyReportEmployeeDetail = result.monthlyReportEmployeeDetail
           const monthlyReportEmployee = result.monthlyReportEmployee
@@ -143,7 +152,7 @@ export default class MonthlyReportsController {
         }
 
         CreateRouteHist(statusRoutes.FINISH, dateStart)
-        return response.ok({ message: "Berhasil mengambil data", monthlyReport, data: datas });
+        return response.ok({ message: "Berhasil mengambil data", monthlyReport, data: { meta: dataArrayObject.meta, data: datas } });
       } else {
         //buat module profile
         data = await MonthlyReport.query()
@@ -194,7 +203,7 @@ export default class MonthlyReportsController {
 
         const dataObject = JSON.parse(JSON.stringify(data)).monthlyReportEmployees[0]
 
-        const result = await destructurMonthlyReport(dataObject)
+        const result = await MonthlyReportHelper(dataObject)
         const dataEmployee = result.dataEmployee
         const monthlyReportEmployeeDetail = result.monthlyReportEmployeeDetail
         const monthlyReportEmployee = result.monthlyReportEmployee
@@ -225,6 +234,10 @@ export default class MonthlyReportsController {
       console.log("data update kosong");
       return response.badRequest({ message: "Data tidak boleh kosong" });
     }
+    if (payload.fromDate! > payload.toDate!) {
+      return response.badRequest({ message: "INVALID_DATE_RANGE" })
+    }
+
     try {
       const monthlyReport = await MonthlyReport.findOrFail(id);
       const data = await monthlyReport.merge(payload).save();

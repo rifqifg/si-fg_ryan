@@ -16,6 +16,7 @@ import Account from "App/Modules/Finance/Models/Account";
 import { statusRoutes } from "App/Modules/Log/lib/enum";
 import { CreateRouteHist } from "App/Modules/Log/Helpers/createRouteHist";
 import { DateTime } from "luxon";
+import Teacher from "App/Modules/Academic/Models/Teacher";
 
 enum ROLE {
   EMPLOYEE = "employee",
@@ -487,6 +488,14 @@ export default class UsersController {
       } catch (error) {
         return response.badRequest({ message: "NIK anda belum terdaftar" });
       }
+
+      if (payload.role === ROLE.TEACHER) {
+        await Teacher.create({
+          employeeId: employee.id,
+          totalMengajar: 0
+        })
+      }
+
       user = await User.create({
         name: payload.name,
         email: payload.email,
@@ -494,10 +503,12 @@ export default class UsersController {
         employeeId: employee.id,
         password: payload.password,
       });
+
       const userObject = JSON.parse(JSON.stringify(user))
+
       await UserRole.create({
         userId: userObject.id,
-        roleName: ROLE.EMPLOYEE
+        roleName: payload.role
       })
     } else {
       try {

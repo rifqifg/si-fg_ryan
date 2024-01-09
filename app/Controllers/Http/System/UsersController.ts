@@ -481,10 +481,7 @@ export default class UsersController {
       return response.internalServerError({ message: "Gagal mengirim email verifikasi", error: error.message });
     }
 
-    console.log(payload.role === ROLE.TEACHER);
-
     if (payload.role === ROLE.EMPLOYEE || payload.role === ROLE.TEACHER) {
-      console.log("lucu");
       try {
         employee = await Employee.findByOrFail("nik", payload.nik);
       } catch (error) {
@@ -503,7 +500,6 @@ export default class UsersController {
         roleName: ROLE.EMPLOYEE
       })
     } else {
-      console.log("HAHA!");
       try {
         student = await Student.findByOrFail("nisn", payload.nisn);
       } catch (error) {

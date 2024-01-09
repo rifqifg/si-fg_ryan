@@ -547,7 +547,7 @@ export default class UsersController {
     }
 
     CreateRouteHist(statusRoutes.FINISH, dateStart)
-    response.ok({
+    return response.ok({
       message: "Berhasil melakukan register/nSilahkan verifikasi email anda",
       user,
     });

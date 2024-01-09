@@ -504,7 +504,7 @@ export default class UsersController {
         student = await Student.findByOrFail("nisn", payload.nisn);
       } catch (error) {
         CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error)
-        return response.send({ message: "NISN tidak terdaftar" });
+        response.badRequest({ message: "NISN tidak terdaftar" });
       }
       if (student && payload.role === ROLE.STUDENT) {
         user = await User.create({

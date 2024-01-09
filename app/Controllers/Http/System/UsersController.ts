@@ -22,6 +22,7 @@ enum ROLE {
   STUDENT = "student",
   PARENT = "parent",
   ALUMNI = "alumni",
+  TEACHER = "teacher"
 }
 
 interface UserGoogle {
@@ -480,7 +481,7 @@ export default class UsersController {
       return response.internalServerError({ message: "Gagal mengirim email verifikasi", error: error.message });
     }
 
-    if (payload.role === ROLE.EMPLOYEE) {
+    if (payload.role === ROLE.EMPLOYEE || payload.role === ROLE.TEACHER) {
       try {
         employee = await Employee.findByOrFail("nik", payload.nik);
       } catch (error) {

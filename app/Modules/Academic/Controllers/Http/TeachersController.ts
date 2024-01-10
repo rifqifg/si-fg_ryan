@@ -18,15 +18,25 @@ export default class TeachersController {
       let data: any[] = [];
       if (mode === "page") {
         data = await Teacher.query()
-          .whereHas("employee", (e) => e.whereILike("name", `%${keyword}%`))
-          .orWhereHas("teaching", (t) =>
-            t.whereHas("class", (c) => (c.whereILike("name", `%${keyword}%`)))
-          ).orWhereHas("teaching", (t) =>
-          t.whereHas("class", (c) => ( c.where('is_graduated', false)))
-        )
-          .orWhereHas("teaching", (t) =>
-            t.whereHas("subject", (s) => s.whereILike("name", `%${keyword}%`))
-          )
+          .if(keyword, qKeyword => {
+            qKeyword.andWhere(qWhere => {
+              qWhere.andWhereHas("employee", (e) => e.whereILike("name", `%${keyword}%`))
+              qWhere.orWhereHas('teaching', (t) => {
+                t
+                  .whereHas("class", (c) => (c.whereILike("name", `%${keyword}%`)))
+                  .orWhereHas("subject", (s) => s.whereILike("name", `%${keyword}%`))
+              })
+            })
+          })
+        //   .whereHas("employee", (e) => e.whereILike("name", `%${keyword}%`))
+        //   .orWhereHas("teaching", (t) =>
+        //     t.whereHas("class", (c) => (c.whereILike("name", `%${keyword}%`)))
+        //   ).orWhereHas("teaching", (t) =>
+        //   t.whereHas("class", (c) => ( c.where('is_graduated', false)))
+        // )
+        //   .orWhereHas("teaching", (t) =>
+        //     t.whereHas("subject", (s) => s.whereILike("name", `%${keyword}%`))
+        //   )
           .preload("employee", (e) => e.select("id", "name", "nip"))
           .preload("teaching", (t) =>
             t
@@ -62,12 +72,12 @@ export default class TeachersController {
         });
       }
 
-      
+
       CreateRouteHist(statusRoutes.FINISH, dateStart);
       response.ok({ message: "Berhasil mengambil data", data: data.sort((a, b) => {
         const nameA = a.employee.name!.toUpperCase(); // Convert to uppercase for case-insensitive comparison
         const nameB = b.employee.name!.toUpperCase();
-      
+
         if (nameA < nameB) {
           return -1; // Name A comes before name B
         }

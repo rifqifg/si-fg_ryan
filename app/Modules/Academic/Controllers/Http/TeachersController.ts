@@ -28,15 +28,6 @@ export default class TeachersController {
               })
             })
           })
-        //   .whereHas("employee", (e) => e.whereILike("name", `%${keyword}%`))
-        //   .orWhereHas("teaching", (t) =>
-        //     t.whereHas("class", (c) => (c.whereILike("name", `%${keyword}%`)))
-        //   ).orWhereHas("teaching", (t) =>
-        //   t.whereHas("class", (c) => ( c.where('is_graduated', false)))
-        // )
-        //   .orWhereHas("teaching", (t) =>
-        //     t.whereHas("subject", (s) => s.whereILike("name", `%${keyword}%`))
-        //   )
           .preload("employee", (e) => e.select("id", "name", "nip"))
           .preload("teaching", (t) =>
             t

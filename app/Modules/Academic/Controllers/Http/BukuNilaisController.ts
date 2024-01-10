@@ -97,7 +97,7 @@ export default class BukuNilaisController {
         )
         .preload("semester", (s) => s.select("*"))
         .preload("academicYear", (ay) => ay.select("*"));
-      
+
       const types = bukuNilaiData.map((bn) => ({
         type: bn.type,
         prosemDetailId: bn.programSemesterDetailId,
@@ -156,11 +156,11 @@ export default class BukuNilaisController {
         bab: uniqueProsemDetails
           .sort((a, b) => {
             if (a === null && b !== null) {
-              return 1; 
+              return 1;
             } else if (a !== null && b === null) {
               return -1;
             } else {
-              return 0; 
+              return 0;
             }
           })
           .map((b) => ({
@@ -189,7 +189,7 @@ export default class BukuNilaisController {
               })).sort((a, b) => {
                 const dateA: any = new Date(a.tanggal_pengambilan_nilai);
                 const dateB: any= new Date(b.tanggal_pengambilan_nilai);
-            
+
                 return dateA - dateB;
             })
           })),
@@ -198,7 +198,7 @@ export default class BukuNilaisController {
       if (data.students.length === 0 || data.bab.length === 0 || !data.data) {
         return response.ok({ message: "Behasil mengambil data", data: [] });
       }
-    
+
       CreateRouteHist(statusRoutes.FINISH, dateStart);
       response.ok({ message: "Berhasil mengambil data", data });
 
@@ -300,7 +300,7 @@ export default class BukuNilaisController {
 
       const existingBukuNilai = bukuNilai.find(item => item.classId === payload.bukuNilai[0]?.classId && item.subjectId === payload.bukuNilai[0]?.subjectId && item.teacherId === payload.bukuNilai[0]?.teacherId && item.type === payload.bukuNilai[0]?.type && item.programSemesterDetailId === payload.bukuNilai[0]?.programSemesterDetailId  && item.academicYearId === payload.bukuNilai[0]?.academicYearId && item.semesterId === payload.bukuNilai[0]?.semesterId && item.aspekPenilaian === payload.bukuNilai[0]?.aspekPenilaian && formatDate(item.tanggalPengambilanNilai.toString()) === formatDate(payload.bukuNilai[0]?.tanggalPengambilanNilai) || item.classId === payload.bukuNilai[0]?.classId && item.subjectId === payload.bukuNilai[0]?.subjectId && item.teacherId === payload.bukuNilai[0]?.teacherId && item.type === payload.bukuNilai[0]?.type && item.programSemesterDetailId === payload.bukuNilai[0]?.programSemesterDetailId  && item.academicYearId === payload.bukuNilai[0]?.academicYearId && item.semesterId === payload.bukuNilai[0]?.semesterId && item.aspekPenilaian === payload.bukuNilai[0]?.aspekPenilaian && formatDate(item.tanggalPengambilanNilai.toString()) === formatDate(payload.bukuNilai[0]?.tanggalPengambilanNilai) && item.material === payload.bukuNilai[0]?.material || item.classId === payload.bukuNilai[0]?.classId && item.subjectId === payload.bukuNilai[0]?.subjectId && item.teacherId === payload.bukuNilai[0]?.teacherId && item.type === payload.bukuNilai[0]?.type &&  item.academicYearId === payload.bukuNilai[0]?.academicYearId && item.semesterId === payload.bukuNilai[0]?.semesterId && item.aspekPenilaian === payload.bukuNilai[0]?.aspekPenilaian && formatDate(item.tanggalPengambilanNilai.toString()) === formatDate(payload.bukuNilai[0]?.tanggalPengambilanNilai) && item.material === payload.bukuNilai[0]?.material || item.classId === payload.bukuNilai[0]?.classId && item.subjectId === payload.bukuNilai[0]?.subjectId && item.teacherId === payload.bukuNilai[0]?.teacherId &&  item.academicYearId === payload.bukuNilai[0]?.academicYearId && item.semesterId === payload.bukuNilai[0]?.semesterId && item.aspekPenilaian === payload.bukuNilai[0]?.aspekPenilaian && formatDate(item.tanggalPengambilanNilai.toString()) === formatDate(payload.bukuNilai[0]?.tanggalPengambilanNilai) && item.material === payload.bukuNilai[0]?.material || item.classId === payload.bukuNilai[0]?.classId && item.subjectId === payload.bukuNilai[0]?.subjectId && item.teacherId === payload.bukuNilai[0]?.teacherId &&  item.academicYearId === payload.bukuNilai[0]?.academicYearId && item.semesterId === payload.bukuNilai[0]?.semesterId && item.aspekPenilaian === payload.bukuNilai[0]?.aspekPenilaian && formatDate(item.tanggalPengambilanNilai.toString()) === formatDate(payload.bukuNilai[0]?.tanggalPengambilanNilai) || item.subjectId === payload.bukuNilai[0]?.subjectId && item.teacherId === payload.bukuNilai[0]?.teacherId && item.semesterId === payload.bukuNilai[0]?.semesterId && item.academicYearId === payload.bukuNilai[0]?.academicYearId && formatDate(item.tanggalPengambilanNilai.toString()) === formatDate(payload.bukuNilai[0]?.tanggalPengambilanNilai))
 
-      
+
       if (existingBukuNilai) {
         return response.status(406).notAcceptable({message: 'nilai dengan materi dan tanggal pengambilan nilai sudah tersedia'})
       }
@@ -370,7 +370,7 @@ export default class BukuNilaisController {
 
       const existingBukuNilai = bukuNilai.find(item => item.classId === payload.bukuNilai[0]?.classId && item.subjectId === payload.bukuNilai[0]?.subjectId && item.teacherId === payload.bukuNilai[0]?.teacherId && item.type === payload.bukuNilai[0]?.type && item.programSemesterDetailId === payload.bukuNilai[0]?.programSemesterDetailId  && item.academicYearId === payload.bukuNilai[0]?.academicYearId && item.semesterId === payload.bukuNilai[0]?.semesterId && item.aspekPenilaian === payload.bukuNilai[0]?.aspekPenilaian && formatDate(item.tanggalPengambilanNilai.toString()) === formatDate(payload.bukuNilai[0]?.tanggalPengambilanNilai) || item.classId === payload.bukuNilai[0]?.classId && item.subjectId === payload.bukuNilai[0]?.subjectId && item.teacherId === payload.bukuNilai[0]?.teacherId && item.type === payload.bukuNilai[0]?.type && item.programSemesterDetailId === payload.bukuNilai[0]?.programSemesterDetailId  && item.academicYearId === payload.bukuNilai[0]?.academicYearId && item.semesterId === payload.bukuNilai[0]?.semesterId && item.aspekPenilaian === payload.bukuNilai[0]?.aspekPenilaian && formatDate(item.tanggalPengambilanNilai.toString()) === formatDate(payload.bukuNilai[0]?.tanggalPengambilanNilai) && item.material === payload.bukuNilai[0]?.material || item.classId === payload.bukuNilai[0]?.classId && item.subjectId === payload.bukuNilai[0]?.subjectId && item.teacherId === payload.bukuNilai[0]?.teacherId && item.type === payload.bukuNilai[0]?.type &&  item.academicYearId === payload.bukuNilai[0]?.academicYearId && item.semesterId === payload.bukuNilai[0]?.semesterId && item.aspekPenilaian === payload.bukuNilai[0]?.aspekPenilaian && formatDate(item.tanggalPengambilanNilai.toString()) === formatDate(payload.bukuNilai[0]?.tanggalPengambilanNilai) && item.material === payload.bukuNilai[0]?.material || item.classId === payload.bukuNilai[0]?.classId && item.subjectId === payload.bukuNilai[0]?.subjectId && item.teacherId === payload.bukuNilai[0]?.teacherId &&  item.academicYearId === payload.bukuNilai[0]?.academicYearId && item.semesterId === payload.bukuNilai[0]?.semesterId && item.aspekPenilaian === payload.bukuNilai[0]?.aspekPenilaian && formatDate(item.tanggalPengambilanNilai.toString()) === formatDate(payload.bukuNilai[0]?.tanggalPengambilanNilai) && item.material === payload.bukuNilai[0]?.material || item.classId === payload.bukuNilai[0]?.classId && item.subjectId === payload.bukuNilai[0]?.subjectId && item.teacherId === payload.bukuNilai[0]?.teacherId &&  item.academicYearId === payload.bukuNilai[0]?.academicYearId && item.semesterId === payload.bukuNilai[0]?.semesterId && item.aspekPenilaian === payload.bukuNilai[0]?.aspekPenilaian && formatDate(item.tanggalPengambilanNilai.toString()) === formatDate(payload.bukuNilai[0]?.tanggalPengambilanNilai) || item.subjectId === payload.bukuNilai[0]?.subjectId && item.teacherId === payload.bukuNilai[0]?.teacherId && item.semesterId === payload.bukuNilai[0]?.semesterId && item.academicYearId === payload.bukuNilai[0]?.academicYearId && formatDate(item.tanggalPengambilanNilai.toString()) === formatDate(payload.bukuNilai[0]?.tanggalPengambilanNilai))
 
-      
+
       if (existingBukuNilai) {
         return response.status(406).notAcceptable({message: 'nilai dengan materi dan tanggal pengambilan nilai sudah tersedia'})
       }
@@ -407,7 +407,7 @@ export default class BukuNilaisController {
         .preload("students", (s) => s.select("name", "nis", "nisn"))
         .preload("classes", (c) => c.select("name"))
         .firstOrFail();
-        
+
       CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
@@ -603,6 +603,7 @@ export default class BukuNilaisController {
     }
   }
 
+  // TODO: Fix supaya bisa generate uts di tanggal akhir yg sama dgn tanggal pengambilan nilai harian
   public async generateUts({ request, response }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
@@ -616,6 +617,7 @@ export default class BukuNilaisController {
       .andWhere("teacher_id", teacherId)
       .andWhere("aspekPenilaian", aspekPenilaian);
 
+    // TODO: test ini ditaruh sebelum bukuNilaiData
     if (aspekPenilaian === "SIKAP") {
       return response.badRequest({
         message: "Aspek Sikap tidak bisa di generate UTS",
@@ -623,7 +625,7 @@ export default class BukuNilaisController {
     }
 
     const utsData = await Database.rawQuery(`
-          select bn.student_id, round(avg(bn.nilai), 2) uts, bn.subject_id, bn.class_id, bn.teacher_id, bn.aspek_penilaian, bn.semester_id, bn.academic_year_id
+          select bn.student_id, round(avg(bn.nilai), 2) uts, bn.subject_id, bn.class_id, bn.teacher_id, bn.aspek_penilaian, bn.semester_id, bn.academic_year_id, bn.tanggal_pengambilan_nilai
           from academic.buku_nilais bn
                    left join academic.semesters s
                              on s.id = bn.semester_id
@@ -637,7 +639,7 @@ export default class BukuNilaisController {
             and bn.subject_id = '${subjectId}'
             and bn.type = 'HARIAN'
             and bn.tanggal_pengambilan_nilai between '${fromDate}' and '${toDate}'
-          group by bn.student_id, bn.subject_id, bn.class_id, bn.teacher_id, bn.aspek_penilaian, bn.semester_id, bn.academic_year_id
+          group by bn.student_id, bn.subject_id, bn.class_id, bn.teacher_id, bn.aspek_penilaian, bn.semester_id, bn.academic_year_id, bn.tanggal_pengambilan_nilai
           order by bn.student_id
           `)
 
@@ -674,6 +676,21 @@ export default class BukuNilaisController {
         response.badRequest({ message: "Gagal memperbarui uts", error });
       }
     } else {
+      const utsDataFixedTglPengambilanNilai = utsData.rows.map((uts) => {
+        const someDate = DateTime.fromISO("2023-10-22T17:00:00.000Z").setZone('UTC+7');
+        uts.tanggal_pengambilan_nilai = someDate.toString().slice(0, 10)
+
+        return uts;
+      })
+
+      // cek jika ada tanggal pengambilan harian yg sama dengan input tanggal akhir (toDate)
+      // jika ada, reject
+      // NOTE: ini temporary fix
+      const toDateSliced = toDate.toString().slice(0, 10);
+      if (utsDataFixedTglPengambilanNilai.find((uts) => uts.tanggal_pengambilan_nilai === toDateSliced)) {
+        return response.badRequest({ message: `Tanggal Akhir tidak boleh sama dengan tanggal yang ada di data harian (${toDateSliced})` })
+      }
+
       const utsPayload = utsData.rows.map((uts) => ({
         studentId: uts.student_id,
         subjectId: uts.subject_id,
@@ -684,7 +701,7 @@ export default class BukuNilaisController {
         academicYearId: uts.academic_year_id,
         type: "UTS",
         material: "UTS",
-        tanggalPengambilanNilai: new Date().toISOString().slice(0, 10),
+        tanggalPengambilanNilai: toDateSliced, //new Date().toISOString().slice(0, 10),
         nilai: uts.uts,
       }));
 
@@ -708,7 +725,7 @@ export default class BukuNilaisController {
     try {
       const bukuNilaiIds = payload.bukuNilai.map(bn => bn.id)
       const bukuNilai = await BukuNilai.query().whereIn('id', bukuNilaiIds).delete()
-      
+
       response.ok({message: 'Berhasil menghapus buku nilai'})
     } catch (error) {
       response.badRequest({message: 'Gagal menghapus buku nilai'})

@@ -33,7 +33,7 @@ export default class UpdateTeachingValidator {
         }
       })
     ]),
-    classId: schema.string.optional({}, [
+    classId: schema.string.nullableAndOptional({}, [
       rules.exists({ table: 'academic.classes', column: 'id' }),
       rules.unique({
         table: 'academic.teachings', column: 'class_id', where: {

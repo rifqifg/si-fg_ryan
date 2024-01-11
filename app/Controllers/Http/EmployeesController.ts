@@ -59,6 +59,8 @@ export default class EmployeesController {
       orderDirection = "ASC",
     } = request.qs();
     // TODO: filter by division
+    console.log('yes');
+
     const data = await Employee.query()
       .select("*")
       .if(employeeTypeId, (e) => e.where("employeeTypeId", employeeTypeId))
@@ -74,6 +76,7 @@ export default class EmployeesController {
       .preload("kota")
       .preload("kecamatan")
       .preload("kelurahan")
+      .andWhereNull("date_out")
       .andWhere((query) => {
         query.whereILike("name", `%${keyword}%`);
         query.orWhereILike("nik", `%${keyword}%`);

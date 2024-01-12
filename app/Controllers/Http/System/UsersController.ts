@@ -16,12 +16,14 @@ import Account from "App/Modules/Finance/Models/Account";
 import { statusRoutes } from "App/Modules/Log/lib/enum";
 import { CreateRouteHist } from "App/Modules/Log/Helpers/createRouteHist";
 import { DateTime } from "luxon";
+import Teacher from "App/Modules/Academic/Models/Teacher";
 
 enum ROLE {
   EMPLOYEE = "employee",
   STUDENT = "student",
   PARENT = "parent",
   ALUMNI = "alumni",
+  TEACHER = "teacher"
 }
 
 interface UserGoogle {
@@ -480,12 +482,20 @@ export default class UsersController {
       return response.internalServerError({ message: "Gagal mengirim email verifikasi", error: error.message });
     }
 
-    if (payload.role === ROLE.EMPLOYEE) {
+    if (payload.role === ROLE.EMPLOYEE || payload.role === ROLE.TEACHER) {
       try {
         employee = await Employee.findByOrFail("nik", payload.nik);
       } catch (error) {
         return response.badRequest({ message: "NIK anda belum terdaftar" });
       }
+
+      if (payload.role === ROLE.TEACHER) {
+        await Teacher.create({
+          employeeId: employee.id,
+          totalMengajar: 0
+        })
+      }
+
       user = await User.create({
         name: payload.name,
         email: payload.email,
@@ -493,17 +503,19 @@ export default class UsersController {
         employeeId: employee.id,
         password: payload.password,
       });
+
       const userObject = JSON.parse(JSON.stringify(user))
+
       await UserRole.create({
         userId: userObject.id,
-        roleName: ROLE.EMPLOYEE
+        roleName: payload.role
       })
     } else {
       try {
         student = await Student.findByOrFail("nisn", payload.nisn);
       } catch (error) {
         CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error)
-        return response.send({ message: "NISN tidak terdaftar" });
+        response.badRequest({ message: "NISN tidak terdaftar" });
       }
       if (student && payload.role === ROLE.STUDENT) {
         user = await User.create({
@@ -546,7 +558,7 @@ export default class UsersController {
     }
 
     CreateRouteHist(statusRoutes.FINISH, dateStart)
-    response.ok({
+    return response.ok({
       message: "Berhasil melakukan register/nSilahkan verifikasi email anda",
       user,
     });

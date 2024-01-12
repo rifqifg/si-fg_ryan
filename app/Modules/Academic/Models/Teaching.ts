@@ -26,7 +26,7 @@ export default class Teaching extends BaseModel {
   public teacher: BelongsTo<typeof Teacher>;
 
   @column()
-  public classId: string;
+  public classId: string | null;
 
   @belongsTo(() => Class)
   public class: BelongsTo<typeof Class>;

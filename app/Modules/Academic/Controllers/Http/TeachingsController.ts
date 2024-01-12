@@ -64,6 +64,20 @@ export default class TeachingsController {
     CreateRouteHist(statusRoutes.START, dateStart);
     const payload = await request.validate(CreateTeachingValidator);
     try {
+      // cari dulu apa data yg diinput sudah ada di db...
+      const existingRow = await Teaching
+        .query()
+        .where('teacher_id', payload.teacherId)
+        .andWhere('subject_id', payload.subjectId)
+        .if(payload.classId, q => {
+          q.andWhere('class_id', payload.classId!)
+        })
+
+      // ... jika ya return error
+      if (existingRow.length > 0) {
+        throw new Error(`Data mengajar utk guru, kelas dan mapel ini sudah ada`);
+      }
+
       const data = await Teaching.create(payload);
 
       CreateRouteHist(statusRoutes.FINISH, dateStart);

@@ -65,26 +65,40 @@ export default class TriwulanEmployee extends BaseModel {
 
   @afterCreate()
   public static async insertTriwulanEmployeeDetail(TriwulanEmployee: TriwulanEmployee) {
+    interface AssessmentComponent {
+      assessmentComponentId: string;
+      directSupervisor: boolean;
+      triwulanEmployeeId: string;
+      skor: number;
+    }
     try {
       const assesmentComponentId = await AssessmentComponent.query()
         .select('id')
       const assesmentComponentIdObject = JSON.parse(JSON.stringify(assesmentComponentId))
+
+      const assesmentDirectSupervisor: AssessmentComponent[] = []
       assesmentComponentIdObject.map(async value => {
-        await TriwulanEmployeeDetail.create({
+        assesmentDirectSupervisor.push({
           assessmentComponentId: value.id,
           directSupervisor: true,
           triwulanEmployeeId: TriwulanEmployee.id,
           skor: 0
         })
       })
+
+      await TriwulanEmployeeDetail.createMany(assesmentDirectSupervisor)
+
+      const assesmentInDirectSupervisor: AssessmentComponent[] = []
       assesmentComponentIdObject.map(async value => {
-        await TriwulanEmployeeDetail.create({
+        assesmentInDirectSupervisor.push({
           assessmentComponentId: value.id,
           directSupervisor: false,
           triwulanEmployeeId: TriwulanEmployee.id,
           skor: 0
         })
       })
+
+      await TriwulanEmployeeDetail.createMany(assesmentInDirectSupervisor)
     } catch (error) {
       console.log(error);
     }

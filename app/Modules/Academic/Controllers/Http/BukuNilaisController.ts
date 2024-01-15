@@ -180,7 +180,7 @@ export default class BukuNilaisController {
                 materi_prosem: b?.materi,
                 tanggal_pengambilan_nilai: t.tanggalPengambilanNilai,
                 nilai: bukuNilaiData
-                  .filter((n) => n.material == t.materi && formatDate(n.tanggalPengambilanNilai.toString()) === formatDate(t.tanggalPengambilanNilai) || formatDate(n.tanggalPengambilanNilai.toString()) === formatDate(t.tanggalPengambilanNilai) ).filter(bn => aspekPenilaian && aspekPenilaian == bn.aspekPenilaian || !aspekPenilaian && bn.aspekPenilaian == null)
+                  .filter((n) => n.material == t.materi && formatDate(n.tanggalPengambilanNilai.toString()) === formatDate(t.tanggalPengambilanNilai)).filter(bn => aspekPenilaian && aspekPenilaian == bn.aspekPenilaian || !aspekPenilaian && bn.aspekPenilaian == null)
                   .map((nilai) => ({
                     id: nilai?.id,
                     studentId: nilai?.studentId,
@@ -644,26 +644,26 @@ export default class BukuNilaisController {
           `)
 
     // ambil tanggal pengambilan nilai utk dibandingkan dgn tanggal toDate
-    const tanggalNilai = await Database.rawQuery(`
-      select distinct(bn.tanggal_pengambilan_nilai)
-          from academic.buku_nilais bn
-                   left join academic.semesters s
-                             on s.id = bn.semester_id
-                   left join academic.academic_years ay
-                             on ay.id = bn.academic_year_id
-          where bn.aspek_penilaian = '${aspekPenilaian}'
-            and ay.active = true
-            and s.is_active = true
-            and bn.class_id = '${classId}'
-            and bn.teacher_id = '${teacherId}'
-            and bn.subject_id = '${subjectId}'
-            and bn.type = 'HARIAN'
-            and bn.tanggal_pengambilan_nilai between '${fromDate}' and '${toDate}'
-    `);
+    // const tanggalNilai = await Database.rawQuery(`
+    //   select distinct(bn.tanggal_pengambilan_nilai)
+    //       from academic.buku_nilais bn
+    //                left join academic.semesters s
+    //                          on s.id = bn.semester_id
+    //                left join academic.academic_years ay
+    //                          on ay.id = bn.academic_year_id
+    //       where bn.aspek_penilaian = '${aspekPenilaian}'
+    //         and ay.active = true
+    //         and s.is_active = true
+    //         and bn.class_id = '${classId}'
+    //         and bn.teacher_id = '${teacherId}'
+    //         and bn.subject_id = '${subjectId}'
+    //         and bn.type = 'HARIAN'
+    //         and bn.tanggal_pengambilan_nilai between '${fromDate}' and '${toDate}'
+    // `);
 
-    const tanggalNilaiArray = tanggalNilai.rows.map((uts) => {
-      return DateTime.fromISO(uts.tanggal_pengambilan_nilai.toISOString()).setZone('UTC+7');
-    })
+    // const tanggalNilaiArray = tanggalNilai.rows.map((uts) => {
+    //   return DateTime.fromISO(uts.tanggal_pengambilan_nilai.toISOString()).setZone('UTC+7');
+    // })
 
     if (Boolean(bukuNilaiData.find((bn) => bn.type == "UTS"))) {
       const updateUts = utsData.rows.map((uts) => ({
@@ -702,9 +702,9 @@ export default class BukuNilaisController {
       // jika ada, reject
       // NOTE: ini temporary fix
       const toDateSliced = toDate.toString().slice(0, 10);
-      if (tanggalNilaiArray.find((tanggalPengambilanNilai) => tanggalPengambilanNilai.toString().slice(0, 10) === toDateSliced)) {
-        return response.badRequest({ message: `Tanggal Akhir tidak boleh sama dengan tanggal yang ada di data harian (${toDateSliced})` })
-      }
+      // if (tanggalNilaiArray.find((tanggalPengambilanNilai) => tanggalPengambilanNilai.toString().slice(0, 10) === toDateSliced)) {
+      //   return response.badRequest({ message: `Tanggal Akhir tidak boleh sama dengan tanggal yang ada di data harian (${toDateSliced})` })
+      // }
 
       const utsPayload = utsData.rows.map((uts) => ({
         studentId: uts.student_id,

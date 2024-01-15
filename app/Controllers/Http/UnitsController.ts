@@ -1,49 +1,55 @@
 import type { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import Unit from "App/Models/Unit";
-import { schema, rules } from "@ioc:Adonis/Core/Validator";
 import { CreateRouteHist } from "App/Modules/Log/Helpers/createRouteHist";
 import { statusRoutes } from "App/Modules/Log/lib/enum";
 import { DateTime } from "luxon";
+import CreateUnitValidator from "App/Validators/CreateUnitValidator";
+import UpdateUnitValidator from "App/Validators/UpdateUnitValidator";
 
 export default class UnitsController {
   public async index({ request, response }: HttpContextContract) {
-    const dateStart = DateTime.now().toMillis();
-    CreateRouteHist(statusRoutes.START, dateStart);
-    const {
-      page = 1,
-      limit = 10,
-      keyword = "",
-      orderBy = "name",
-      orderDirection = "ASC",
-    } = request.qs();
-    const data = await Unit.query()
-      // .preload("employees", (e) => {
-      //   e.select("title", "employee_id");
-      //   e.preload("employee", (m) => m.select("name"));
-      //   e.where("title", "=", "lead");
-      // })
-      .whereILike("name", `%${keyword}%`)
-      .orderBy(orderBy, orderDirection)
-      .paginate(page, limit);
+    // const dateStart = DateTime.now().toMillis();
+    // CreateRouteHist(statusRoutes.START, dateStart);
+    const { page = 1, limit = 10, keyword = "" } = request.qs();
 
-    CreateRouteHist(statusRoutes.FINISH, dateStart);
-    response.ok({ message: "Data Berhasil Didapatkan", data });
+    try {
+      const data = await Unit.query()
+        .preload("employees", (e) => {
+          e.select("title", "employee_id");
+          e.preload("employee", (m) => m.select("name"));
+          e.where("title", "=", "lead");
+        })
+        .whereILike("name", `%${keyword}%`)
+        .orderBy('name', 'asc')
+        .paginate(page, limit);
+
+      // CreateRouteHist(statusRoutes.FINISH, dateStart);
+      response.ok({ message: "Data Berhasil Didapatkan", data });
+    } catch (error) {
+      const message = "HRDU01: " + error.message || error;
+      // CreateRouteHist(statusRoutes.ERROR, dateStart, message)
+      console.log(error);
+      response.badRequest({
+        message: "Gagal mengambil data",
+        error: message,
+        error_data: error,
+      });
+    }
   }
 
   public async store({ request, response }: HttpContextContract) {
-    const createNewUnitSchema = schema.create({
-      name: schema.string({ trim: true }, [rules.minLength(2)]),
-      description: schema.string.optional({}, [rules.minLength(6)]),
-    });
-
-    const payload = await request.validate({ schema: createNewUnitSchema });
-
+    const payload = await request.validate(CreateUnitValidator);
     try {
       const data = await Unit.create(payload);
       response.ok({ message: "Create data success", data });
     } catch (error) {
+      const message = "HRDU02: " + error.message || error;
       console.log(error);
-      return response.internalServerError(error);
+      response.badRequest({
+        message: "Gagal mengambil data",
+        error: message,
+        error_data: error,
+      });
     }
   }
 
@@ -64,20 +70,21 @@ export default class UnitsController {
       CreateRouteHist(statusRoutes.FINISH, dateStart);
       response.ok({ message: "Get data success", data });
     } catch (error) {
-      CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error);
+      const message = "HRDU03: " + error.message || error;
+      CreateRouteHist(statusRoutes.ERROR, dateStart, message)
       console.log(error);
-      return response.internalServerError(error);
+      response.badRequest({
+        message: "Gagal mengambil data",
+        error: message,
+        error_data: error,
+      });
     }
   }
 
   public async update({ request, response, params }: HttpContextContract) {
     const { id } = params;
-    const createNewUnitSchema = schema.create({
-      name: schema.string({ trim: true }, [rules.minLength(2)]),
-      description: schema.string.optional({}, [rules.minLength(6)]),
-    });
 
-    const payload = await request.validate({ schema: createNewUnitSchema });
+    const payload = await request.validate(UpdateUnitValidator);
 
     try {
       const data = await Unit.findOrFail(id);
@@ -85,9 +92,13 @@ export default class UnitsController {
 
       response.ok({ message: "Update data success", data });
     } catch (error) {
+      const message = "HRDU04: " + error.message || error;
       console.log(error);
-
-      return response.internalServerError({ ...error });
+      response.badRequest({
+        message: "Gagal mengambil data",
+        error: message,
+        error_data: error,
+      });
     }
   }
 
@@ -99,8 +110,13 @@ export default class UnitsController {
 
       response.ok({ message: "Delete data success" });
     } catch (error) {
+      const message = "HRDU05: " + error.message || error;
       console.log(error);
-      response.internalServerError(error);
+      response.badRequest({
+        message: "Gagal mengambil data",
+        error: message,
+        error_data: error,
+      });
     }
   }
 }

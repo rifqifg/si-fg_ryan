@@ -1,10 +1,8 @@
 import type { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import Unit from "App/Models/Unit";
-import { CreateRouteHist } from "App/Modules/Log/Helpers/createRouteHist";
-import { statusRoutes } from "App/Modules/Log/lib/enum";
-import { DateTime } from "luxon";
 import CreateUnitValidator from "App/Validators/CreateUnitValidator";
 import UpdateUnitValidator from "App/Validators/UpdateUnitValidator";
+import { validate as uuidValidation } from "uuid"
 
 export default class UnitsController {
   public async index({ request, response }: HttpContextContract) {
@@ -14,8 +12,8 @@ export default class UnitsController {
 
     try {
       const data = await Unit.query()
-        .preload("employees", (e) => {
-          e.select("title", "employee_id");
+        .preload("employeeUnits", (e) => {
+          e.select("id", "title", "employee_id");
           e.preload("employee", (m) => m.select("name"));
           e.where("title", "=", "lead");
         })
@@ -46,7 +44,7 @@ export default class UnitsController {
       const message = "HRDU02: " + error.message || error;
       console.log(error);
       response.badRequest({
-        message: "Gagal mengambil data",
+        message: "Gagal create data",
         error: message,
         error_data: error,
       });
@@ -54,27 +52,26 @@ export default class UnitsController {
   }
 
   public async show({ params, response }: HttpContextContract) {
-    const dateStart = DateTime.now().toMillis();
-    CreateRouteHist(statusRoutes.START, dateStart);
     const { id } = params;
+    if (!uuidValidation(id)) {
+      return response.badRequest({ message: "Unit ID tidak valid" });
+    }
 
     try {
       const data = await Unit.query()
-        .preload("employees", (e) => {
-          e.select("title", "employee_id");
+        .preload("employeeUnits", (e) => {
+          e.select("id", "title", "employee_id");
           e.preload("employee", (m) => m.select("name"));
         })
         .where("id", id)
         .firstOrFail();
 
-      CreateRouteHist(statusRoutes.FINISH, dateStart);
       response.ok({ message: "Get data success", data });
     } catch (error) {
       const message = "HRDU03: " + error.message || error;
-      CreateRouteHist(statusRoutes.ERROR, dateStart, message)
       console.log(error);
       response.badRequest({
-        message: "Gagal mengambil data",
+        message: "Gagal mengambil detail data",
         error: message,
         error_data: error,
       });
@@ -95,7 +92,7 @@ export default class UnitsController {
       const message = "HRDU04: " + error.message || error;
       console.log(error);
       response.badRequest({
-        message: "Gagal mengambil data",
+        message: "Gagal update data",
         error: message,
         error_data: error,
       });
@@ -113,7 +110,7 @@ export default class UnitsController {
       const message = "HRDU05: " + error.message || error;
       console.log(error);
       response.badRequest({
-        message: "Gagal mengambil data",
+        message: "Gagal menghapus data",
         error: message,
         error_data: error,
       });

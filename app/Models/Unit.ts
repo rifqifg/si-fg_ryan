@@ -15,7 +15,7 @@ export default class Unit extends BaseModel {
   public description: string
 
   @hasMany(() => EmployeeUnit)
-  public employees: HasMany<typeof EmployeeUnit>
+  public employeeUnits: HasMany<typeof EmployeeUnit>
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime

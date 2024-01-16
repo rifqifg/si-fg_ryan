@@ -42,7 +42,10 @@ export default class UpdateLeaveValidator {
     employeeId: schema.string.optional({}, [
       rules.exists({table: 'employees', column: 'id'})
     ]),
-    leaveStatus: schema.enum.optional(Object.values(LeaveStatuses))
+    leaveStatus: schema.enum.optional(Object.values(LeaveStatuses)),
+    unitId: schema.string.optional({}, [
+      rules.exists({table: 'units', column: 'id'})
+    ]),
   })
 
   /**

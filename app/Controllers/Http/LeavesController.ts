@@ -1,5 +1,7 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import { checkRoleSuperAdmin } from 'App/Helpers/checkRoleSuperAdmin'
 import { RolesHelper } from 'App/Helpers/rolesHelper'
+import { unitHelper } from 'App/Helpers/unitHelper'
 import Leave from 'App/Models/Leave'
 import User from 'App/Models/User'
 import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist'
@@ -14,6 +16,8 @@ export default class LeavesController {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
     const { page = 1, limit = 10, keyword = "", fromDate = "", toDate = "", employeeId } = request.qs()
+    const unitIds = await unitHelper()
+    const superAdmin = await checkRoleSuperAdmin()
 
     //cek fromDate dan toDate
     if (DateTime.fromISO(fromDate) > DateTime.fromISO(toDate)) {
@@ -31,7 +35,7 @@ export default class LeavesController {
 
       if (roles.includes('super_admin') || roles.includes('admin_hrd')) {
         data = await Leave.query()
-          .select('id', 'employee_id', 'status', 'reason', 'from_date', 'to_date', 'type', 'leaveStatus')
+          .select('id', 'employee_id', 'status', 'reason', 'from_date', 'to_date', 'type', 'leaveStatus', 'unit_id')
           .preload('employee', em => em.select('name'))
           .whereHas('employee', e => e.whereILike('name', `%${keyword}%`))
           .andWhere(query => {
@@ -46,10 +50,13 @@ export default class LeavesController {
               query.where('employee_id', employeeId)
             }
           })
+          .if(!superAdmin, query => {
+            query.whereIn('unit_id', unitIds)
+          })
           .paginate(page, limit)
       } else {
         data = await Leave.query()
-          .select('id', 'employee_id', 'status', 'reason', 'from_date', 'to_date', 'type', 'leaveStatus')
+          .select('id', 'employee_id', 'status', 'reason', 'from_date', 'to_date', 'type', 'leaveStatus', 'unit_id')
           .preload('employee', em => em.select('name'))
           .whereHas('employee', e => e.whereILike('name', `%${keyword}%`))
           .andWhere(query => {
@@ -60,6 +67,9 @@ export default class LeavesController {
           })
           .andWhere(query => {
             query.where('employee_id', userObject.employee_id)
+          })
+          .if(!superAdmin, query => {
+            query.whereIn('unit_id', unitIds)
           })
           .paginate(page, limit)
       }

@@ -42,7 +42,10 @@ export default class CreateLeaveValidator {
     employeeId: schema.string({}, [
       rules.exists({table: 'employees', column: 'id'})
     ]),
-    leaveStatus: schema.enum(Object.values(LeaveStatuses))
+    leaveStatus: schema.enum(Object.values(LeaveStatuses)),
+    unitId: schema.string({}, [
+      rules.exists({table: 'units', column: 'id'})
+    ]),
   })
 
   /**

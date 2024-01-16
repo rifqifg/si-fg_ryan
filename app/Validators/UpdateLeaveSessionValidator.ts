@@ -36,6 +36,9 @@ export default class UpdateLeaveSessionValidator {
     employeeId: schema.string.optional({}, [
       rules.exists({ table: 'employees', column: 'id' })
     ]),
+    unitId: schema.string.optional({}, [
+      rules.exists({table: 'units', column: 'id'})
+    ]),
   })
 
   /**

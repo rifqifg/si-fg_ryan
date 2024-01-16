@@ -34,6 +34,9 @@ export default class LeaveSession extends BaseModel {
   @belongsTo(() => Employee)
   public employee: BelongsTo<typeof Employee>
 
+  @column()
+  public unitId: string
+
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
 

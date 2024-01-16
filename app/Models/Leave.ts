@@ -43,6 +43,9 @@ export default class Leave extends BaseModel {
   @column()
   public leaveStatus: LeaveStatuses
 
+  @column()
+  public unitId: string
+
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
 

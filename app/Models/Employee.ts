@@ -20,6 +20,7 @@ import EmployeeDivision from "./EmployeeDivision";
 import EmployeeType from "./EmployeeType";
 import Teacher from "App/Modules/Academic/Models/Teacher";
 import { StatusEmployees } from "App/lib/enum";
+import EmployeeUnit from "./EmployeeUnit";
 let newId = "";
 
 export default class Employee extends BaseModel {
@@ -71,6 +72,9 @@ export default class Employee extends BaseModel {
 
   @hasMany(() => EmployeeDivision)
   public divisions: HasMany<typeof EmployeeDivision>;
+
+  @hasMany(() => EmployeeUnit)
+  public employeeUnits: HasMany<typeof EmployeeUnit>;
 
   @manyToMany(() => Division, {
     pivotTable: "employee_divisions",

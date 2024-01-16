@@ -36,6 +36,9 @@ export default class CreateLeaveSessionValidator {
     employeeId: schema.string({}, [
       rules.exists({ table: 'employees', column: 'id' })
     ]),
+    unitId: schema.string({}, [
+      rules.exists({table: 'units', column: 'id'})
+    ]),
   })
 
   /**

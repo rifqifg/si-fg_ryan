@@ -1,4 +1,6 @@
 import type { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
+import { checkRoleSuperAdmin } from "App/Helpers/checkRoleSuperAdmin";
+import { unitHelper } from "App/Helpers/unitHelper";
 import Unit from "App/Models/Unit";
 import CreateUnitValidator from "App/Validators/CreateUnitValidator";
 import UpdateUnitValidator from "App/Validators/UpdateUnitValidator";
@@ -51,19 +53,22 @@ export default class UnitsController {
     }
   }
 
-  public async show({ params, response }: HttpContextContract) {
+  public async show({ params, response, request }: HttpContextContract) {
+    const { keyword = "" } = request.qs();
     const { id } = params;
+
     if (!uuidValidation(id)) {
       return response.badRequest({ message: "Unit ID tidak valid" });
     }
 
     try {
       const data = await Unit.query()
+        .where("id", id)
         .preload("employeeUnits", (e) => {
           e.select("id", "title", "employee_id");
           e.preload("employee", (m) => m.select("name"));
+          e.whereHas('employee', e => e.whereILike("name", `%${keyword}%`))
         })
-        .where("id", id)
         .firstOrFail();
 
       response.ok({ message: "Get data success", data });
@@ -116,4 +121,30 @@ export default class UnitsController {
       });
     }
   }
+
+  public async getUnit({ request, response }: HttpContextContract) {
+    const { keyword = "" } = request.qs()
+
+    try {
+      const unitIds = await unitHelper()
+      const superAdmin = await checkRoleSuperAdmin()
+
+      const data = await Unit.query()
+        .whereILike('name', `%${keyword}%`)
+        .if(!superAdmin, query => {
+          query.whereIn('id', unitIds)
+        })
+
+      response.ok({ message: "get data successfully", data })
+    } catch (error) {
+      const message = "HRDU06: " + error.message || error;
+      console.log(error);
+      response.badRequest({
+        message: "Gagal mengambil data",
+        error: message,
+        error_data: error,
+      });
+    }
+  }
+
 }

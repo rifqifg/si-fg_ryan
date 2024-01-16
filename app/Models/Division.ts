@@ -14,6 +14,9 @@ export default class Division extends BaseModel {
   @column()
   public description: string
 
+  @column()
+  public unitId: string
+
   @hasMany(() => EmployeeDivision)
   public employees: HasMany<typeof EmployeeDivision>
 

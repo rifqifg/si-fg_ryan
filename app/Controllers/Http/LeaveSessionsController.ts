@@ -1,5 +1,7 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import { checkRoleSuperAdmin } from 'App/Helpers/checkRoleSuperAdmin'
 import { RolesHelper } from 'App/Helpers/rolesHelper'
+import { unitHelper } from 'App/Helpers/unitHelper'
 import LeaveSession from 'App/Models/LeaveSession'
 import User from 'App/Models/User'
 import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist'
@@ -18,6 +20,9 @@ export default class LeaveSessionsController {
     if (DateTime.fromISO(fromDate) > DateTime.fromISO(toDate)) {
       return response.badRequest({ message: "INVALID_DATE_RANGE" })
     }
+
+    const unitIds = await unitHelper()
+    const superAdmin = await checkRoleSuperAdmin()
 
     try {
       let data
@@ -43,6 +48,9 @@ export default class LeaveSessionsController {
               query.where('employee_id', employeeId)
             }
           })
+          .if(!superAdmin, query => {
+            query.whereIn('unit_id', unitIds)
+          })
           .paginate(page, limit)
       } else {
         data = await LeaveSession.query()
@@ -54,7 +62,10 @@ export default class LeaveSessionsController {
             }
           })
           .andWhere(query => {
-              query.where('employee_id', userObject.employee_id)
+            query.where('employee_id', userObject.employee_id)
+          })
+          .if(!superAdmin, query => {
+            query.whereIn('unit_id', unitIds)
           })
           .paginate(page, limit)
       }

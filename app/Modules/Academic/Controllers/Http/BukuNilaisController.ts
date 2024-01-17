@@ -603,7 +603,6 @@ export default class BukuNilaisController {
     }
   }
 
-  // TODO: Fix supaya bisa generate uts di tanggal akhir yg sama dgn tanggal pengambilan nilai harian
   public async generateUts({ request, response }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
@@ -643,28 +642,6 @@ export default class BukuNilaisController {
           order by bn.student_id
           `)
 
-    // ambil tanggal pengambilan nilai utk dibandingkan dgn tanggal toDate
-    // const tanggalNilai = await Database.rawQuery(`
-    //   select distinct(bn.tanggal_pengambilan_nilai)
-    //       from academic.buku_nilais bn
-    //                left join academic.semesters s
-    //                          on s.id = bn.semester_id
-    //                left join academic.academic_years ay
-    //                          on ay.id = bn.academic_year_id
-    //       where bn.aspek_penilaian = '${aspekPenilaian}'
-    //         and ay.active = true
-    //         and s.is_active = true
-    //         and bn.class_id = '${classId}'
-    //         and bn.teacher_id = '${teacherId}'
-    //         and bn.subject_id = '${subjectId}'
-    //         and bn.type = 'HARIAN'
-    //         and bn.tanggal_pengambilan_nilai between '${fromDate}' and '${toDate}'
-    // `);
-
-    // const tanggalNilaiArray = tanggalNilai.rows.map((uts) => {
-    //   return DateTime.fromISO(uts.tanggal_pengambilan_nilai.toISOString()).setZone('UTC+7');
-    // })
-
     if (Boolean(bukuNilaiData.find((bn) => bn.type == "UTS"))) {
       const updateUts = utsData.rows.map((uts) => ({
         nilai: uts?.uts,
@@ -698,14 +675,6 @@ export default class BukuNilaisController {
         response.badRequest({ message: "Gagal memperbarui uts", error });
       }
     } else {
-      // cek jika ada tanggal pengambilan harian yg sama dengan input tanggal akhir (toDate)
-      // jika ada, reject
-      // NOTE: ini temporary fix
-      const toDateSliced = toDate.toString().slice(0, 10);
-      // if (tanggalNilaiArray.find((tanggalPengambilanNilai) => tanggalPengambilanNilai.toString().slice(0, 10) === toDateSliced)) {
-      //   return response.badRequest({ message: `Tanggal Akhir tidak boleh sama dengan tanggal yang ada di data harian (${toDateSliced})` })
-      // }
-
       const utsPayload = utsData.rows.map((uts) => ({
         studentId: uts.student_id,
         subjectId: uts.subject_id,
@@ -716,7 +685,7 @@ export default class BukuNilaisController {
         academicYearId: uts.academic_year_id,
         type: "UTS",
         material: "UTS",
-        tanggalPengambilanNilai: toDateSliced, //new Date().toISOString().slice(0, 10),
+        tanggalPengambilanNilai: toDate.toString().slice(0, 10),
         nilai: uts.uts,
       }));
 

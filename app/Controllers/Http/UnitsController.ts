@@ -11,6 +11,8 @@ export default class UnitsController {
     // const dateStart = DateTime.now().toMillis();
     // CreateRouteHist(statusRoutes.START, dateStart);
     const { page = 1, limit = 10, keyword = "" } = request.qs();
+    const unitIds = await unitHelper()
+    const superAdmin = await checkRoleSuperAdmin()
 
     try {
       const data = await Unit.query()
@@ -20,6 +22,9 @@ export default class UnitsController {
           e.where("title", "=", "lead");
         })
         .whereILike("name", `%${keyword}%`)
+        .if(!superAdmin, query => {
+          query.whereIn('id', unitIds)
+        })
         .orderBy('name', 'asc')
         .paginate(page, limit);
 

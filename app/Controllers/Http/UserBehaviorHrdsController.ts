@@ -16,11 +16,11 @@ export default class UserBehaviorHrdsController {
 
     if (userObject.roles[0].role_name == 'super_admin') {
       data = await Activity.query()
-        .preload('division', division => division.select('id', 'name'))
+        .preload('unit', unit => unit.select('id', 'name'))
         .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
     } else {
       data = await Activity.query()
-        .preload('division', division => division.select('id', 'name'))
+        .preload('unit', unit => unit.select('id', 'name'))
         .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
         .whereHas('activityMembers', am => (am.where('employee_id', user.employeeId), am.where('role', 'manager')))
     }

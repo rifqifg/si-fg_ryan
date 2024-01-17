@@ -64,9 +64,12 @@ export default class CreateActivityValidator {
     days: schema.string.optional([
       rules.requiredWhen('type', '=', 'scheduled')
     ]),
-    division_id: schema.string.optional({}, [
-      rules.exists({ table: 'divisions', column: 'id' })
+    unitId: schema.string.optional({}, [
+      rules.exists({ table: 'units', column: 'id' })
     ]),
+    // division_id: schema.string.optional({}, [
+    //   rules.exists({ table: 'divisions', column: 'id' })
+    // ]),
     assessment: schema.boolean(),
     default: schema.number.optional(),
     activityType: schema.enum(Object.values(ActivityType)),

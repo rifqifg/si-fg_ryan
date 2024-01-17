@@ -47,9 +47,12 @@ export default class UpdateActivityValidator {
     type: schema.enum.optional(['scheduled', 'standalone']),
     scheduleActive: schema.boolean.optional(),
     days: schema.string.optional(),
-    division_id: schema.string.optional({}, [
-      rules.exists({ table: 'divisions', column: 'id' })
+    unitId: schema.string.optional({}, [
+      rules.exists({ table: 'units', column: 'id' })
     ]),
+    // division_id: schema.string.optional({}, [
+    //   rules.exists({ table: 'divisions', column: 'id' })
+    // ]),
     assessment: schema.boolean.optional(),
     default: schema.number.nullableAndOptional(),
     activityType: schema.enum.optional(Object.values(ActivityType)),

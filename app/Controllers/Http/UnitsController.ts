@@ -65,7 +65,7 @@ export default class UnitsController {
       const data = await Unit.query()
         .where("id", id)
         .preload("employeeUnits", (e) => {
-          e.select("id", "title", "employee_id");
+          e.select("id", "title", "employee_id", "status");
           e.preload("employee", (m) => m.select("name"));
           e.whereHas('employee', e => e.whereILike("name", `%${keyword}%`))
         })
@@ -133,6 +133,7 @@ export default class UnitsController {
         .whereILike('name', `%${keyword}%`)
         .if(!superAdmin, query => {
           query.whereIn('id', unitIds)
+          query.whereHas('employeeUnits', eu => eu.where('title', 'lead'))
         })
 
       response.ok({ message: "get data successfully", data })

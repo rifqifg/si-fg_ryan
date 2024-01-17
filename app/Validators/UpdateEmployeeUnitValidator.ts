@@ -24,7 +24,8 @@ export default class UpdateEmployeeUnitValidator {
    *    ```
    */
   public schema = schema.create({
-    title: schema.enum(['lead', 'vice', 'member'])
+    title: schema.enum.optional(['lead', 'vice', 'member']),
+    status: schema.enum.optional(['FULLTIME', 'PARTTIME'])
   })
 
   /**

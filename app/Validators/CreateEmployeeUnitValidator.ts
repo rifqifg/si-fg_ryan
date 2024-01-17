@@ -30,7 +30,8 @@ export default class CreateEmployeeUnitValidator {
     unitId: schema.string({}, [
       rules.exists({table: 'units', column: 'id'})
     ]),
-    title: schema.enum(['lead', 'vice', 'member'])
+    title: schema.enum(['lead', 'vice', 'member']),
+    status: schema.enum(['FULLTIME', 'PARTTIME'])
   })
 
   /**

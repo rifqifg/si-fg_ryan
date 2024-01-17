@@ -24,6 +24,9 @@ export default class EmployeeUnit extends BaseModel {
   @column()
   public title: string
 
+  @column()
+  public status: string
+
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
 

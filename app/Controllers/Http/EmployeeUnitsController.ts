@@ -1,4 +1,5 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import { checkRoleSuperAdmin } from 'App/Helpers/checkRoleSuperAdmin'
 import EmployeeUnit from 'App/Models/EmployeeUnit'
 import Unit from 'App/Models/Unit'
 import CreateEmployeeUnitValidator from 'App/Validators/CreateEmployeeUnitValidator'
@@ -9,15 +10,32 @@ export default class EmployeeUnitsController {
   public async store({ request, response, auth }: HttpContextContract) {
     const payload = await request.validate(CreateEmployeeUnitValidator)
 
-    //cek unit, apakah user yg login adalah lead atau bukan
-    const checkUnit = await Unit.query()
-      .whereHas('employeeUnits', eu => eu
-        .where('employee_id', auth.user!.$attributes.employeeId)
-        .andWhere('title', 'lead'))
-      .firstOrFail()
+    const superAdmin = await checkRoleSuperAdmin()
 
-    if (checkUnit.id !== payload.unitId) {
-      return response.badRequest({ message: "Gagal menambahkan karyawan ke unit dikarenakan anda bukan ketua" })
+    if (!superAdmin) {
+      //cek unit, apakah user yg login adalah lead atau bukan
+      const checkUnit = await Unit.query()
+        .whereHas('employeeUnits', eu => eu
+          .where('employee_id', auth.user!.$attributes.employeeId)
+          .andWhere('title', 'lead'))
+        .firstOrFail()
+
+      if (checkUnit.id !== payload.unitId) {
+        return response.badRequest({ message: "Gagal menambahkan karyawan ke unit dikarenakan anda bukan ketua" })
+      }
+    }
+
+    //cek lead harus satu disetiap unitnya
+    if (payload.title === 'lead') {
+      const checkLeadUnit = await Unit.query()
+        .whereHas('employeeUnits', eu => eu
+          .where('unit_id', payload.unitId)
+          .andWhere('title', 'lead')
+        )
+
+      if (checkLeadUnit.length > 0) {
+        return response.badRequest({ message: "Ketua unit hanya boleh ada 1" })
+      }
     }
 
     try {
@@ -37,6 +55,7 @@ export default class EmployeeUnitsController {
 
   public async update({ params, request, response, auth }: HttpContextContract) {
     const { id } = params
+    const superAdmin = await checkRoleSuperAdmin()
 
     if (!uuidValidation(id)) {
       return response.badRequest({ message: "Employee Unit ID tidak valid" });
@@ -47,14 +66,29 @@ export default class EmployeeUnitsController {
     try {
       const employeeUnit = await EmployeeUnit.findOrFail(id)
 
-      const checkUnit = await Unit.query()
-        .whereHas('employeeUnits', eu => eu
-          .where('employee_id', auth.user!.$attributes.employeeId)
-          .andWhere('title', 'lead'))
-        .firstOrFail()
+      if (!superAdmin) {
+        //cek unit, apakah user yg login adalah lead atau bukan
+        const checkUnit = await Unit.query()
+          .whereHas('employeeUnits', eu => eu
+            .where('employee_id', auth.user!.$attributes.employeeId)
+            .andWhere('title', 'lead'))
+          .firstOrFail()
 
-      if (checkUnit.id !== employeeUnit.unitId) {
-        return response.badRequest({ message: "Gagal mengubah data dikarenakan anda bukan ketua" })
+        if (checkUnit.id !== employeeUnit.unitId) {
+          return response.badRequest({ message: "Gagal mengubah data dikarenakan anda bukan ketua" })
+        }
+      }
+
+      if (payload.title === 'lead') {
+        const checkLeadUnit = await Unit.query()
+          .whereHas('employeeUnits', eu => eu
+            .where('unit_id', employeeUnit.unitId)
+            .andWhere('title', 'lead')
+          )
+
+        if (checkLeadUnit.length > 0) {
+          return response.badRequest({ message: "Ketua unit hanya boleh ada 1" })
+        }
       }
 
       const data = await employeeUnit.merge(payload).save();
@@ -80,15 +114,18 @@ export default class EmployeeUnitsController {
 
     try {
       const data = await EmployeeUnit.findOrFail(id);
+      const superAdmin = await checkRoleSuperAdmin()
 
-      const checkUnit = await Unit.query()
-        .whereHas('employeeUnits', eu => eu
-          .where('employee_id', auth.user!.$attributes.employeeId)
-          .andWhere('title', 'lead'))
-        .firstOrFail()
+      if (!superAdmin) {
+        const checkUnit = await Unit.query()
+          .whereHas('employeeUnits', eu => eu
+            .where('employee_id', auth.user!.$attributes.employeeId)
+            .andWhere('title', 'lead'))
+          .firstOrFail()
 
-      if (checkUnit.id !== data.unitId) {
-        return response.badRequest({ message: "Gagal menghapus data dikarenakan anda bukan ketua" })
+        if (checkUnit.id !== data.unitId) {
+          return response.badRequest({ message: "Gagal menghapus data dikarenakan anda bukan ketua" })
+        }
       }
 
       await data.delete();

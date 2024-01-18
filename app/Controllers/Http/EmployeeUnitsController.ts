@@ -72,7 +72,7 @@ export default class EmployeeUnitsController {
 
   }
 
-  public async destroy({ params, response }: HttpContextContract) {
+  public async destroy({ params, response, auth }: HttpContextContract) {
     const { id } = params
     if (!uuidValidation(id)) {
       return response.badRequest({ message: "Employee Unit ID tidak valid" });
@@ -80,6 +80,17 @@ export default class EmployeeUnitsController {
 
     try {
       const data = await EmployeeUnit.findOrFail(id);
+
+      const checkUnit = await Unit.query()
+        .whereHas('employeeUnits', eu => eu
+          .where('employee_id', auth.user!.$attributes.employeeId)
+          .andWhere('title', 'lead'))
+        .firstOrFail()
+
+      if (checkUnit.id !== data.unitId) {
+        return response.badRequest({ message: "Gagal menghapus data dikarenakan anda bukan ketua" })
+      }
+
       await data.delete();
 
       response.ok({

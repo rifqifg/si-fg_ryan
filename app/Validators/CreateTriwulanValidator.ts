@@ -36,6 +36,9 @@ export default class CreateTriwulanValidator {
     description: schema.string.optional([
       rules.minLength(3)
     ]),
+    unitId: schema.string({}, [
+      rules.exists({table: 'units', column: 'id'})
+    ]),
   })
 
   /**

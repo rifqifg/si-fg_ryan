@@ -102,7 +102,7 @@ export default class EmployeeUnitsController {
 
       const data = await employeeUnit.merge(payload).save();
 
-      response.ok({ message: "Berhasil mengubah jabatan karyawan di divisi", data })
+      response.ok({ message: "Berhasil mengubah data karyawan di unit", data })
     } catch (error) {
       const message = "HRDEU02: " + error.message || error;
       console.log(error);

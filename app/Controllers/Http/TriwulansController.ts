@@ -1,6 +1,8 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Database from '@ioc:Adonis/Lucid/Database'
 import { TriwulanHelper } from 'App/Helpers/TriwulanHelper'
+import { checkRoleSuperAdmin } from 'App/Helpers/checkRoleSuperAdmin'
+import { unitHelper } from 'App/Helpers/unitHelper'
 import Triwulan from 'App/Models/Triwulan'
 import TriwulanEmployee from 'App/Models/TriwulanEmployee'
 import TriwulanEmployeeDetail from 'App/Models/TriwulanEmployeeDetail'
@@ -16,6 +18,8 @@ export default class TriwulansController {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
     const { page = 1, limit = 10, keyword = "", fromDate = "", toDate = "" } = request.qs()
+    const unitIds = await unitHelper()
+    const superAdmin = await checkRoleSuperAdmin()
 
     try {
       let data
@@ -29,10 +33,16 @@ export default class TriwulansController {
             query.whereBetween('from_date', [fromDate, toDate])
             query.orWhereBetween('to_date', [fromDate, toDate])
           })
+          .if(!superAdmin, query => {
+            query.whereIn('unit_id', unitIds)
+          })
           .paginate(page, limit)
       } else {
         data = await Triwulan.query()
           .whereILike('name', `%${keyword}%`)
+          .if(!superAdmin, query => {
+            query.whereIn('unit_id', unitIds)
+          })
           .paginate(page, limit)
       }
 

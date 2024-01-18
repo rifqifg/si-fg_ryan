@@ -42,7 +42,10 @@ export default class ActivitiesController {
           .whereILike('name', `%${keyword}%`)
           .andWhere(query => {
             // query.where('division_id', auth.use('api').user!.divisionId)
-            query.orWhereHas('activityMembers', am => (am.where('employee_id', user.employeeId), am.where('role', 'manager')))
+            query.whereHas('activityMembers', am => (am.where('employee_id', user.employeeId), am.where('role', 'manager')))
+            query.orWhereHas('unit', u => u
+              .whereIn('id', unitIds)
+              .andWhere(query => query.whereHas('employeeUnits', eu => eu.where('title', 'lead'))))
           })
           .if(!superAdmin, query => {
             query.whereIn('unit_id', unitIds)

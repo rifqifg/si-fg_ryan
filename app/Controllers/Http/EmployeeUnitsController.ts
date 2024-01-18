@@ -38,6 +38,15 @@ export default class EmployeeUnitsController {
       }
     }
 
+    //cek duplikat user
+    const checkDuplikatUser = await EmployeeUnit.query()
+      .where('unit_id', payload.unitId)
+      .andWhere('employee_id', payload.employeeId)
+
+    if (checkDuplikatUser.length > 0) {
+      return response.badRequest({ message: "Anggota unit tidak boleh duplikat" })
+    }
+
     try {
       const data = await EmployeeUnit.create(payload)
 

@@ -13,6 +13,9 @@ export default class MonthlyReport extends BaseModel {
   @column()
   public name: string
 
+  @column()
+  public unitId: string
+
   @column.date()
   public fromDate: DateTime
 
@@ -44,7 +47,15 @@ export default class MonthlyReport extends BaseModel {
 
   @afterCreate()
   public static async insertMonthlyReportEmployee() {
-    const employeeIds = await Employee.query().select('id').whereNull('date_out')
+    const { request } = HttpContext.get()!
+    const { unitId }: any = JSON.parse(request.raw()!)
+
+    // kemungkinan kondisionalnya ditambah, berdasarkan unitnya
+    const employeeIds = await Employee
+      .query()
+      .select('id')
+      .whereNull('date_out')
+      .andWhereHas('employeeUnits', employeeUnit => employeeUnit.where('unit_id', unitId))
     const dataObject = JSON.parse(JSON.stringify(employeeIds))
 
     try {

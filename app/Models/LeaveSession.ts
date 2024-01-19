@@ -3,6 +3,7 @@ import { BaseModel, BelongsTo, afterCreate, beforeCreate, belongsTo, column } fr
 import Employee from './Employee'
 import { StatusLeaves } from 'App/lib/enum'
 import { v4 as uuidv4 } from 'uuid'
+import Unit from './Unit'
 let newId = ""
 
 export default class LeaveSession extends BaseModel {
@@ -36,6 +37,9 @@ export default class LeaveSession extends BaseModel {
 
   @column()
   public unitId: string
+
+  @belongsTo(() => Unit)
+  public unit: BelongsTo<typeof Unit>
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime

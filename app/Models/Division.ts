@@ -1,7 +1,8 @@
 import { DateTime } from 'luxon'
-import { afterCreate, BaseModel, beforeCreate, column, HasMany, hasMany } from '@ioc:Adonis/Lucid/Orm'
+import { afterCreate, BaseModel, beforeCreate, BelongsTo, belongsTo, column, HasMany, hasMany } from '@ioc:Adonis/Lucid/Orm'
 import { v4 as uuidv4 } from 'uuid'
 import EmployeeDivision from './EmployeeDivision'
+import Unit from './Unit'
 let newId = ""
 
 export default class Division extends BaseModel {
@@ -16,6 +17,9 @@ export default class Division extends BaseModel {
 
   @column()
   public unitId: string
+
+  @belongsTo(() => Unit)
+  public unit: BelongsTo<typeof Unit>
 
   @hasMany(() => EmployeeDivision)
   public employees: HasMany<typeof EmployeeDivision>

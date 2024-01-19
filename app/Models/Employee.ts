@@ -142,6 +142,9 @@ export default class Employee extends BaseModel {
   @column()
   public status: StatusEmployees
 
+  @hasMany(() => EmployeeUnit)
+  public unit: HasMany<typeof EmployeeUnit>
+
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime;
 

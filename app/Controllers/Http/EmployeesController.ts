@@ -9,7 +9,7 @@ import { DateTime } from "luxon";
 export default class EmployeesController {
   public async index({ request, response }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
-   CreateRouteHist(statusRoutes.START, dateStart)
+    CreateRouteHist(statusRoutes.START, dateStart)
     const {
       page = 1,
       limit = 10,
@@ -35,6 +35,7 @@ export default class EmployeesController {
       .preload("kota")
       .preload("kecamatan")
       .preload("kelurahan")
+      .preload("employeeUnits", eu => eu.select('title', 'id', 'unit_id').preload('unit', u => u.select('name')))
       .andWhere((query) => {
         query.whereILike("name", `%${keyword}%`);
         query.orWhereILike("nik", `%${keyword}%`);
@@ -50,7 +51,7 @@ export default class EmployeesController {
 
   public async getEmployee({ request, response }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
-   CreateRouteHist(statusRoutes.START, dateStart)
+    CreateRouteHist(statusRoutes.START, dateStart)
     const {
       keyword = "",
       employeeTypeId = "",
@@ -91,7 +92,7 @@ export default class EmployeesController {
 
   public async store({ request, response }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
-   CreateRouteHist(statusRoutes.START, dateStart)
+    CreateRouteHist(statusRoutes.START, dateStart)
     const payload = await request.validate(CreateEmployeeValidator);
 
     try {
@@ -108,7 +109,7 @@ export default class EmployeesController {
 
   public async show({ params, response }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
-   CreateRouteHist(statusRoutes.START, dateStart)
+    CreateRouteHist(statusRoutes.START, dateStart)
     const { id } = params;
     try {
       const data = await Employee.query()
@@ -127,6 +128,7 @@ export default class EmployeesController {
             d.preload("division", (x) => x.select("name"))
           )
         )
+        .preload("employeeUnits", eu => eu.select('title', 'id', 'unit_id').preload('unit', u => u.select('name')))
         .where("id", id);
       CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Get data success", data });

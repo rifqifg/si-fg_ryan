@@ -22,6 +22,7 @@ export default class DivisionsController {
         e.preload('employee', m => m.select('name'))
         e.where('title', '=', 'lead')
       })
+      .preload('unit', u => u.select('name'))
       .whereILike('name', `%${keyword}%`)
       .if(!superAdmin, query => {
         query.whereIn('unit_id', unitIds)

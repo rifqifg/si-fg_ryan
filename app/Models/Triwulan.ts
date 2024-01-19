@@ -1,5 +1,5 @@
 import { DateTime } from 'luxon'
-import { BaseModel, HasMany, afterCreate, beforeCreate, column, hasMany } from '@ioc:Adonis/Lucid/Orm'
+import { BaseModel, BelongsTo, HasMany, afterCreate, beforeCreate, belongsTo, column, hasMany } from '@ioc:Adonis/Lucid/Orm'
 import { v4 as uuidv4 } from "uuid";
 // import Employee from './Employee';
 import TriwulanEmployee from './TriwulanEmployee';
@@ -8,6 +8,7 @@ import TriwulanEmployee from './TriwulanEmployee';
 let newId = "";
 import { validator, schema, rules } from '@ioc:Adonis/Core/Validator'
 import EmployeeUnit from './EmployeeUnit';
+import Unit from './Unit';
 
 export default class Triwulan extends BaseModel {
   @column({ isPrimary: true })
@@ -30,6 +31,9 @@ export default class Triwulan extends BaseModel {
 
   @column()
   public unitId: string
+
+  @belongsTo(() => Unit)
+  public unit: BelongsTo<typeof Unit>
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime

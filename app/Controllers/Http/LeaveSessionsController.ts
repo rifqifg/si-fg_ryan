@@ -37,6 +37,7 @@ export default class LeaveSessionsController {
         data = await LeaveSession.query()
           .preload('employee', em => em.select('name'))
           .whereHas('employee', e => e.whereILike('name', `%${keyword}%`))
+          .preload('unit', u => u.select('name'))
           .andWhere(query => {
             if (fromDate && toDate) {
               query.whereBetween('date', [fromDate, toDate])
@@ -55,6 +56,7 @@ export default class LeaveSessionsController {
       } else {
         data = await LeaveSession.query()
           .preload('employee', em => em.select('name'))
+          .preload('unit', u => u.select('name'))
           .whereHas('employee', e => e.whereILike('name', `%${keyword}%`))
           .andWhere(query => {
             if (fromDate && toDate) {

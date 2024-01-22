@@ -362,7 +362,7 @@ export default class SubActivitiesController {
       const activity = await Activity.query()
         .where('id', activityId)
         .preload('categoryActivity', ca => ca.select('name'))
-        .preload('division', d => d.select('name'))
+        .preload('unit', d => d.select('name'))
         .firstOrFail()
 
       CreateRouteHist(statusRoutes.FINISH, dateStart)

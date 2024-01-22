@@ -2,7 +2,7 @@ import { schema, CustomMessages, rules } from '@ioc:Adonis/Core/Validator'
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 
 export default class CreateEmployeeUnitValidator {
-  constructor(protected ctx: HttpContextContract) {}
+  constructor(protected ctx: HttpContextContract) { }
 
   /*
    * Define schema to validate the "shape", "type", "formatting" and "integrity" of data.
@@ -24,14 +24,18 @@ export default class CreateEmployeeUnitValidator {
    *    ```
    */
   public schema = schema.create({
-    employeeId: schema.string({}, [
-      rules.exists({table: 'employees', column: 'id'})
-    ]),
-    unitId: schema.string({}, [
-      rules.exists({table: 'units', column: 'id'})
-    ]),
-    title: schema.enum(['lead', 'vice', 'member']),
-    status: schema.enum(['FULLTIME', 'PARTTIME'])
+    employeeUnits: schema.array().members(
+      schema.object().members({
+        employeeId: schema.string({}, [
+          rules.exists({ table: 'employees', column: 'id' })
+        ]),
+        unitId: schema.string({}, [
+          rules.exists({ table: 'units', column: 'id' })
+        ]),
+        title: schema.enum(['lead', 'vice', 'member']),
+        status: schema.enum(['FULLTIME', 'PARTTIME'])
+      })
+    )
   })
 
   /**

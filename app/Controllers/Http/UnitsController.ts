@@ -100,11 +100,11 @@ export default class UnitsController {
         .whereHas('employeeUnits', eu => eu
           .where('employee_id', auth.user!.$attributes.employeeId)
           .andWhere('title', 'lead'))
-        .firstOrFail()
+        .first()
 
-      if (checkUnit.id !== id) {
-        return response.badRequest({ message: "Gagal mengubah unit dikarenakan anda bukan ketua" })
-      }
+        if (!checkUnit || checkUnit.id != id) {
+          return response.badRequest({ message: "Gagal mengubah data unit dikarenakan anda bukan ketua" });
+        }
     }
 
     try {

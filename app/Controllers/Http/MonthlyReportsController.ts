@@ -142,17 +142,10 @@ export default class MonthlyReportsController {
 
         const dataArrayObject = JSON.parse(JSON.stringify(data))
 
-        let datas: any = []
-        for (let i = 0; i < dataArrayObject.data.length; i++) {
-          const result = await MonthlyReportHelper(dataArrayObject.data[i])
-          const dataEmployee = result.dataEmployee
-          const monthlyReportEmployeeDetail = result.monthlyReportEmployeeDetail
-          const monthlyReportEmployee = result.monthlyReportEmployee
-          datas.push({ dataEmployee, monthlyReportEmployee, monthlyReportEmployeeDetail })
-        }
+        const result = await MonthlyReportHelper(dataArrayObject.data)
 
         CreateRouteHist(statusRoutes.FINISH, dateStart)
-        return response.ok({ message: "Berhasil mengambil data", monthlyReport, data: { meta: dataArrayObject.meta, data: datas } });
+        return response.ok({ message: "Berhasil mengambil data", monthlyReport, data: { meta: dataArrayObject.meta, data: result } });
       } else {
         //buat module profile
         data = await MonthlyReport.query()
@@ -201,15 +194,15 @@ export default class MonthlyReportsController {
               .where('is_teaching', true)))
           .firstOrFail();
 
-        const dataObject = JSON.parse(JSON.stringify(data)).monthlyReportEmployees[0]
+        const dataArray = JSON.parse(JSON.stringify(data)).monthlyReportEmployees
 
-        const result = await MonthlyReportHelper(dataObject)
+        const result = await MonthlyReportHelper(dataArray)
         const dataEmployee = result.dataEmployee
         const monthlyReportEmployeeDetail = result.monthlyReportEmployeeDetail
-        const monthlyReportEmployee = result.monthlyReportEmployee
+        // const monthlyReportEmployee = result.monthlyReportEmployee
 
         CreateRouteHist(statusRoutes.FINISH, dateStart)
-        return response.ok({ message: "Berhasil mengambil data", dataEmployee, monthlyReportEmployee, monthlyReportEmployeeDetail });
+        return response.ok({ message: "Berhasil mengambil data", dataEmployee, monthlyReportEmployeeDetail });
       }
     } catch (error) {
       const message = "HRDMR03: " + error.message || error;

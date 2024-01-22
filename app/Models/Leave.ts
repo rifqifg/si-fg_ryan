@@ -45,6 +45,9 @@ export default class Leave extends BaseModel {
   public leaveStatus: LeaveStatuses
 
   @column()
+  public image: string | null
+
+  @column()
   public unitId: string
 
   @belongsTo(() => Unit)

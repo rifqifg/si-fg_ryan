@@ -30,6 +30,9 @@ export default class LeaveSession extends BaseModel {
   public note: string
 
   @column()
+  public image: string
+
+  @column()
   public employeeId: string
 
   @belongsTo(() => Employee)

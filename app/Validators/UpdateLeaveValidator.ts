@@ -46,6 +46,10 @@ export default class UpdateLeaveValidator {
     unitId: schema.string.optional({}, [
       rules.exists({table: 'units', column: 'id'})
     ]),
+    image: schema.file.optional({
+      size: '2mb',
+      extnames: ['png', 'jpg', 'jpeg'],
+    }),
   })
 
   /**

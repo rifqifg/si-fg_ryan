@@ -10,6 +10,15 @@ import CreateLeaveValidator from 'App/Validators/CreateLeaveValidator'
 import UpdateLeaveValidator from 'App/Validators/UpdateLeaveValidator'
 import { DateTime } from 'luxon'
 import { validate as uuidValidation } from "uuid"
+import Env from "@ioc:Adonis/Core/Env"
+import Drive from '@ioc:Adonis/Core/Drive'
+
+const getSignedUrl = async (filename: string) => {
+  const beHost = Env.get('BE_URL')
+  const hrdDrive = Drive.use('hrd')
+  const signedUrl = beHost + await hrdDrive.getSignedUrl('leaves/' + filename, { expiresIn: '30mins' })
+  return signedUrl
+}
 
 export default class LeavesController {
   public async index({ request, response, auth }: HttpContextContract) {
@@ -35,7 +44,7 @@ export default class LeavesController {
 
       if (roles.includes('super_admin') || roles.includes('admin_hrd')) {
         data = await Leave.query()
-          .select('id', 'employee_id', 'status', 'reason', 'from_date', 'to_date', 'type', 'leaveStatus', 'unit_id')
+          .select('id', 'employee_id', 'status', 'reason', 'from_date', 'to_date', 'type', 'leaveStatus', 'unit_id', 'image')
           .preload('employee', em => em.select('name'))
           .preload('unit', u => u.select('name'))
           .whereHas('employee', e => e.whereILike('name', `%${keyword}%`))
@@ -57,7 +66,7 @@ export default class LeavesController {
           .paginate(page, limit)
       } else {
         data = await Leave.query()
-          .select('id', 'employee_id', 'status', 'reason', 'from_date', 'to_date', 'type', 'leaveStatus', 'unit_id')
+          .select('id', 'employee_id', 'status', 'reason', 'from_date', 'to_date', 'type', 'leaveStatus', 'unit_id', 'image')
           .preload('employee', em => em.select('name'))
           .preload('unit', u => u.select('name'))
           .whereHas('employee', e => e.whereILike('name', `%${keyword}%`))
@@ -76,8 +85,16 @@ export default class LeavesController {
           .paginate(page, limit)
       }
 
+      const dataObject = JSON.parse(JSON.stringify(data))
+
+      dataObject.data.map(async (value) => {
+        if (value.image) {
+          value.image = await getSignedUrl(value.image)
+        }
+      })
+
       CreateRouteHist(statusRoutes.FINISH, dateStart)
-      response.ok({ message: "Data Berhasil Didapatkan", data })
+      response.ok({ message: "Data Berhasil Didapatkan", data: dataObject })
     } catch (error) {
       const message = "HRDLE01: " + error.message || error;
       CreateRouteHist(statusRoutes.ERROR, dateStart, message)
@@ -100,7 +117,30 @@ export default class LeavesController {
     }
 
     try {
-      const data = await Leave.create(payload);
+      let data
+      if (payload.image) {
+        const image = Math.floor(Math.random() * 1000) + DateTime.now().toUnixInteger().toString() + "." + payload.image.extname
+        await payload.image.moveToDisk(
+          'leaves',
+          { name: image, overwrite: true },
+          'hrd'
+        )
+        data = await Leave.create({ ...payload, image });
+        data.image = await getSignedUrl(data.image)
+      } else {
+        data = await Leave.create({
+          employeeId: payload.employeeId,
+          status: payload.status,
+          reason: payload.reason,
+          fromDate: payload.fromDate,
+          toDate: payload.toDate,
+          note: payload.note,
+          type: payload.type,
+          leaveStatus: payload.leaveStatus,
+          unitId: payload.unitId,
+        })
+      }
+
       CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.created({ message: "Berhasil menyimpan data", data });
     } catch (error) {
@@ -125,8 +165,14 @@ export default class LeavesController {
 
     try {
       const data = await Leave.query().where("id", id).firstOrFail();
+      const dataObject = JSON.parse(JSON.stringify(data))
+
+      if (dataObject.image) {
+        dataObject.image = await getSignedUrl(dataObject.image)
+      }
+
       CreateRouteHist(statusRoutes.FINISH, dateStart)
-      response.ok({ message: "Berhasil mengambil data", data });
+      response.ok({ message: "Berhasil mengambil data", data: dataObject });
     } catch (error) {
       const message = "HRDLE03: " + error.message || error;
       CreateRouteHist(statusRoutes.ERROR, dateStart, message)
@@ -148,6 +194,7 @@ export default class LeavesController {
     }
 
     const payload = await request.validate(UpdateLeaveValidator);
+    const objectPayload = JSON.parse(JSON.stringify(payload))
     if (JSON.stringify(payload) === "{}") {
       console.log("data update kosong");
       return response.badRequest({ message: "Data tidak boleh kosong" });
@@ -158,7 +205,26 @@ export default class LeavesController {
 
     try {
       const leave = await Leave.findOrFail(id);
-      const data = await leave.merge(payload).save();
+
+      if (payload.image) {
+        const image = Math.floor(Math.random() * 1000) + DateTime.now().toUnixInteger().toString() + "." + payload.image.extname
+        await payload.image.moveToDisk(
+          'leaves',
+          { name: image, overwrite: true },
+          'hrd'
+        )
+        if (leave.image) {
+          await Drive.use('hrd').delete('leaves/' + leave.image)
+        }
+
+        objectPayload.image = image
+      }
+
+      const data = await leave.merge(objectPayload).save();
+      if (data.image) {
+        data.image = await getSignedUrl(data.image)
+      }
+
       CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil mengubah data", data });
     } catch (error) {
@@ -184,6 +250,9 @@ export default class LeavesController {
     try {
       const data = await Leave.findOrFail(id);
       await data.delete();
+      if (data.image) {
+        await Drive.use('hrd').delete('leaves/' + data.image)
+      }
       CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil menghapus data" });
     } catch (error) {

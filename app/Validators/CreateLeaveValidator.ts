@@ -46,6 +46,10 @@ export default class CreateLeaveValidator {
     unitId: schema.string({}, [
       rules.exists({table: 'units', column: 'id'})
     ]),
+    image: schema.file.nullableAndOptional({
+      size: '2mb',
+      extnames: ['png', 'jpg', 'jpeg'],
+    }),
   })
 
   /**

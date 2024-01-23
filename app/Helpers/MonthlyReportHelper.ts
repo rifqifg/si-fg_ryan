@@ -1,6 +1,5 @@
 export const MonthlyReportHelper = async (dataArray) => {
   const dataEmployee: any = []
-  // const monthlyReportEmployee: any = []
   const monthlyReportEmployeeDetail: any = []
 
   dataArray.forEach(dataObject => {
@@ -19,13 +18,6 @@ export const MonthlyReportHelper = async (dataArray) => {
         "suggestions_and_improvements": dataObject.suggestions_and_improvements,
       }
     })
-
-    // monthlyReportEmployee.push({
-    //   "id": dataObject.id,
-    //   "achievement": dataObject.achievement,
-    //   "indisipliner": dataObject.indisipliner,
-    //   "suggestions_and_improvements": dataObject.suggestions_and_improvements,
-    // })
 
     // gabungkan data fixed time & not fixed time.
     dataObject.monthlyReportEmployeesGabungan = [
@@ -59,15 +51,18 @@ export const MonthlyReportHelper = async (dataArray) => {
       else activityName = gabungan.activity.name
 
       // NOTE: ketika salah satu item dibawah ini ngga ada (misal notenya ngga ada / undefined. klo null, kondisionalnya wktu cek layer 3) maka atributnya ngga dimasukin
-      // NOTE2: nama key harus sama dengan key di object monthlyReportEmployeesGabungan
-      const items = {
-        skor: gabungan.skor,
-        note: gabungan.note,
-        percentage: gabungan.percentage,
+      const items: any = {
         default: gabungan.default,
+        skor: gabungan.skor,
       }
 
-      // cek layer 1
+      // utk percentage, key & valuenya tergantung ada tidaknya default
+      if (gabungan.default) items.percentage_persen = gabungan.percentage + '%'
+      else items.percentage = gabungan.percentage
+
+      items.note = gabungan.note
+
+      // cek Kategori Aktivitas
       let categoryIndex = monthlyReportEmployeeDetail.findIndex(c => c.name === categoryName);
       // jika kategori tidak ditemukan..
       if (categoryIndex === -1) {
@@ -80,7 +75,7 @@ export const MonthlyReportHelper = async (dataArray) => {
         });
       }
 
-      // cek layer 2
+      // cek Aktivitas
       let activityIndex = monthlyReportEmployeeDetail[categoryIndex].data.findIndex(a => a.activity_name === activityName);
       if (activityIndex === -1) {
         activityIndex = monthlyReportEmployeeDetail[categoryIndex].data.length;
@@ -106,7 +101,7 @@ export const MonthlyReportHelper = async (dataArray) => {
             id: gabungan.id,
             id_employee: dataObject.employee.id,
             employee_name: dataObject.employee.name,
-            value: gabungan[itemKey]
+            value: itemValue
           })
         }
       }

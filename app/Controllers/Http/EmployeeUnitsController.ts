@@ -156,4 +156,25 @@ export default class EmployeeUnitsController {
     }
   }
 
+  public async getListEmployeeUnits({ response, request }: HttpContextContract) {
+    const { unitId } = request.qs()
+
+    try {
+      const data = await EmployeeUnit.query()
+        .select('id', 'employee_id', 'unit_id', 'title')
+        .where('unit_id', unitId)
+        .preload('employee', e => e.select('name'))
+
+      response.ok({ message: "Berhasil get data", data })
+    } catch (error) {
+      const message = "HRDEU04: " + error.message || error;
+      console.log(error);
+      response.badRequest({
+        message: "Gagal menghapus data",
+        error: message,
+        error_data: error,
+      });
+    }
+  }
+
 }

@@ -98,6 +98,7 @@ Route.get('triwulans/:id/recaps', 'TriwulansController.recaps').as('triwulan.rec
 Route.shallowResource('units', 'UnitsController').apiOnly().middleware({ '*': ['auth', 'checkRole:admin'] })
 Route.get('unit-lists', 'UnitsController.getUnit').as('unit.list').middleware(['auth', 'checkRole:admin'])
 Route.shallowResource('employee-units', 'EmployeeUnitsController').apiOnly().middleware({ '*': ['auth', 'checkRole:admin'] })
+Route.get('list-employee-units', 'EmployeeUnitsController.getListEmployeeUnits').middleware(['auth'])
 
 Route.group(() => {
   Route.get('activities', 'UserBehaviorHrdsController.activity').middleware(['auth'])

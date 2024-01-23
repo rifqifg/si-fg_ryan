@@ -88,10 +88,24 @@ export default class UnitsController {
     }
   }
 
-  public async update({ request, response, params }: HttpContextContract) {
+  public async update({ request, response, params, auth }: HttpContextContract) {
     const { id } = params;
 
     const payload = await request.validate(UpdateUnitValidator);
+    const superAdmin = await checkRoleSuperAdmin()
+
+    if (!superAdmin) {
+      //cek unit, apakah user yg login adalah lead atau bukan
+      const checkUnit = await Unit.query()
+        .whereHas('employeeUnits', eu => eu
+          .where('employee_id', auth.user!.$attributes.employeeId)
+          .andWhere('title', 'lead'))
+        .first()
+
+        if (!checkUnit || checkUnit.id != id) {
+          return response.badRequest({ message: "Gagal mengubah data unit dikarenakan anda bukan ketua" });
+        }
+    }
 
     try {
       const data = await Unit.findOrFail(id);

@@ -1,9 +1,8 @@
 import { schema, CustomMessages, rules } from '@ioc:Adonis/Core/Validator'
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import { StatusLeaves } from 'App/lib/enum'
 
-export default class CreateLeaveSessionValidator {
-  constructor(protected ctx: HttpContextContract) { }
+export default class DeleteManyEmployeeUnitValidator {
+  constructor(protected ctx: HttpContextContract) {}
 
   /*
    * Define schema to validate the "shape", "type", "formatting" and "integrity" of data.
@@ -25,24 +24,9 @@ export default class CreateLeaveSessionValidator {
    *    ```
    */
   public schema = schema.create({
-    status: schema.enum(Object.values(StatusLeaves)),
-    sessions: schema.array().members(schema.string()),
-    date: schema.date({
-      format: 'yyyy-MM-dd'
-    }),
-    note: schema.string([
-      rules.minLength(3)
-    ]),
-    employeeId: schema.string({}, [
-      rules.exists({ table: 'employees', column: 'id' })
-    ]),
-    unitId: schema.string({}, [
-      rules.exists({table: 'units', column: 'id'})
-    ]),
-    image: schema.file.optional({
-      size: '2mb',
-      extnames: ['png', 'jpg', 'jpeg'],
-    }),
+    employeeUnits: schema.array().members(schema.string({}, [
+      rules.exists({ table: 'employee_units', column: 'id' })
+    ]))
   })
 
   /**

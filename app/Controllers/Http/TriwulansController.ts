@@ -33,6 +33,7 @@ export default class TriwulansController {
             query.whereBetween('from_date', [fromDate, toDate])
             query.orWhereBetween('to_date', [fromDate, toDate])
           })
+          .preload('unit', u => u.select('name'))
           .if(!superAdmin, query => {
             query.whereIn('unit_id', unitIds)
           })
@@ -40,6 +41,7 @@ export default class TriwulansController {
       } else {
         data = await Triwulan.query()
           .whereILike('name', `%${keyword}%`)
+          .preload('unit', u => u.select('name'))
           .if(!superAdmin, query => {
             query.whereIn('unit_id', unitIds)
           })

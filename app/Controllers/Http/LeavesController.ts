@@ -24,7 +24,7 @@ export default class LeavesController {
   public async index({ request, response, auth }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
-    const { page = 1, limit = 10, keyword = "", fromDate = "", toDate = "", employeeId } = request.qs()
+    const { page = 1, limit = 10, keyword = "", fromDate = "", toDate = "" } = request.qs()
     const unitIds = await unitHelper()
     const superAdmin = await checkRoleSuperAdmin()
 
@@ -44,7 +44,6 @@ export default class LeavesController {
 
       if (roles.includes('super_admin') || roles.includes('admin_hrd')) {
         data = await Leave.query()
-          .select('id', 'employee_id', 'status', 'reason', 'from_date', 'to_date', 'type', 'leaveStatus', 'unit_id', 'image')
           .preload('employee', em => em.select('name'))
           .preload('unit', u => u.select('name'))
           .whereHas('employee', e => e.whereILike('name', `%${keyword}%`))
@@ -54,15 +53,15 @@ export default class LeavesController {
               query.orWhereBetween('to_date', [fromDate, toDate])
             }
           })
-          .andWhere(query => {
-            //TODO: menghilangkan parameter employeeId
-            if (employeeId) {
-              query.where('employee_id', employeeId)
-            }
-          })
+          // .andWhere(query => {
+          //   if (employeeId) {
+          //     query.where('employee_id', employeeId)
+          //   }
+          // })
           .if(!superAdmin, query => {
             query.whereIn('unit_id', unitIds)
           })
+          .orderBy('from_date', 'desc')
           .paginate(page, limit)
       } else {
         data = await Leave.query()
@@ -82,6 +81,7 @@ export default class LeavesController {
           .if(!superAdmin, query => {
             query.whereIn('unit_id', unitIds)
           })
+          .orderBy('from_date', 'desc')
           .paginate(page, limit)
       }
 

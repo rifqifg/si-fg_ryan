@@ -52,7 +52,6 @@ export default class LeaveSessionsController {
               query.whereBetween('date', [fromDate, toDate])
             }
           })
-          .whereIn('unit_id', unitIds)
           // .andWhere(query => {
           //   if (employeeId) {
           //     query.where('employee_id', employeeId)

@@ -24,7 +24,7 @@ export default class LeavesController {
   public async index({ request, response, auth }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
-    const { page = 1, limit = 10, keyword = "", fromDate = "", toDate = "" } = request.qs()
+    const { page = 1, limit = 10, keyword = "", fromDate = "", toDate = "", status = "" } = request.qs()
     const unitIds = await unitHelper()
     const superAdmin = await checkRoleSuperAdmin()
 
@@ -47,6 +47,7 @@ export default class LeavesController {
           .preload('employee', em => em.select('name'))
           .preload('unit', u => u.select('name'))
           .whereHas('employee', e => e.whereILike('name', `%${keyword}%`))
+          .andWhereILike('status', `%${status}%`)
           .andWhere(query => {
             if (fromDate && toDate) {
               query.whereBetween('from_date', [fromDate, toDate])
@@ -78,6 +79,7 @@ export default class LeavesController {
           .andWhere(query => {
             query.where('employee_id', userObject.employee_id)
           })
+          .andWhereILike('status', `%${status}%`)
           .if(!superAdmin, query => {
             query.whereIn('unit_id', unitIds)
           })

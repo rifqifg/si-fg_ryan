@@ -73,6 +73,13 @@ export default class UnitsController {
           e.select("id", "title", "employee_id", "status");
           e.preload("employee", (m) => m.select("name"));
           e.whereHas('employee', e => e.whereILike("name", `%${keyword}%`))
+          e.orderByRaw(`
+            case
+              when title = 'lead' then 1
+              when title = 'vice' then 2
+              else 3
+            end
+          `)
         })
         .firstOrFail();
 
@@ -102,9 +109,9 @@ export default class UnitsController {
           .andWhere('title', 'lead'))
         .first()
 
-        if (!checkUnit || checkUnit.id != id) {
-          return response.badRequest({ message: "Gagal mengubah data unit dikarenakan anda bukan ketua" });
-        }
+      if (!checkUnit || checkUnit.id != id) {
+        return response.badRequest({ message: "Gagal mengubah data unit dikarenakan anda bukan ketua" });
+      }
     }
 
     try {
@@ -141,8 +148,8 @@ export default class UnitsController {
     }
   }
 
-  public async getUnit({ request, response }: HttpContextContract) {
-    const { keyword = "", employee_id } = request.qs()
+  public async getUnit({ request, response, auth }: HttpContextContract) {
+    const { keyword = "" } = request.qs()
 
     try {
       const unitIds = await unitHelper()
@@ -150,12 +157,9 @@ export default class UnitsController {
 
       const data = await Unit.query()
         .whereILike('name', `%${keyword}%`)
+        .preload('employeeUnits', eu => eu.where('title', 'lead').andWhere('employee_id', auth.user!.$attributes.employeeId))
         .if(!superAdmin, query => {
           query.whereIn('id', unitIds)
-          query.whereHas('employeeUnits', eu => {
-            eu.where('title', 'lead')
-            .if(employee_id, e => e.andWhere('employee_id', employee_id))
-          })
         })
 
       response.ok({ message: "get data successfully", data })

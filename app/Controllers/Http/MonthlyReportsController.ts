@@ -17,7 +17,7 @@ export default class MonthlyReportsController {
   public async index({ request, response }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
-    const { page = 1, limit = 10, keyword = "", fromDate = "", toDate = "" } = request.qs()
+    const { page = 1, limit = 10, keyword = "", fromDate = "", toDate = "", unitId } = request.qs()
 
     try {
       let data
@@ -27,14 +27,17 @@ export default class MonthlyReportsController {
         }
         data = await MonthlyReport.query()
           .whereILike('name', `%${keyword}%`)
+          .if(unitId, q => q.andWhere('unit_id', unitId))
           .andWhere(query => {
             query.whereBetween('from_date', [fromDate, toDate])
             query.orWhereBetween('to_date', [fromDate, toDate])
           })
+          .preload('unit')
           .paginate(page, limit)
       } else {
         data = await MonthlyReport.query()
           .whereILike('name', `%${keyword}%`)
+          .preload('unit')
           .paginate(page, limit)
       }
 
@@ -127,7 +130,8 @@ export default class MonthlyReportsController {
       let data
       if (!employeeId) {
         const monthlyReport = await MonthlyReport.query()
-          .select('name', 'from_date', 'to_date', 'red_dates')
+          .select('name', 'from_date', 'to_date', 'red_dates', 'unit_id')
+          .preload('unit')
           .where("id", id)
           .firstOrFail();
 

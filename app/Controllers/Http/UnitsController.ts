@@ -109,9 +109,9 @@ export default class UnitsController {
           .andWhere('title', 'lead'))
         .first()
 
-        if (!checkUnit || checkUnit.id != id) {
-          return response.badRequest({ message: "Gagal mengubah data unit dikarenakan anda bukan ketua" });
-        }
+      if (!checkUnit || checkUnit.id != id) {
+        return response.badRequest({ message: "Gagal mengubah data unit dikarenakan anda bukan ketua" });
+      }
     }
 
     try {
@@ -148,7 +148,7 @@ export default class UnitsController {
     }
   }
 
-  public async getUnit({ request, response }: HttpContextContract) {
+  public async getUnit({ request, response, auth }: HttpContextContract) {
     const { keyword = "" } = request.qs()
 
     try {
@@ -157,9 +157,9 @@ export default class UnitsController {
 
       const data = await Unit.query()
         .whereILike('name', `%${keyword}%`)
+        .preload('employeeUnits', eu => eu.where('title', 'lead').andWhere('employee_id', auth.user!.$attributes.employeeId))
         .if(!superAdmin, query => {
           query.whereIn('id', unitIds)
-          query.whereHas('employeeUnits', eu => eu.where('title', 'lead'))
         })
 
       response.ok({ message: "get data successfully", data })

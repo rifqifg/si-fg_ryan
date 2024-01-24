@@ -24,7 +24,7 @@ export default class LeaveSessionsController {
   public async index({ request, response, auth }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
-    const { page = 1, limit = 10, keyword = "", fromDate = "", toDate = "" } = request.qs()
+    const { page = 1, limit = 10, keyword = "", fromDate = "", toDate = "", status = "" } = request.qs()
 
     if (DateTime.fromISO(fromDate) > DateTime.fromISO(toDate)) {
       return response.badRequest({ message: "INVALID_DATE_RANGE" })
@@ -52,6 +52,7 @@ export default class LeaveSessionsController {
               query.whereBetween('date', [fromDate, toDate])
             }
           })
+          .andWhereILike('status', `%${status}%`)
           // .andWhere(query => {
           //   if (employeeId) {
           //     query.where('employee_id', employeeId)
@@ -75,6 +76,7 @@ export default class LeaveSessionsController {
           .andWhere(query => {
             query.where('employee_id', userObject.employee_id)
           })
+          .andWhereILike('status', `%${status}%`)
           .if(!superAdmin, query => {
             query.whereIn('unit_id', unitIds)
           })

@@ -149,7 +149,7 @@ export default class UnitsController {
   }
 
   public async getUnit({ request, response, auth }: HttpContextContract) {
-    const { keyword = "", employee_id } = request.qs()
+    const { keyword = "" } = request.qs()
 
     try {
       const unitIds = await unitHelper()
@@ -160,10 +160,10 @@ export default class UnitsController {
         .preload('employeeUnits', eu => eu.where('title', 'lead').andWhere('employee_id', auth.user!.$attributes.employeeId))
         .if(!superAdmin, query => {
           query.whereIn('id', unitIds)
-          query.whereHas('employeeUnits', eu => {
-            eu.where('title', 'lead')
-            .if(employee_id, e => e.andWhere('employee_id', employee_id))
-          })
+          // query.whereHas('employeeUnits', eu => {
+          //   eu.where('title', 'lead')
+          //   .if(employee_id, e => e.andWhere('employee_id', employee_id))
+          // })
         })
 
       response.ok({ message: "get data successfully", data })

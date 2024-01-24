@@ -12,6 +12,7 @@ import { DateTime } from 'luxon'
 import { validate as uuidValidation } from "uuid"
 import Env from "@ioc:Adonis/Core/Env"
 import Drive from '@ioc:Adonis/Core/Drive'
+import EmployeeUnit from 'App/Models/EmployeeUnit'
 
 const getSignedUrl = async (filename: string) => {
   const beHost = Env.get('BE_URL')
@@ -33,6 +34,8 @@ export default class LeavesController {
       return response.badRequest({ message: "INVALID_DATE_RANGE" })
     }
 
+
+
     try {
       let data
 
@@ -43,6 +46,12 @@ export default class LeavesController {
       const roles = RolesHelper(userObject)
 
       if (roles.includes('super_admin') || roles.includes('admin_hrd')) {
+        const unitLead = await EmployeeUnit.query()
+          .where('employee_id', auth.user!.$attributes.employeeId)
+          .andWhere('title', 'lead')
+          .first()
+        const unitLeadObject = JSON.parse(JSON.stringify(unitLead))
+
         data = await Leave.query()
           .preload('employee', em => em.select('name'))
           .preload('unit', u => u.select('name'))
@@ -54,13 +63,9 @@ export default class LeavesController {
               query.orWhereBetween('to_date', [fromDate, toDate])
             }
           })
-          // .andWhere(query => {
-          //   if (employeeId) {
-          //     query.where('employee_id', employeeId)
-          //   }
-          // })
           .if(!superAdmin, query => {
-            query.whereIn('unit_id', unitIds)
+            query.where('unit_id', unitLeadObject.unit_id)
+            query.orWhere('employee_id', auth.user!.$attributes.employeeId)
           })
           .orderBy('from_date', 'desc')
           .paginate(page, limit)
@@ -109,13 +114,27 @@ export default class LeavesController {
     }
   }
 
-  public async store({ request, response }: HttpContextContract) {
+  public async store({ request, response, auth }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
 
     const payload = await request.validate(CreateLeaveValidator)
     if (payload.fromDate! > payload.toDate!) {
       return response.badRequest({ message: "INVALID_DATE_RANGE" })
+    }
+
+    //cek lead
+    const superAdmin = await checkRoleSuperAdmin()
+    if (!superAdmin && payload.status) {
+      const unitLead = await EmployeeUnit.query()
+        .where('employee_id', auth.user!.$attributes.employeeId)
+        .andWhere('title', 'lead')
+        .first()
+      if (unitLead?.unitId !== payload.unitId && unitLead?.employeeId !== payload.employeeId) {
+        return response.badRequest({ message: "Gagal menambah data dikarenakan anda bukan ketua unit tersebut" });
+      }else if(unitLead?.unitId === payload.unitId && unitLead?.employeeId !== payload.employeeId) {
+        return response.badRequest({ message: "Gagal menambah data dikarenakan karyawan tersebut bukan anggota unit anda" });
+      }
     }
 
     try {
@@ -187,7 +206,7 @@ export default class LeavesController {
     }
   }
 
-  public async update({ params, request, response }: HttpContextContract) {
+  public async update({ params, request, response, auth }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
     const { id } = params;
@@ -207,6 +226,17 @@ export default class LeavesController {
 
     try {
       const leave = await Leave.findOrFail(id);
+      // cek lead unit
+      const superAdmin = await checkRoleSuperAdmin()
+      if (!superAdmin && payload.status) {
+        const unitLead = await EmployeeUnit.query()
+          .where('employee_id', auth.user!.$attributes.employeeId)
+          .andWhere('title', 'lead')
+          .first()
+        if (unitLead?.unitId !== leave.unitId) {
+          return response.badRequest({ message: "Gagal update status izin dikarenakan anda bukan ketua unit tersebut" });
+        }
+      }
 
       if (payload.image) {
         const image = Math.floor(Math.random() * 1000) + DateTime.now().toUnixInteger().toString() + "." + payload.image.extname

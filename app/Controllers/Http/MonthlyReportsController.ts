@@ -17,7 +17,10 @@ export default class MonthlyReportsController {
   public async index({ request, response }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
-    const { page = 1, limit = 10, keyword = "", fromDate = "", toDate = "", unitId } = request.qs()
+    const { page = 1, limit = 10, keyword = "", fromDate = "", toDate = "" } = request.qs()
+
+    const unitIds = await unitHelper()
+    const superAdmin = await checkRoleSuperAdmin()
 
     try {
       let data
@@ -27,7 +30,7 @@ export default class MonthlyReportsController {
         }
         data = await MonthlyReport.query()
           .whereILike('name', `%${keyword}%`)
-          .if(unitId, q => q.andWhere('unit_id', unitId))
+          .if(!(superAdmin), q => q.andWhereIn('unit_id', unitIds))
           .andWhere(query => {
             query.whereBetween('from_date', [fromDate, toDate])
             query.orWhereBetween('to_date', [fromDate, toDate])

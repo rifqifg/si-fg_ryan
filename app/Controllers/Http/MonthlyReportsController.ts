@@ -73,36 +73,6 @@ export default class MonthlyReportsController {
 
     if (fixedTimeActivity.length <= 0) throw new Error('Unit yang akan digenerate belum memiliki aktifitas tetap')
 
-    // const superAdmin = await checkRoleSuperAdmin()
-
-    // if (superAdmin) {
-    //   if (!(payload.unitId)) throw new Error("Super admin wajib isi field unitId")
-    // } else {
-    //   const unitIds = await unitHelper()
-    //   const body = request.body()
-
-    //   request.updateBody({ ...body, unitId: unitIds[0]})
-    // }
-
-    // return request.body()
-
-    // jika dia superadmin, ngga perlu ubah apa2.
-    // cukup cek apakah field unitId nya diisi. klo ngga, bad request
-
-    // jika dia bukan superadmin, panggil fungsi unitHelper..
-    // ..masukkan nilai unitId[0] ke payload & request body.
-
-
-    // TODO: handle jika payload.unitId nya ngga ada,
-    // const newPayload = JSON.parse(JSON.stringify(payload))
-    // const superAdmin = await checkRoleSuperAdmin()
-
-    // if (!(superAdmin)) {
-    //   const unitIds = await unitHelper()
-
-    //   newPayload.unitId = unitIds[0]
-    // }
-
     try {
       const data = await MonthlyReport.create(payload);
       CreateRouteHist(statusRoutes.FINISH, dateStart)

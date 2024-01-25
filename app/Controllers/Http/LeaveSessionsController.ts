@@ -264,7 +264,7 @@ export default class LeaveSessionsController {
     }
   }
 
-  public async destroy({ params, response }: HttpContextContract) {
+  public async destroy({ params, response, auth }: HttpContextContract) {
     const { id } = params;
     if (!uuidValidation(id)) {
       return response.badRequest({ message: "LeaveSession ID tidak valid" });
@@ -272,6 +272,25 @@ export default class LeaveSessionsController {
 
     try {
       const data = await LeaveSession.findOrFail(id);
+
+      // cek role
+      const user = await User.query().preload('roles', r => r.preload('role')).where('id', auth.use('api').user!.id).firstOrFail()
+      const userObject = JSON.parse(JSON.stringify(user))
+
+      const roles = RolesHelper(userObject)
+
+      //cek lead
+      if (roles.includes('admin_hrd')) {
+        const unitLead = await EmployeeUnit.query()
+          .where('employee_id', auth.user!.$attributes.employeeId)
+          .andWhere('title', 'lead')
+          .first()
+
+        if (unitLead?.unitId !== data.unitId && unitLead?.employeeId === data.employeeId) {
+          return response.badRequest({ message: "Gagal menghapus data dikarenakan anda bukan ketua unit tersebut" });
+        }
+      }
+
       await data.delete();
       if (data.image) {
         await Drive.use('hrd').delete('leave_sessions/' + data.image)

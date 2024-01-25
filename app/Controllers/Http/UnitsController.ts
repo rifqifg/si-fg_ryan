@@ -261,10 +261,32 @@ export default class UnitsController {
 
       response.ok({ message: "get data successfully", data })
     } catch (error) {
-      const message = "HRDU06: " + error.message || error;
+      const message = "HRDU07: " + error.message || error;
       console.log(error);
       response.badRequest({
         message: "Gagal mengambil data",
+        error: message,
+        error_data: error,
+      });
+    }
+  }
+
+  public async deleteImage({ params, response }: HttpContextContract) {
+    const { id } = params;
+    try {
+      const data = await Unit.findOrFail(id);
+
+      if (data.signature) {
+        await Drive.use('hrd').delete('units/' + data.signature)
+      }
+
+      await data.merge({signature: null}).save()
+      response.ok({ message: "Delete unit image success" });
+    } catch (error) {
+      const message = "HRDU08: " + error.message || error;
+      console.log(error);
+      response.badRequest({
+        message: "Gagal menghapus data",
         error: message,
         error_data: error,
       });

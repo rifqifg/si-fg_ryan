@@ -132,9 +132,10 @@ export default class LeavesController {
         .first()
       if (unitLead?.unitId !== payload.unitId && unitLead?.employeeId !== payload.employeeId) {
         return response.badRequest({ message: "Gagal menambah data dikarenakan anda bukan ketua unit tersebut" });
-      }else if(unitLead?.unitId === payload.unitId && unitLead?.employeeId !== payload.employeeId) {
-        return response.badRequest({ message: "Gagal menambah data dikarenakan karyawan tersebut bukan anggota unit anda" });
       }
+      // else if(unitLead?.unitId === payload.unitId && unitLead?.employeeId !== payload.employeeId) {
+      //   return response.badRequest({ message: "Gagal menambah data dikarenakan karyawan tersebut bukan anggota unit anda" });
+      // }
     }
 
     try {

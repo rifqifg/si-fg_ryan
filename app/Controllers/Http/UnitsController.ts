@@ -1,12 +1,26 @@
 import type { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import { checkRoleSuperAdmin } from "App/Helpers/checkRoleSuperAdmin";
+import { RolesHelper } from "App/Helpers/rolesHelper";
 import { unitHelper } from "App/Helpers/unitHelper";
+import EmployeeUnit from "App/Models/EmployeeUnit";
 import Unit from "App/Models/Unit";
+import User from "App/Models/User";
+import Env from "@ioc:Adonis/Core/Env"
+import Drive from '@ioc:Adonis/Core/Drive'
 import CreateUnitValidator from "App/Validators/CreateUnitValidator";
 import UpdateUnitValidator from "App/Validators/UpdateUnitValidator";
+import { DateTime } from "luxon";
 import { validate as uuidValidation } from "uuid"
 
 export default class UnitsController {
+
+  private async getSignedUrl(filename: string) {
+    const beHost = Env.get('BE_URL')
+    const hrdDrive = Drive.use('hrd')
+    const signedUrl = beHost + await hrdDrive.getSignedUrl('units/' + filename, { expiresIn: '30mins' })
+    return signedUrl
+  }
+
   public async index({ request, response }: HttpContextContract) {
     // const dateStart = DateTime.now().toMillis();
     // CreateRouteHist(statusRoutes.START, dateStart);
@@ -44,8 +58,27 @@ export default class UnitsController {
 
   public async store({ request, response }: HttpContextContract) {
     const payload = await request.validate(CreateUnitValidator);
+
     try {
-      const data = await Unit.create(payload);
+      let data
+      if (payload.signature) {
+        const signature = Math.floor(Math.random() * 1000) + DateTime.now().toUnixInteger().toString() + "." + payload.signature.extname
+        await payload.signature.moveToDisk(
+          'units',
+          { name: signature, overwrite: true },
+          'hrd'
+        )
+
+        data = await Unit.create({ ...payload, signature })
+        data.signature = await this.getSignedUrl(data.signature)
+      } else {
+        data = await Unit.create({
+          name: payload.name,
+          description: payload.description
+        })
+      }
+
+      // const data = await Unit.create(payload);
       response.ok({ message: "Create data success", data });
     } catch (error) {
       const message = "HRDU02: " + error.message || error;

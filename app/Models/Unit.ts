@@ -14,6 +14,9 @@ export default class Unit extends BaseModel {
   @column()
   public description: string
 
+  @column()
+  public signature: string | null
+
   @hasMany(() => EmployeeUnit)
   public employeeUnits: HasMany<typeof EmployeeUnit>
 

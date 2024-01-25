@@ -26,6 +26,10 @@ export default class CreateUnitValidator {
   public schema = schema.create({
     name: schema.string({ trim: true }, [rules.minLength(2)]),
     description: schema.string.optional({}, [rules.minLength(3)]),
+    signature: schema.file.nullableAndOptional({
+      size: '2mb',
+      extnames: ['png'],
+    })
   })
 
   /**

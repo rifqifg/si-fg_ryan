@@ -42,8 +42,15 @@ export default class UnitsController {
         .orderBy('name', 'asc')
         .paginate(page, limit);
 
+      const dataObject = JSON.parse(JSON.stringify(data))
+
+      dataObject.data.map(async (value) => {
+        if (value.signature) {
+          value.signature = await this.getSignedUrl(value.signature)
+        }
+      })
       // CreateRouteHist(statusRoutes.FINISH, dateStart);
-      response.ok({ message: "Data Berhasil Didapatkan", data });
+      response.ok({ message: "Data Berhasil Didapatkan", data: dataObject });
     } catch (error) {
       const message = "HRDU01: " + error.message || error;
       // CreateRouteHist(statusRoutes.ERROR, dateStart, message)
@@ -116,7 +123,13 @@ export default class UnitsController {
         })
         .firstOrFail();
 
-      response.ok({ message: "Get data success", data });
+      const dataObject = JSON.parse(JSON.stringify(data))
+
+      if (dataObject.signature) {
+        dataObject.signature = await this.getSignedUrl(dataObject.signature)
+      }
+
+      response.ok({ message: "Get data success", data: dataObject });
     } catch (error) {
       const message = "HRDU03: " + error.message || error;
       console.log(error);
@@ -132,6 +145,7 @@ export default class UnitsController {
     const { id } = params;
 
     const payload = await request.validate(UpdateUnitValidator);
+    const objectPayload = JSON.parse(JSON.stringify(payload))
     const superAdmin = await checkRoleSuperAdmin()
 
     if (!superAdmin) {
@@ -148,8 +162,26 @@ export default class UnitsController {
     }
 
     try {
-      const data = await Unit.findOrFail(id);
-      await data.merge(payload).save();
+      const unit = await Unit.findOrFail(id);
+
+      if (payload.signature) {
+        const image = Math.floor(Math.random() * 1000) + DateTime.now().toUnixInteger().toString() + "." + payload.signature.extname
+        await payload.signature.moveToDisk(
+          'units',
+          { name: image, overwrite: true },
+          'hrd'
+        )
+        if (unit.signature) {
+          await Drive.use('hrd').delete('units/' + unit.signature)
+        }
+
+        objectPayload.signature = image
+      }
+
+      const data = await unit.merge(objectPayload).save();
+      if (data.signature) {
+        data.signature = await this.getSignedUrl(data.signature)
+      }
 
       response.ok({ message: "Update data success", data });
     } catch (error) {
@@ -168,6 +200,10 @@ export default class UnitsController {
     try {
       const data = await Unit.findOrFail(id);
       await data.delete();
+
+      if (data.signature) {
+        await Drive.use('hrd').delete('units/' + data.signature)
+      }
 
       response.ok({ message: "Delete data success" });
     } catch (error) {

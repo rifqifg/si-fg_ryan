@@ -52,22 +52,27 @@ export default class LeaveSessionsController {
 
         data = await LeaveSession.query()
           .preload('employee', em => em.select('name'))
-          .whereHas('employee', e => e.whereILike('name', `%${keyword}%`))
           .preload('unit', u => u.select('name'))
           .andWhere(query => {
             if (fromDate && toDate) {
               query.whereBetween('date', [fromDate, toDate])
             }
           })
-          .andWhereILike('status', `%${status}%`)
-          // .andWhere(query => {
-          //   if (employeeId) {
-          //     query.where('employee_id', employeeId)
-          //   }
-          // })
-          .if(!superAdmin, query => {
+          .if(superAdmin, query => {
+            query.whereHas('employee', e => e.whereILike('name', `%${keyword}%`))
+            query.andWhereILike('status', `%${status}%`)
+          })
+          .if(!superAdmin && keyword === "" && status === "", query => {
             query.where('unit_id', unitLeadObject.unit_id)
             query.orWhere('employee_id', auth.user!.$attributes.employeeId)
+          })
+          .if(!superAdmin && (keyword !== "" || status !== ""), query => {
+            query.where('unit_id', unitLeadObject.unit_id)
+            query.andWhereHas('employee', e => e.whereILike('name', `%${keyword}%`))
+            query.andWhereILike('status', `%${status}%`)
+            query.orWhere('employee_id', auth.user!.$attributes.employeeId)
+              .andWhereHas('employee', e => e.whereILike('name', `%${keyword}%`))
+              .andWhereILike('status', `%${status}%`)
           })
           .orderBy('date', 'desc')
           .paginate(page, limit)
@@ -264,7 +269,7 @@ export default class LeaveSessionsController {
     }
   }
 
-  public async destroy({ params, response, auth }: HttpContextContract) {
+  public async destroy({ params, response }: HttpContextContract) {
     const { id } = params;
     if (!uuidValidation(id)) {
       return response.badRequest({ message: "LeaveSession ID tidak valid" });
@@ -272,25 +277,6 @@ export default class LeaveSessionsController {
 
     try {
       const data = await LeaveSession.findOrFail(id);
-
-      // cek role
-      const user = await User.query().preload('roles', r => r.preload('role')).where('id', auth.use('api').user!.id).firstOrFail()
-      const userObject = JSON.parse(JSON.stringify(user))
-
-      const roles = RolesHelper(userObject)
-
-      //cek lead
-      if (roles.includes('admin_hrd')) {
-        const unitLead = await EmployeeUnit.query()
-          .where('employee_id', auth.user!.$attributes.employeeId)
-          .andWhere('title', 'lead')
-          .first()
-
-        if (unitLead?.unitId !== data.unitId && unitLead?.employeeId === data.employeeId) {
-          return response.badRequest({ message: "Gagal menghapus data dikarenakan anda bukan ketua unit tersebut" });
-        }
-      }
-
       await data.delete();
       if (data.image) {
         await Drive.use('hrd').delete('leave_sessions/' + data.image)

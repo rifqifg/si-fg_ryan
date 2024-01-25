@@ -119,9 +119,14 @@ export default class LeaveSessionsController {
     CreateRouteHist(statusRoutes.START, dateStart)
     const payload = await request.validate(CreateLeaveSessionValidator)
 
+    // cek role
+    const user = await User.query().preload('roles', r => r.preload('role')).where('id', auth.use('api').user!.id).firstOrFail()
+    const userObject = JSON.parse(JSON.stringify(user))
+
+    const roles = RolesHelper(userObject)
+
     //cek lead
-    const superAdmin = await checkRoleSuperAdmin()
-    if (!superAdmin && payload.status) {
+    if (roles.includes('admin_hrd')) {
       const unitLead = await EmployeeUnit.query()
         .where('employee_id', auth.user!.$attributes.employeeId)
         .andWhere('title', 'lead')

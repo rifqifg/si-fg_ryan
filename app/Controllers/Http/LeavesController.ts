@@ -162,7 +162,7 @@ export default class LeavesController {
           fromDate: payload.fromDate,
           toDate: payload.toDate,
           note: payload.note,
-          type: payload.type,
+          // type: payload.type,
           leaveStatus: payload.leaveStatus,
           unitId: payload.unitId,
         })

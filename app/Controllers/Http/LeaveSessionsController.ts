@@ -101,6 +101,7 @@ export default class LeaveSessionsController {
 
       dataObject.data.map(async (value) => {
         if (value.image) {
+          value.file_image = value.image
           value.image = await getSignedUrl(value.image)
         }
       })
@@ -194,6 +195,7 @@ export default class LeaveSessionsController {
       const dataObject = JSON.parse(JSON.stringify(data))
 
       if (dataObject.image) {
+        dataObject.file_image = dataObject.image
         dataObject.image = await getSignedUrl(dataObject.image)
       }
 

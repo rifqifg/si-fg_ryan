@@ -4,6 +4,7 @@ import { checkRoleSuperAdmin } from 'App/Helpers/checkRoleSuperAdmin';
 import { unitHelper } from 'App/Helpers/unitHelper';
 import Activity from 'App/Models/Activity';
 import ActivityMember from 'App/Models/ActivityMember';
+import EmployeeUnit from 'App/Models/EmployeeUnit';
 import Presence from 'App/Models/Presence';
 import SubActivity from 'App/Models/SubActivity';
 import User from 'App/Models/User';
@@ -206,7 +207,7 @@ export default class ActivitiesController {
     }
   }
 
-  public async update({ request, response, params }: HttpContextContract) {
+  public async update({ request, response, params, auth }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
     const { id } = params
@@ -321,6 +322,19 @@ export default class ActivitiesController {
       payload.categoryActivityId ? formattedPayload['categoryActivityId'] = payload.categoryActivityId : ""
 
       const findData = await Activity.findOrFail(id)
+
+      // cek lead unit
+      const superAdmin = await checkRoleSuperAdmin()
+      if (!superAdmin) {
+        const unitLead = await EmployeeUnit.query()
+          .where('employee_id', auth.user!.$attributes.employeeId)
+          .andWhere('title', 'lead')
+          .first()
+        if (unitLead?.unitId !== findData.unitId) {
+          return response.badRequest({ message: "Gagal update status izin dikarenakan anda bukan ketua unit tersebut" });
+        }
+      }
+
       const data = await findData.merge(formattedPayload).save()
 
       CreateRouteHist(statusRoutes.FINISH, dateStart)
@@ -340,12 +354,25 @@ export default class ActivitiesController {
   }
 
 
-  public async destroy({ params, response }: HttpContextContract) {
+  public async destroy({ params, response, auth }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
     const { id } = params
     try {
       const data = await Activity.findOrFail(id)
+
+      // cek lead unit
+      const superAdmin = await checkRoleSuperAdmin()
+      if (!superAdmin) {
+        const unitLead = await EmployeeUnit.query()
+          .where('employee_id', auth.user!.$attributes.employeeId)
+          .andWhere('title', 'lead')
+          .first()
+        if (unitLead?.unitId !== data.unitId) {
+          return response.badRequest({ message: "Gagal update status izin dikarenakan anda bukan ketua unit tersebut" });
+        }
+      }
+
       await data.delete()
 
       CreateRouteHist(statusRoutes.FINISH, dateStart)

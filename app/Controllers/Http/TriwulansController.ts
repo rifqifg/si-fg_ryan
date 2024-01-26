@@ -3,6 +3,7 @@ import Database from '@ioc:Adonis/Lucid/Database'
 import { TriwulanHelper } from 'App/Helpers/TriwulanHelper'
 import { checkRoleSuperAdmin } from 'App/Helpers/checkRoleSuperAdmin'
 import { unitHelper } from 'App/Helpers/unitHelper'
+import EmployeeUnit from 'App/Models/EmployeeUnit'
 import Triwulan from 'App/Models/Triwulan'
 import TriwulanEmployee from 'App/Models/TriwulanEmployee'
 import TriwulanEmployeeDetail from 'App/Models/TriwulanEmployeeDetail'
@@ -203,7 +204,7 @@ export default class TriwulansController {
     }
   }
 
-  public async update({ params, request, response }: HttpContextContract) {
+  public async update({ params, request, response, auth }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
     const { id } = params;
@@ -222,6 +223,19 @@ export default class TriwulansController {
 
     try {
       const triwulan = await Triwulan.findOrFail(id);
+
+      // cek lead unit
+      const superAdmin = await checkRoleSuperAdmin()
+      if (!superAdmin) {
+        const unitLead = await EmployeeUnit.query()
+          .where('employee_id', auth.user!.$attributes.employeeId)
+          .andWhere('title', 'lead')
+          .first()
+        if (unitLead?.unitId !== triwulan.unitId) {
+          return response.badRequest({ message: "Gagal update rapot triwulan dikarenakan anda bukan ketua unit tersebut" });
+        }
+      }
+
       const data = await triwulan.merge(payload).save();
       CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil mengubah data", data });
@@ -237,7 +251,7 @@ export default class TriwulansController {
     }
   }
 
-  public async destroy({ params, response }: HttpContextContract) {
+  public async destroy({ params, response, auth }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
     const { id } = params;
@@ -247,6 +261,19 @@ export default class TriwulansController {
 
     try {
       const data = await Triwulan.findOrFail(id);
+
+      // cek lead unit
+      const superAdmin = await checkRoleSuperAdmin()
+      if (!superAdmin) {
+        const unitLead = await EmployeeUnit.query()
+          .where('employee_id', auth.user!.$attributes.employeeId)
+          .andWhere('title', 'lead')
+          .first()
+        if (unitLead?.unitId !== data.unitId) {
+          return response.badRequest({ message: "Gagal hapus rapot triwulan dikarenakan anda bukan ketua unit tersebut" });
+        }
+      }
+
       await data.delete();
       CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil menghapus data" });

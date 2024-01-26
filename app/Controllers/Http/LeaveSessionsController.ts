@@ -252,6 +252,15 @@ export default class LeaveSessionsController {
         objectPayload.image = image
       }
 
+      //klo hapus gambar
+      if (payload.deleteImage) {
+        await Drive.use('hrd').delete('leave_sessions/' + leave.image)
+        delete objectPayload["deleteImage"]
+        if (!objectPayload.image) {
+          objectPayload.image = null
+        }
+      }
+
       const data = await leave.merge(objectPayload).save();
       if (data.image) {
         data.image = await getSignedUrl(data.image)

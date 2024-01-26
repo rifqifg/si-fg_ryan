@@ -50,6 +50,7 @@ export default class UpdateLeaveValidator {
       size: '2mb',
       extnames: ['png', 'jpg', 'jpeg'],
     }),
+    deleteImage: schema.string.optional()
   })
 
   /**

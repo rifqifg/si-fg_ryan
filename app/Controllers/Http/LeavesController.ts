@@ -106,6 +106,7 @@ export default class LeavesController {
 
       dataObject.data.map(async (value) => {
         if (value.image) {
+          value.file_image = value.image
           value.image = await getSignedUrl(value.image)
         }
       })
@@ -205,6 +206,7 @@ export default class LeavesController {
       const dataObject = JSON.parse(JSON.stringify(data))
 
       if (dataObject.image) {
+        dataObject.file_image = dataObject.image
         dataObject.image = await getSignedUrl(dataObject.image)
       }
 
@@ -254,6 +256,7 @@ export default class LeavesController {
         }
       }
 
+      //klo ganti gambar
       if (payload.image) {
         const image = Math.floor(Math.random() * 1000) + DateTime.now().toUnixInteger().toString() + "." + payload.image.extname
         await payload.image.moveToDisk(
@@ -266,6 +269,15 @@ export default class LeavesController {
         }
 
         objectPayload.image = image
+      }
+
+      //klo hapus gambar
+      if (payload.deleteImage) {
+        await Drive.use('hrd').delete('leaves/' + leave.image)
+        delete objectPayload["deleteImage"]
+        if (!objectPayload.image) {
+          objectPayload.image = null
+        }
       }
 
       const data = await leave.merge(objectPayload).save();

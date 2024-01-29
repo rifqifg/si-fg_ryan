@@ -55,17 +55,27 @@ export default class LeavesController {
         data = await Leave.query()
           .preload('employee', em => em.select('name'))
           .preload('unit', u => u.select('name'))
-          .whereHas('employee', e => e.whereILike('name', `%${keyword}%`))
-          .andWhereILike('status', `%${status}%`)
           .andWhere(query => {
             if (fromDate && toDate) {
               query.whereBetween('from_date', [fromDate, toDate])
               query.orWhereBetween('to_date', [fromDate, toDate])
             }
           })
-          .if(!superAdmin, query => {
+          .if(superAdmin, query => {
+            query.whereHas('employee', e => e.whereILike('name', `%${keyword}%`))
+            query.andWhereILike('status', `%${status}%`)
+          })
+          .if(!superAdmin && keyword === "" && status === "", query => {
             query.where('unit_id', unitLeadObject.unit_id)
             query.orWhere('employee_id', auth.user!.$attributes.employeeId)
+          })
+          .if(!superAdmin && (keyword !== "" || status !== ""), query => {
+            query.where('unit_id', unitLeadObject.unit_id)
+            query.andWhereHas('employee', e => e.whereILike('name', `%${keyword}%`))
+            query.andWhereILike('status', `%${status}%`)
+            query.orWhere('employee_id', auth.user!.$attributes.employeeId)
+              .andWhereHas('employee', e => e.whereILike('name', `%${keyword}%`))
+              .andWhereILike('status', `%${status}%`)
           })
           .orderBy('from_date', 'desc')
           .paginate(page, limit)
@@ -96,6 +106,7 @@ export default class LeavesController {
 
       dataObject.data.map(async (value) => {
         if (value.image) {
+          value.file_image = value.image
           value.image = await getSignedUrl(value.image)
         }
       })
@@ -195,6 +206,7 @@ export default class LeavesController {
       const dataObject = JSON.parse(JSON.stringify(data))
 
       if (dataObject.image) {
+        dataObject.file_image = dataObject.image
         dataObject.image = await getSignedUrl(dataObject.image)
       }
 
@@ -244,6 +256,7 @@ export default class LeavesController {
         }
       }
 
+      //klo ganti gambar
       if (payload.image) {
         const image = Math.floor(Math.random() * 1000) + DateTime.now().toUnixInteger().toString() + "." + payload.image.extname
         await payload.image.moveToDisk(
@@ -256,6 +269,15 @@ export default class LeavesController {
         }
 
         objectPayload.image = image
+      }
+
+      //klo hapus gambar
+      if (payload.deleteImage) {
+        await Drive.use('hrd').delete('leaves/' + leave.image)
+        delete objectPayload["deleteImage"]
+        if (!objectPayload.image) {
+          objectPayload.image = null
+        }
       }
 
       const data = await leave.merge(objectPayload).save();
@@ -277,16 +299,34 @@ export default class LeavesController {
     }
   }
 
-  public async destroy({ params, response }: HttpContextContract) {
+  public async destroy({ params, response, auth }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
     const { id } = params;
     if (!uuidValidation(id)) {
       return response.badRequest({ message: "Leave ID tidak valid" });
     }
-
     try {
       const data = await Leave.findOrFail(id);
+
+      // cek role
+      const user = await User.query().preload('roles', r => r.preload('role')).where('id', auth.use('api').user!.id).firstOrFail()
+      const userObject = JSON.parse(JSON.stringify(user))
+
+      const roles = RolesHelper(userObject)
+
+      //cek lead
+      if (roles.includes('admin_hrd')) {
+        const unitLead = await EmployeeUnit.query()
+          .where('employee_id', auth.user!.$attributes.employeeId)
+          .andWhere('title', 'lead')
+          .first()
+
+        if (unitLead?.unitId !== data.unitId && unitLead?.employeeId === data.employeeId) {
+          return response.badRequest({ message: "Gagal menghapus data dikarenakan anda bukan ketua unit tersebut" });
+        }
+      }
+
       await data.delete();
       if (data.image) {
         await Drive.use('hrd').delete('leaves/' + data.image)

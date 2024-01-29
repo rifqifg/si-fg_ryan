@@ -6,6 +6,7 @@ import { statusRoutes } from 'App/Modules/Log/lib/enum'
 import { DateTime } from 'luxon'
 import { unitHelper } from 'App/Helpers/unitHelper'
 import { checkRoleSuperAdmin } from 'App/Helpers/checkRoleSuperAdmin'
+import EmployeeUnit from 'App/Models/EmployeeUnit'
 
 
 export default class DivisionsController {
@@ -110,7 +111,7 @@ export default class DivisionsController {
 
   public async edit({ }: HttpContextContract) { }
 
-  public async update({ request, response, params }: HttpContextContract) {
+  public async update({ request, response, params, auth }: HttpContextContract) {
 
     const { id } = params
     const createNewDivisionSchema = schema.create({
@@ -128,6 +129,19 @@ export default class DivisionsController {
     try {
 
       const data = await Division.findOrFail(id)
+
+      // cek lead unit
+      const superAdmin = await checkRoleSuperAdmin()
+      if (!superAdmin) {
+        const unitLead = await EmployeeUnit.query()
+          .where('employee_id', auth.user!.$attributes.employeeId)
+          .andWhere('title', 'lead')
+          .first()
+        if (unitLead?.unitId !== data.unitId) {
+          return response.badRequest({ message: "Gagal update status izin dikarenakan anda bukan ketua unit tersebut" });
+        }
+      }
+
       await data.merge(payload).save()
 
       response.ok({ message: "Update data success", data })
@@ -138,10 +152,23 @@ export default class DivisionsController {
     }
   }
 
-  public async destroy({ params, response }: HttpContextContract) {
+  public async destroy({ params, response, auth }: HttpContextContract) {
     const { id } = params
     try {
       const data = await Division.findOrFail(id)
+
+      // cek lead unit
+      const superAdmin = await checkRoleSuperAdmin()
+      if (!superAdmin) {
+        const unitLead = await EmployeeUnit.query()
+          .where('employee_id', auth.user!.$attributes.employeeId)
+          .andWhere('title', 'lead')
+          .first()
+        if (unitLead?.unitId !== data.unitId) {
+          return response.badRequest({ message: "Gagal update status izin dikarenakan anda bukan ketua unit tersebut" });
+        }
+      }
+
       await data.delete()
 
       response.ok({ message: "Delete data success" })

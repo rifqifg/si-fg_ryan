@@ -52,22 +52,27 @@ export default class LeaveSessionsController {
 
         data = await LeaveSession.query()
           .preload('employee', em => em.select('name'))
-          .whereHas('employee', e => e.whereILike('name', `%${keyword}%`))
           .preload('unit', u => u.select('name'))
           .andWhere(query => {
             if (fromDate && toDate) {
               query.whereBetween('date', [fromDate, toDate])
             }
           })
-          .andWhereILike('status', `%${status}%`)
-          // .andWhere(query => {
-          //   if (employeeId) {
-          //     query.where('employee_id', employeeId)
-          //   }
-          // })
-          .if(!superAdmin, query => {
+          .if(superAdmin, query => {
+            query.whereHas('employee', e => e.whereILike('name', `%${keyword}%`))
+            query.andWhereILike('status', `%${status}%`)
+          })
+          .if(!superAdmin && keyword === "" && status === "", query => {
             query.where('unit_id', unitLeadObject.unit_id)
             query.orWhere('employee_id', auth.user!.$attributes.employeeId)
+          })
+          .if(!superAdmin && (keyword !== "" || status !== ""), query => {
+            query.where('unit_id', unitLeadObject.unit_id)
+            query.andWhereHas('employee', e => e.whereILike('name', `%${keyword}%`))
+            query.andWhereILike('status', `%${status}%`)
+            query.orWhere('employee_id', auth.user!.$attributes.employeeId)
+              .andWhereHas('employee', e => e.whereILike('name', `%${keyword}%`))
+              .andWhereILike('status', `%${status}%`)
           })
           .orderBy('date', 'desc')
           .paginate(page, limit)
@@ -96,6 +101,7 @@ export default class LeaveSessionsController {
 
       dataObject.data.map(async (value) => {
         if (value.image) {
+          value.file_image = value.image
           value.image = await getSignedUrl(value.image)
         }
       })
@@ -189,6 +195,7 @@ export default class LeaveSessionsController {
       const dataObject = JSON.parse(JSON.stringify(data))
 
       if (dataObject.image) {
+        dataObject.file_image = dataObject.image
         dataObject.image = await getSignedUrl(dataObject.image)
       }
 
@@ -245,6 +252,15 @@ export default class LeaveSessionsController {
         }
 
         objectPayload.image = image
+      }
+
+      //klo hapus gambar
+      if (payload.deleteImage) {
+        await Drive.use('hrd').delete('leave_sessions/' + leave.image)
+        delete objectPayload["deleteImage"]
+        if (!objectPayload.image) {
+          objectPayload.image = null
+        }
       }
 
       const data = await leave.merge(objectPayload).save();

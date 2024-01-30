@@ -25,7 +25,7 @@ export default class ActivitiesController {
     const user = await User.query().preload('roles', r => r.preload('role')).where('id', auth.use('api').user!.id).firstOrFail()
     const userObject = JSON.parse(JSON.stringify(user))
 
-    const unitIds = await unitHelper()
+    const unitLeadIds = await unitHelper("lead")
     const superAdmin = await checkRoleSuperAdmin()
 
     const roles = await RolesHelper(userObject)
@@ -47,16 +47,21 @@ export default class ActivitiesController {
           .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
           .preload('unit', u => u.select('name'))
           .whereILike('name', `%${keyword}%`)
-          .andWhere(query => {
-            // query.where('division_id', auth.use('api').user!.divisionId)
-            query.whereHas('activityMembers', am => (am.where('employee_id', user.employeeId), am.where('role', 'manager')))
-            .if(isAdminHrd, query => {
-              query.orWhereHas('unit', u => u
-                .whereIn('id', unitIds)
-                .andWhere(query => query.whereHas('employeeUnits', eu => eu.where('title', 'lead'))))
-            })
+          // .andWhere(query => {
+          //   // query.where('division_id', auth.use('api').user!.divisionId)
+          //   query.whereHas('activityMembers', am => (am.where('employee_id', user.employeeId), am.where('role', 'manager')))
+          //   .if(isAdminHrd, query => {
+          //     query.orWhereHas('unit', u => u
+          //       .whereIn('id', unitLeadIds)
+          //       .andWhere(query => query.whereHas('employeeUnits', eu => eu.where('title', 'lead'))))
+          //   })
+          // })
+          // .andWhereIn('unit_id', unitLeadIds)
+          .whereHas('activityMembers', am => {
+            am.where('employee_id', user.employeeId)
+              .andWhere('role', 'manager')
           })
-          .andWhereIn('unit_id', unitIds)
+          .if((isAdminHrd), q => q.orWhereIn('unit_id', unitLeadIds))
           .orderBy(orderBy, orderDirection)
           .paginate(page, limit)
       }

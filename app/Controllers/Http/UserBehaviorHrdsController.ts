@@ -1,4 +1,7 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import { checkRoleSuperAdmin } from 'App/Helpers/checkRoleSuperAdmin'
+import { RolesHelper } from 'App/Helpers/rolesHelper'
+import { unitHelper } from 'App/Helpers/unitHelper'
 import Activity from 'App/Models/Activity'
 import User from 'App/Models/User'
 import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist'
@@ -12,9 +15,13 @@ export default class UserBehaviorHrdsController {
     const user = await User.query().preload('roles', r => r.preload('role')).where('id', auth.use('api').user!.id).firstOrFail()
     const userObject = JSON.parse(JSON.stringify(user))
 
-    let data: object
+    const superAdmin = await checkRoleSuperAdmin()
+    const unitLeadIds = await unitHelper("lead")
+    const roles = await RolesHelper(userObject)
+    const isAdminHrd = roles.includes('admin_hrd')
 
-    if (userObject.roles[0].role_name == 'super_admin') {
+    let data: object
+    if (superAdmin) {
       data = await Activity.query()
         .preload('unit', unit => unit.select('id', 'name'))
         .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
@@ -22,7 +29,11 @@ export default class UserBehaviorHrdsController {
       data = await Activity.query()
         .preload('unit', unit => unit.select('id', 'name'))
         .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
-        .whereHas('activityMembers', am => (am.where('employee_id', user.employeeId), am.where('role', 'manager')))
+        .whereHas('activityMembers', am => {
+          am.where('employee_id', user.employeeId)
+            am.andWhere('role', 'manager')
+        })
+        .if((isAdminHrd), q => q.orWhereIn('unit_id', unitLeadIds))
     }
 
     CreateRouteHist(statusRoutes.FINISH, dateStart)

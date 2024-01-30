@@ -23,6 +23,16 @@ const getSignedUrl = async (filename: string) => {
   return signedUrl
 }
 
+function translateStatus(status) {
+  if (status === "approve") {
+      return "menyetujui";
+  } else if (status === "rejected") {
+      return "menolak";
+  } else {
+      return "menunggu";
+  }
+}
+
 export default class LeavesController {
   public async index({ request, response, auth }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
@@ -206,7 +216,7 @@ export default class LeavesController {
           }),
           data: {
             title: `Izin Cuti/Sakit`,
-            description: `${userObject.name} mengajukan ${payload.leaveStatus}`,
+            description: `${userObject.name.split(' ')[0]} mengajukan ${translateStatus(payload.leaveStatus)}`,
             type: `leave_daily`,
             userId: checkAdminUnitObject.employee.user.id,
             date: DateTime.now().setZone('Asia/Jakarta').toFormat('yyyy-MM-dd HH:mm:ss').toString()
@@ -346,7 +356,7 @@ export default class LeavesController {
           }),
           data: {
             title: `Izin Cuti/Sakit`,
-            description: `admin ${payload.status} izin kamu`,
+            description: `Kepala unit ${payload.status} izin kamu`,
             type: `leave_daily`,
             userId: leave.employee.user.id,
             date: DateTime.now().setZone('Asia/Jakarta').toFormat('yyyy-MM-dd HH:mm:ss').toString()

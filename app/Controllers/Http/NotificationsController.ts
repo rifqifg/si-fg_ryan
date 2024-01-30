@@ -24,6 +24,7 @@ export default class NotificationsController {
         `))
         .where('user_id', auth.use('api').user!.id)
         .andWhere('read', false)
+        .orderBy('date', 'desc')
         .paginate(page, limit)
 
       response.ok({ message: "Berhasil mengambil data", data })

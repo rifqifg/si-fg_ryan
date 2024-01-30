@@ -24,9 +24,9 @@ const getSignedUrl = async (filename: string) => {
 }
 
 function translateStatus(status) {
-  if (status === "approve") {
+  if (status == "aprove") {
       return "menyetujui";
-  } else if (status === "rejected") {
+  } else if (status == "rejected") {
       return "menolak";
   } else {
       return "menunggu";

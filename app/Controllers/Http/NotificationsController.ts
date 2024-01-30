@@ -1,6 +1,7 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Database from '@ioc:Adonis/Lucid/Database';
 import Notification from 'App/Models/Notification';
+import UpdateBatchNotificationValidator from 'App/Validators/UpdateBatchNotificationValidator';
 import UpdateNotificationValidator from 'App/Validators/UpdateNotificationValidator';
 import { validate as uuidValidation } from "uuid"
 
@@ -56,6 +57,24 @@ export default class NotificationsController {
       response.ok({ message: "Berhasil mengubah data", data });
     } catch (error) {
       const message = "NOTIF02: " + error.message || error;
+      console.log(error);
+      response.badRequest({
+        message: "Gagal mengubah data",
+        error: message,
+        error_data: error,
+      });
+    }
+  }
+
+  public async updateBatch({ request, response }: HttpContextContract) {
+    const payload = await request.validate(UpdateBatchNotificationValidator)
+
+    try {
+      const data = await Notification.updateOrCreateMany("id", payload.notifications)
+
+      response.ok({ message: "Berhasil mengubah data", data });
+    } catch (error) {
+      const message = "NOTIF03: " + error.message || error;
       console.log(error);
       response.badRequest({
         message: "Gagal mengubah data",

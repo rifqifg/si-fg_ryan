@@ -1,6 +1,7 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Database from '@ioc:Adonis/Lucid/Database';
 import { checkRoleSuperAdmin } from 'App/Helpers/checkRoleSuperAdmin';
+import { RolesHelper } from 'App/Helpers/rolesHelper';
 import { unitHelper } from 'App/Helpers/unitHelper';
 import Activity from 'App/Models/Activity';
 import ActivityMember from 'App/Models/ActivityMember';
@@ -27,9 +28,12 @@ export default class ActivitiesController {
     const unitIds = await unitHelper()
     const superAdmin = await checkRoleSuperAdmin()
 
+    const roles = await RolesHelper(userObject)
+    const isAdminHrd = roles.includes('admin_hrd')
+
     try {
       let data: object
-      if (userObject.roles[0].role_name == 'super_admin') {
+      if (superAdmin) {
         data = await Activity.query()
           .preload('unit', unit => unit.select('id', 'name'))
           .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
@@ -46,13 +50,13 @@ export default class ActivitiesController {
           .andWhere(query => {
             // query.where('division_id', auth.use('api').user!.divisionId)
             query.whereHas('activityMembers', am => (am.where('employee_id', user.employeeId), am.where('role', 'manager')))
-            query.orWhereHas('unit', u => u
-              .whereIn('id', unitIds)
-              .andWhere(query => query.whereHas('employeeUnits', eu => eu.where('title', 'lead'))))
+            .if(isAdminHrd, query => {
+              query.orWhereHas('unit', u => u
+                .whereIn('id', unitIds)
+                .andWhere(query => query.whereHas('employeeUnits', eu => eu.where('title', 'lead'))))
+            })
           })
-          .if(!superAdmin, query => {
-            query.whereIn('unit_id', unitIds)
-          })
+          .andWhereIn('unit_id', unitIds)
           .orderBy(orderBy, orderDirection)
           .paginate(page, limit)
       }

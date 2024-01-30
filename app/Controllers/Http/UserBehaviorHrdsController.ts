@@ -16,7 +16,7 @@ export default class UserBehaviorHrdsController {
     const userObject = JSON.parse(JSON.stringify(user))
 
     const superAdmin = await checkRoleSuperAdmin()
-    const unitLeadIds = await unitHelper("lead")
+    const unitIds = await unitHelper()
     const roles = await RolesHelper(userObject)
     const isAdminHrd = roles.includes('admin_hrd')
 
@@ -29,11 +29,15 @@ export default class UserBehaviorHrdsController {
       data = await Activity.query()
         .preload('unit', unit => unit.select('id', 'name'))
         .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
-        .whereHas('activityMembers', am => {
-          am.where('employee_id', user.employeeId)
-            am.andWhere('role', 'manager')
+        .andWhere(query => {
+          query.whereHas('activityMembers', am => (am.where('employee_id', user.employeeId), am.where('role', 'manager')))
+            .if(isAdminHrd, query => {
+              query.orWhereHas('unit', u => u
+                .whereIn('id', unitIds)
+                .andWhere(query => query.whereHas('employeeUnits', eu => eu.where('title', 'lead'))))
+            })
         })
-        .if((isAdminHrd), q => q.orWhereIn('unit_id', unitLeadIds))
+        .andWhereIn('unit_id', unitIds)
     }
 
     CreateRouteHist(statusRoutes.FINISH, dateStart)

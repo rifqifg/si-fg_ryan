@@ -105,3 +105,5 @@ Route.get('list-employee-units', 'EmployeeUnitsController.getListEmployeeUnits')
 Route.group(() => {
   Route.get('activities', 'UserBehaviorHrdsController.activity').middleware(['auth'])
 }).prefix('/user-behavior-hrd')
+
+Route.shallowResource('/notifications', 'NotificationsController').middleware({ '*': ['auth'] })

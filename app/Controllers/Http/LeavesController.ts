@@ -329,7 +329,7 @@ export default class LeavesController {
       }
 
       // push notifikasi ke masing2 user buat mengetahui aprove / reject
-      if (!superAdmin && payload.status) {
+      if (!superAdmin && payload.status && leave.employee.user.id) {
         const CreateNotifValidator = await validator.validate({
           schema: schema.create({
             title: schema.string({}, [

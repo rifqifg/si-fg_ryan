@@ -24,21 +24,32 @@ export default class AddEmployeeToDivisionValidator {
    *    ```
    */
 
-  public refs = schema.refs({
-    employeeId: this.ctx.params.employee_id,
-    divisionId: this.ctx.request.body().divisionId
-  })
+  // public refs = schema.refs({
+  //   employeeId: this.ctx.params.employee_id,
+  //   divisionId: this.ctx.request.body().divisionId
+  // })
 
   public schema = schema.create({
-    divisionId: schema.string([
-      rules.exists({ table: 'divisions', column: 'id' }),
-      rules.unique({
-        table: 'employee_divisions', column: 'division_id', where: {
-          employee_id: this.ctx.params.employee_id
-        }
+    employeeDivisions: schema.array().members(
+      schema.object().members({
+        employeeId: schema.string({}, [
+          rules.exists({ table: 'employees', column: 'id' })
+        ]),
+        divisionId: schema.string({}, [
+          rules.exists({ table: 'divisions', column: 'id' })
+        ]),
+        title: schema.enum(['lead', 'vice', 'member']),
       })
-    ]),
-    title: schema.enum(['lead', 'vice', 'member'])
+    )
+    // divisionId: schema.string([
+    //   rules.exists({ table: 'divisions', column: 'id' }),
+    //   rules.unique({
+    //     table: 'employee_divisions', column: 'division_id', where: {
+    //       employee_id: this.ctx.params.employee_id
+    //     }
+    //   })
+    // ]),
+    // title: schema.enum(['lead', 'vice', 'member'])
   })
 
   /**

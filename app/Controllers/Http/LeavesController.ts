@@ -216,7 +216,7 @@ export default class LeavesController {
           }),
           data: {
             title: `Izin Cuti/Sakit`,
-            description: `${userObject.name.split(' ')[0]} mengajukan ${translateStatus(payload.leaveStatus)}`,
+            description: `${userObject.name.split(' ')[0]} mengajukan ${payload.leaveStatus}`,
             type: `leave_daily`,
             userId: checkAdminUnitObject.employee.user.id,
             date: DateTime.now().setZone('Asia/Jakarta').toFormat('yyyy-MM-dd HH:mm:ss').toString()
@@ -356,7 +356,7 @@ export default class LeavesController {
           }),
           data: {
             title: `Izin Cuti/Sakit`,
-            description: `Kepala unit ${payload.status} izin kamu`,
+            description: `Kepala unit ${translateStatus(payload.status)} izin kamu`,
             type: `leave_daily`,
             userId: leave.employee.user.id,
             date: DateTime.now().setZone('Asia/Jakarta').toFormat('yyyy-MM-dd HH:mm:ss').toString()

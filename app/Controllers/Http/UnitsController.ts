@@ -174,4 +174,31 @@ export default class UnitsController {
     }
   }
 
+  // get data unit hanya yg di ketuai user yg sdg login
+  public async getUnitLeadOnly({ request, response, auth }: HttpContextContract) {
+    const { keyword = "" } = request.qs()
+
+    try {
+      const unitIds = await unitHelper()
+      const superAdmin = await checkRoleSuperAdmin()
+
+      const data = await Unit.query()
+        .whereILike('name', `%${keyword}%`)
+        .preload('employeeUnits', eu => eu.where('title', 'lead').andWhere('employee_id', auth.user!.$attributes.employeeId))
+        .if(!superAdmin, query => {
+          query.whereIn('id', unitIds)
+          query.whereHas('employeeUnits', eu => eu.where('title', 'lead').andWhere('employee_id', auth.user!.$attributes.employeeId))
+        })
+
+      response.ok({ message: "get data successfully", data })
+    } catch (error) {
+      const message = "HRDU06: " + error.message || error;
+      console.log(error);
+      response.badRequest({
+        message: "Gagal mengambil data",
+        error: message,
+        error_data: error,
+      });
+    }
+  }
 }

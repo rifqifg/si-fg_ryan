@@ -95,15 +95,15 @@ export default class MonthlyReportEmployeesController {
           .select(Database.raw(`(select total_mengajar from academic.teachers where employee_id ='${employeeId}') as "default"`))
           .where('is_teaching', true))
 
-      const dataObject = JSON.parse(JSON.stringify(data))[0]
+      const dataArray = JSON.parse(JSON.stringify(data))
 
-      const result = await MonthlyReportHelper(dataObject)
+      const result = await MonthlyReportHelper(dataArray)
       const dataEmployee = result.dataEmployee
       const monthlyReportEmployeeDetail = result.monthlyReportEmployeeDetail
-      const monthlyReportEmployee = result.monthlyReportEmployee
+      // const monthlyReportEmployee = result.monthlyReportEmployee
 
       CreateRouteHist(statusRoutes.FINISH, dateStart)
-      response.ok({ message: "Berhasil mengambil data", dataEmployee, monthlyReportEmployeeDetail, monthlyReportEmployee });
+      response.ok({ message: "Berhasil mengambil data", dataEmployee, monthlyReportEmployeeDetail});
     } catch (error) {
       const message = "HRDMRE02: " + error.message || error;
       CreateRouteHist(statusRoutes.ERROR, dateStart, message)

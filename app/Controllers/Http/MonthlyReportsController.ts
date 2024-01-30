@@ -9,12 +9,18 @@ import { statusRoutes } from 'App/Modules/Log/lib/enum'
 import { DateTime } from 'luxon'
 import { MonthlyReportHelper } from 'App/Helpers/MonthlyReportHelper'
 import MonthlyReportEmployee from 'App/Models/MonthlyReportEmployee'
+import { unitHelper } from 'App/Helpers/unitHelper'
+import { checkRoleSuperAdmin } from 'App/Helpers/checkRoleSuperAdmin';
+import Activity from 'App/Models/Activity'
 
 export default class MonthlyReportsController {
   public async index({ request, response }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
     const { page = 1, limit = 10, keyword = "", fromDate = "", toDate = "" } = request.qs()
+
+    const unitIds = await unitHelper()
+    const superAdmin = await checkRoleSuperAdmin()
 
     try {
       let data
@@ -24,14 +30,17 @@ export default class MonthlyReportsController {
         }
         data = await MonthlyReport.query()
           .whereILike('name', `%${keyword}%`)
+          .if(!(superAdmin), q => q.andWhereIn('unit_id', unitIds))
           .andWhere(query => {
             query.whereBetween('from_date', [fromDate, toDate])
             query.orWhereBetween('to_date', [fromDate, toDate])
           })
+          .preload('unit')
           .paginate(page, limit)
       } else {
         data = await MonthlyReport.query()
           .whereILike('name', `%${keyword}%`)
+          .preload('unit')
           .paginate(page, limit)
       }
 
@@ -57,6 +66,42 @@ export default class MonthlyReportsController {
     if (payload.fromDate > payload.toDate) {
       return response.badRequest({ message: "INVALID_DATE_RANGE" })
     }
+
+    const fixedTimeActivity = await Activity.query()
+      .where('unit_id', payload.unitId)
+      .andWhere('activity_type', 'fixed_time')
+
+    if (fixedTimeActivity.length <= 0) throw new Error('Unit yang akan digenerate belum memiliki aktifitas tetap')
+
+    // const superAdmin = await checkRoleSuperAdmin()
+
+    // if (superAdmin) {
+    //   if (!(payload.unitId)) throw new Error("Super admin wajib isi field unitId")
+    // } else {
+    //   const unitIds = await unitHelper()
+    //   const body = request.body()
+
+    //   request.updateBody({ ...body, unitId: unitIds[0]})
+    // }
+
+    // return request.body()
+
+    // jika dia superadmin, ngga perlu ubah apa2.
+    // cukup cek apakah field unitId nya diisi. klo ngga, bad request
+
+    // jika dia bukan superadmin, panggil fungsi unitHelper..
+    // ..masukkan nilai unitId[0] ke payload & request body.
+
+
+    // TODO: handle jika payload.unitId nya ngga ada,
+    // const newPayload = JSON.parse(JSON.stringify(payload))
+    // const superAdmin = await checkRoleSuperAdmin()
+
+    // if (!(superAdmin)) {
+    //   const unitIds = await unitHelper()
+
+    //   newPayload.unitId = unitIds[0]
+    // }
 
     try {
       const data = await MonthlyReport.create(payload);
@@ -88,7 +133,8 @@ export default class MonthlyReportsController {
       let data
       if (!employeeId) {
         const monthlyReport = await MonthlyReport.query()
-          .select('name', 'from_date', 'to_date', 'red_dates')
+          .select('name', 'from_date', 'to_date', 'red_dates', 'unit_id')
+          .preload('unit')
           .where("id", id)
           .firstOrFail();
 
@@ -142,17 +188,10 @@ export default class MonthlyReportsController {
 
         const dataArrayObject = JSON.parse(JSON.stringify(data))
 
-        let datas: any = []
-        for (let i = 0; i < dataArrayObject.data.length; i++) {
-          const result = await MonthlyReportHelper(dataArrayObject.data[i])
-          const dataEmployee = result.dataEmployee
-          const monthlyReportEmployeeDetail = result.monthlyReportEmployeeDetail
-          const monthlyReportEmployee = result.monthlyReportEmployee
-          datas.push({ dataEmployee, monthlyReportEmployee, monthlyReportEmployeeDetail })
-        }
+        const result = await MonthlyReportHelper(dataArrayObject.data)
 
         CreateRouteHist(statusRoutes.FINISH, dateStart)
-        return response.ok({ message: "Berhasil mengambil data", monthlyReport, data: { meta: dataArrayObject.meta, data: datas } });
+        return response.ok({ message: "Berhasil mengambil data", monthlyReport, data: { meta: dataArrayObject.meta, data: result } });
       } else {
         //buat module profile
         data = await MonthlyReport.query()
@@ -201,15 +240,15 @@ export default class MonthlyReportsController {
               .where('is_teaching', true)))
           .firstOrFail();
 
-        const dataObject = JSON.parse(JSON.stringify(data)).monthlyReportEmployees[0]
+        const dataArray = JSON.parse(JSON.stringify(data)).monthlyReportEmployees
 
-        const result = await MonthlyReportHelper(dataObject)
+        const result = await MonthlyReportHelper(dataArray)
         const dataEmployee = result.dataEmployee
         const monthlyReportEmployeeDetail = result.monthlyReportEmployeeDetail
-        const monthlyReportEmployee = result.monthlyReportEmployee
+        // const monthlyReportEmployee = result.monthlyReportEmployee
 
         CreateRouteHist(statusRoutes.FINISH, dateStart)
-        return response.ok({ message: "Berhasil mengambil data", dataEmployee, monthlyReportEmployee, monthlyReportEmployeeDetail });
+        return response.ok({ message: "Berhasil mengambil data", dataEmployee, monthlyReportEmployeeDetail });
       }
     } catch (error) {
       const message = "HRDMR03: " + error.message || error;

@@ -1,103 +1,112 @@
-import CategoryActivity from "App/Models/CategoryActivity"
+export const MonthlyReportHelper = async (dataArray) => {
+  const dataEmployee: any = []
+  const monthlyReportEmployeeDetail: any = []
 
-export const MonthlyReportHelper = async (dataObject) => {
-  const categoryActivity = await CategoryActivity.query().select('name')
-  const categoryActivityObject = JSON.parse(JSON.stringify(categoryActivity))
+  dataArray.forEach(dataObject => {
+    dataEmployee.push({
+      "id": dataObject.employee.id,
+      "name": dataObject.employee.name,
+      "nik": dataObject.employee.nik,
+      "status": dataObject.employee.status,
+      "divisi": dataObject.employee.divisions,
+      "period_of_work": dataObject.employee.period_of_work,
+      "period_of_assesment": dataObject.monthlyReport.name,
+      "monthlyReportEmployee": {
+        "id": dataObject.id,
+        "achievement": dataObject.achievement,
+        "indisipliner": dataObject.indisipliner,
+        "suggestions_and_improvements": dataObject.suggestions_and_improvements,
+      }
+    })
 
-  const dataEmployee = {
-    "name": dataObject.employee.name,
-    "nik": dataObject.employee.nik,
-    "status": dataObject.employee.status,
-    "divisi": dataObject.employee.divisions,
-    "period_of_work": dataObject.employee.period_of_work,
-    "period_of_assesment": dataObject.monthlyReport.name,
-  }
+    // gabungkan data fixed time & not fixed time.
+    dataObject.monthlyReportEmployeesGabungan = [
+      ...dataObject.monthlyReportEmployeesFixedTime,
+      ...dataObject.monthlyReportEmployeesNotFixedTime
+    ]
 
-  const monthlyReportEmployee = {
-    "id": dataObject.id,
-    "achievement": dataObject.achievement,
-    "indisipliner": dataObject.indisipliner,
-    "suggestions_and_improvements": dataObject.suggestions_and_improvements,
-  }
+    // TODO: cek data leave, leave session, sama teaching. klo true masukin sini
+    const leave = dataObject.monthlyReportEmployeesLeave[0]
+    const leaveSession = dataObject.monthlyReportEmployeesLeaveSession[0]
+    const teaching = dataObject.monthlyReportEmployeesTeaching[0]
 
-  let monthlyReportEmployeeDetail: any = []
-  categoryActivityObject.map(value => {
-    monthlyReportEmployeeDetail.push({
-      name: value.name,
-      data: []
+    // masukkan ke array gabungan klo kondisi true
+    if (leave.is_leave) dataObject.monthlyReportEmployeesGabungan.push(leave)
+    if (leaveSession.is_leave_session) dataObject.monthlyReportEmployeesGabungan.push(leaveSession)
+    if (teaching.is_teaching) dataObject.monthlyReportEmployeesGabungan.push(teaching)
+
+    dataObject.monthlyReportEmployeesGabungan.forEach(gabungan => {
+      let categoryName
+      let activityName
+
+      if (gabungan.is_leave || gabungan.is_leave_session || gabungan.is_teaching) {
+        categoryName = "KEDISIPLINAN DAN KINERJA"
+      } else {
+        categoryName = gabungan.activity.categoryActivity.name;
+      }
+
+      if (gabungan.is_leave) activityName = "SISA JATAH CUTI"
+      else if (gabungan.is_leave_session) activityName = "IZIN (SESI)"
+      else if (gabungan.is_teaching) activityName = "MENGAJAR"
+      else activityName = gabungan.activity.name
+
+      // NOTE: ketika salah satu item dibawah ini ngga ada (misal notenya ngga ada / undefined. klo null, kondisionalnya wktu cek layer 3) maka atributnya ngga dimasukin
+      const items: any = {
+        default: gabungan.default,
+        skor: gabungan.skor,
+      }
+
+      // utk percentage, key & valuenya tergantung ada tidaknya default
+      if (gabungan.default) items.percentage_persen = gabungan.percentage + '%'
+      else items.percentage = gabungan.percentage
+
+      items.note = gabungan.note
+
+      // cek Kategori Aktivitas
+      let categoryIndex = monthlyReportEmployeeDetail.findIndex(c => c.name === categoryName);
+      // jika kategori tidak ditemukan..
+      if (categoryIndex === -1) {
+        // ..maka set index utk kategori baru, +1 dari index terakhir (aka. nilai length sekarang)
+        categoryIndex = monthlyReportEmployeeDetail.length;
+        // lalu push pake index baru tsb
+        monthlyReportEmployeeDetail.push({
+          name: categoryName,
+          data: []
+        });
+      }
+
+      // cek Aktivitas
+      let activityIndex = monthlyReportEmployeeDetail[categoryIndex].data.findIndex(a => a.activity_name === activityName);
+      if (activityIndex === -1) {
+        activityIndex = monthlyReportEmployeeDetail[categoryIndex].data.length;
+        monthlyReportEmployeeDetail[categoryIndex].data.push({
+          activity_name: activityName,
+          item: []
+        });
+      }
+
+      // cek layer 3
+      for (const [itemKey, itemValue] of Object.entries(items)) {
+        if (itemValue !== null && itemValue !== undefined) {
+          let itemIndex = monthlyReportEmployeeDetail[categoryIndex].data[activityIndex].item.findIndex(item => item.item_name === itemKey)
+          if (itemIndex === -1) {
+            itemIndex = monthlyReportEmployeeDetail[categoryIndex].data[activityIndex].item.length
+            monthlyReportEmployeeDetail[categoryIndex].data[activityIndex].item.push({
+              item_name: itemKey,
+              data_value: []
+            })
+          }
+
+          monthlyReportEmployeeDetail[categoryIndex].data[activityIndex].item[itemIndex].data_value.push({
+            id: gabungan.id,
+            id_employee: dataObject.employee.id,
+            employee_name: dataObject.employee.name,
+            value: itemValue
+          })
+        }
+      }
     })
   })
 
-  monthlyReportEmployeeDetail.map(value => {
-    const fixedTime = dataObject.monthlyReportEmployeesFixedTime[0]
-    if (fixedTime) {
-      if (value.name == fixedTime.activity.categoryActivity.name) {
-        value.data.push({
-          id: fixedTime.id,
-          skor: fixedTime.skor,
-          note: fixedTime.note,
-          percentage: fixedTime.percentage,
-          activity_name: fixedTime.activity.name,
-          default: fixedTime.default
-        })
-      }
-    }
-
-    const leave = dataObject.monthlyReportEmployeesLeave[0]
-    if (leave) {
-      if (value.name == "KEDISIPLINAN DAN KINERJA" && leave.is_leave) {
-        value.data.push({
-          id: leave.id,
-          skor: leave.skor,
-          note: leave.note,
-          percentage: null,
-          activity_name: "SISA JATAH CUTI"
-        })
-      }
-    }
-
-    const leaveSession = dataObject.monthlyReportEmployeesLeaveSession[0]
-    if (leaveSession) {
-      if (value.name == "KEDISIPLINAN DAN KINERJA" && leaveSession.is_leave_session) {
-        value.data.push({
-          id: leaveSession.id,
-          skor: leaveSession.skor,
-          note: leaveSession.note,
-          percentage: null,
-          activity_name: "IZIN (SESI)"
-        })
-      }
-    }
-
-    const teaching = dataObject.monthlyReportEmployeesTeaching[0]
-    if (teaching) {
-      if (value.name == "KEDISIPLINAN DAN KINERJA" && teaching.is_teaching) {
-        value.data.push({
-          id: teaching.id,
-          skor: teaching.skor,
-          percentage: teaching.percentage,
-          activity_name: "MENGAJAR",
-          default: teaching.default
-        })
-      }
-    }
-
-    const notFixedTime = dataObject.monthlyReportEmployeesNotFixedTime
-    if (notFixedTime.length > 0) {
-      notFixedTime.map(nft => {
-        if (value.name == nft.activity.categoryActivity.name) {
-          value.data.push({
-            id: nft.id,
-            skor: nft.skor,
-            note: nft.note,
-            percentage: nft.percentage,
-            activity_name: nft.activity.name,
-            default: nft.default
-          })
-        }
-      })
-    }
-  })
-
-  return { dataEmployee, monthlyReportEmployee, monthlyReportEmployeeDetail }
+  return { dataEmployee, monthlyReportEmployeeDetail }
 }

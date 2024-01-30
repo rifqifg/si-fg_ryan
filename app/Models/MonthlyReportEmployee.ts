@@ -68,11 +68,11 @@ export default class MonthlyReportEmployee extends BaseModel {
   @afterCreate()
   public static async insertMonthlyReportEmployeeDetail(monthlyReportEmployee: MonthlyReportEmployee) {
     const { request } = HttpContext.get()!
-    const { fromDate, toDate }: any = JSON.parse(request.raw()!)
+    const { fromDate, toDate, unitId }: any = JSON.parse(request.raw()!)
 
     try {
       // Menghitung Presensi employee Aktifitas yang tetap
-      const presenceEmployeeFixedTime = await countPresenceEMployeeFixedTime(monthlyReportEmployee, fromDate, toDate)
+      const presenceEmployeeFixedTime = await countPresenceEMployeeFixedTime(monthlyReportEmployee, fromDate, toDate, unitId)
       if (presenceEmployeeFixedTime) {
         await MonthlyReportEmployeeDetail.create({
           skor: presenceEmployeeFixedTime.presence_count,
@@ -83,6 +83,7 @@ export default class MonthlyReportEmployee extends BaseModel {
         const activity = await Activity.query()
           .select('id')
           .where('activity_type', 'fixed_time')
+          .andWhere('unit_id', unitId)
           .first()
         const dataActivityObject = JSON.parse(JSON.stringify(activity))
         await MonthlyReportEmployeeDetail.create({
@@ -93,7 +94,7 @@ export default class MonthlyReportEmployee extends BaseModel {
       }
 
       // Menghitung Presensi employee Aktifitas yang tidak tetap
-      const presenceEmployeeNotFixedTime = await countPresenceEMployeeNotFixedTime(monthlyReportEmployee, fromDate, toDate)
+      const presenceEmployeeNotFixedTime = await countPresenceEMployeeNotFixedTime(monthlyReportEmployee, fromDate, toDate, unitId)
       let activityId: any = []
       if (presenceEmployeeNotFixedTime.length > 0) {
         presenceEmployeeNotFixedTime.map(async value => {
@@ -108,6 +109,7 @@ export default class MonthlyReportEmployee extends BaseModel {
           let activityNotFixedTime = await Activity.query()
             .select('id')
             .where('activity_type', 'not_fixed_time')
+            .andWhere('unit_id', unitId)
             .andWhere('assessment', true)
             .andWhereNotIn('id', activityId)
 
@@ -123,6 +125,7 @@ export default class MonthlyReportEmployee extends BaseModel {
         let activityNotFixedTime = await Activity.query()
           .select('id')
           .where('activity_type', 'not_fixed_time')
+          .andWhere('unit_id', unitId)
           .andWhere('assessment', true)
         const dataActivityFixedTimeObject = JSON.parse(JSON.stringify(activityNotFixedTime))
         dataActivityFixedTimeObject.map(async aft => {
@@ -135,7 +138,7 @@ export default class MonthlyReportEmployee extends BaseModel {
       }
 
       //menghitung sisa jumlah cuti
-      const leaveEmployee = await countLeaveEmloyees(monthlyReportEmployee, fromDate)
+      const leaveEmployee = await countLeaveEmloyees(monthlyReportEmployee, fromDate, unitId)
       if (leaveEmployee) {
         await MonthlyReportEmployeeDetail.create({
           skor: leaveEmployee.sisa_jatah_cuti,
@@ -146,7 +149,7 @@ export default class MonthlyReportEmployee extends BaseModel {
       }
 
       //menghitung izin persesi
-      const leaveSessionEmployee = await countLeaveSessionEmployee(monthlyReportEmployee, fromDate, toDate)
+      const leaveSessionEmployee = await countLeaveSessionEmployee(monthlyReportEmployee, fromDate, toDate, unitId)
       if (leaveSessionEmployee) {
         await MonthlyReportEmployeeDetail.create({
           skor: leaveSessionEmployee.count_sessions,
@@ -176,14 +179,20 @@ export default class MonthlyReportEmployee extends BaseModel {
   }
 }
 
-const countPresenceEMployeeFixedTime = async (monthlyReportEmployee, fromDate, toDate) => {
+const countPresenceEMployeeFixedTime = async (monthlyReportEmployee, fromDate, toDate, unitId) => {
   // mengambil presensi empoyee
   //TODO: kalo employee nya masuk di aktifitas KBM dan Kesantrian apakah harus di jumlahkan ?
   const presenceEmployee = await Presence.query()
     .select('activity_id')
     .whereBetween("time_in", [fromDate + ' 00:00:00', toDate + ' 23:59:59'])
     .andWhere('employee_id', monthlyReportEmployee.employeeId)
-    .andWhereHas('activity', ac => ac.where('activity_type', 'fixed_time').andWhere('assessment', true))
+    // NOTE: kemungkinan didalam wherehas activity ini, ditambah andWhere utk unit nya
+    .andWhereHas('activity', ac => {
+      ac
+        .where('activity_type', 'fixed_time')
+        .andWhere('assessment', true)
+        .andWhere('unit_id', unitId)
+    })
     .count('*', 'presence_count')
     // .preload('activity', ac => ac.select('id', 'name'))
     .groupBy('activity_id')
@@ -193,13 +202,19 @@ const countPresenceEMployeeFixedTime = async (monthlyReportEmployee, fromDate, t
   return dataPresenceEmployeeObject[0]
 }
 
-const countPresenceEMployeeNotFixedTime = async (monthlyReportEmployee, fromDate, toDate) => {
+const countPresenceEMployeeNotFixedTime = async (monthlyReportEmployee, fromDate, toDate, unitId) => {
   // mengambil presensi empoyee waktu tidak tetap
   const presenceEmployee = await Presence.query()
     .select('activity_id')
     // .whereBetween("created_at", [fromDate + ' 00:00:00', toDate + ' 23:59:59'])
     .where('employee_id', monthlyReportEmployee.employeeId)
-    .andWhereHas('activity', ac => ac.where('activity_type', 'not_fixed_time').andWhere('assessment', true))
+    // NOTE: kemungkinan didalam wherehas activity ini, ditambah andWhere utk unit nya
+    .andWhereHas('activity', ac => {
+      ac
+        .where('activity_type', 'not_fixed_time')
+        .andWhere('assessment', true)
+        .andWhere('unit_id', unitId)
+    })
     .andWhereHas('subActivity', sa => sa.whereBetween('date', [fromDate + ' 00:00:00', toDate + ' 23:59:59']))
     .count('*', 'presence_count')
     // .preload('activity', ac => ac.select('id', 'name'))
@@ -210,7 +225,7 @@ const countPresenceEMployeeNotFixedTime = async (monthlyReportEmployee, fromDate
   return dataPresenceEmployeeObject
 }
 
-const countLeaveEmloyees = async (monthlyReportEmployee, fromDate) => {
+const countLeaveEmloyees = async (monthlyReportEmployee, fromDate, unitId) => {
   const today = DateTime.fromISO(fromDate);
   // Tahun ajaran baru dimulai pada bulan Juli (bulan 7)
   const tahunAjaran = today.month >= 7 ? today.year : today.year - 1;
@@ -232,6 +247,7 @@ const countLeaveEmloyees = async (monthlyReportEmployee, fromDate) => {
     .where('employee_id', monthlyReportEmployee.employeeId)
     .andWhere('leave_status', 'cuti')
     .andWhere('status', 'aprove')
+    .andWhere('unit_id', unitId)
     .andWhereBetween('to_date', [fromDateTahunAjaran, toDateTahunAjaran])
     .groupBy('employee_id')
 
@@ -247,7 +263,7 @@ const countLeaveEmloyees = async (monthlyReportEmployee, fromDate) => {
   return dataLeaveEmployeeObject.length != 0 ? dataLeaveEmployeeObject[0] : dataEmployeeObject[0]
 }
 
-const countLeaveSessionEmployee = async (monthlyReportEmployee, fromDate, toDate) => {
+const countLeaveSessionEmployee = async (monthlyReportEmployee, fromDate, toDate, unitId) => {
   //menghitung jumlah izin persesinya
   const leaveSessionEmployee = await LeaveSession.query()
     .select('employee_id')
@@ -255,6 +271,7 @@ const countLeaveSessionEmployee = async (monthlyReportEmployee, fromDate, toDate
     .select(Database.raw(`string_agg(TO_CHAR(date, 'DD Month') || ' izin ' || array_to_string(sessions, ',') || ': ' ||note, ', ') as notes`))
     .where('employee_id', monthlyReportEmployee.employeeId)
     .andWhere('status', 'aprove')
+    .andWhere('unit_id', unitId)
     .andWhereBetween('date', [fromDate, toDate])
     .groupBy('employee_id')
 

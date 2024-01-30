@@ -13,14 +13,14 @@ export default class NotificationsController {
         .select('*')
         .select(Database.raw(`
             CASE
-                WHEN EXTRACT(EPOCH FROM age(CURRENT_TIMESTAMP, date)) < 60 THEN
-                    CONCAT(FLOOR(EXTRACT(EPOCH FROM age(CURRENT_TIMESTAMP, date))), ' s')
-                WHEN EXTRACT(EPOCH FROM age(CURRENT_TIMESTAMP, date)) < 3600 THEN
-                    CONCAT(FLOOR(EXTRACT(EPOCH FROM age(CURRENT_TIMESTAMP, date)) / 60), ' m')
-                WHEN EXTRACT(EPOCH FROM age(CURRENT_TIMESTAMP, date)) < 86400 THEN
-                    CONCAT(FLOOR(EXTRACT(EPOCH FROM age(CURRENT_TIMESTAMP, date)) / 3600), ' h')
+                WHEN EXTRACT(EPOCH FROM age(CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta', date)) < 60 THEN
+                    CONCAT(FLOOR(EXTRACT(EPOCH FROM age(CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta', date))), ' s')
+                WHEN EXTRACT(EPOCH FROM age(CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta', date)) < 3600 THEN
+                    CONCAT(FLOOR(EXTRACT(EPOCH FROM age(CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta', date)) / 60), ' m')
+                WHEN EXTRACT(EPOCH FROM age(CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta', date)) < 86400 THEN
+                    CONCAT(FLOOR(EXTRACT(EPOCH FROM age(CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta', date)) / 3600), ' h')
                 ELSE
-                    CONCAT(FLOOR(EXTRACT(EPOCH FROM age(CURRENT_TIMESTAMP, date)) / 86400), ' d')
+                    CONCAT(FLOOR(EXTRACT(EPOCH FROM age(CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta', date)) / 86400), ' d')
             END AS time_elapsed
         `))
         .where('user_id', auth.use('api').user!.id)

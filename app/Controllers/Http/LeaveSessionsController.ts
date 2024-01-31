@@ -15,6 +15,7 @@ import Drive from '@ioc:Adonis/Core/Drive'
 import EmployeeUnit from 'App/Models/EmployeeUnit'
 import Notification from 'App/Models/Notification'
 import { validator, schema, rules } from '@ioc:Adonis/Core/Validator'
+import Employee from 'App/Models/Employee'
 
 const getSignedUrl = async (filename: string) => {
   const beHost = Env.get('BE_URL')
@@ -188,6 +189,8 @@ export default class LeaveSessionsController {
           .preload('employee', e => e.preload('user', u => u.select('id')))
           .first()
 
+        const employee = await Employee.findOrFail(payload.employeeId)
+
         const checkAdminUnitObject = JSON.parse(JSON.stringify(chekAdminUnit))
         const CreateNotifValidator = await validator.validate({
           schema: schema.create({
@@ -205,7 +208,7 @@ export default class LeaveSessionsController {
           }),
           data: {
             title: `Izin Sesi`,
-            description: `${userObject.name.split(' ')[0]} mengajukan izin sesi`,
+            description: `${employee.name.split(' ')[0]} mengajukan izin sesi`,
             type: `leave_session`,
             userId: checkAdminUnitObject.employee.user.id,
             date: DateTime.now().setZone('Asia/Jakarta').toFormat('yyyy-MM-dd HH:mm:ss').toString()

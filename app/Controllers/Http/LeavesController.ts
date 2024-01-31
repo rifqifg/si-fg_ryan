@@ -15,6 +15,7 @@ import Drive from '@ioc:Adonis/Core/Drive'
 import EmployeeUnit from 'App/Models/EmployeeUnit'
 import Notification from 'App/Models/Notification'
 import { validator, schema, rules } from '@ioc:Adonis/Core/Validator'
+import Employee from 'App/Models/Employee'
 
 const getSignedUrl = async (filename: string) => {
   const beHost = Env.get('BE_URL')
@@ -25,11 +26,11 @@ const getSignedUrl = async (filename: string) => {
 
 function translateStatus(status) {
   if (status == "aprove") {
-      return "menyetujui";
+    return "menyetujui";
   } else if (status == "rejected") {
-      return "menolak";
+    return "menolak";
   } else {
-      return "menunggu";
+    return "menunggu";
   }
 }
 
@@ -199,6 +200,8 @@ export default class LeavesController {
           .preload('employee', e => e.preload('user', u => u.select('id')))
           .first()
 
+        const employee = await Employee.findOrFail(payload.employeeId)
+
         const checkAdminUnitObject = JSON.parse(JSON.stringify(chekAdminUnit))
         const CreateNotifValidator = await validator.validate({
           schema: schema.create({
@@ -216,7 +219,7 @@ export default class LeavesController {
           }),
           data: {
             title: `Izin Cuti/Sakit`,
-            description: `${userObject.name.split(' ')[0]} mengajukan ${payload.leaveStatus}`,
+            description: `${employee.name.split(' ')[0]} mengajukan ${payload.leaveStatus}`,
             type: `leave_daily`,
             userId: checkAdminUnitObject.employee.user.id,
             date: DateTime.now().setZone('Asia/Jakarta').toFormat('yyyy-MM-dd HH:mm:ss').toString()

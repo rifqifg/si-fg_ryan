@@ -17,6 +17,8 @@ import Activity from 'App/Models/Activity'
 import { validator, schema, rules } from '@ioc:Adonis/Core/Validator'
 import EmployeeUnit from 'App/Models/EmployeeUnit'
 import Notification from 'App/Models/Notification'
+import User from 'App/Models/User'
+import { RolesHelper } from 'App/Helpers/rolesHelper'
 
 export default class MonthlyReportsController {
   private async getSignedUrl(filename: string) {
@@ -26,13 +28,21 @@ export default class MonthlyReportsController {
     return signedUrl
   }
 
-  public async index({ request, response }: HttpContextContract) {
+  public async index({ request, response, auth }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
     const { page = 1, limit = 10, keyword = "", fromDate = "", toDate = "" } = request.qs()
 
     const unitIds = await unitHelper()
     const superAdmin = await checkRoleSuperAdmin()
+
+    const user = await User.query().preload('roles', r => r.preload('role')).where('id', auth.use('api').user!.id).firstOrFail()
+    const userObject = JSON.parse(JSON.stringify(user))
+
+    const roles = await RolesHelper(userObject)
+
+    // cek apakah user termasuk user_hrd (dan bukan admin_hrd)
+    const isJustMemberHRD = roles.includes('user_hrd') && !(roles.includes('admin_hrd'))
 
     try {
       let data
@@ -46,6 +56,11 @@ export default class MonthlyReportsController {
           .andWhere(query => {
             query.whereBetween('from_date', [fromDate, toDate])
             query.orWhereBetween('to_date', [fromDate, toDate])
+          })
+          .if(isJustMemberHRD, query => {
+            query.andWhereHas('monthlyReportEmployees', mre => {
+              mre.where('employee_id', user.employeeId)
+            })
           })
           .preload('unit')
           .paginate(page, limit)

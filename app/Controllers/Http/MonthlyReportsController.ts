@@ -7,6 +7,8 @@ import { validate as uuidValidation } from "uuid"
 import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist'
 import { statusRoutes } from 'App/Modules/Log/lib/enum'
 import { DateTime } from 'luxon'
+import Env from "@ioc:Adonis/Core/Env"
+import Drive from '@ioc:Adonis/Core/Drive'
 import { MonthlyReportHelper } from 'App/Helpers/MonthlyReportHelper'
 import MonthlyReportEmployee from 'App/Models/MonthlyReportEmployee'
 import { unitHelper } from 'App/Helpers/unitHelper'
@@ -17,6 +19,13 @@ import EmployeeUnit from 'App/Models/EmployeeUnit'
 import Notification from 'App/Models/Notification'
 
 export default class MonthlyReportsController {
+  private async getSignedUrl(filename: string) {
+    const beHost = Env.get('BE_URL')
+    const hrdDrive = Drive.use('hrd')
+    const signedUrl = beHost + await hrdDrive.getSignedUrl('units/' + filename, { expiresIn: '30mins' })
+    return signedUrl
+  }
+
   public async index({ request, response }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
@@ -150,6 +159,26 @@ export default class MonthlyReportsController {
     }
 
     try {
+      const getUnit = await MonthlyReport.query()
+        .where('id', id)
+        .preload('unit', u => {
+          u.preload('employeeUnits', eu => {
+            eu
+              .select('id', 'employee_id')
+              .where('title', 'lead')
+              .preload('employee', e => e.select('name'))
+          })
+        })
+        .first()
+
+      const dataUnit = getUnit?.unit
+      const dataUnitObject = {
+        id: dataUnit?.id,
+        name: dataUnit?.name,
+        signature: dataUnit?.signature ? await this.getSignedUrl(dataUnit.signature) : null,
+        unit_lead_employee_id: dataUnit?.employeeUnits[0].employee.id,
+        unit_lead_employee_name: dataUnit?.employeeUnits[0].employee.name
+      }
       let data
       if (!employeeId) {
         const monthlyReport = await MonthlyReport.query()
@@ -211,7 +240,7 @@ export default class MonthlyReportsController {
         const result = await MonthlyReportHelper(dataArrayObject.data)
 
         CreateRouteHist(statusRoutes.FINISH, dateStart)
-        return response.ok({ message: "Berhasil mengambil data", monthlyReport, data: { meta: dataArrayObject.meta, data: result } });
+        return response.ok({ message: "Berhasil mengambil data", dataUnit: dataUnitObject, monthlyReport, data: { meta: dataArrayObject.meta, data: result } });
       } else {
         //buat module profile
         data = await MonthlyReport.query()

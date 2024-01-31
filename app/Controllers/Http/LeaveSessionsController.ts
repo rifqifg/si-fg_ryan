@@ -25,11 +25,11 @@ const getSignedUrl = async (filename: string) => {
 
 function translateStatus(status) {
   if (status == "aprove") {
-      return "menyetujui";
+    return "menyetujui";
   } else if (status == "rejected") {
-      return "menolak";
+    return "menolak";
   } else {
-      return "menunggu";
+    return "menunggu";
   }
 }
 
@@ -321,7 +321,7 @@ export default class LeaveSessionsController {
       }
 
       // push notifikasi ke masing2 user buat mengetahui aprove / reject
-      if (!superAdmin && payload.status && leave.employee.user.id) {
+      if (!superAdmin && payload.status && leave.employee.user) {
         const CreateNotifValidator = await validator.validate({
           schema: schema.create({
             title: schema.string({}, [

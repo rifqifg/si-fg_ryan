@@ -242,6 +242,26 @@ export default class MonthlyReportsController {
         CreateRouteHist(statusRoutes.FINISH, dateStart)
         return response.ok({ message: "Berhasil mengambil data", dataUnit: dataUnitObject, monthlyReport, data: { meta: dataArrayObject.meta, data: result } });
       } else {
+        const getUnit = await MonthlyReport.query()
+          .where('id', id)
+          .preload('unit', u => {
+            u.preload('employeeUnits', eu => {
+              eu
+                .select('id', 'employee_id')
+                .where('title', 'lead')
+                .preload('employee', e => e.select('name'))
+            })
+          })
+          .first()
+
+        const dataUnit = getUnit?.unit
+        const dataUnitObject = {
+          id: dataUnit?.id,
+          name: dataUnit?.name,
+          signature: dataUnit?.signature ? await this.getSignedUrl(dataUnit.signature) : null,
+          unit_lead_employee_id: dataUnit?.employeeUnits[0].employee.id,
+          unit_lead_employee_name: dataUnit?.employeeUnits[0].employee.name
+        }
         //buat module profile
         data = await MonthlyReport.query()
           .where("id", id)
@@ -297,7 +317,7 @@ export default class MonthlyReportsController {
         // const monthlyReportEmployee = result.monthlyReportEmployee
 
         CreateRouteHist(statusRoutes.FINISH, dateStart)
-        return response.ok({ message: "Berhasil mengambil data", dataEmployee, monthlyReportEmployeeDetail });
+        return response.ok({ message: "Berhasil mengambil data", dataUnit: dataUnitObject, dataEmployee, monthlyReportEmployeeDetail });
       }
     } catch (error) {
       const message = "HRDMR03: " + error.message || error;

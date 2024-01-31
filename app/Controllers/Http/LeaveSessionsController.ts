@@ -13,12 +13,25 @@ import { validate as uuidValidation } from "uuid"
 import Env from "@ioc:Adonis/Core/Env"
 import Drive from '@ioc:Adonis/Core/Drive'
 import EmployeeUnit from 'App/Models/EmployeeUnit'
+import Notification from 'App/Models/Notification'
+import { validator, schema, rules } from '@ioc:Adonis/Core/Validator'
+import Employee from 'App/Models/Employee'
 
 const getSignedUrl = async (filename: string) => {
   const beHost = Env.get('BE_URL')
   const hrdDrive = Drive.use('hrd')
   const signedUrl = beHost + await hrdDrive.getSignedUrl('leave_sessions/' + filename, { expiresIn: '30mins' })
   return signedUrl
+}
+
+function translateStatus(status) {
+  if (status == "aprove") {
+    return "menyetujui";
+  } else if (status == "rejected") {
+    return "menolak";
+  } else {
+    return "menunggu";
+  }
 }
 
 export default class LeaveSessionsController {
@@ -168,6 +181,43 @@ export default class LeaveSessionsController {
         })
       }
 
+      if (!roles.includes('super_admin')) {
+        // push notifikasi ke ketua unit masing2
+        const chekAdminUnit = await EmployeeUnit.query()
+          .where('title', 'lead')
+          .andWhere('unit_id', payload.unitId)
+          .preload('employee', e => e.preload('user', u => u.select('id')))
+          .first()
+
+        const employee = await Employee.findOrFail(payload.employeeId)
+
+        const checkAdminUnitObject = JSON.parse(JSON.stringify(chekAdminUnit))
+        const CreateNotifValidator = await validator.validate({
+          schema: schema.create({
+            title: schema.string({}, [
+              rules.minLength(3)
+            ]),
+            description: schema.string({}, [
+              rules.minLength(3)
+            ]),
+            date: schema.date({ format: 'yyyy-MM-dd HH:mm:ss' }),
+            type: schema.string(),
+            userId: schema.string({}, [
+              rules.exists({ table: 'users', column: 'id' })
+            ]),
+          }),
+          data: {
+            title: `Izin Sesi`,
+            description: `${employee.name.split(' ')[0]} mengajukan izin sesi`,
+            type: `leave_session`,
+            userId: checkAdminUnitObject.employee.user.id,
+            date: DateTime.now().setZone('Asia/Jakarta').toFormat('yyyy-MM-dd HH:mm:ss').toString()
+          }
+        })
+
+        await Notification.create(CreateNotifValidator)
+      }
+
       CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.created({ message: "Berhasil menyimpan data", data });
     } catch (error) {
@@ -226,7 +276,12 @@ export default class LeaveSessionsController {
       return response.badRequest({ message: "Data tidak boleh kosong" });
     }
     try {
-      const leave = await LeaveSession.findOrFail(id);
+      const leave = await LeaveSession.query()
+        .where('id', id)
+        .preload('employee', e => e
+          .preload('user', u => u
+            .select('id')))
+        .firstOrFail()
 
       // cek lead unit
       const superAdmin = await checkRoleSuperAdmin()
@@ -266,6 +321,34 @@ export default class LeaveSessionsController {
       const data = await leave.merge(objectPayload).save();
       if (data.image) {
         data.image = await getSignedUrl(data.image)
+      }
+
+      // push notifikasi ke masing2 user buat mengetahui aprove / reject
+      if (!superAdmin && payload.status && leave.employee.user) {
+        const CreateNotifValidator = await validator.validate({
+          schema: schema.create({
+            title: schema.string({}, [
+              rules.minLength(3)
+            ]),
+            description: schema.string({}, [
+              rules.minLength(3)
+            ]),
+            date: schema.date({ format: 'yyyy-MM-dd HH:mm:ss' }),
+            type: schema.string(),
+            userId: schema.string({}, [
+              rules.exists({ table: 'users', column: 'id' })
+            ]),
+          }),
+          data: {
+            title: `Izin Sesi`,
+            description: `Kepala unit ${translateStatus(payload.status)} izin kamu`,
+            type: `leave_session`,
+            userId: leave.employee.user.id,
+            date: DateTime.now().setZone('Asia/Jakarta').toFormat('yyyy-MM-dd HH:mm:ss').toString()
+          }
+        })
+
+        await Notification.create(CreateNotifValidator)
       }
 
       response.ok({ message: "Berhasil mengubah data", data });

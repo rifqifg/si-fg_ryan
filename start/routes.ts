@@ -107,3 +107,4 @@ Route.group(() => {
 }).prefix('/user-behavior-hrd')
 
 Route.shallowResource('/notifications', 'NotificationsController').middleware({ '*': ['auth'] })
+Route.put('/notification/batch', 'NotificationsController.updateBatch').middleware(['auth'])

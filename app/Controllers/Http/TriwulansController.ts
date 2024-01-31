@@ -4,6 +4,7 @@ import { TriwulanHelper } from 'App/Helpers/TriwulanHelper'
 import { checkRoleSuperAdmin } from 'App/Helpers/checkRoleSuperAdmin'
 import { unitHelper } from 'App/Helpers/unitHelper'
 import EmployeeUnit from 'App/Models/EmployeeUnit'
+import Notification from 'App/Models/Notification'
 import Triwulan from 'App/Models/Triwulan'
 import TriwulanEmployee from 'App/Models/TriwulanEmployee'
 import TriwulanEmployeeDetail from 'App/Models/TriwulanEmployeeDetail'
@@ -13,6 +14,7 @@ import CreateTriwulanValidator from 'App/Validators/CreateTriwulanValidator'
 import UpdateTriwulanValidator from 'App/Validators/UpdateTriwulanValidator'
 import { DateTime } from 'luxon'
 import { validate as uuidValidation } from "uuid"
+import { validator, schema, rules } from '@ioc:Adonis/Core/Validator'
 
 export default class TriwulansController {
   public async index({ request, response }: HttpContextContract) {
@@ -74,6 +76,53 @@ export default class TriwulansController {
 
     try {
       const data = await Triwulan.create(payload);
+
+      // push notifikasi ke member unit masing2 bahwa rapot triwulan sudah dibuat
+      const listEmployeeUnit = await EmployeeUnit.query()
+        .where('unit_id', payload.unitId)
+        .preload('employee', e => e
+          .select('id')
+          .preload('user', u => u.
+            select('id')))
+
+      const listEmployeeUnitObject = JSON.parse(JSON.stringify(listEmployeeUnit))
+
+      let listPushnotif: any = { notifications: [] }
+      listEmployeeUnitObject.map(value => {
+        if (value.employee.user) {
+          listPushnotif.notifications.push({
+            title: "Rapot Triwulan",
+            description: `Rapot ${payload.name} telah dibuat`,
+            date: DateTime.now().setZone('Asia/Jakarta').toFormat('yyyy-MM-dd HH:mm:ss').toString(),
+            type: "triwulan",
+            userId: value.employee.user.id
+          })
+        }
+      })
+
+      const CreateNotifValidator = await validator.validate({
+        schema: schema.create({
+          notifications: schema.array().members(
+            schema.object().members({
+              title: schema.string({}, [
+                rules.minLength(3)
+              ]),
+              description: schema.string({}, [
+                rules.minLength(3)
+              ]),
+              date: schema.date({ format: 'yyyy-MM-dd HH:mm:ss' }),
+              type: schema.string(),
+              userId: schema.string({}, [
+                rules.exists({ table: 'users', column: 'id' })
+              ])
+            })
+          )
+        }),
+        data: listPushnotif
+      })
+
+      await Notification.createMany(CreateNotifValidator.notifications)
+
       CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.created({ message: "Berhasil menyimpan data", data });
     } catch (error) {

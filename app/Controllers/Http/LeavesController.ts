@@ -15,12 +15,23 @@ import Drive from '@ioc:Adonis/Core/Drive'
 import EmployeeUnit from 'App/Models/EmployeeUnit'
 import Notification from 'App/Models/Notification'
 import { validator, schema, rules } from '@ioc:Adonis/Core/Validator'
+import Employee from 'App/Models/Employee'
 
 const getSignedUrl = async (filename: string) => {
   const beHost = Env.get('BE_URL')
   const hrdDrive = Drive.use('hrd')
   const signedUrl = beHost + await hrdDrive.getSignedUrl('leaves/' + filename, { expiresIn: '30mins' })
   return signedUrl
+}
+
+function translateStatus(status) {
+  if (status == "aprove") {
+    return "menyetujui";
+  } else if (status == "rejected") {
+    return "menolak";
+  } else {
+    return "menunggu";
+  }
 }
 
 export default class LeavesController {
@@ -189,6 +200,8 @@ export default class LeavesController {
           .preload('employee', e => e.preload('user', u => u.select('id')))
           .first()
 
+        const employee = await Employee.findOrFail(payload.employeeId)
+
         const checkAdminUnitObject = JSON.parse(JSON.stringify(chekAdminUnit))
         const CreateNotifValidator = await validator.validate({
           schema: schema.create({
@@ -206,7 +219,7 @@ export default class LeavesController {
           }),
           data: {
             title: `Izin Cuti/Sakit`,
-            description: `${userObject.name} mengajukan ${payload.leaveStatus}`,
+            description: `${employee.name.split(' ')[0]} mengajukan ${payload.leaveStatus}`,
             type: `leave_daily`,
             userId: checkAdminUnitObject.employee.user.id,
             date: DateTime.now().setZone('Asia/Jakarta').toFormat('yyyy-MM-dd HH:mm:ss').toString()
@@ -329,7 +342,7 @@ export default class LeavesController {
       }
 
       // push notifikasi ke masing2 user buat mengetahui aprove / reject
-      if (!superAdmin && payload.status) {
+      if (!superAdmin && payload.status && leave.employee.user) {
         const CreateNotifValidator = await validator.validate({
           schema: schema.create({
             title: schema.string({}, [
@@ -346,7 +359,7 @@ export default class LeavesController {
           }),
           data: {
             title: `Izin Cuti/Sakit`,
-            description: `admin ${payload.status} izin kamu`,
+            description: `Kepala unit ${translateStatus(payload.status)} izin kamu`,
             type: `leave_daily`,
             userId: leave.employee.user.id,
             date: DateTime.now().setZone('Asia/Jakarta').toFormat('yyyy-MM-dd HH:mm:ss').toString()

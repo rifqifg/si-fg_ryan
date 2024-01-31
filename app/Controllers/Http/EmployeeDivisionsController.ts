@@ -1,9 +1,7 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import { checkRoleSuperAdmin } from 'App/Helpers/checkRoleSuperAdmin'
 import Division from 'App/Models/Division'
-import Employee from 'App/Models/Employee'
 import EmployeeDivision from 'App/Models/EmployeeDivision'
-import EmployeeUnit from 'App/Models/EmployeeUnit'
 import Unit from 'App/Models/Unit'
 import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist'
 import { statusRoutes } from 'App/Modules/Log/lib/enum'
@@ -20,19 +18,19 @@ export default class EmployeeDivisionsController {
     const payload = await request.validate(AddEmployeeToDivisionValidator)
     const superAdmin = await checkRoleSuperAdmin()
 
-    // grab divisionId from payload
-
-
     try {
       // TODO: cek hanya boleh ketua divisi / unit yg input
+      if (!superAdmin) {
+        const checkUnit = await Unit.query()
+          .whereHas('employeeUnits', eu => eu
+            .where('employee_id', auth.user!.$attributes.employeeId)
+            .andWhere('title', 'lead'))
+          .first()
 
-
-      // if (!superAdmin) {
-      //   const checkUnitLead = await EmployeeUnit.query()
-      //     .where('employee_id', auth.user!.$attributes.employeeId)
-      //     .andWhere('title', 'lead')
-      //     .first()
-      // }
+        if (checkUnit === null) {
+          throw new Error("Gagal menambahkan anggota divisi dikarenakan anda bukan ketua unit")
+        }
+      }
 
       //cek ketua divisi harus satu disetiap divisinya
       if (payload.employeeDivisions.filter(ed => ed.title === 'lead').length > 0) {
@@ -88,9 +86,20 @@ export default class EmployeeDivisionsController {
 
   public async destroy({ request, response, auth }: HttpContextContract) {
     const payload = await request.validate(DeleteManyEmployeeDivisionValidator)
-    // const superAdmin = await checkRoleSuperAdmin()
+    const superAdmin = await checkRoleSuperAdmin()
 
     // TODO: cek hanya boleh ketua divisi / unit yg input
+    if (!superAdmin) {
+      const checkUnit = await Unit.query()
+        .whereHas('employeeUnits', eu => eu
+          .where('employee_id', auth.user!.$attributes.employeeId)
+          .andWhere('title', 'lead'))
+        .first()
+
+      if (checkUnit === null) {
+        throw new Error("Gagal menghapus anggota divisi dikarenakan anda bukan ketua unit")
+      }
+    }
 
     try {
       await EmployeeDivision.query()

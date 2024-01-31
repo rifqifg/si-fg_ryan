@@ -89,7 +89,7 @@ export default class TriwulansController {
 
       let listPushnotif: any = { notifications: [] }
       listEmployeeUnitObject.map(value => {
-        if (value.employee.user.id) {
+        if (value.employee.user) {
           listPushnotif.notifications.push({
             title: "Rapot Triwulan",
             description: `Rapot ${payload.name} telah dibuat`,

@@ -121,7 +121,7 @@ export default class MonthlyReportsController {
 
       let listPushnotif: any = { notifications: [] }
       listEmployeeUnitObject.map(value => {
-        if (value.employee.user.id) {
+        if (value.employee.user) {
           listPushnotif.notifications.push({
             title: "Rapot Bulanan",
             description: `Rapot ${payload.name} telah dibuat`,

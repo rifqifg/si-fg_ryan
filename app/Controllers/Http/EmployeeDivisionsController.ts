@@ -3,6 +3,7 @@ import { checkRoleSuperAdmin } from 'App/Helpers/checkRoleSuperAdmin'
 import Division from 'App/Models/Division'
 import Employee from 'App/Models/Employee'
 import EmployeeDivision from 'App/Models/EmployeeDivision'
+import EmployeeUnit from 'App/Models/EmployeeUnit'
 import Unit from 'App/Models/Unit'
 import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist'
 import { statusRoutes } from 'App/Modules/Log/lib/enum'
@@ -12,40 +13,52 @@ import EditEmployeeTitleInDivisionValidator from 'App/Validators/EditEmployeeTit
 import { DateTime } from 'luxon'
 
 export default class EmployeeDivisionsController {
-  public async store({  request, response }: HttpContextContract) {
+  public async store({  request, response, auth }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
 
     const payload = await request.validate(AddEmployeeToDivisionValidator)
+    const superAdmin = await checkRoleSuperAdmin()
 
-    // TODO: cek hanya boleh ketua divisi / unit yg input
+    // grab divisionId from payload
 
-    //cek ketua divisi harus satu disetiap divisinya
-    if (payload.employeeDivisions.filter(ed => ed.title === 'lead').length > 0) {
-      const checkLeadDivision = await Division.query()
-        .whereHas('employees', employee => {
-          employee
-            .where('title', 'lead')
-            .andWhereIn('division_id', payload.employeeDivisions.map(unit => unit.divisionId))
-        })
-
-      if (checkLeadDivision.length > 0) {
-        throw new Error("Ketua divisi hanya boleh ada satu")
-      }
-    }
-
-    //cek duplikat user
-    const cekDuplikatUser = await EmployeeDivision.query()
-      .whereIn('division_id', payload.employeeDivisions.map(ed => ed.divisionId))
-      .andWhereIn('employee_id', payload.employeeDivisions.map(ed => ed.employeeId))
-
-    if (cekDuplikatUser.length > 0) {
-      throw new Error("Anggota divisi tidak boleh duplikat")
-    }
-
-    // TODO: cek employee dari divisi lain?
 
     try {
+      // TODO: cek hanya boleh ketua divisi / unit yg input
+
+
+      // if (!superAdmin) {
+      //   const checkUnitLead = await EmployeeUnit.query()
+      //     .where('employee_id', auth.user!.$attributes.employeeId)
+      //     .andWhere('title', 'lead')
+      //     .first()
+      // }
+
+      //cek ketua divisi harus satu disetiap divisinya
+      if (payload.employeeDivisions.filter(ed => ed.title === 'lead').length > 0) {
+        const checkLeadDivision = await Division.query()
+          .whereHas('employees', employee => {
+            employee
+              .where('title', 'lead')
+              .andWhereIn('division_id', payload.employeeDivisions.map(unit => unit.divisionId))
+          })
+
+        if (checkLeadDivision.length > 0) {
+          throw new Error("Ketua divisi hanya boleh ada satu")
+        }
+      }
+
+      //cek duplikat user
+      const cekDuplikatUser = await EmployeeDivision.query()
+        .whereIn('division_id', payload.employeeDivisions.map(ed => ed.divisionId))
+        .andWhereIn('employee_id', payload.employeeDivisions.map(ed => ed.employeeId))
+
+      if (cekDuplikatUser.length > 0) {
+        throw new Error("Anggota divisi tidak boleh duplikat")
+      }
+
+      // TODO: cek employee dari divisi lain?
+
       const data = await EmployeeDivision.createMany(payload.employeeDivisions)
 
       response.created({ message: "Berhasil menambahkan karyawan ke divisi", data })
@@ -77,12 +90,13 @@ export default class EmployeeDivisionsController {
     const payload = await request.validate(DeleteManyEmployeeDivisionValidator)
     // const superAdmin = await checkRoleSuperAdmin()
 
-    try {
-      const employeeDivisions = await EmployeeDivision.findMany(payload.employeeDivisions)
+    // TODO: cek hanya boleh ketua divisi / unit yg input
 
-      // TODO: cek hanya boleh ketua divisi / unit yg input
+    try {
       await EmployeeDivision.query()
-        .whereIn("id", employeeDivisions.map(ed => ed.id)).delete()
+        .whereIn("employee_id", payload.employeeDivisions.map(ed => ed.employeeId))
+        .andWhereIn("division_id", payload.employeeDivisions.map(ed => ed.divisionId))
+        .delete()
 
       response.ok({
         message: "Berhasil menghapus karyawan dari unit"

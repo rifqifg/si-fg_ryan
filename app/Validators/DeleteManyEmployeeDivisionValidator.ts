@@ -24,9 +24,16 @@ export default class DeleteManyEmployeeDivisionValidator {
    *    ```
    */
   public schema = schema.create({
-    employeeDivisions: schema.array().members(schema.string({}, [
-      rules.exists({ table: 'employee_divisions', column: 'id' })
-    ]))
+    employeeDivisions: schema.array().members(
+      schema.object().members({
+        employeeId: schema.string({}, [
+          rules.exists({ table: 'employees', column: 'id' })
+        ]),
+        divisionId: schema.string({}, [
+          rules.exists({ table: 'divisions', column: 'id' })
+        ]),
+      })
+    )
   })
   /**
    * Custom messages for validation failures. You can make use of dot notation `(.)`

@@ -11,7 +11,7 @@ import EditEmployeeTitleInDivisionValidator from 'App/Validators/EditEmployeeTit
 import { DateTime } from 'luxon'
 
 export default class EmployeeDivisionsController {
-  public async store({  request, response, auth }: HttpContextContract) {
+  public async store({ request, response, auth }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
 
@@ -28,7 +28,7 @@ export default class EmployeeDivisionsController {
           .first()
 
         if (checkUnit === null) {
-          throw new Error("Gagal menambahkan anggota divisi dikarenakan anda bukan ketua unit")
+          return response.badRequest({ message: "Gagal menambahkan anggota divisi dikarenakan anda bukan ketua unit" })
         }
       }
 
@@ -42,7 +42,7 @@ export default class EmployeeDivisionsController {
           })
 
         if (checkLeadDivision.length > 0) {
-          throw new Error("Ketua divisi hanya boleh ada satu")
+          return response.badRequest({ message: "Ketua divisi hanya boleh ada satu" })
         }
       }
 
@@ -52,7 +52,7 @@ export default class EmployeeDivisionsController {
         .andWhereIn('employee_id', payload.employeeDivisions.map(ed => ed.employeeId))
 
       if (cekDuplikatUser.length > 0) {
-        throw new Error("Anggota divisi tidak boleh duplikat")
+        return response.badRequest({ message: "Anggota divisi tidak boleh duplikat" })
       }
 
       // TODO: cek employee dari divisi lain?
@@ -97,7 +97,7 @@ export default class EmployeeDivisionsController {
         .first()
 
       if (checkUnit === null) {
-        throw new Error("Gagal menghapus anggota divisi dikarenakan anda bukan ketua unit")
+        return response.badRequest({ message: "Gagal menghapus anggota divisi dikarenakan anda bukan ketua unit" })
       }
     }
 
@@ -107,9 +107,7 @@ export default class EmployeeDivisionsController {
         .andWhereIn("division_id", payload.employeeDivisions.map(ed => ed.divisionId))
         .delete()
 
-      response.ok({
-        message: "Berhasil menghapus karyawan dari unit"
-      })
+      response.ok({message: "Berhasil menghapus karyawan dari unit"})
     } catch (error) {
       const message = "HRDEDV03: " + error.message || error;
       console.log(error);

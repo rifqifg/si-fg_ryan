@@ -75,11 +75,11 @@ export default class LeaveSessionsController {
             query.whereHas('employee', e => e.whereILike('name', `%${keyword}%`))
             query.andWhereILike('status', `%${status}%`)
           })
-          .if(!superAdmin && keyword === "" && status === "", query => {
+          .if(!superAdmin && unitLeadObject && keyword === "" && status === "", query => {
             query.where('unit_id', unitLeadObject.unit_id)
             query.orWhere('employee_id', auth.user!.$attributes.employeeId)
           })
-          .if(!superAdmin && (keyword !== "" || status !== ""), query => {
+          .if(!superAdmin && unitLeadObject && (keyword !== "" || status !== ""), query => {
             query.where('unit_id', unitLeadObject.unit_id)
             query.andWhereHas('employee', e => e.whereILike('name', `%${keyword}%`))
             query.andWhereILike('status', `%${status}%`)

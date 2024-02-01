@@ -1,4 +1,4 @@
-import { schema, CustomMessages } from '@ioc:Adonis/Core/Validator'
+import { schema, CustomMessages, rules } from '@ioc:Adonis/Core/Validator'
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 
 export default class EditEmployeeTitleInDivisionValidator {
@@ -24,7 +24,13 @@ export default class EditEmployeeTitleInDivisionValidator {
    *    ```
    */
   public schema = schema.create({
-    title: schema.enum(['lead', 'vice', 'member'])
+    employeeId: schema.string({}, [
+      rules.exists({ table: 'employees', column: 'id' })
+    ]),
+    divisionId: schema.string({}, [
+      rules.exists({ table: 'divisions', column: 'id' })
+    ]),
+    title: schema.enum(['lead', 'vice', 'member']),
   })
 
   /**

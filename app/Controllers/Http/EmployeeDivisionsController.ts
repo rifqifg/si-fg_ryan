@@ -72,11 +72,25 @@ export default class EmployeeDivisionsController {
     }
   }
 
-  public async update({ params, request, response }: HttpContextContract) {
-    const { employee_id, id } = params
+  public async update({ request, response }: HttpContextContract) {
     const payload = await request.validate(EditEmployeeTitleInDivisionValidator)
 
-    const data = await EmployeeDivision.query().where('employee_id', employee_id).where('division_id', id).firstOrFail()
+    const data = await EmployeeDivision.query()
+      .where('employee_id', payload.employeeId)
+      .andWhere('division_id', payload.divisionId)
+      .firstOrFail()
+
+    if (payload.title === 'lead') {
+      const divisionLead = await EmployeeDivision.query()
+        .where('title', 'lead')
+        .andWhere('division_id', payload.divisionId)
+        .first()
+
+      if (divisionLead !== null && (divisionLead.employeeId !== payload.employeeId)) {
+        return response.badRequest({ message: "Ketua divisi hanya boleh ada satu" })
+      }
+    }
+
     await data.merge(payload).save()
 
     response.ok({

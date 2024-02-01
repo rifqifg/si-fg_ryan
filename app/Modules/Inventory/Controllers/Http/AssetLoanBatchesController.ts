@@ -32,7 +32,6 @@ export default class AssetLoanBatchesController {
         })
         .if(fromDate && toDate, query => {
           query.whereBetween('start_date', [fromDate, toDate])
-          query.orWhereBetween('end_date', [fromDate, toDate])
         })
         .orderBy('created_at', 'desc')
         .paginate(page, limit)

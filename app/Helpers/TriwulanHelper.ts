@@ -1,4 +1,5 @@
-import Division from "App/Models/Division";
+// import Division from "App/Models/Division";
+import Unit from "App/Models/Unit";
 
 export const TriwulanHelper = async (dataArrayObject) => {
   // const directSupervisor = await Division.query()
@@ -17,24 +18,22 @@ export const TriwulanHelper = async (dataArrayObject) => {
   //   indirect_supervisor: indirectSupervisorArrayObject
   // }
 
-  const divisiHrd = await Division.query()
-    .select('id', 'name')
-    .whereILike('name', `%hrd%`)
-    .first()
-  const divisiHrdObject = JSON.parse(JSON.stringify(divisiHrd))
+  // const leadUnit = await Unit.findBy('id', dataArrayObject.triwulan.unit.id)
+  const leadUnit = await Unit.query().select('id', 'name').where('id', dataArrayObject.triwulan.unit.id)
+
 
   let direct_supervisor: any = []
   dataArrayObject.employee.divisions.map(value => {
     if (value.title == 'member') {
       direct_supervisor.push({id: value.division.id, name: value.division.name})
-    }else {
-      direct_supervisor.push(divisiHrdObject)
+    }else if(value.title == 'vice'){
+      direct_supervisor.push({id: value.division.id, name: value.division.name})
     }
   })
 
   const penilai = {
     direct_supervisor: direct_supervisor,
-    indirect_supervisor: divisiHrdObject
+    indirect_supervisor: leadUnit
   }
 
   const triwulanEmployee = {

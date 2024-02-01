@@ -15,8 +15,18 @@ import UpdateTriwulanValidator from 'App/Validators/UpdateTriwulanValidator'
 import { DateTime } from 'luxon'
 import { validate as uuidValidation } from "uuid"
 import { validator, schema, rules } from '@ioc:Adonis/Core/Validator'
+import Unit from 'App/Models/Unit'
+import Env from "@ioc:Adonis/Core/Env"
+import Drive from '@ioc:Adonis/Core/Drive'
 
 export default class TriwulansController {
+  private async getSignedUrl(filename: string) {
+    const beHost = Env.get('BE_URL')
+    const hrdDrive = Drive.use('hrd')
+    const signedUrl = beHost + await hrdDrive.getSignedUrl('units/' + filename, { expiresIn: '30mins' })
+    return signedUrl
+  }
+
   public async index({ request, response }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
@@ -150,11 +160,10 @@ export default class TriwulansController {
     let data
 
     try {
+      const triwulan = await Triwulan.query()
+        .where('id', id)
+        .firstOrFail()
       if (!employeeId) {
-        const triwulan = await Triwulan.query()
-          .where('id', id)
-          .firstOrFail()
-
         data = await TriwulanEmployee.query()
           .with('AggregatedData', query => {
             query
@@ -170,6 +179,7 @@ export default class TriwulansController {
               .joinRaw(`LEFT JOIN triwulan_employee_details ted ON ted.triwulan_employee_id = te.id`)
               .groupBy('te.id')
           })
+          .preload('triwulan', tr => tr.preload('unit', u => u.select('id')))
           .preload('employee', e => e
             .select('id', 'name', 'nik')
             .select(Database.raw(`EXTRACT(YEAR FROM AGE((select to_date from triwulans where id = '${id}'), "date_in")) || ' tahun ' || EXTRACT(MONTH FROM AGE((select to_date from triwulans where id = '${id}'), "date_in")) || ' bulan' AS period_of_work`))
@@ -192,7 +202,13 @@ export default class TriwulansController {
           const triwulanEmployee = result.triwulanEmployee
           const triwulanEmployeeDetail = result.triwulanEmployeeDetail
           const penilai = result.penilai
-          datas.push({ dataEmployee, triwulanEmployee, triwulanEmployeeDetail, penilai })
+          const unit = await Unit.query().select('id', 'signature').where('id', triwulan.unitId).first()
+          const dataObject = JSON.parse(JSON.stringify(unit))
+          if (dataObject?.signature) {
+            dataObject.signature = await this.getSignedUrl(dataObject.signature)
+          }
+
+          datas.push({ dataEmployee, triwulanEmployee, triwulanEmployeeDetail, penilai, signature: dataObject.signature })
         }
 
         CreateRouteHist(statusRoutes.FINISH, dateStart)
@@ -214,6 +230,7 @@ export default class TriwulansController {
               .joinRaw(`LEFT JOIN triwulan_employee_details ted ON ted.triwulan_employee_id = te.id`)
               .groupBy('te.id')
           })
+          .preload('triwulan', tr => tr.preload('unit', u => u.select('id')))
           .preload('employee', e => e
             .select('name', 'nik')
             .select(Database.raw(`EXTRACT(YEAR FROM AGE((select to_date from triwulans where id = '${id}'), "date_in")) || ' tahun ' || EXTRACT(MONTH FROM AGE((select to_date from triwulans where id = '${id}'), "date_in")) || ' bulan' AS period_of_work`))
@@ -234,12 +251,18 @@ export default class TriwulansController {
           const triwulanEmployee = result.triwulanEmployee
           const triwulanEmployeeDetail = result.triwulanEmployeeDetail
           const penilai = result.penilai
-          datas.push({ dataEmployee, triwulanEmployee, triwulanEmployeeDetail, penilai })
+          const unit = await Unit.query().select('id', 'signature').where('id', triwulan.unitId).first()
+          const dataObject = JSON.parse(JSON.stringify(unit))
+          if (dataObject?.signature) {
+            dataObject.signature = await this.getSignedUrl(dataObject.signature)
+          }
+
+          datas.push({ dataEmployee, triwulanEmployee, triwulanEmployeeDetail, penilai, signature: dataObject.signature })
         }
-        const { dataEmployee, triwulanEmployee, triwulanEmployeeDetail, penilai } = datas[0]
+        const { dataEmployee, triwulanEmployee, triwulanEmployeeDetail, penilai, signature } = datas[0]
 
         CreateRouteHist(statusRoutes.FINISH, dateStart)
-        return response.ok({ message: "Data Berhasil Didapatkan", dataEmployee, triwulanEmployee, triwulanEmployeeDetail, penilai })
+        return response.ok({ message: "Data Berhasil Didapatkan", dataEmployee, triwulanEmployee, triwulanEmployeeDetail, penilai, signature })
       }
     } catch (error) {
       const message = "HRDTW03: " + error.message || error;

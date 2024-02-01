@@ -19,7 +19,7 @@ export const TriwulanHelper = async (dataArrayObject) => {
   // }
 
   // const leadUnit = await Unit.findBy('id', dataArrayObject.triwulan.unit.id)
-  const leadUnit = await Unit.query().select('id', 'name').where('id', dataArrayObject.triwulan.unit.id)
+  const leadUnit = await Unit.query().select('id', 'name').where('id', dataArrayObject.triwulan.unit.id).firstOrFail()
 
 
   let direct_supervisor: any = []

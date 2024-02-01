@@ -12,9 +12,8 @@ import { DateTime } from 'luxon'
 export default class AssetLoanBatchesController {
   public async index({ request, response }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
-   CreateRouteHist(statusRoutes.START, dateStart)
-    const { page = 1, limit = 10, keyword = "" } = request.qs()
-
+    CreateRouteHist(statusRoutes.START, dateStart)
+    const { page = 1, limit = 10, keyword = "", fromDate, toDate } = request.qs()
     try {
       let data = {}
       data = await AssetLoanBatch
@@ -31,6 +30,10 @@ export default class AssetLoanBatchesController {
         .whereHas('employee', query => {
           query.whereILike('name', `%${keyword}%`)
         })
+        .if(fromDate && toDate, query => {
+          query.whereBetween('start_date', [fromDate, toDate])
+          query.orWhereBetween('end_date', [fromDate, toDate])
+        })
         .orderBy('created_at', 'desc')
         .paginate(page, limit)
 
@@ -44,7 +47,7 @@ export default class AssetLoanBatchesController {
 
   public async store({ request, response }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
-   CreateRouteHist(statusRoutes.START, dateStart)
+    CreateRouteHist(statusRoutes.START, dateStart)
     const payload = await request.validate(CreateAssetLoanBatchValidator)
     // const { employeeId, type, description, startDate, endDate } = payload
 
@@ -85,7 +88,7 @@ export default class AssetLoanBatchesController {
 
   public async show({ params, response }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
-   CreateRouteHist(statusRoutes.START, dateStart)
+    CreateRouteHist(statusRoutes.START, dateStart)
     const { id } = params
     if (!uuidValidation(id)) { return response.badRequest({ message: "Batch ID tidak valid" }) }
 

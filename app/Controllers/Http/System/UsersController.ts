@@ -42,7 +42,7 @@ export default class UsersController {
       password: schema.string({}, [rules.minLength(6)]),
     });
 
-    const payload = await request.validate({ schema: loginSchema });
+    const payload = await request.validate({schema: loginSchema});
 
     try {
       const token = await auth
@@ -196,7 +196,7 @@ export default class UsersController {
     } catch (error) {
       CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error)
       console.log(error);
-      return response.badRequest({ message: "Invalid credentials", error });
+      return response.badRequest({ message: "Wrong Password", error });
     }
   }
 

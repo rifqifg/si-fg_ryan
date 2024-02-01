@@ -47,6 +47,24 @@ export default class ExceptionHandler extends HttpExceptionHandler {
     if (error.code === 'E_VALIDATION_FAILURE') {
       const data = error.messages
 
+      let messages: any = [];
+
+      // Iterasi setiap elemen dalam array errors
+      data.errors.forEach((error) => {
+        if (error.field === 'email' && error.rule === 'exists') {
+          messages.push('Email Not Registered');
+        }
+        //TODO: custom error message
+        // Tambahan kondisi lain jika diperlukan
+      });
+      //buat reponse login sementara
+      if (messages.length > 0) {
+        return request.ctx?.response.badRequest({
+          message: messages.join(', '), // bisa pake /n
+          data: error.messages.errors,
+        })
+      }
+
       // Extract the unique error messages from the object
       //@ts-ignore
       const uniqueErrorMessages = Object.values(data).flatMap((errorMessages) => [...new Set(errorMessages)]);
@@ -57,7 +75,7 @@ export default class ExceptionHandler extends HttpExceptionHandler {
           message: 'Data tidak valid',
           data: error.messages.errors,
         })
-      }else {
+      } else {
         return request.ctx?.response.badRequest({
           message: combinedData,
         })

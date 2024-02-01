@@ -38,7 +38,7 @@ export default class CreateUserValidator {
     employee_id: schema.string.optional({}, [
       rules.exists({ table: 'employees', column: 'id' })
     ]),
-    division_id: schema.string({}, [
+    division_id: schema.string.optional({}, [
       rules.exists({ table: 'divisions', column: 'id' })
     ]),
     password: schema.string({}, [

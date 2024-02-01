@@ -20,7 +20,7 @@ export const TriwulanHelper = async (dataArrayObject) => {
   const divisiHrd = await Division.query()
     .select('id', 'name')
     .whereILike('name', `%hrd%`)
-    .firstOrFail()
+    .first()
   const divisiHrdObject = JSON.parse(JSON.stringify(divisiHrd))
 
   let direct_supervisor: any = []

@@ -246,7 +246,7 @@ export default class TriwulansController {
       CreateRouteHist(statusRoutes.ERROR, dateStart, message)
       console.log(error);
       response.badRequest({
-        message: "Gagal mengubah data",
+        message: "Gagal mengambil data",
         error: message,
         error_data: error,
       });

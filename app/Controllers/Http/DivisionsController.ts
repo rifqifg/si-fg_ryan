@@ -96,6 +96,13 @@ export default class DivisionsController {
           e.select('title', 'employee_id')
           e.preload('employee', m => m.select('name'))
           e.whereHas('employee', e => e.whereILike("name", `%${keyword}%`))
+          e.orderByRaw(`
+            case
+              when title = 'lead' then 1
+              when title = 'vice' then 2
+              else 3
+            end
+          `)
         })
         .where('id', id)
         .firstOrFail()

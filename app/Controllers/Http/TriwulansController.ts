@@ -202,13 +202,25 @@ export default class TriwulansController {
           const triwulanEmployee = result.triwulanEmployee
           const triwulanEmployeeDetail = result.triwulanEmployeeDetail
           const penilai = result.penilai
-          const unit = await Unit.query().select('id', 'signature').where('id', triwulan.unitId).first()
-          const dataObject = JSON.parse(JSON.stringify(unit))
-          if (dataObject?.signature) {
-            dataObject.signature = await this.getSignedUrl(dataObject.signature)
+          const dataUnit = await Unit.query()
+          .select('id', 'signature')
+          .where('id', triwulan.unitId)
+          .preload('employeeUnits', eu =>
+            eu
+              .select('id', 'employee_id')
+              .where('title', 'lead')
+              .preload('employee', e => e.select('name')))
+          .first()
+
+          const dataUnitObject = {
+            id: dataUnit?.id,
+            name: dataUnit?.name,
+            signature: dataUnit?.signature ? await this.getSignedUrl(dataUnit.signature) : null,
+            unit_lead_employee_id: dataUnit?.employeeUnits[0].employee.id,
+            unit_lead_employee_name: dataUnit?.employeeUnits[0].employee.name
           }
 
-          datas.push({ dataEmployee, triwulanEmployee, triwulanEmployeeDetail, penilai, signature: dataObject.signature })
+          datas.push({ dataEmployee, triwulanEmployee, triwulanEmployeeDetail, penilai, dataUnit: dataUnitObject })
         }
 
         CreateRouteHist(statusRoutes.FINISH, dateStart)
@@ -251,18 +263,30 @@ export default class TriwulansController {
           const triwulanEmployee = result.triwulanEmployee
           const triwulanEmployeeDetail = result.triwulanEmployeeDetail
           const penilai = result.penilai
-          const unit = await Unit.query().select('id', 'signature').where('id', triwulan.unitId).first()
-          const dataObject = JSON.parse(JSON.stringify(unit))
-          if (dataObject?.signature) {
-            dataObject.signature = await this.getSignedUrl(dataObject.signature)
-          }
+          const dataUnit = await Unit.query()
+            .select('id', 'signature')
+            .where('id', triwulan.unitId)
+            .preload('employeeUnits', eu =>
+              eu
+                .select('id', 'employee_id')
+                .where('title', 'lead')
+                .preload('employee', e => e.select('name')))
+            .first()
 
-          datas.push({ dataEmployee, triwulanEmployee, triwulanEmployeeDetail, penilai, signature: dataObject.signature })
+            const dataUnitObject = {
+              id: dataUnit?.id,
+              name: dataUnit?.name,
+              signature: dataUnit?.signature ? await this.getSignedUrl(dataUnit.signature) : null,
+              unit_lead_employee_id: dataUnit?.employeeUnits[0].employee.id,
+              unit_lead_employee_name: dataUnit?.employeeUnits[0].employee.name
+            }
+
+          datas.push({ dataEmployee, triwulanEmployee, triwulanEmployeeDetail, penilai, dataUnit: dataUnitObject })
         }
-        const { dataEmployee, triwulanEmployee, triwulanEmployeeDetail, penilai, signature } = datas[0]
+        const { dataEmployee, triwulanEmployee, triwulanEmployeeDetail, penilai, dataUnit } = datas[0]
 
         CreateRouteHist(statusRoutes.FINISH, dateStart)
-        return response.ok({ message: "Data Berhasil Didapatkan", dataEmployee, triwulanEmployee, triwulanEmployeeDetail, penilai, signature })
+        return response.ok({ message: "Data Berhasil Didapatkan", dataEmployee, triwulanEmployee, triwulanEmployeeDetail, penilai, dataUnit })
       }
     } catch (error) {
       const message = "HRDTW03: " + error.message || error;

@@ -506,10 +506,26 @@ export default class UsersController {
 
       const userObject = JSON.parse(JSON.stringify(user))
 
-      await UserRole.create({
-        userId: userObject.id,
-        roleName: payload.role
-      })
+      //guru : user_academic, user_hrd
+      if (payload.role === ROLE.TEACHER) {
+        await UserRole.createMany([
+          {
+            userId: userObject.id,
+            roleName: 'user_academic'
+          },
+          {
+            userId: userObject.id,
+            roleName: 'user_hrd'
+          },
+        ])
+      }
+      //employee: user_hrd
+      if (payload.role === ROLE.EMPLOYEE) {
+        await UserRole.create({
+          userId: userObject.id,
+          roleName: 'user_hrd'
+        })
+      }
     } else {
       try {
         student = await Student.findByOrFail("nisn", payload.nisn);

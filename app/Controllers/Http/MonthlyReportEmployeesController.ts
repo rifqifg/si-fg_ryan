@@ -4,13 +4,22 @@ import { MonthlyReportHelper } from 'App/Helpers/MonthlyReportHelper';
 import MonthlyReportEmployee from 'App/Models/MonthlyReportEmployee';
 import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist';
 import { statusRoutes } from 'App/Modules/Log/lib/enum';
+import Env from "@ioc:Adonis/Core/Env"
+import Drive from '@ioc:Adonis/Core/Drive'
 import DeleteManyMonthlyReportEmployeeValidator from 'App/Validators/DeleteManyMonthlyReportEmployeeValidator';
 import UpdateMonthlyReportEmployeeValidator from 'App/Validators/UpdateMonthlyReportEmployeeValidator';
 import { DateTime } from 'luxon';
 import { validate as uuidValidation } from "uuid"
 
 export default class MonthlyReportEmployeesController {
+  private async getSignedUrl(filename: string) {
+    const beHost = Env.get('BE_URL')
+    const hrdDrive = Drive.use('hrd')
+    const signedUrl = beHost + await hrdDrive.getSignedUrl('units/' + filename, { expiresIn: '30mins' })
+    return signedUrl
+  }
   public async index({ request, response }: HttpContextContract) {
+
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
     const { page = 1, limit = 10, keyword = "", monthlyReportId } = request.qs()
@@ -45,6 +54,26 @@ export default class MonthlyReportEmployeesController {
     }
 
     try {
+      const getUnit = await MonthlyReportEmployee.query()
+        .where('id', id)
+        .preload('monthlyReport', mr => mr.preload('unit', u => {
+          u.preload('employeeUnits', eu => {
+            eu
+              .select('id', 'employee_id')
+              .where('title', 'lead')
+              .preload('employee', e => e.select('name'))
+          })
+        })).first()
+
+      const dataUnit = getUnit?.monthlyReport.unit
+      const dataUnitObject = {
+        id: dataUnit?.id,
+        name: dataUnit?.name,
+        signature: dataUnit?.signature ? await this.getSignedUrl(dataUnit.signature) : null,
+        unit_lead_employee_id: dataUnit?.employeeUnits[0].employee.id,
+        unit_lead_employee_name: dataUnit?.employeeUnits[0].employee.name
+      }
+
       const getEmployeeId = await MonthlyReportEmployee.query()
         .select('employee_id')
         .where('id', id)
@@ -95,15 +124,14 @@ export default class MonthlyReportEmployeesController {
           .select(Database.raw(`(select total_mengajar from academic.teachers where employee_id ='${employeeId}') as "default"`))
           .where('is_teaching', true))
 
-      const dataObject = JSON.parse(JSON.stringify(data))[0]
+      const dataArray = JSON.parse(JSON.stringify(data))
 
-      const result = await MonthlyReportHelper(dataObject)
+      const result = await MonthlyReportHelper(dataArray)
       const dataEmployee = result.dataEmployee
       const monthlyReportEmployeeDetail = result.monthlyReportEmployeeDetail
-      const monthlyReportEmployee = result.monthlyReportEmployee
 
       CreateRouteHist(statusRoutes.FINISH, dateStart)
-      response.ok({ message: "Berhasil mengambil data", dataEmployee, monthlyReportEmployeeDetail, monthlyReportEmployee });
+      response.ok({ message: "Berhasil mengambil data", dataUnit: dataUnitObject, dataEmployee, monthlyReportEmployeeDetail});
     } catch (error) {
       const message = "HRDMRE02: " + error.message || error;
       CreateRouteHist(statusRoutes.ERROR, dateStart, message)

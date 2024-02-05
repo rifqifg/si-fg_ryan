@@ -7,14 +7,42 @@ import { validate as uuidValidation } from "uuid"
 import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist'
 import { statusRoutes } from 'App/Modules/Log/lib/enum'
 import { DateTime } from 'luxon'
+import Env from "@ioc:Adonis/Core/Env"
+import Drive from '@ioc:Adonis/Core/Drive'
 import { MonthlyReportHelper } from 'App/Helpers/MonthlyReportHelper'
 import MonthlyReportEmployee from 'App/Models/MonthlyReportEmployee'
+import { unitHelper } from 'App/Helpers/unitHelper'
+import { checkRoleSuperAdmin } from 'App/Helpers/checkRoleSuperAdmin';
+import Activity from 'App/Models/Activity'
+import { validator, schema, rules } from '@ioc:Adonis/Core/Validator'
+import EmployeeUnit from 'App/Models/EmployeeUnit'
+import Notification from 'App/Models/Notification'
+import User from 'App/Models/User'
+import { RolesHelper } from 'App/Helpers/rolesHelper'
 
 export default class MonthlyReportsController {
-  public async index({ request, response }: HttpContextContract) {
+  private async getSignedUrl(filename: string) {
+    const beHost = Env.get('BE_URL')
+    const hrdDrive = Drive.use('hrd')
+    const signedUrl = beHost + await hrdDrive.getSignedUrl('units/' + filename, { expiresIn: '30mins' })
+    return signedUrl
+  }
+
+  public async index({ request, response, auth }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
     const { page = 1, limit = 10, keyword = "", fromDate = "", toDate = "" } = request.qs()
+
+    const unitIds = await unitHelper()
+    const superAdmin = await checkRoleSuperAdmin()
+
+    const user = await User.query().preload('roles', r => r.preload('role')).where('id', auth.use('api').user!.id).firstOrFail()
+    const userObject = JSON.parse(JSON.stringify(user))
+
+    const roles = await RolesHelper(userObject)
+
+    // cek apakah user termasuk user_hrd (dan bukan admin_hrd)
+    const isJustMemberHRD = roles.includes('user_hrd') && !(roles.includes('admin_hrd'))
 
     try {
       let data
@@ -24,14 +52,22 @@ export default class MonthlyReportsController {
         }
         data = await MonthlyReport.query()
           .whereILike('name', `%${keyword}%`)
+          .if(!(superAdmin), q => q.andWhereIn('unit_id', unitIds))
           .andWhere(query => {
             query.whereBetween('from_date', [fromDate, toDate])
             query.orWhereBetween('to_date', [fromDate, toDate])
           })
+          .if(isJustMemberHRD, query => {
+            query.andWhereHas('monthlyReportEmployees', mre => {
+              mre.where('employee_id', user.employeeId)
+            })
+          })
+          .preload('unit')
           .paginate(page, limit)
       } else {
         data = await MonthlyReport.query()
           .whereILike('name', `%${keyword}%`)
+          .preload('unit')
           .paginate(page, limit)
       }
 
@@ -58,8 +94,61 @@ export default class MonthlyReportsController {
       return response.badRequest({ message: "INVALID_DATE_RANGE" })
     }
 
+    const fixedTimeActivity = await Activity.query()
+      .where('unit_id', payload.unitId)
+      .andWhere('activity_type', 'fixed_time')
+
+    if (fixedTimeActivity.length <= 0) throw new Error('Unit yang akan digenerate belum memiliki aktifitas tetap')
+
     try {
       const data = await MonthlyReport.create(payload);
+
+      // push notifikasi ke member unit masing2 bahwa rapot bulanan sudah dibuat
+      const listEmployeeUnit = await EmployeeUnit.query()
+        .where('unit_id', payload.unitId)
+        .preload('employee', e => e
+          .select('id')
+          .preload('user', u => u.
+            select('id')))
+
+      const listEmployeeUnitObject = JSON.parse(JSON.stringify(listEmployeeUnit))
+
+      let listPushnotif: any = { notifications: [] }
+      listEmployeeUnitObject.map(value => {
+        if (value.employee.user) {
+          listPushnotif.notifications.push({
+            title: "Rapot Bulanan",
+            description: `Rapot ${payload.name} telah dibuat`,
+            date: DateTime.now().setZone('Asia/Jakarta').toFormat('yyyy-MM-dd HH:mm:ss').toString(),
+            type: "monthly_report",
+            userId: value.employee.user.id
+          })
+        }
+      })
+
+      const CreateNotifValidator = await validator.validate({
+        schema: schema.create({
+          notifications: schema.array().members(
+            schema.object().members({
+              title: schema.string({}, [
+                rules.minLength(3)
+              ]),
+              description: schema.string({}, [
+                rules.minLength(3)
+              ]),
+              date: schema.date({ format: 'yyyy-MM-dd HH:mm:ss' }),
+              type: schema.string(),
+              userId: schema.string({}, [
+                rules.exists({ table: 'users', column: 'id' })
+              ])
+            })
+          )
+        }),
+        data: listPushnotif
+      })
+
+      await Notification.createMany(CreateNotifValidator.notifications)
+
       CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.created({ message: "Berhasil menyimpan data", data });
     } catch (error) {
@@ -85,10 +174,31 @@ export default class MonthlyReportsController {
     }
 
     try {
+      const getUnit = await MonthlyReport.query()
+        .where('id', id)
+        .preload('unit', u => {
+          u.preload('employeeUnits', eu => {
+            eu
+              .select('id', 'employee_id')
+              .where('title', 'lead')
+              .preload('employee', e => e.select('name'))
+          })
+        })
+        .first()
+
+      const dataUnit = getUnit?.unit
+      const dataUnitObject = {
+        id: dataUnit?.id,
+        name: dataUnit?.name,
+        signature: dataUnit?.signature ? await this.getSignedUrl(dataUnit.signature) : null,
+        unit_lead_employee_id: dataUnit?.employeeUnits[0].employee.id,
+        unit_lead_employee_name: dataUnit?.employeeUnits[0].employee.name
+      }
       let data
       if (!employeeId) {
         const monthlyReport = await MonthlyReport.query()
-          .select('name', 'from_date', 'to_date', 'red_dates')
+          .select('name', 'from_date', 'to_date', 'red_dates', 'unit_id')
+          .preload('unit')
           .where("id", id)
           .firstOrFail();
 
@@ -142,18 +252,31 @@ export default class MonthlyReportsController {
 
         const dataArrayObject = JSON.parse(JSON.stringify(data))
 
-        let datas: any = []
-        for (let i = 0; i < dataArrayObject.data.length; i++) {
-          const result = await MonthlyReportHelper(dataArrayObject.data[i])
-          const dataEmployee = result.dataEmployee
-          const monthlyReportEmployeeDetail = result.monthlyReportEmployeeDetail
-          const monthlyReportEmployee = result.monthlyReportEmployee
-          datas.push({ dataEmployee, monthlyReportEmployee, monthlyReportEmployeeDetail })
-        }
+        const result = await MonthlyReportHelper(dataArrayObject.data)
 
         CreateRouteHist(statusRoutes.FINISH, dateStart)
-        return response.ok({ message: "Berhasil mengambil data", monthlyReport, data: { meta: dataArrayObject.meta, data: datas } });
+        return response.ok({ message: "Berhasil mengambil data", dataUnit: dataUnitObject, monthlyReport, data: { meta: dataArrayObject.meta, data: result } });
       } else {
+        const getUnit = await MonthlyReport.query()
+          .where('id', id)
+          .preload('unit', u => {
+            u.preload('employeeUnits', eu => {
+              eu
+                .select('id', 'employee_id')
+                .where('title', 'lead')
+                .preload('employee', e => e.select('name'))
+            })
+          })
+          .first()
+
+        const dataUnit = getUnit?.unit
+        const dataUnitObject = {
+          id: dataUnit?.id,
+          name: dataUnit?.name,
+          signature: dataUnit?.signature ? await this.getSignedUrl(dataUnit.signature) : null,
+          unit_lead_employee_id: dataUnit?.employeeUnits[0].employee.id,
+          unit_lead_employee_name: dataUnit?.employeeUnits[0].employee.name
+        }
         //buat module profile
         data = await MonthlyReport.query()
           .where("id", id)
@@ -201,15 +324,15 @@ export default class MonthlyReportsController {
               .where('is_teaching', true)))
           .firstOrFail();
 
-        const dataObject = JSON.parse(JSON.stringify(data)).monthlyReportEmployees[0]
+        const dataArray = JSON.parse(JSON.stringify(data)).monthlyReportEmployees
 
-        const result = await MonthlyReportHelper(dataObject)
+        const result = await MonthlyReportHelper(dataArray)
         const dataEmployee = result.dataEmployee
         const monthlyReportEmployeeDetail = result.monthlyReportEmployeeDetail
-        const monthlyReportEmployee = result.monthlyReportEmployee
+        // const monthlyReportEmployee = result.monthlyReportEmployee
 
         CreateRouteHist(statusRoutes.FINISH, dateStart)
-        return response.ok({ message: "Berhasil mengambil data", dataEmployee, monthlyReportEmployee, monthlyReportEmployeeDetail });
+        return response.ok({ message: "Berhasil mengambil data", dataUnit: dataUnitObject, dataEmployee, monthlyReportEmployeeDetail });
       }
     } catch (error) {
       const message = "HRDMR03: " + error.message || error;

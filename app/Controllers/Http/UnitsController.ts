@@ -1,0 +1,295 @@
+import type { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
+import { checkRoleSuperAdmin } from "App/Helpers/checkRoleSuperAdmin";
+import { RolesHelper } from "App/Helpers/rolesHelper";
+import { unitHelper } from "App/Helpers/unitHelper";
+import EmployeeUnit from "App/Models/EmployeeUnit";
+import Unit from "App/Models/Unit";
+import User from "App/Models/User";
+import Env from "@ioc:Adonis/Core/Env"
+import Drive from '@ioc:Adonis/Core/Drive'
+import CreateUnitValidator from "App/Validators/CreateUnitValidator";
+import UpdateUnitValidator from "App/Validators/UpdateUnitValidator";
+import { DateTime } from "luxon";
+import { validate as uuidValidation } from "uuid"
+
+export default class UnitsController {
+
+  private async getSignedUrl(filename: string) {
+    const beHost = Env.get('BE_URL')
+    const hrdDrive = Drive.use('hrd')
+    const signedUrl = beHost + await hrdDrive.getSignedUrl('units/' + filename, { expiresIn: '30mins' })
+    return signedUrl
+  }
+
+  public async index({ request, response }: HttpContextContract) {
+    // const dateStart = DateTime.now().toMillis();
+    // CreateRouteHist(statusRoutes.START, dateStart);
+    const { page = 1, limit = 10, keyword = "" } = request.qs();
+    const unitIds = await unitHelper()
+    const superAdmin = await checkRoleSuperAdmin()
+
+    try {
+      const data = await Unit.query()
+        .preload("employeeUnits", (e) => {
+          e.select("id", "title", "employee_id");
+          e.preload("employee", (m) => m.select("name"));
+          e.where("title", "=", "lead");
+        })
+        .whereILike("name", `%${keyword}%`)
+        .if(!superAdmin, query => {
+          query.whereIn('id', unitIds)
+        })
+        .orderBy('name', 'asc')
+        .paginate(page, limit);
+
+      const dataObject = JSON.parse(JSON.stringify(data))
+
+      dataObject.data.map(async (value) => {
+        if (value.signature) {
+          value.signature = await this.getSignedUrl(value.signature)
+        }
+      })
+      // CreateRouteHist(statusRoutes.FINISH, dateStart);
+      response.ok({ message: "Data Berhasil Didapatkan", data: dataObject });
+    } catch (error) {
+      const message = "HRDU01: " + error.message || error;
+      // CreateRouteHist(statusRoutes.ERROR, dateStart, message)
+      console.log(error);
+      response.badRequest({
+        message: "Gagal mengambil data",
+        error: message,
+        error_data: error,
+      });
+    }
+  }
+
+  public async store({ request, response }: HttpContextContract) {
+    const payload = await request.validate(CreateUnitValidator);
+
+    try {
+      let data
+      if (payload.signature) {
+        const signature = Math.floor(Math.random() * 1000) + DateTime.now().toUnixInteger().toString() + "." + payload.signature.extname
+        await payload.signature.moveToDisk(
+          'units',
+          { name: signature, overwrite: true },
+          'hrd'
+        )
+
+        data = await Unit.create({ ...payload, signature })
+        data.signature = await this.getSignedUrl(data.signature)
+      } else {
+        data = await Unit.create({
+          name: payload.name,
+          description: payload.description
+        })
+      }
+
+      // const data = await Unit.create(payload);
+      response.ok({ message: "Create data success", data });
+    } catch (error) {
+      const message = "HRDU02: " + error.message || error;
+      console.log(error);
+      response.badRequest({
+        message: "Gagal create data",
+        error: message,
+        error_data: error,
+      });
+    }
+  }
+
+  public async show({ params, response, request }: HttpContextContract) {
+    const { keyword = "" } = request.qs();
+    const { id } = params;
+
+    if (!uuidValidation(id)) {
+      return response.badRequest({ message: "Unit ID tidak valid" });
+    }
+
+    try {
+      const data = await Unit.query()
+        .where("id", id)
+        .preload("employeeUnits", (e) => {
+          e.select("id", "title", "employee_id", "status");
+          e.preload("employee", (m) => m.select("name"));
+          e.whereHas('employee', e => e.whereILike("name", `%${keyword}%`))
+          e.orderByRaw(`
+            case
+              when title = 'lead' then 1
+              when title = 'vice' then 2
+              else 3
+            end
+          `)
+        })
+        .firstOrFail();
+
+      const dataObject = JSON.parse(JSON.stringify(data))
+
+      if (dataObject.signature) {
+        dataObject.signature = await this.getSignedUrl(dataObject.signature)
+      }
+
+      response.ok({ message: "Get data success", data: dataObject });
+    } catch (error) {
+      const message = "HRDU03: " + error.message || error;
+      console.log(error);
+      response.badRequest({
+        message: "Gagal mengambil detail data",
+        error: message,
+        error_data: error,
+      });
+    }
+  }
+
+  public async update({ request, response, params, auth }: HttpContextContract) {
+    const { id } = params;
+
+    const payload = await request.validate(UpdateUnitValidator);
+    const objectPayload = JSON.parse(JSON.stringify(payload))
+    const superAdmin = await checkRoleSuperAdmin()
+
+    if (!superAdmin) {
+      //cek unit, apakah user yg login adalah lead atau bukan
+      const checkUnit = await Unit.query()
+        .whereHas('employeeUnits', eu => eu
+          .where('employee_id', auth.user!.$attributes.employeeId)
+          .andWhere('title', 'lead'))
+        .first()
+
+      if (!checkUnit || checkUnit.id != id) {
+        return response.badRequest({ message: "Gagal mengubah data unit dikarenakan anda bukan ketua" });
+      }
+    }
+
+    try {
+      const unit = await Unit.findOrFail(id);
+
+      if (payload.signature) {
+        const image = Math.floor(Math.random() * 1000) + DateTime.now().toUnixInteger().toString() + "." + payload.signature.extname
+        await payload.signature.moveToDisk(
+          'units',
+          { name: image, overwrite: true },
+          'hrd'
+        )
+        if (unit.signature) {
+          await Drive.use('hrd').delete('units/' + unit.signature)
+        }
+
+        objectPayload.signature = image
+      }
+
+      const data = await unit.merge(objectPayload).save();
+      if (data.signature) {
+        data.signature = await this.getSignedUrl(data.signature)
+      }
+
+      response.ok({ message: "Update data success", data });
+    } catch (error) {
+      const message = "HRDU04: " + error.message || error;
+      console.log(error);
+      response.badRequest({
+        message: "Gagal update data",
+        error: message,
+        error_data: error,
+      });
+    }
+  }
+
+  public async destroy({ params, response }: HttpContextContract) {
+    const { id } = params;
+    try {
+      const data = await Unit.findOrFail(id);
+      await data.delete();
+
+      if (data.signature) {
+        await Drive.use('hrd').delete('units/' + data.signature)
+      }
+
+      response.ok({ message: "Delete data success" });
+    } catch (error) {
+      const message = "HRDU05: " + error.message || error;
+      console.log(error);
+      response.badRequest({
+        message: "Gagal menghapus data",
+        error: message,
+        error_data: error,
+      });
+    }
+  }
+
+  public async getUnit({ request, response, auth }: HttpContextContract) {
+    const { keyword = "" } = request.qs()
+
+    try {
+      const unitIds = await unitHelper()
+      const superAdmin = await checkRoleSuperAdmin()
+
+      const data = await Unit.query()
+        .whereILike('name', `%${keyword}%`)
+        .preload('employeeUnits', eu => eu.where('title', 'lead').andWhere('employee_id', auth.user!.$attributes.employeeId))
+        .if(!superAdmin, query => {
+          query.whereIn('id', unitIds)
+        })
+
+      response.ok({ message: "get data successfully", data })
+    } catch (error) {
+      const message = "HRDU06: " + error.message || error;
+      console.log(error);
+      response.badRequest({
+        message: "Gagal mengambil data",
+        error: message,
+        error_data: error,
+      });
+    }
+  }
+
+  // get data unit hanya yg di ketuai user yg sdg login
+  public async getUnitLeadOnly({ request, response, auth }: HttpContextContract) {
+    const { keyword = "" } = request.qs()
+
+    try {
+      const unitIds = await unitHelper()
+      const superAdmin = await checkRoleSuperAdmin()
+
+      const data = await Unit.query()
+        .whereILike('name', `%${keyword}%`)
+        .preload('employeeUnits', eu => eu.where('title', 'lead').andWhere('employee_id', auth.user!.$attributes.employeeId))
+        .if(!superAdmin, query => {
+          query.whereIn('id', unitIds)
+          query.whereHas('employeeUnits', eu => eu.where('title', 'lead').andWhere('employee_id', auth.user!.$attributes.employeeId))
+        })
+
+      response.ok({ message: "get data successfully", data })
+    } catch (error) {
+      const message = "HRDU07: " + error.message || error;
+      console.log(error);
+      response.badRequest({
+        message: "Gagal mengambil data",
+        error: message,
+        error_data: error,
+      });
+    }
+  }
+
+  public async deleteImage({ params, response }: HttpContextContract) {
+    const { id } = params;
+    try {
+      const data = await Unit.findOrFail(id);
+
+      if (data.signature) {
+        await Drive.use('hrd').delete('units/' + data.signature)
+      }
+
+      await data.merge({signature: null}).save()
+      response.ok({ message: "Delete unit image success" });
+    } catch (error) {
+      const message = "HRDU08: " + error.message || error;
+      console.log(error);
+      response.badRequest({
+        message: "Gagal menghapus data",
+        error: message,
+        error_data: error,
+      });
+    }
+  }
+}

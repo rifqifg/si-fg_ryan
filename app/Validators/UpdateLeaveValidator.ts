@@ -1,6 +1,6 @@
 import { schema, CustomMessages, rules } from '@ioc:Adonis/Core/Validator'
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import { LeaveStatuses, StatusLeaves, TypeLeaves } from 'App/lib/enum'
+import { LeaveStatuses, StatusLeaves } from 'App/lib/enum'
 
 export default class UpdateLeaveValidator {
   constructor(protected ctx: HttpContextContract) {}
@@ -38,11 +38,19 @@ export default class UpdateLeaveValidator {
     note: schema.string.optional([
       rules.minLength(3)
     ]),
-    type: schema.enum.optional(Object.values(TypeLeaves)),
+    // type: schema.enum.optional(Object.values(TypeLeaves)),
     employeeId: schema.string.optional({}, [
       rules.exists({table: 'employees', column: 'id'})
     ]),
-    leaveStatus: schema.enum.optional(Object.values(LeaveStatuses))
+    leaveStatus: schema.enum.optional(Object.values(LeaveStatuses)),
+    unitId: schema.string.optional({}, [
+      rules.exists({table: 'units', column: 'id'})
+    ]),
+    image: schema.file.optional({
+      size: '2mb',
+      extnames: ['png', 'jpg', 'jpeg'],
+    }),
+    deleteImage: schema.string.optional()
   })
 
   /**

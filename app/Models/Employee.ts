@@ -20,6 +20,8 @@ import EmployeeDivision from "./EmployeeDivision";
 import EmployeeType from "./EmployeeType";
 import Teacher from "App/Modules/Academic/Models/Teacher";
 import { StatusEmployees } from "App/lib/enum";
+import EmployeeUnit from "./EmployeeUnit";
+import User from "./User";
 let newId = "";
 
 export default class Employee extends BaseModel {
@@ -72,6 +74,9 @@ export default class Employee extends BaseModel {
   @hasMany(() => EmployeeDivision)
   public divisions: HasMany<typeof EmployeeDivision>;
 
+  @hasMany(() => EmployeeUnit)
+  public employeeUnits: HasMany<typeof EmployeeUnit>;
+
   @manyToMany(() => Division, {
     pivotTable: "employee_divisions",
     pivotColumns: ["title"],
@@ -86,6 +91,9 @@ export default class Employee extends BaseModel {
 
   @hasOne(() => Teacher)
   public teacher: HasOne<typeof Teacher>;
+
+  @hasOne(() => User)
+  public user: HasOne<typeof User>;
 
   @column.date()
   public dateIn: DateTime;
@@ -137,6 +145,9 @@ export default class Employee extends BaseModel {
 
   @column()
   public status: StatusEmployees
+
+  @hasMany(() => EmployeeUnit)
+  public unit: HasMany<typeof EmployeeUnit>
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime;

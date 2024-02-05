@@ -1,7 +1,11 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Database from '@ioc:Adonis/Lucid/Database';
+import { checkRoleSuperAdmin } from 'App/Helpers/checkRoleSuperAdmin';
+import { RolesHelper } from 'App/Helpers/rolesHelper';
+import { unitHelper } from 'App/Helpers/unitHelper';
 import Activity from 'App/Models/Activity';
 import ActivityMember from 'App/Models/ActivityMember';
+import EmployeeUnit from 'App/Models/EmployeeUnit';
 import Presence from 'App/Models/Presence';
 import SubActivity from 'App/Models/SubActivity';
 import User from 'App/Models/User';
@@ -21,24 +25,43 @@ export default class ActivitiesController {
     const user = await User.query().preload('roles', r => r.preload('role')).where('id', auth.use('api').user!.id).firstOrFail()
     const userObject = JSON.parse(JSON.stringify(user))
 
+    const unitLeadIds = await unitHelper("lead")
+    const superAdmin = await checkRoleSuperAdmin()
+
+    const roles = await RolesHelper(userObject)
+    const isAdminHrd = roles.includes('admin_hrd')
+
     try {
       let data: object
-      if (userObject.roles[0].role_name == 'super_admin') {
+      if (superAdmin) {
         data = await Activity.query()
-          .preload('division', division => division.select('id', 'name'))
+          .preload('unit', unit => unit.select('id', 'name'))
           .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
+          .preload('unit', u => u.select('name'))
           .whereILike('name', `%${keyword}%`)
           .orderBy(orderBy, orderDirection)
           .paginate(page, limit)
       } else {
         data = await Activity.query()
-          .preload('division', division => division.select('id', 'name'))
+          .preload('unit', unit => unit.select('id', 'name'))
           .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
+          .preload('unit', u => u.select('name'))
           .whereILike('name', `%${keyword}%`)
-          .andWhere(query => {
-            query.where('division_id', auth.use('api').user!.divisionId)
-            query.orWhereHas('activityMembers', am => (am.where('employee_id', user.employeeId), am.where('role', 'manager')))
+          // .andWhere(query => {
+          //   // query.where('division_id', auth.use('api').user!.divisionId)
+          //   query.whereHas('activityMembers', am => (am.where('employee_id', user.employeeId), am.where('role', 'manager')))
+          //   .if(isAdminHrd, query => {
+          //     query.orWhereHas('unit', u => u
+          //       .whereIn('id', unitLeadIds)
+          //       .andWhere(query => query.whereHas('employeeUnits', eu => eu.where('title', 'lead'))))
+          //   })
+          // })
+          // .andWhereIn('unit_id', unitLeadIds)
+          .whereHas('activityMembers', am => {
+            am.where('employee_id', user.employeeId)
+              .andWhere('role', 'manager')
           })
+          .if((isAdminHrd), q => q.orWhereIn('unit_id', unitLeadIds))
           .orderBy(orderBy, orderDirection)
           .paginate(page, limit)
       }
@@ -68,7 +91,7 @@ export default class ActivitiesController {
     try {
       const data = await Activity.query()
         .where("id", id)
-        .preload('division', division => division.select('id', 'name'))
+        .preload('unit', unit => unit.select('id', 'name'))
         .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
         .preload('activityMembers', activityMembers => activityMembers.select('id', 'role', 'employee_id').preload('employee', employee => employee.select('name')))
         .firstOrFail();
@@ -95,13 +118,15 @@ export default class ActivitiesController {
     const user = await User.query().preload('roles', r => r.preload('role')).where('id', auth.use('api').user!.id).firstOrFail()
     const userObject = JSON.parse(JSON.stringify(user))
     let data: object
+    const unitIds = await unitHelper()
+    const superAdmin = await checkRoleSuperAdmin()
 
     try {
       if (userObject.roles[0].role_name == 'super_admin') {
         console.log('masuk sinikah?');
 
         data = await Activity.query()
-          .preload('division', division => division.select('id', 'name'))
+          .preload('unit', unit => unit.select('id', 'name'))
           .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
           .where(query => {
             if (activity_type !== '') {
@@ -116,7 +141,7 @@ export default class ActivitiesController {
         console.log('masuk sini ya');
 
         data = await Activity.query()
-          .preload('division', division => division.select('id', 'name'))
+          .preload('unit', unit => unit.select('id', 'name'))
           .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
           .where(query => {
             if (activity_type !== '') {
@@ -124,6 +149,9 @@ export default class ActivitiesController {
               query.andWhereILike('name', `%${keyword}%`);
             }
             query.andWhereILike('name', `%${keyword}%`);
+          })
+          .if(!superAdmin, query => {
+            query.whereIn('unit_id', unitIds)
           })
           // .andWhere('owner', auth.user!.id) // Jika perlu, aktifkan kembali ini
           .orderBy(orderBy, orderDirection)
@@ -162,7 +190,9 @@ export default class ActivitiesController {
         scheduleActive: payload.scheduleActive,
         days: payload.days,
         owner: auth.user!.id,
-        division_id: payload.division_id || auth.use('api').user!.divisionId,
+        // TOD0: Cek
+        unitId: payload.unitId,
+        // division_id: payload.division_id || auth.use('api').user!.divisionId,
         assessment: payload.assessment,
         default: payload.default,
         activityType: payload.activityType,
@@ -186,7 +216,7 @@ export default class ActivitiesController {
     }
   }
 
-  public async update({ request, response, params }: HttpContextContract) {
+  public async update({ request, response, params, auth }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
     const { id } = params
@@ -291,7 +321,8 @@ export default class ActivitiesController {
       payload.type ? formattedPayload['type'] = payload.type : ''
       payload.scheduleActive ? formattedPayload['scheduleActive'] = payload.scheduleActive : ''
       payload.days ? formattedPayload['days'] = payload.days : ""
-      formattedPayload['division_id'] = payload.division_id
+      formattedPayload['unitId'] = payload.unitId
+      // formattedPayload['division_id'] = payload.division_id
       formattedPayload['categoryActivityId'] = payload.categoryActivityId
       payload.assessment ? formattedPayload['assessment'] = payload.assessment : ""
       payload.activityType ? formattedPayload['activityType'] = payload.activityType : ""
@@ -300,6 +331,19 @@ export default class ActivitiesController {
       payload.categoryActivityId ? formattedPayload['categoryActivityId'] = payload.categoryActivityId : ""
 
       const findData = await Activity.findOrFail(id)
+
+      // cek lead unit
+      const superAdmin = await checkRoleSuperAdmin()
+      if (!superAdmin) {
+        const unitLead = await EmployeeUnit.query()
+          .where('employee_id', auth.user!.$attributes.employeeId)
+          .andWhere('title', 'lead')
+          .first()
+        if (unitLead?.unitId !== findData.unitId) {
+          return response.badRequest({ message: "Gagal update status izin dikarenakan anda bukan ketua unit tersebut" });
+        }
+      }
+
       const data = await findData.merge(formattedPayload).save()
 
       CreateRouteHist(statusRoutes.FINISH, dateStart)
@@ -319,12 +363,25 @@ export default class ActivitiesController {
   }
 
 
-  public async destroy({ params, response }: HttpContextContract) {
+  public async destroy({ params, response, auth }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
     const { id } = params
     try {
       const data = await Activity.findOrFail(id)
+
+      // cek lead unit
+      const superAdmin = await checkRoleSuperAdmin()
+      if (!superAdmin) {
+        const unitLead = await EmployeeUnit.query()
+          .where('employee_id', auth.user!.$attributes.employeeId)
+          .andWhere('title', 'lead')
+          .first()
+        if (unitLead?.unitId !== data.unitId) {
+          return response.badRequest({ message: "Gagal update status izin dikarenakan anda bukan ketua unit tersebut" });
+        }
+      }
+
       await data.delete()
 
       CreateRouteHist(statusRoutes.FINISH, dateStart)

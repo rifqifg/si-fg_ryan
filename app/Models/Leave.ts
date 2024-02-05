@@ -3,6 +3,7 @@ import { BaseModel, BelongsTo, afterCreate, beforeCreate, belongsTo, column } fr
 import { LeaveStatuses, StatusLeaves, TypeLeaves } from 'App/lib/enum'
 import Employee from './Employee'
 import { v4 as uuidv4 } from 'uuid'
+import Unit from './Unit'
 let newId = ""
 
 export default class Leave extends BaseModel {
@@ -42,6 +43,15 @@ export default class Leave extends BaseModel {
 
   @column()
   public leaveStatus: LeaveStatuses
+
+  @column()
+  public image: string | null
+
+  @column()
+  public unitId: string
+
+  @belongsTo(() => Unit)
+  public unit: BelongsTo<typeof Unit>
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime

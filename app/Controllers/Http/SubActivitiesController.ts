@@ -16,6 +16,7 @@ import Database from '@ioc:Adonis/Lucid/Database';
 import Activity from 'App/Models/Activity';
 import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist';
 import { statusRoutes } from 'App/Modules/Log/lib/enum';
+import { RolesHelper } from 'App/Helpers/rolesHelper';
 
 const getSignedUrl = async (filename: string) => {
   const beHost = Env.get('BE_URL')
@@ -268,7 +269,8 @@ export default class SubActivitiesController {
     const user = await User.query().preload('roles', r => r.preload('role')).where('id', auth.use('api').user!.id).firstOrFail()
     const userObject = JSON.parse(JSON.stringify(user))
 
-    const authRole = userObject.roles[0].role_name
+    // const authRole = userObject.roles[0].role_name
+    const roles = RolesHelper(userObject)
     const authEmployeeId = auth.user?.$original.employeeId
 
     const getActivityMember = await ActivityMember.query()
@@ -298,7 +300,7 @@ export default class SubActivitiesController {
         });
       }
 
-      if (authRole == 'super_admin' || memberManager.length > 0) { // buat ngecek yang berwenang absen membernya
+      if (roles.includes('super_admin') || roles.includes('admin_hrd')|| memberManager.length > 0) { // buat ngecek yang berwenang absen membernya
         if (payload.presences.length > 0 && hasDuplicateEmployeeId(payload.presences)) { return response.badRequest({ message: "Employee_ID Duplicated" }); }
         const data = await Presence.createMany(payload.presences)
         CreateRouteHist(statusRoutes.FINISH, dateStart)
@@ -362,7 +364,7 @@ export default class SubActivitiesController {
       const activity = await Activity.query()
         .where('id', activityId)
         .preload('categoryActivity', ca => ca.select('name'))
-        .preload('division', d => d.select('name'))
+        .preload('unit', d => d.select('name'))
         .firstOrFail()
 
       CreateRouteHist(statusRoutes.FINISH, dateStart)

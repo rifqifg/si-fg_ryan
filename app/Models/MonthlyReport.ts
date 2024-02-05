@@ -1,9 +1,10 @@
 import { DateTime } from 'luxon'
-import { BaseModel, HasMany, afterCreate, afterUpdate, beforeCreate, beforeUpdate, column, hasMany } from '@ioc:Adonis/Lucid/Orm'
+import { BaseModel, BelongsTo, HasMany, afterCreate, afterUpdate, beforeCreate, beforeUpdate, belongsTo, column, hasMany } from '@ioc:Adonis/Lucid/Orm'
 import MonthlyReportEmployee from './MonthlyReportEmployee'
 import { v4 as uuidv4 } from 'uuid'
 import Employee from './Employee'
 import { HttpContext } from '@adonisjs/core/build/standalone'
+import Unit from './Unit'
 let newId = ""
 
 export default class MonthlyReport extends BaseModel {
@@ -12,6 +13,12 @@ export default class MonthlyReport extends BaseModel {
 
   @column()
   public name: string
+
+  @column()
+  public unitId: string
+
+  @belongsTo(() => Unit)
+  public unit: BelongsTo<typeof Unit>
 
   @column.date()
   public fromDate: DateTime
@@ -44,7 +51,15 @@ export default class MonthlyReport extends BaseModel {
 
   @afterCreate()
   public static async insertMonthlyReportEmployee() {
-    const employeeIds = await Employee.query().select('id').whereNull('date_out')
+    const { request } = HttpContext.get()!
+    const { unitId }: any = JSON.parse(request.raw()!)
+
+    // kemungkinan kondisionalnya ditambah, berdasarkan unitnya
+    const employeeIds = await Employee
+      .query()
+      .select('id')
+      .whereNull('date_out')
+      .andWhereHas('employeeUnits', employeeUnit => employeeUnit.where('unit_id', unitId))
     const dataObject = JSON.parse(JSON.stringify(employeeIds))
 
     try {

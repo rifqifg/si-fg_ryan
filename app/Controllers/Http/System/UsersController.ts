@@ -42,7 +42,7 @@ export default class UsersController {
       password: schema.string({}, [rules.minLength(6)]),
     });
 
-    const payload = await request.validate({ schema: loginSchema });
+    const payload = await request.validate({schema: loginSchema});
 
     try {
       const token = await auth
@@ -196,7 +196,7 @@ export default class UsersController {
     } catch (error) {
       CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error)
       console.log(error);
-      return response.badRequest({ message: "Invalid credentials", error });
+      return response.badRequest({ message: "Wrong Password", error });
     }
   }
 
@@ -506,10 +506,26 @@ export default class UsersController {
 
       const userObject = JSON.parse(JSON.stringify(user))
 
-      await UserRole.create({
-        userId: userObject.id,
-        roleName: payload.role
-      })
+      //guru : user_academic, user_hrd
+      if (payload.role === ROLE.TEACHER) {
+        await UserRole.createMany([
+          {
+            userId: userObject.id,
+            roleName: 'user_academic'
+          },
+          {
+            userId: userObject.id,
+            roleName: 'user_hrd'
+          },
+        ])
+      }
+      //employee: user_hrd
+      if (payload.role === ROLE.EMPLOYEE) {
+        await UserRole.create({
+          userId: userObject.id,
+          roleName: 'user_hrd'
+        })
+      }
     } else {
       try {
         student = await Student.findByOrFail("nisn", payload.nisn);

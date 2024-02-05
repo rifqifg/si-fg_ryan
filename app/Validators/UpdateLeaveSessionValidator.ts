@@ -36,6 +36,14 @@ export default class UpdateLeaveSessionValidator {
     employeeId: schema.string.optional({}, [
       rules.exists({ table: 'employees', column: 'id' })
     ]),
+    unitId: schema.string.optional({}, [
+      rules.exists({table: 'units', column: 'id'})
+    ]),
+    image: schema.file.optional({
+      size: '2mb',
+      extnames: ['png', 'jpg', 'jpeg'],
+    }),
+    deleteImage: schema.string.optional()
   })
 
   /**

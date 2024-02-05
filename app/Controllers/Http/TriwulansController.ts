@@ -1,6 +1,10 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Database from '@ioc:Adonis/Lucid/Database'
 import { TriwulanHelper } from 'App/Helpers/TriwulanHelper'
+import { checkRoleSuperAdmin } from 'App/Helpers/checkRoleSuperAdmin'
+import { unitHelper } from 'App/Helpers/unitHelper'
+import EmployeeUnit from 'App/Models/EmployeeUnit'
+import Notification from 'App/Models/Notification'
 import Triwulan from 'App/Models/Triwulan'
 import TriwulanEmployee from 'App/Models/TriwulanEmployee'
 import TriwulanEmployeeDetail from 'App/Models/TriwulanEmployeeDetail'
@@ -10,12 +14,25 @@ import CreateTriwulanValidator from 'App/Validators/CreateTriwulanValidator'
 import UpdateTriwulanValidator from 'App/Validators/UpdateTriwulanValidator'
 import { DateTime } from 'luxon'
 import { validate as uuidValidation } from "uuid"
+import { validator, schema, rules } from '@ioc:Adonis/Core/Validator'
+import Unit from 'App/Models/Unit'
+import Env from "@ioc:Adonis/Core/Env"
+import Drive from '@ioc:Adonis/Core/Drive'
 
 export default class TriwulansController {
+  private async getSignedUrl(filename: string) {
+    const beHost = Env.get('BE_URL')
+    const hrdDrive = Drive.use('hrd')
+    const signedUrl = beHost + await hrdDrive.getSignedUrl('units/' + filename, { expiresIn: '30mins' })
+    return signedUrl
+  }
+
   public async index({ request, response }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
     const { page = 1, limit = 10, keyword = "", fromDate = "", toDate = "" } = request.qs()
+    const unitIds = await unitHelper()
+    const superAdmin = await checkRoleSuperAdmin()
 
     try {
       let data
@@ -29,10 +46,18 @@ export default class TriwulansController {
             query.whereBetween('from_date', [fromDate, toDate])
             query.orWhereBetween('to_date', [fromDate, toDate])
           })
+          .preload('unit', u => u.select('name'))
+          .if(!superAdmin, query => {
+            query.whereIn('unit_id', unitIds)
+          })
           .paginate(page, limit)
       } else {
         data = await Triwulan.query()
           .whereILike('name', `%${keyword}%`)
+          .preload('unit', u => u.select('name'))
+          .if(!superAdmin, query => {
+            query.whereIn('unit_id', unitIds)
+          })
           .paginate(page, limit)
       }
 
@@ -61,6 +86,53 @@ export default class TriwulansController {
 
     try {
       const data = await Triwulan.create(payload);
+
+      // push notifikasi ke member unit masing2 bahwa rapot triwulan sudah dibuat
+      const listEmployeeUnit = await EmployeeUnit.query()
+        .where('unit_id', payload.unitId)
+        .preload('employee', e => e
+          .select('id')
+          .preload('user', u => u.
+            select('id')))
+
+      const listEmployeeUnitObject = JSON.parse(JSON.stringify(listEmployeeUnit))
+
+      let listPushnotif: any = { notifications: [] }
+      listEmployeeUnitObject.map(value => {
+        if (value.employee.user) {
+          listPushnotif.notifications.push({
+            title: "Rapot Triwulan",
+            description: `Rapot ${payload.name} telah dibuat`,
+            date: DateTime.now().setZone('Asia/Jakarta').toFormat('yyyy-MM-dd HH:mm:ss').toString(),
+            type: "triwulan",
+            userId: value.employee.user.id
+          })
+        }
+      })
+
+      const CreateNotifValidator = await validator.validate({
+        schema: schema.create({
+          notifications: schema.array().members(
+            schema.object().members({
+              title: schema.string({}, [
+                rules.minLength(3)
+              ]),
+              description: schema.string({}, [
+                rules.minLength(3)
+              ]),
+              date: schema.date({ format: 'yyyy-MM-dd HH:mm:ss' }),
+              type: schema.string(),
+              userId: schema.string({}, [
+                rules.exists({ table: 'users', column: 'id' })
+              ])
+            })
+          )
+        }),
+        data: listPushnotif
+      })
+
+      await Notification.createMany(CreateNotifValidator.notifications)
+
       CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.created({ message: "Berhasil menyimpan data", data });
     } catch (error) {
@@ -88,11 +160,10 @@ export default class TriwulansController {
     let data
 
     try {
+      const triwulan = await Triwulan.query()
+        .where('id', id)
+        .firstOrFail()
       if (!employeeId) {
-        const triwulan = await Triwulan.query()
-          .where('id', id)
-          .firstOrFail()
-
         data = await TriwulanEmployee.query()
           .with('AggregatedData', query => {
             query
@@ -108,6 +179,7 @@ export default class TriwulansController {
               .joinRaw(`LEFT JOIN triwulan_employee_details ted ON ted.triwulan_employee_id = te.id`)
               .groupBy('te.id')
           })
+          .preload('triwulan', tr => tr.preload('unit', u => u.select('id')))
           .preload('employee', e => e
             .select('id', 'name', 'nik')
             .select(Database.raw(`EXTRACT(YEAR FROM AGE((select to_date from triwulans where id = '${id}'), "date_in")) || ' tahun ' || EXTRACT(MONTH FROM AGE((select to_date from triwulans where id = '${id}'), "date_in")) || ' bulan' AS period_of_work`))
@@ -130,7 +202,25 @@ export default class TriwulansController {
           const triwulanEmployee = result.triwulanEmployee
           const triwulanEmployeeDetail = result.triwulanEmployeeDetail
           const penilai = result.penilai
-          datas.push({ dataEmployee, triwulanEmployee, triwulanEmployeeDetail, penilai })
+          const dataUnit = await Unit.query()
+          .select('id', 'signature')
+          .where('id', triwulan.unitId)
+          .preload('employeeUnits', eu =>
+            eu
+              .select('id', 'employee_id')
+              .where('title', 'lead')
+              .preload('employee', e => e.select('name')))
+          .first()
+
+          const dataUnitObject = {
+            id: dataUnit?.id,
+            name: dataUnit?.name,
+            signature: dataUnit?.signature ? await this.getSignedUrl(dataUnit.signature) : null,
+            unit_lead_employee_id: dataUnit?.employeeUnits[0].employee.id,
+            unit_lead_employee_name: dataUnit?.employeeUnits[0].employee.name
+          }
+
+          datas.push({ dataEmployee, triwulanEmployee, triwulanEmployeeDetail, penilai, dataUnit: dataUnitObject })
         }
 
         CreateRouteHist(statusRoutes.FINISH, dateStart)
@@ -152,6 +242,7 @@ export default class TriwulansController {
               .joinRaw(`LEFT JOIN triwulan_employee_details ted ON ted.triwulan_employee_id = te.id`)
               .groupBy('te.id')
           })
+          .preload('triwulan', tr => tr.preload('unit', u => u.select('id')))
           .preload('employee', e => e
             .select('name', 'nik')
             .select(Database.raw(`EXTRACT(YEAR FROM AGE((select to_date from triwulans where id = '${id}'), "date_in")) || ' tahun ' || EXTRACT(MONTH FROM AGE((select to_date from triwulans where id = '${id}'), "date_in")) || ' bulan' AS period_of_work`))
@@ -172,26 +263,44 @@ export default class TriwulansController {
           const triwulanEmployee = result.triwulanEmployee
           const triwulanEmployeeDetail = result.triwulanEmployeeDetail
           const penilai = result.penilai
-          datas.push({ dataEmployee, triwulanEmployee, triwulanEmployeeDetail, penilai })
+          const dataUnit = await Unit.query()
+            .select('id', 'signature')
+            .where('id', triwulan.unitId)
+            .preload('employeeUnits', eu =>
+              eu
+                .select('id', 'employee_id')
+                .where('title', 'lead')
+                .preload('employee', e => e.select('name')))
+            .first()
+
+            const dataUnitObject = {
+              id: dataUnit?.id,
+              name: dataUnit?.name,
+              signature: dataUnit?.signature ? await this.getSignedUrl(dataUnit.signature) : null,
+              unit_lead_employee_id: dataUnit?.employeeUnits[0].employee.id,
+              unit_lead_employee_name: dataUnit?.employeeUnits[0].employee.name
+            }
+
+          datas.push({ dataEmployee, triwulanEmployee, triwulanEmployeeDetail, penilai, dataUnit: dataUnitObject })
         }
-        const { dataEmployee, triwulanEmployee, triwulanEmployeeDetail, penilai } = datas[0]
+        const { dataEmployee, triwulanEmployee, triwulanEmployeeDetail, penilai, dataUnit } = datas[0]
 
         CreateRouteHist(statusRoutes.FINISH, dateStart)
-        return response.ok({ message: "Data Berhasil Didapatkan", dataEmployee, triwulanEmployee, triwulanEmployeeDetail, penilai })
+        return response.ok({ message: "Data Berhasil Didapatkan", dataEmployee, triwulanEmployee, triwulanEmployeeDetail, penilai, dataUnit })
       }
     } catch (error) {
       const message = "HRDTW03: " + error.message || error;
       CreateRouteHist(statusRoutes.ERROR, dateStart, message)
       console.log(error);
       response.badRequest({
-        message: "Gagal mengubah data",
+        message: "Gagal mengambil data",
         error: message,
         error_data: error,
       });
     }
   }
 
-  public async update({ params, request, response }: HttpContextContract) {
+  public async update({ params, request, response, auth }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
     const { id } = params;
@@ -210,6 +319,19 @@ export default class TriwulansController {
 
     try {
       const triwulan = await Triwulan.findOrFail(id);
+
+      // cek lead unit
+      const superAdmin = await checkRoleSuperAdmin()
+      if (!superAdmin) {
+        const unitLead = await EmployeeUnit.query()
+          .where('employee_id', auth.user!.$attributes.employeeId)
+          .andWhere('title', 'lead')
+          .first()
+        if (unitLead?.unitId !== triwulan.unitId) {
+          return response.badRequest({ message: "Gagal update rapot triwulan dikarenakan anda bukan ketua unit tersebut" });
+        }
+      }
+
       const data = await triwulan.merge(payload).save();
       CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil mengubah data", data });
@@ -225,7 +347,7 @@ export default class TriwulansController {
     }
   }
 
-  public async destroy({ params, response }: HttpContextContract) {
+  public async destroy({ params, response, auth }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
     const { id } = params;
@@ -235,6 +357,19 @@ export default class TriwulansController {
 
     try {
       const data = await Triwulan.findOrFail(id);
+
+      // cek lead unit
+      const superAdmin = await checkRoleSuperAdmin()
+      if (!superAdmin) {
+        const unitLead = await EmployeeUnit.query()
+          .where('employee_id', auth.user!.$attributes.employeeId)
+          .andWhere('title', 'lead')
+          .first()
+        if (unitLead?.unitId !== data.unitId) {
+          return response.badRequest({ message: "Gagal hapus rapot triwulan dikarenakan anda bukan ketua unit tersebut" });
+        }
+      }
+
       await data.delete();
       CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil menghapus data" });

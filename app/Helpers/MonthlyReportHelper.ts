@@ -102,7 +102,9 @@ export const MonthlyReportHelper = async (dataArray) => {
             monthlyReportEmployeeDetail[categoryIndex].data.push({ activity_name: activityName, item: [] })
           } else {
             // jika bukan hardcode, maka input SEBELUM index yg hardcode
-            monthlyReportEmployeeDetail[categoryIndex].data.splice(hardcodedActivityIndex, 0, {activity_name: activityName, activity_type: gabungan.activity.activity_type, item: [] })
+            monthlyReportEmployeeDetail[categoryIndex].data.splice(hardcodedActivityIndex, 0, {activity_name: activityName, item: [] })
+            // ubah value activityIndex ke index data yg di splice tdi
+            activityIndex = hardcodedActivityIndex
           }
         }
       }

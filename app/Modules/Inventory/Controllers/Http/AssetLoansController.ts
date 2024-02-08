@@ -10,9 +10,7 @@ import { DateTime } from 'luxon';
 
 export default class AssetLoansController {
   public async index({ request, response }: HttpContextContract) {
-    const dateStart = DateTime.now().toMillis()
-   CreateRouteHist(statusRoutes.START, dateStart)
-    const { page = 1, limit = 10, keyword = "" } = request.qs()
+    const { page = 1, limit = 10, keyword = "", fromDate, toDate } = request.qs()
 
     try {
       const data = await AssetLoan
@@ -20,37 +18,43 @@ export default class AssetLoansController {
         .preload('employee', query => {
           query.select('name', 'nip')
         })
-        .whereHas('employee', query => {
-          query.whereILike('name', `%${keyword}%`)
+        .where(queryK => {
+          queryK.whereHas('employee', query => {
+            query.whereILike('name', `%${keyword}%`)
+          })
+          queryK.orWhereHas('student', query => {
+            query.orWhereILike('name', `%${keyword}%`)
+          })
+          queryK.orWhereHas('asset', query => {
+            query.orWhereILike('serial', `%${keyword}%`)
+            query.orWhereILike('tag', `%${keyword}%`)
+          })
+        })
+        .andWhere(query => {
+          if (fromDate && toDate) {
+            query.whereBetween('start_date', [fromDate + " 00:00:00", toDate + " 23:59:59"])
+            query.orWhereBetween('end_date', [fromDate + " 00:00:00", toDate + " 23:59:59"])
+          }
         })
         .preload('student', query => {
           query.select('name', 'nis', 'nisn', 'classId')
           query.preload('class', query => query.select('name'))
         })
-        .orWhereHas('student', query => {
-          query.orWhereILike('name', `%${keyword}%`)
-        })
         .preload('asset', query => {
           query.select('serial', 'tag')
-        })
-        .orWhereHas('asset', query => {
-          query.orWhereILike('serial', `%${keyword}%`)
-          query.orWhereILike('tag', `%${keyword}%`)
         })
         .orderBy('created_at', 'desc')
         .paginate(page, limit)
 
-      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil mengambil data", data })
     } catch (error) {
-      CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error)
       response.badRequest({ message: "Gagal mengambil data", error: error.message })
     }
   }
 
   public async store({ request, response }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
-   CreateRouteHist(statusRoutes.START, dateStart)
+    CreateRouteHist(statusRoutes.START, dateStart)
     const payload = await request.validate(CreateAssetLoanValidator)
 
     if (!payload.endDate) {
@@ -78,7 +82,7 @@ export default class AssetLoansController {
 
   public async show({ params, response }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
-   CreateRouteHist(statusRoutes.START, dateStart)
+    CreateRouteHist(statusRoutes.START, dateStart)
     const { id } = params
     if (!uuidValidation(id)) { return response.badRequest({ message: "Loan ID tidak valid" }) }
 

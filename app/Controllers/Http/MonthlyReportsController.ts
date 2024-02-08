@@ -221,7 +221,7 @@ export default class MonthlyReportsController {
                 end) as percentage`))
             .select(Database.raw(`(select default_presence from public.employees where id= (select employee_id from monthly_report_employees where id = monthly_report_employee_id)) - (select red_dates from monthly_reports where id = '${id}') as "default"`))
             .whereHas('activity', ac => ac.where('activity_type', 'fixed_time').andWhere('assessment', true))
-            .preload('activity', a => a.select('id', 'name', 'category_activity_id')
+            .preload('activity', a => a.select('id', 'name', 'category_activity_id', 'activity_type')
               .preload('categoryActivity', ca => ca.select('name'))))
           .preload('monthlyReportEmployeesNotFixedTime', mrenft => mrenft
             .select('*')
@@ -231,7 +231,7 @@ export default class MonthlyReportsController {
                 end) as percentage`))
             .select(Database.raw(`(select "default" from public.activities where id=activity_id) as "default"`))
             .whereHas('activity', ac => ac.where('activity_type', 'not_fixed_time').andWhere('assessment', true))
-            .preload('activity', a => a.select('id', 'name', 'category_activity_id')
+            .preload('activity', a => a.select('id', 'name', 'category_activity_id', 'activity_type')
               .preload('categoryActivity', ca => ca.select('name'))))
           .preload('monthlyReportEmployeesLeave', mrel => mrel
             .select('*')
@@ -296,7 +296,7 @@ export default class MonthlyReportsController {
                 end) as percentage`))
               .select(Database.raw(`(select default_presence from public.employees where id='${employeeId}') - (select red_dates from monthly_reports where id = '${id}') as "default"`))
               .whereHas('activity', ac => ac.where('activity_type', 'fixed_time').andWhere('assessment', true))
-              .preload('activity', a => a.select('id', 'name', 'category_activity_id')
+              .preload('activity', a => a.select('id', 'name', 'category_activity_id', 'activity_type')
                 .preload('categoryActivity', ca => ca.select('name'))))
             .preload('monthlyReportEmployeesNotFixedTime', mrenft => mrenft
               .select('*')
@@ -306,7 +306,7 @@ export default class MonthlyReportsController {
                 end) as percentage`))
               .select(Database.raw(`(select "default" from public.activities where id=activity_id) as "default"`))
               .whereHas('activity', ac => ac.where('activity_type', 'not_fixed_time').andWhere('assessment', true))
-              .preload('activity', a => a.select('id', 'name', 'category_activity_id')
+              .preload('activity', a => a.select('id', 'name', 'category_activity_id', 'activity_type')
                 .preload('categoryActivity', ca => ca.select('name'))))
             .preload('monthlyReportEmployeesLeave', mrel => mrel
               .select('*')

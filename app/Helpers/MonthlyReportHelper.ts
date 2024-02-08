@@ -25,7 +25,6 @@ export const MonthlyReportHelper = async (dataArray) => {
       ...dataObject.monthlyReportEmployeesNotFixedTime
     ]
 
-    // TODO: cek data leave, leave session, sama teaching. klo true masukin sini
     const leave = dataObject.monthlyReportEmployeesLeave[0]
     const leaveSession = dataObject.monthlyReportEmployeesLeaveSession[0]
     const teaching = dataObject.monthlyReportEmployeesTeaching[0]
@@ -76,13 +75,36 @@ export const MonthlyReportHelper = async (dataArray) => {
       }
 
       // cek Aktivitas
-      let activityIndex = monthlyReportEmployeeDetail[categoryIndex].data.findIndex(a => a.activity_name === activityName);
+      let activityIndex = monthlyReportEmployeeDetail[categoryIndex].data.findIndex(a => a.activity_name === activityName)
       if (activityIndex === -1) {
         activityIndex = monthlyReportEmployeeDetail[categoryIndex].data.length;
-        monthlyReportEmployeeDetail[categoryIndex].data.push({
-          activity_name: activityName,
-          item: []
-        });
+
+        /*
+          Dibawah ini logic utk mengurutkan aktivitas.
+
+          Urutan aktivitas:
+          1. Aktivitas tetap
+          2. Aktivitas tdk tetap
+          3. Aktivitas hardcode (leave, leave session, dsb.)
+        */
+        if (
+          activityName === "SISA JATAH CUTI" ||
+          activityName === "IZIN (SESI)" ||
+          activityName === "MENGAJAR"
+        ) {
+          // jika aktivitas yg diinput adalah hardcode, tandai dgn activity_type: hardcoded...
+          // ...utk skrg cuma dipake di BE
+          monthlyReportEmployeeDetail[categoryIndex].data.push({activity_name: activityName, activity_type: 'hardcoded', item: [] })
+        } else {
+          const hardcodedActivityIndex = monthlyReportEmployeeDetail[categoryIndex].data.findIndex(a => a.activity_type === 'hardcoded')
+          if (hardcodedActivityIndex === -1) {
+            // jika bukan hardcode, dan aktivitas yg hardcoded memang belum ada, maka push spt biasa (tanpa ditandai hardcode)
+            monthlyReportEmployeeDetail[categoryIndex].data.push({ activity_name: activityName, item: [] })
+          } else {
+            // jika bukan hardcode, maka input SEBELUM index yg hardcode
+            monthlyReportEmployeeDetail[categoryIndex].data.splice(hardcodedActivityIndex, 0, {activity_name: activityName, activity_type: gabungan.activity.activity_type, item: [] })
+          }
+        }
       }
 
       // cek layer 3

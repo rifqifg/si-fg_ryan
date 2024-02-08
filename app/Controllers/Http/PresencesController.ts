@@ -11,10 +11,70 @@ import { validator } from '@ioc:Adonis/Core/Validator'
 import UpdateTimeOutPresenceValidator from 'App/Validators/UpdateTimeOutPresenceValidator'
 import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist'
 import { statusRoutes } from 'App/Modules/Log/lib/enum'
+
+function calculateWorkingTimeDiff(times) {
+  let positiveSum = 0;
+  let negativeSum = 0;
+
+  // Mengelompokkan antara negatif dan positif dan menjumlahkannya
+  times.forEach(date => {
+    const [hours, minutes, seconds] = date.split(':').map(Number);
+
+    if (hours < 0 || minutes < 0 || seconds < 0 || Object.is(hours, -0)) {
+      const absoluteHours = Math.abs(hours);
+      const absoluteMinutes = Math.abs(minutes);
+      const absoluteSeconds = Math.abs(seconds);
+      negativeSum += (absoluteHours * 3600 + absoluteMinutes * 60 + absoluteSeconds);
+    } else {
+      positiveSum += (hours * 3600 + minutes * 60 + seconds);
+    }
+  });
+
+  if (negativeSum != 0) {
+    negativeSum = -negativeSum
+  }
+
+
+  // Jika semua nilai positif
+  if (positiveSum > 0 && negativeSum === 0) {
+    const totalSeconds = positiveSum;
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    return `${hours}:${minutes}:${seconds}`;
+  }
+  // Jika semua nilai negatif
+  else if (negativeSum < 0 && positiveSum === 0) {
+    const totalSeconds = Math.abs(negativeSum);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    return `-${Math.abs(hours)}:${Math.abs(minutes).toString().padStart(2, '0')}:${Math.abs(seconds).toString().padStart(2, '0')}`;
+  }
+  // Jika tidak, maka menjumlahkan antara kelompok positif dan negatif
+  else {
+    negativeSum = -negativeSum
+    let totalSeconds
+    if (positiveSum > negativeSum) {
+      totalSeconds = positiveSum - negativeSum
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      return `${hours}:${minutes}:${seconds}`;
+    } else {
+      totalSeconds = negativeSum - positiveSum
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      return `-${hours}:${minutes}:${seconds}`;
+    }
+  }
+}
+
 export default class PresencesController {
   public async index({ request, response }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
-   CreateRouteHist(statusRoutes.START, dateStart)
+    CreateRouteHist(statusRoutes.START, dateStart)
     // @ts-ignore
     const hariIni = DateTime.now().toSQLDate().toString()
     // @ts-ignore
@@ -76,7 +136,7 @@ export default class PresencesController {
 
   public async store({ request, response }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
-   CreateRouteHist(statusRoutes.START, dateStart)
+    CreateRouteHist(statusRoutes.START, dateStart)
     const payload = await request.validate(CreatePresenceValidator)
 
     try {
@@ -92,7 +152,7 @@ export default class PresencesController {
 
   public async scanRFID({ request, response }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
-   CreateRouteHist(statusRoutes.START, dateStart)
+    CreateRouteHist(statusRoutes.START, dateStart)
     const { activityId, rfid } = request.body()
     const employeeId = (await Employee.findByOrFail('rfid', rfid)).id
     const activity = await Activity.findOrFail(activityId)
@@ -129,7 +189,7 @@ export default class PresencesController {
 
   public async show({ params, response }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
-   CreateRouteHist(statusRoutes.START, dateStart)
+    CreateRouteHist(statusRoutes.START, dateStart)
     const { id } = params
     const activity = await Activity.findOrFail(id)
 
@@ -147,7 +207,7 @@ export default class PresencesController {
 
   public async edit({ params, response }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
-   CreateRouteHist(statusRoutes.START, dateStart)
+    CreateRouteHist(statusRoutes.START, dateStart)
     const { id } = params
     try {
       const data = await Presence.query().preload('employee', query => query.select('name')).where('id', id).firstOrFail()
@@ -226,13 +286,14 @@ export default class PresencesController {
 
   public async recap({ params, response, request }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
-   CreateRouteHist(statusRoutes.START, dateStart)
+    CreateRouteHist(statusRoutes.START, dateStart)
     // @ts-ignore
     const hariIni = DateTime.now().toSQLDate().toString()
     const { id } = params
     const { from = hariIni, to = hariIni } = request.qs()
 
-    const { rows: detail } = await Database.rawQuery(`
+    try {
+      const { rows: detail } = await Database.rawQuery(`
       select name, time_in, time_out, case when (keterlambatan > interval '1 second') then cast(keterlambatan as varchar) else '0' end late
       from (
         select e.name, p.time_in, p.time_out, time_in ::time - '07:30:00'::time keterlambatan
@@ -246,7 +307,7 @@ export default class PresencesController {
       order by name, time_in
     `)
 
-    const recapHourlyQuery = `
+      const recapHourlyQuery = `
       select id, name
         ,count(name) total
         ,cast(sum(time_out :: time - time_in::time) as varchar) total_hours
@@ -267,9 +328,9 @@ export default class PresencesController {
     `
 
 
-    const { rows: recap } = await Database.rawQuery(recapHourlyQuery)
+      const { rows: recap } = await Database.rawQuery(recapHourlyQuery)
 
-    const { rows: [overview] } = await Database.rawQuery(`
+      const { rows: [overview] } = await Database.rawQuery(`
       select data.*, (presence_total/presence_expected)*100  presence_precentage, mostPresent.*
       from
       (
@@ -296,13 +357,55 @@ export default class PresencesController {
       ) mostPresent
     `)
 
-    CreateRouteHist(statusRoutes.FINISH, dateStart)
-    response.ok({ message: "Get data success", overview, recap, detail })
+      const selisihWaktu = await Presence.query()
+        .select('*') // Select only the employee_id
+        .preload('employee', query => {
+          query.select('name', 'id', 'nip')
+            .orderBy('name');
+        })
+        .where('activity_id', id)
+        .andWhereRaw(`time_in::date BETWEEN '${from}' AND '${to}'`)
+
+      const selisihWaktuObject = JSON.parse(JSON.stringify(selisihWaktu))
+      const recapObject = JSON.parse(JSON.stringify(recap))
+
+      let resultRecap: any[] = [];
+
+      for (let i = 0; i < recapObject.length; i++) {
+        let recapItem = recapObject[i];
+        let workingTimeDiffArray: string[] = [];
+
+        for (let j = 0; j < selisihWaktuObject.length; j++) {
+          if (recapItem.id === selisihWaktuObject[j].employee_id) {
+            workingTimeDiffArray.push(selisihWaktuObject[j].workingTimeDiff);
+          }
+        }
+
+        recapItem.workingTimeDiffArray = workingTimeDiffArray;
+
+        resultRecap.push(recapItem);
+      }
+
+      for (let i = 0; i < resultRecap.length; i++) {
+        resultRecap[i].workingTimeDiff = calculateWorkingTimeDiff(resultRecap[i].workingTimeDiffArray)
+      }
+
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
+      response.ok({ message: "Get data success", overview, recap: resultRecap, detail })
+    } catch (error) {
+      const message = "RecapPresence: " + error.message || error;
+      console.log(error);
+      response.badRequest({
+        message: "Gagal mengambil data",
+        error: message,
+        error_data: error,
+      });
+    }
   }
 
   public async hours({ params, response, request }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
-   CreateRouteHist(statusRoutes.START, dateStart)
+    CreateRouteHist(statusRoutes.START, dateStart)
     // @ts-ignore
     const hariIni = DateTime.now().toSQLDate().toString()
     const { id } = params

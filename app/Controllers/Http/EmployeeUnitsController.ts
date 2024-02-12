@@ -8,6 +8,27 @@ import UpdateEmployeeUnitValidator from 'App/Validators/UpdateEmployeeUnitValida
 // import { validate as uuidValidation } from "uuid"
 
 export default class EmployeeUnitsController {
+  public async index({ request, response }: HttpContextContract) {
+    const { page = 1, limit = 10, keyword = "", unitId } = request.qs()
+
+    try {
+      const data = await EmployeeUnit.query()
+        .where('unit_id', unitId)
+        .preload("employee", (m) => m.select("name"))
+        .andWhereHas('employee', e => e.whereILike('name', `%${keyword}%`))
+        .paginate(page, limit)
+
+      response.ok({ message: "Get data success", data });
+    } catch (error) {
+      const message = "HRDEU05: " + error.message || error;
+      console.log(error);
+      response.badRequest({
+        message: "Gagal create data",
+        error: message,
+        error_data: error,
+      });
+    }
+  }
   public async store({ request, response, auth }: HttpContextContract) {
     const payload = await request.validate(CreateEmployeeUnitValidator)
 

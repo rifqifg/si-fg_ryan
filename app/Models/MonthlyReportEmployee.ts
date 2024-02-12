@@ -73,25 +73,47 @@ export default class MonthlyReportEmployee extends BaseModel {
     try {
       // Menghitung Presensi employee Aktifitas yang tetap
       const presenceEmployeeFixedTime = await countPresenceEMployeeFixedTime(monthlyReportEmployee, fromDate, toDate, unitId)
-      if (presenceEmployeeFixedTime) {
-        await MonthlyReportEmployeeDetail.create({
-          skor: presenceEmployeeFixedTime.presence_count,
-          activityId: presenceEmployeeFixedTime.activity_id,
-          monthlyReportEmployeeId: monthlyReportEmployee.id
+      if (presenceEmployeeFixedTime.length > 0) {
+        // TODO: work on this
+        let activityId: any = []
+        presenceEmployeeFixedTime.map(async value => {
+          activityId.push(value.activity_id)
+          await MonthlyReportEmployeeDetail.create({
+            skor: value.presence_count,
+            activityId: value.activity_id,
+            monthlyReportEmployeeId: monthlyReportEmployee.id
+          })
         })
-      } else {
-        const activity = await Activity.query()
-          .select('id')
-          .where('activity_type', 'fixed_time')
-          .andWhere('unit_id', unitId)
-          .first()
-        const dataActivityObject = JSON.parse(JSON.stringify(activity))
-        await MonthlyReportEmployeeDetail.create({
-          skor: 0,
-          activityId: dataActivityObject.id,
-          monthlyReportEmployeeId: monthlyReportEmployee.id
-        })
+
+        // let activityFixedTime = await Activity.query()
+        //   .select('id')
+        //   .where('activity_type', 'fixed_time')
+        //   .andWhere('unit_id', unitId)
+        //   .andWhereNotIn('id', activityId)
+
+        // const dataActivityFixedTimeObject = JSON.parse(JSON.stringify(activityFixedTime))
+        // dataActivityFixedTimeObject.map(async aft => {
+        //   await MonthlyReportEmployeeDetail.create({
+        //     skor: 0,
+        //     activityId: aft.id,
+        //     monthlyReportEmployeeId: monthlyReportEmployee.id
+        //   })
+        // })
       }
+      // else {
+      //   const activity = await Activity.query()
+      //     .select('id')
+      //     .where('activity_type', 'fixed_time')
+      //     .andWhere('unit_id', unitId)
+      //   const dataActivityObject = JSON.parse(JSON.stringify(activity))
+      //   dataActivityObject.map(async aft => {
+      //     await MonthlyReportEmployeeDetail.create({
+      //       skor: 0,
+      //       activityId: aft.id,
+      //       monthlyReportEmployeeId: monthlyReportEmployee.id
+      //     })
+      //   })
+      // }
 
       // Menghitung Presensi employee Aktifitas yang tidak tetap
       const presenceEmployeeNotFixedTime = await countPresenceEMployeeNotFixedTime(monthlyReportEmployee, fromDate, toDate, unitId)
@@ -106,36 +128,38 @@ export default class MonthlyReportEmployee extends BaseModel {
           })
         })
 
-          let activityNotFixedTime = await Activity.query()
-            .select('id')
-            .where('activity_type', 'not_fixed_time')
-            .andWhere('unit_id', unitId)
-            .andWhere('assessment', true)
-            .andWhereNotIn('id', activityId)
+          // let activityNotFixedTime = await Activity.query()
+          //   .select('id')
+          //   .where('activity_type', 'not_fixed_time')
+          //   .andWhere('unit_id', unitId)
+          //   .andWhere('assessment', true)
+          //   .andWhereNotIn('id', activityId)
 
-          const dataActivityFixedTimeObject = JSON.parse(JSON.stringify(activityNotFixedTime))
-          dataActivityFixedTimeObject.map(async aft => {
-            await MonthlyReportEmployeeDetail.create({
-              skor: 0,
-              activityId: aft.id,
-              monthlyReportEmployeeId: monthlyReportEmployee.id
-            })
-          })
-      } else {
-        let activityNotFixedTime = await Activity.query()
-          .select('id')
-          .where('activity_type', 'not_fixed_time')
-          .andWhere('unit_id', unitId)
-          .andWhere('assessment', true)
-        const dataActivityFixedTimeObject = JSON.parse(JSON.stringify(activityNotFixedTime))
-        dataActivityFixedTimeObject.map(async aft => {
-          await MonthlyReportEmployeeDetail.create({
-            skor: 0,
-            activityId: aft.id,
-            monthlyReportEmployeeId: monthlyReportEmployee.id
-          })
-        })
+          // // TODO: benerin penamaan variable, terus testing akt tidak tetap
+          // const dataActivityFixedTimeObject = JSON.parse(JSON.stringify(activityNotFixedTime))
+          // dataActivityFixedTimeObject.map(async aft => {
+          //   await MonthlyReportEmployeeDetail.create({
+          //     skor: 0,
+          //     activityId: aft.id,
+          //     monthlyReportEmployeeId: monthlyReportEmployee.id
+          //   })
+          // })
       }
+      // else {
+      //   let activityNotFixedTime = await Activity.query()
+      //     .select('id')
+      //     .where('activity_type', 'not_fixed_time')
+      //     .andWhere('unit_id', unitId)
+      //     .andWhere('assessment', true)
+      //   const dataActivityFixedTimeObject = JSON.parse(JSON.stringify(activityNotFixedTime))
+      //   dataActivityFixedTimeObject.map(async aft => {
+      //     await MonthlyReportEmployeeDetail.create({
+      //       skor: 0,
+      //       activityId: aft.id,
+      //       monthlyReportEmployeeId: monthlyReportEmployee.id
+      //     })
+      //   })
+      // }
 
       //menghitung sisa jumlah cuti
       const leaveEmployee = await countLeaveEmloyees(monthlyReportEmployee, fromDate, unitId)
@@ -199,7 +223,7 @@ const countPresenceEMployeeFixedTime = async (monthlyReportEmployee, fromDate, t
 
   const dataPresenceEmployeeObject = JSON.parse(JSON.stringify(presenceEmployee))
 
-  return dataPresenceEmployeeObject[0]
+  return dataPresenceEmployeeObject
 }
 
 const countPresenceEMployeeNotFixedTime = async (monthlyReportEmployee, fromDate, toDate, unitId) => {

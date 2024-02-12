@@ -1,10 +1,7 @@
 import type { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import { checkRoleSuperAdmin } from "App/Helpers/checkRoleSuperAdmin";
-import { RolesHelper } from "App/Helpers/rolesHelper";
 import { unitHelper } from "App/Helpers/unitHelper";
-import EmployeeUnit from "App/Models/EmployeeUnit";
 import Unit from "App/Models/Unit";
-import User from "App/Models/User";
 import Env from "@ioc:Adonis/Core/Env"
 import Drive from '@ioc:Adonis/Core/Drive'
 import CreateUnitValidator from "App/Validators/CreateUnitValidator";
@@ -99,7 +96,7 @@ export default class UnitsController {
   }
 
   public async show({ params, response, request }: HttpContextContract) {
-    const { keyword = "" } = request.qs();
+    const { keyword = "", page = 1, limit = 10 } = request.qs();
     const { id } = params;
 
     if (!uuidValidation(id)) {
@@ -120,6 +117,7 @@ export default class UnitsController {
               else 3
             end
           `)
+          .forPage(page, limit)
         })
         .firstOrFail();
 

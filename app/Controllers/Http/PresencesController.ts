@@ -20,7 +20,7 @@ function calculateWorkingTimeDiff(times) {
   times.forEach(date => {
     const [hours, minutes, seconds] = date.split(':').map(Number);
 
-    if (hours < 0 || minutes < 0 || seconds < 0 || Object.is(hours, -0)) {
+    if (hours < 0 || minutes < 0 || seconds < 0 || Object.is(hours, -0) || Object.is(minutes, -0) || Object.is(seconds, -0)) {
       const absoluteHours = Math.abs(hours);
       const absoluteMinutes = Math.abs(minutes);
       const absoluteSeconds = Math.abs(seconds);
@@ -33,7 +33,6 @@ function calculateWorkingTimeDiff(times) {
   if (negativeSum != 0) {
     negativeSum = -negativeSum
   }
-
 
   // Jika semua nilai positif
   if (positiveSum > 0 && negativeSum === 0) {
@@ -68,6 +67,23 @@ function calculateWorkingTimeDiff(times) {
       const seconds = totalSeconds % 60;
       return `-${hours}:${minutes}:${seconds}`;
     }
+  }
+}
+
+function padZero(num) {
+  return num < 10 ? '0' + num : num;
+}
+
+function formatTime(time) {
+  const [hours, minutes, seconds] = time.split(':').map(Number);
+
+  if (hours < 0 || minutes < 0 || seconds < 0 || Object.is(hours, -0) || Object.is(minutes, -0) || Object.is(seconds, -0)) {
+    const absoluteHours = padZero(Math.abs(hours));
+    const absoluteMinutes = padZero(Math.abs(minutes));
+    const absoluteSeconds = padZero(Math.abs(seconds));
+    return `-${absoluteHours}:${absoluteMinutes}:${absoluteSeconds}`;
+  } else {
+    return `${padZero(hours)}:${padZero(minutes)}:${padZero(seconds)}`;
   }
 }
 
@@ -388,6 +404,7 @@ export default class PresencesController {
 
       for (let i = 0; i < resultRecap.length; i++) {
         resultRecap[i].workingTimeDiff = calculateWorkingTimeDiff(resultRecap[i].workingTimeDiffArray)
+        resultRecap[i].workingTimeDiff = formatTime(resultRecap[i].workingTimeDiff)
       }
 
       CreateRouteHist(statusRoutes.FINISH, dateStart)

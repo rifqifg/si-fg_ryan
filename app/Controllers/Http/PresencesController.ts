@@ -117,7 +117,9 @@ export default class PresencesController {
       .orderBy(orderBy)
       .paginate(page, limit)
 
-    // console.log(presence);
+    presence.forEach(value => {
+      value.$extras.timeDiff = formatTime(value.$extras.timeDiff)
+    })
 
     CreateRouteHist(statusRoutes.FINISH, dateStart)
     response.ok({

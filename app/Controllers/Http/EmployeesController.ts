@@ -16,9 +16,11 @@ export default class EmployeesController {
       keyword = "",
       employeeTypeId = "",
       divisionId = "",
+      isActive = "",
       orderBy = "name",
       orderDirection = "ASC",
     } = request.qs();
+
     // TODO: filter by division
     const data = await Employee.query()
       .select("*")
@@ -42,6 +44,8 @@ export default class EmployeesController {
         query.orWhereILike("nip", `%${keyword}%`);
         // query.orWhereILike("division", `%${keyword}%`);
       })
+      .if(isActive === "not_active", q => q.andWhereNotNull('date_out'))
+      .if(isActive === "active", q => q.andWhereNull('date_out'))
       .orderBy(orderBy, orderDirection)
       .paginate(page, limit);
 

@@ -5,6 +5,13 @@ import { v4 as uuidv4 } from 'uuid'
 let newId = ""
 
 export default class Unit extends BaseModel {
+
+  public serializeExtras() {
+    return {
+      employeeUnits_count: this.$extras.employeeUnits_count,
+    }
+  }
+
   @column({ isPrimary: true })
   public id: string
 

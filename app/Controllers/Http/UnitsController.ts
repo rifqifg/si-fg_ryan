@@ -119,6 +119,7 @@ export default class UnitsController {
           `)
           .forPage(page, limit)
         })
+        .withCount('employeeUnits')
         .firstOrFail();
 
       const dataObject = JSON.parse(JSON.stringify(data))

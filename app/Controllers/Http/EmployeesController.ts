@@ -1,5 +1,6 @@
 import type { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import Employee from "App/Models/Employee";
+import EmployeeUnit from "App/Models/EmployeeUnit";
 import { CreateRouteHist } from "App/Modules/Log/Helpers/createRouteHist";
 import { statusRoutes } from "App/Modules/Log/lib/enum";
 import CreateEmployeeValidator from "App/Validators/CreateEmployeeValidator";
@@ -176,4 +177,45 @@ export default class EmployeesController {
       response.internalServerError(error);
     }
   }
+
+  public async getEmployeesNotInUnit({ request, response }: HttpContextContract) {
+    try {
+      const {
+        page = 1,
+        limit = 10,
+        keyword = "",
+        unitId
+      } = request.qs();
+
+      const employeeUnit = await EmployeeUnit.query()
+        .select('employee_id')
+        .preload('employee', e => e.select('name'))
+        .where('unit_id', unitId)
+
+      const employeeIds: any = []
+
+      employeeUnit.map(value => {
+        employeeIds.push(value.$attributes.employeeId)
+      })
+
+      const data = await Employee.query()
+        .select('id', 'name')
+        .whereNull('date_out')
+        .andWhereILike('name', `%${keyword}%`)
+        .andWhereNotIn('id', employeeIds)
+        .orderBy('name', 'asc')
+        .paginate(page, limit)
+
+      response.ok({ message: "Data Berhasil Didapatkan", data });
+    } catch (error) {
+      const message = "HRDE06: " + error.message || error;
+      console.log(error);
+      response.badRequest({
+        message: "Gagal mengambil data",
+        error: message,
+        error_data: error,
+      });
+    }
+  }
+
 }

@@ -102,6 +102,7 @@ Route.get('unit-lists', 'UnitsController.getUnit').as('unit.list').middleware(['
 Route.get('unit-lists-lead-only', 'UnitsController.getUnitLeadOnly').as('unit.list-lead').middleware(['auth', 'checkRole:admin'])
 Route.shallowResource('employee-units', 'EmployeeUnitsController').apiOnly().middleware({ '*': ['auth', 'checkRole:admin'] })
 Route.get('list-employee-units', 'EmployeeUnitsController.getListEmployeeUnits').middleware(['auth'])
+Route.get('/employees-not-in-unit/', 'EmployeesController.getEmployeesNotInUnit').middleware(['auth'])
 
 Route.group(() => {
   Route.get('activities', 'UserBehaviorHrdsController.activity').middleware(['auth'])

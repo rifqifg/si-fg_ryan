@@ -104,13 +104,8 @@ export default class LeavesController {
               query.orWhereBetween('to_date', [fromDate, toDate])
             }
           })
-          .andWhere(query => {
-            query.where('employee_id', userObject.employee_id)
-          })
           .andWhereILike('status', `%${status}%`)
-          .if(!superAdmin, query => {
-            query.whereIn('unit_id', unitIds)
-          })
+          .andWhereIn('unit_id', unitIds)
           .orderBy('from_date', 'desc')
           .paginate(page, limit)
       }

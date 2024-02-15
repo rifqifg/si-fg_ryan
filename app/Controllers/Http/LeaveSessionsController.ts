@@ -167,16 +167,26 @@ export default class LeaveSessionsController {
           { name: image, overwrite: true },
           'hrd'
         )
-        data = await LeaveSession.create({ ...payload, image });
+        data = await LeaveSession.create({
+          employeeId: payload.employeeId,
+          status: payload.status,
+          fromTime: payload.fromTime.toFormat('HH:mm:ss'),
+          toTime: payload.toTime.toFormat('HH:mm:ss'),
+          date: payload.date,
+          note: payload.note,
+          image
+        });
         data.image = await getSignedUrl(data.image)
       }
       else {
         data = await LeaveSession.create({
           employeeId: payload.employeeId,
           status: payload.status,
+          fromTime: payload.fromTime.toFormat('HH:mm:ss'),
+          toTime: payload.toTime.toFormat('HH:mm:ss'),
           date: payload.date,
           note: payload.note,
-          sessions: payload.sessions,
+          // sessions: payload.sessions,
           unitId: payload.unitId,
         })
       }
@@ -271,6 +281,12 @@ export default class LeaveSessionsController {
 
     const payload = await request.validate(UpdateLeaveSessionValidator);
     const objectPayload = JSON.parse(JSON.stringify(payload))
+
+    if (payload.fromTime !== undefined) objectPayload.fromTime = payload.fromTime.toFormat('HH:mm:ss')
+    if (payload.toTime !== undefined) objectPayload.toTime = payload.toTime.toFormat('HH:mm:ss')
+
+    // TODO: validasi fromTime < toTime
+
     if (JSON.stringify(payload) === "{}") {
       console.log("data update kosong");
       return response.badRequest({ message: "Data tidak boleh kosong" });

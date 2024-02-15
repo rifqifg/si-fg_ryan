@@ -20,11 +20,17 @@ export default class LeaveSession extends BaseModel {
   @column()
   public status: StatusLeaves
 
-  @column()
-  public sessions: string[]
+  // @column()
+  // public sessions: string[]
 
   @column.date()
   public date: DateTime
+
+  @column()
+  public fromTime: string
+
+  @column()
+  public toTime: string
 
   @column()
   public note: string

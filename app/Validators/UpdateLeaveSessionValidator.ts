@@ -26,7 +26,8 @@ export default class UpdateLeaveSessionValidator {
    */
   public schema = schema.create({
     status: schema.enum.optional(Object.values(StatusLeaves)),
-    sessions: schema.array.optional().members(schema.string()),
+    fromTime: schema.date.optional({ format: 'HH:mm:ss' }),
+    toTime: schema.date.optional({ format: 'HH:mm:ss' }),
     date: schema.date.optional({
       format: 'yyyy-MM-dd'
     }),

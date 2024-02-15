@@ -46,5 +46,6 @@ export default class IndexSeeder extends BaseSeeder {
     // await this.runSeeder(await import('Academic/Database/Seeders/JurusanSeeder'))
     // await this.runSeeder(await import('Academic/Database/Seeders/PredikatSeeder'))
     // await this.runSeeder(await import('../AssessmentComponent'))
+    await this.runSeeder(await import('Foundation/Database/Seeder/Foundation'))
   }
 }

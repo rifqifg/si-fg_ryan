@@ -64,7 +64,9 @@
     "Finance": "app/Modules/Finance",
     "FinanceControllers": "app/Modules/Finance/Controllers/Http",
     "Log": "app/Modules/Log",
-    "LogControllers": "app/Modules/Log/Controllers/Http"
+    "LogControllers": "app/Modules/Log/Controllers/Http",
+    "Foundation": "app/Modules/Foundation",
+    "FoundationControllers": "app/Modules/Foundation/Controllers/Http"
   },
   "metaFiles": [
     {

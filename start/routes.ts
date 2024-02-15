@@ -23,6 +23,7 @@ import 'Inventory/Routes/inventory'
 import 'Academic/Routes/academic'
 import 'PPDB/Routes/ppdb'
 import 'Finance/Routes/finance'
+import 'Foundation/Routes/foundation'
 
 Route.get('/', 'DashboardController.index').middleware("auth:api,ppdb_api,parent_api")
 

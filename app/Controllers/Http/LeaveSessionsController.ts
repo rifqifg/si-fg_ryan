@@ -285,8 +285,6 @@ export default class LeaveSessionsController {
     if (payload.fromTime !== undefined) objectPayload.fromTime = payload.fromTime.toFormat('HH:mm:ss')
     if (payload.toTime !== undefined) objectPayload.toTime = payload.toTime.toFormat('HH:mm:ss')
 
-    // TODO: validasi fromTime < toTime
-
     if (JSON.stringify(payload) === "{}") {
       console.log("data update kosong");
       return response.badRequest({ message: "Data tidak boleh kosong" });
@@ -298,6 +296,11 @@ export default class LeaveSessionsController {
           .preload('user', u => u
             .select('id')))
         .firstOrFail()
+
+      const fromTime = (payload.fromTime !== undefined) ? payload.fromTime.toFormat('HH:mm:ss') : leave.fromTime
+      const toTime = (payload.toTime !== undefined) ? payload.toTime.toFormat('HH:mm:ss') : leave.toTime
+
+      if (fromTime > toTime) return response.badRequest({message: "Waktu awal tidak bisa lebih besar dari waktu akhir"})
 
       // cek lead unit
       const superAdmin = await checkRoleSuperAdmin()

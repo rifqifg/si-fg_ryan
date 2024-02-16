@@ -112,7 +112,7 @@ export default class EmployeesController {
 
   public async store({ request, response, auth }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
-    // CreateRouteHist(statusRoutes.START, dateStart)
+    CreateRouteHist(statusRoutes.START, dateStart)
     const payload = await request.validate(CreateEmployeeValidator);
     const superAdmin = await checkRoleSuperAdmin()
     //kalo bukan superadmin maka foundationId nya di hardcode

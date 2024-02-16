@@ -70,10 +70,22 @@ export default class UnitsController {
     }
   }
 
-  public async store({ request, response }: HttpContextContract) {
+  public async store({ request, response, auth }: HttpContextContract) {
     const payload = await request.validate(CreateUnitValidator);
 
     try {
+      const superAdmin = await checkRoleSuperAdmin()
+      //kalo bukan superadmin maka foundationId nya di hardcode
+      if (!superAdmin) {
+        const user = await User.query()
+          .preload('employee', e => e
+            .select('id', 'name', 'foundation_id'))
+          .where('employee_id', auth.user!.$attributes.employeeId)
+          .first()
+
+        payload.foundationId = user!.employee.foundationId
+      }
+
       let data
       if (payload.signature) {
         const signature = Math.floor(Math.random() * 1000) + DateTime.now().toUnixInteger().toString() + "." + payload.signature.extname

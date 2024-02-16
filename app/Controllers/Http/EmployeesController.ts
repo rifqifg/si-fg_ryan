@@ -2,6 +2,7 @@ import type { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import { checkRoleSuperAdmin } from "App/Helpers/checkRoleSuperAdmin";
 import Employee from "App/Models/Employee";
 import EmployeeUnit from "App/Models/EmployeeUnit";
+import Unit from "App/Models/Unit";
 import User from "App/Models/User";
 import { CreateRouteHist } from "App/Modules/Log/Helpers/createRouteHist";
 import { statusRoutes } from "App/Modules/Log/lib/enum";
@@ -217,6 +218,11 @@ export default class EmployeesController {
         .preload('employee', e => e.select('name'))
         .where('unit_id', unitId)
 
+      const unit = await Unit.query()
+        .select('foundation_id')
+        .where('id', unitId)
+        .first()
+
       const employeeIds: any = []
 
       employeeUnit.map(value => {
@@ -228,6 +234,7 @@ export default class EmployeesController {
         .whereNull('date_out')
         .andWhereILike('name', `%${keyword}%`)
         .andWhereNotIn('id', employeeIds)
+        .andWhere('foundation_id', unit!.foundationId)
         .orderBy('name', 'asc')
         .paginate(page, limit)
 

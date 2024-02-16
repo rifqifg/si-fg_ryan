@@ -9,6 +9,7 @@ import UpdateUnitValidator from "App/Validators/UpdateUnitValidator";
 import { DateTime } from "luxon";
 import { validate as uuidValidation } from "uuid"
 import User from "App/Models/User";
+import { RolesHelper } from "App/Helpers/rolesHelper";
 
 export default class UnitsController {
 
@@ -24,12 +25,16 @@ export default class UnitsController {
     // CreateRouteHist(statusRoutes.START, dateStart);
     const { page = 1, limit = 10, keyword = "", foundationId } = request.qs();
     const unitIds = await unitHelper()
-    const superAdmin = await checkRoleSuperAdmin()
     const user = await User.query()
       .preload('employee', e => e
         .select('id', 'name', 'foundation_id'))
+      .preload('roles', r => r
+        .preload('role'))
       .where('employee_id', auth.user!.$attributes.employeeId)
       .first()
+
+    const userObject = JSON.parse(JSON.stringify(user))
+    const roles = await RolesHelper(userObject)
 
     try {
       const data = await Unit.query()
@@ -40,11 +45,14 @@ export default class UnitsController {
         })
         .preload('foundation', f => f.select('name'))
         .whereILike("name", `%${keyword}%`)
-        .if(!superAdmin, query => query
+        .if(!roles.includes('super_admin') && !roles.includes('admin_foundation'), query => query
           .whereIn('id', unitIds)
           .where('foundation_id', user!.employee.foundationId)
         )
-        .if(superAdmin && foundationId, query => query
+        .if(roles.includes('admin_foundation'), query => query
+          .where('foundation_id', user!.employee.foundationId)
+        )
+        .if(roles.includes('super_admin') && foundationId, query => query
           .where('foundation_id', foundationId))
         .orderBy('name', 'asc')
         .paginate(page, limit);

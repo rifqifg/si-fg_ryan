@@ -489,13 +489,6 @@ export default class UsersController {
         return response.badRequest({ message: "NIK anda belum terdaftar" });
       }
 
-      if (payload.role === ROLE.TEACHER) {
-        await Teacher.create({
-          employeeId: employee.id,
-          totalMengajar: 0
-        })
-      }
-
       user = await User.create({
         name: payload.name,
         email: payload.email,

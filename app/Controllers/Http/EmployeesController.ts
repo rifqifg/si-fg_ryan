@@ -1,6 +1,8 @@
 import type { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
+import { checkRoleSuperAdmin } from "App/Helpers/checkRoleSuperAdmin";
 import Employee from "App/Models/Employee";
 import EmployeeUnit from "App/Models/EmployeeUnit";
+import User from "App/Models/User";
 import { CreateRouteHist } from "App/Modules/Log/Helpers/createRouteHist";
 import { statusRoutes } from "App/Modules/Log/lib/enum";
 import CreateEmployeeValidator from "App/Validators/CreateEmployeeValidator";
@@ -8,7 +10,7 @@ import UpdateEmployeeValidator from "App/Validators/UpdateEmployeeValidator";
 import { DateTime } from "luxon";
 
 export default class EmployeesController {
-  public async index({ request, response }: HttpContextContract) {
+  public async index({ request, response, auth }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
     const {
@@ -20,9 +22,16 @@ export default class EmployeesController {
       isActive = "",
       orderBy = "name",
       orderDirection = "ASC",
+      foundationId
     } = request.qs();
 
-    // TODO: filter by division
+    const superAdmin = await checkRoleSuperAdmin()
+    const user = await User.query()
+      .preload('employee', e => e
+        .select('id', 'name', 'foundation_id'))
+      .where('employee_id', auth.user!.$attributes.employeeId)
+      .first()
+
     const data = await Employee.query()
       .select("*")
       .if(employeeTypeId, (e) => e.where("employeeTypeId", employeeTypeId))
@@ -39,6 +48,7 @@ export default class EmployeesController {
       .preload("kecamatan")
       .preload("kelurahan")
       .preload("employeeUnits", eu => eu.select('title', 'id', 'unit_id').preload('unit', u => u.select('name')))
+      .preload("foundation", f => f.select('name'))
       .andWhere((query) => {
         query.whereILike("name", `%${keyword}%`);
         query.orWhereILike("nik", `%${keyword}%`);
@@ -47,6 +57,9 @@ export default class EmployeesController {
       })
       .if(isActive === "not_active", q => q.andWhereNotNull('date_out'))
       .if(isActive === "active", q => q.andWhereNull('date_out'))
+      .if(!superAdmin, q => q.andWhere('foundation_id', user!.employee.foundationId))
+      //filter superadmin by foundation id
+      .if(superAdmin && foundationId, q => q.andWhere('foundation_id', foundationId))
       .orderBy(orderBy, orderDirection)
       .paginate(page, limit);
 
@@ -95,10 +108,21 @@ export default class EmployeesController {
     response.ok({ message: "Data Berhasil Didapatkan", data });
   }
 
-  public async store({ request, response }: HttpContextContract) {
+  public async store({ request, response, auth }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
-    CreateRouteHist(statusRoutes.START, dateStart)
+    // CreateRouteHist(statusRoutes.START, dateStart)
     const payload = await request.validate(CreateEmployeeValidator);
+    const superAdmin = await checkRoleSuperAdmin()
+    //kalo bukan superadmin maka foundationId nya di hardcode
+    if (!superAdmin) {
+      const user = await User.query()
+        .preload('employee', e => e
+          .select('id', 'name', 'foundation_id'))
+        .where('employee_id', auth.user!.$attributes.employeeId)
+        .first()
+
+      payload.foundationId = user!.employee.foundationId
+    }
 
     try {
       const data = await Employee.create(payload);
@@ -134,6 +158,7 @@ export default class EmployeesController {
           )
         )
         .preload("employeeUnits", eu => eu.select('title', 'id', 'unit_id').preload('unit', u => u.select('name')))
+        .preload("foundation", f => f.select('name'))
         .where("id", id);
       CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Get data success", data });

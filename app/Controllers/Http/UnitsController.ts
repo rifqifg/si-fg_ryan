@@ -8,6 +8,7 @@ import CreateUnitValidator from "App/Validators/CreateUnitValidator";
 import UpdateUnitValidator from "App/Validators/UpdateUnitValidator";
 import { DateTime } from "luxon";
 import { validate as uuidValidation } from "uuid"
+import User from "App/Models/User";
 
 export default class UnitsController {
 
@@ -18,12 +19,17 @@ export default class UnitsController {
     return signedUrl
   }
 
-  public async index({ request, response }: HttpContextContract) {
+  public async index({ request, response, auth }: HttpContextContract) {
     // const dateStart = DateTime.now().toMillis();
     // CreateRouteHist(statusRoutes.START, dateStart);
     const { page = 1, limit = 10, keyword = "" } = request.qs();
     const unitIds = await unitHelper()
     const superAdmin = await checkRoleSuperAdmin()
+    const user = await User.query()
+      .preload('employee', e => e
+        .select('id', 'name', 'foundation_id'))
+      .where('employee_id', auth.user!.$attributes.employeeId)
+      .first()
 
     try {
       const data = await Unit.query()
@@ -33,9 +39,10 @@ export default class UnitsController {
           e.where("title", "=", "lead");
         })
         .whereILike("name", `%${keyword}%`)
-        .if(!superAdmin, query => {
-          query.whereIn('id', unitIds)
-        })
+        .if(!superAdmin, query => query
+          .whereIn('id', unitIds)
+          .where('foundation_id', user!.employee.foundationId)
+        )
         .orderBy('name', 'asc')
         .paginate(page, limit);
 
@@ -117,7 +124,7 @@ export default class UnitsController {
               else 3
             end
           `)
-          .forPage(page, limit)
+            .forPage(page, limit)
         })
         .withCount('employeeUnits')
         .firstOrFail();
@@ -279,7 +286,7 @@ export default class UnitsController {
         await Drive.use('hrd').delete('units/' + data.signature)
       }
 
-      await data.merge({signature: null}).save()
+      await data.merge({ signature: null }).save()
       response.ok({ message: "Delete unit image success" });
     } catch (error) {
       const message = "HRDU08: " + error.message || error;

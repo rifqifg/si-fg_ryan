@@ -1,6 +1,7 @@
 import type { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import { checkRoleSuperAdmin } from "App/Helpers/checkRoleSuperAdmin";
 import Employee from "App/Models/Employee";
+import EmployeeDivision from "App/Models/EmployeeDivision";
 import EmployeeUnit from "App/Models/EmployeeUnit";
 import Unit from "App/Models/Unit";
 import User from "App/Models/User";
@@ -240,7 +241,46 @@ export default class EmployeesController {
 
       response.ok({ message: "Data Berhasil Didapatkan", data });
     } catch (error) {
-      const message = "HRDE06: " + error.message || error;
+      const message = "HRDE07: " + error.message || error;
+      console.log(error);
+      response.badRequest({
+        message: "Gagal mengambil data",
+        error: message,
+        error_data: error,
+      });
+    }
+  }
+  public async getEmployeesNotInDivision({ request, response }: HttpContextContract) {
+    const {
+      page = 1,
+      limit = 10,
+      keyword = "",
+      unitId,
+      divisionId
+    } = request.qs();
+
+    try {
+      const employeeDivision = await EmployeeDivision.query()
+        .where('division_id', divisionId)
+
+      const employeeIds: any = []
+
+      employeeDivision.map(value => {
+        employeeIds.push(value.$attributes.employeeId)
+      })
+
+      const data = await EmployeeUnit.query()
+        .select('employee_id')
+        .preload('employee', e => e.select('name'))
+        .where('unit_id', unitId)
+        .andWhereNotIn('employee_id', employeeIds)
+        .andWhereHas('employee', e => e
+          .whereILike('name', `%${keyword}%`))
+        .paginate(page, limit)
+
+      response.ok({ message: "Data Berhasil Didapatkan", data });
+    } catch (error) {
+      const message = "HRDE08: " + error.message || error;
       console.log(error);
       response.badRequest({
         message: "Gagal mengambil data",

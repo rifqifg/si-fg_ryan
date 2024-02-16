@@ -99,13 +99,8 @@ export default class LeaveSessionsController {
               query.whereBetween('date', [fromDate, toDate])
             }
           })
-          .andWhere(query => {
-            query.where('employee_id', userObject.employee_id)
-          })
           .andWhereILike('status', `%${status}%`)
-          .if(!superAdmin, query => {
-            query.whereIn('unit_id', unitIds)
-          })
+          .andWhereIn('unit_id', unitIds)
           .orderBy('date', 'desc')
           .paginate(page, limit)
       }
@@ -297,6 +292,10 @@ export default class LeaveSessionsController {
             .select('id')))
         .firstOrFail()
 
+      const user = await User.query().preload('roles', r => r.preload('role')).where('id', auth.use('api').user!.id).firstOrFail()
+      const userObject = JSON.parse(JSON.stringify(user))
+      const userRoles = RolesHelper(userObject)
+
       const fromTime = (payload.fromTime !== undefined) ? payload.fromTime.toFormat('HH:mm:ss') : leave.fromTime
       const toTime = (payload.toTime !== undefined) ? payload.toTime.toFormat('HH:mm:ss') : leave.toTime
 
@@ -311,6 +310,14 @@ export default class LeaveSessionsController {
           .first()
         if (unitLead?.unitId !== leave.unitId) {
           return response.badRequest({ message: "Gagal update status izin dikarenakan anda bukan ketua unit tersebut" });
+        }
+      }
+
+      if (userRoles.includes('user_hrd') && !(userRoles.includes('admin_hrd'))) {
+        console.log(leave.employee.id);
+        console.log(auth.user!.$attributes.employeeId);
+        if (leave.employee.id !== auth.user!.$attributes.employeeId) {
+          return response.badRequest({ message: "Tidak dapat ubah data anggota lain, anda bukan ketua unit tersebut..." });
         }
       }
 

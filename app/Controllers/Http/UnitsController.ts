@@ -22,7 +22,7 @@ export default class UnitsController {
   public async index({ request, response, auth }: HttpContextContract) {
     // const dateStart = DateTime.now().toMillis();
     // CreateRouteHist(statusRoutes.START, dateStart);
-    const { page = 1, limit = 10, keyword = "" } = request.qs();
+    const { page = 1, limit = 10, keyword = "", foundationId } = request.qs();
     const unitIds = await unitHelper()
     const superAdmin = await checkRoleSuperAdmin()
     const user = await User.query()
@@ -38,11 +38,14 @@ export default class UnitsController {
           e.preload("employee", (m) => m.select("name"));
           e.where("title", "=", "lead");
         })
+        .preload('foundation', f => f.select('name'))
         .whereILike("name", `%${keyword}%`)
         .if(!superAdmin, query => query
           .whereIn('id', unitIds)
           .where('foundation_id', user!.employee.foundationId)
         )
+        .if(superAdmin && foundationId, query => query
+          .where('foundation_id', foundationId))
         .orderBy('name', 'asc')
         .paginate(page, limit);
 
@@ -85,7 +88,8 @@ export default class UnitsController {
       } else {
         data = await Unit.create({
           name: payload.name,
-          description: payload.description
+          description: payload.description,
+          foundationId: payload.foundationId
         })
       }
 
@@ -126,6 +130,7 @@ export default class UnitsController {
           `)
             .forPage(page, limit)
         })
+        .preload('foundation', f => f.select('name'))
         .withCount('employeeUnits')
         .firstOrFail();
 

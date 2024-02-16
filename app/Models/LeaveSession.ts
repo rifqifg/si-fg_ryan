@@ -9,7 +9,7 @@ let newId = ""
 export default class LeaveSession extends BaseModel {
   public serializeExtras() {
     return {
-      count_sessions: this.$extras.count_sessions,
+      elapsed_time: this.$extras.elapsed_time,
       notes: this.$extras.notes,
     }
   }

@@ -61,6 +61,10 @@ export const MonthlyReportHelper = async (dataArray) => {
 
       items.note = gabungan.note
 
+      if (gabungan.total_leave_session !== null) {
+        items.total_leave_session = gabungan.total_leave_session
+      }
+
       // cek Kategori Aktivitas
       let categoryIndex = monthlyReportEmployeeDetail.findIndex(c => c.name === categoryName);
       // jika kategori tidak ditemukan..

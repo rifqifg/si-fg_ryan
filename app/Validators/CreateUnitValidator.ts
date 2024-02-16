@@ -30,7 +30,7 @@ export default class CreateUnitValidator {
       size: '2mb',
       extnames: ['png'],
     }),
-    foundationId: schema.string([rules.exists({table: 'foundation.foundations', column: 'id'})]),
+    foundationId: schema.string.optional([rules.exists({table: 'foundation.foundations', column: 'id'})]),
   })
 
   /**

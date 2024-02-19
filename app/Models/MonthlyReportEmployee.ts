@@ -290,11 +290,8 @@ const countLeaveSessionEmployee = async (monthlyReportEmployee, fromDate, toDate
   //menghitung jumlah izin persesinya
   const leaveSessionEmployee = await LeaveSession.query()
     .select('employee_id')
-    .select(Database.raw(`TIME '00:00:00' + INTERVAL '1 second' * SUM(EXTRACT(EPOCH FROM (to_time - from_time))) AS elapsed_time`))
-    // .select(Database.raw(`(CAST(EXTRACT(EPOCH FROM (to_time - from_time)) / 3600 AS INTEGER) || ' jam ' || CAST(EXTRACT(EPOCH FROM (to_time - from_time)) / 60 % 60 AS INTEGER) || ' menit') AS elapsed_time`))
+    .select(Database.raw(`to_char(INTERVAL '1 second' * SUM(EXTRACT(EPOCH FROM (to_time - from_time))), 'HH24:MI:SS') AS elapsed_time`))
     .select(Database.raw(`(string_agg(TO_CHAR(date, 'DD Month') || ' izin jam ' || to_char(from_time, 'HH24:MI') || '-' || to_char(to_time, 'HH24:MI') || '; ' || note, ', ')) AS notes`))
-    // .select(Database.raw(`sum(ARRAY_LENGTH(sessions, 1)) as count_sessions`))
-    // .select(Database.raw(`string_agg(TO_CHAR(date, 'DD Month') || ' izin ' || array_to_string(sessions, ',') || ': ' ||note, ', ') as notes`))
     .where('employee_id', monthlyReportEmployee.employeeId)
     .andWhere('status', 'aprove')
     .andWhere('unit_id', unitId)

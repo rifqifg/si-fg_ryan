@@ -291,7 +291,7 @@ const countLeaveSessionEmployee = async (monthlyReportEmployee, fromDate, toDate
   const leaveSessionEmployee = await LeaveSession.query()
     .select('employee_id')
     .select(Database.raw(`to_char(INTERVAL '1 second' * SUM(EXTRACT(EPOCH FROM (to_time - from_time))), 'HH24:MI:SS') AS elapsed_time`))
-    .select(Database.raw(`(string_agg(TO_CHAR(date, 'DD Month') || ' izin jam ' || to_char(from_time, 'HH24:MI') || '-' || to_char(to_time, 'HH24:MI') || '; ' || note, ', ')) AS notes`))
+    .select(Database.raw(`(string_agg(TO_CHAR(date, 'DD Month') || ' izin jam ' || to_char(from_time, 'HH24:MI') || '-' || to_char(to_time, 'HH24:MI') || ', Note: ' || note, ' | ' )) AS notes`))
     .where('employee_id', monthlyReportEmployee.employeeId)
     .andWhere('status', 'aprove')
     .andWhere('unit_id', unitId)

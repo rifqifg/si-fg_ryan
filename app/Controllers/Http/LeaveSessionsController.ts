@@ -169,6 +169,7 @@ export default class LeaveSessionsController {
           toTime: payload.toTime.toFormat('HH:mm:ss'),
           date: payload.date,
           note: payload.note,
+          unitId: payload.unitId,
           image
         });
         data.image = await getSignedUrl(data.image)

@@ -1,5 +1,6 @@
 import type { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import { checkRoleSuperAdmin } from "App/Helpers/checkRoleSuperAdmin";
+import Division from "App/Models/Division";
 import Employee from "App/Models/Employee";
 import EmployeeDivision from "App/Models/EmployeeDivision";
 import EmployeeUnit from "App/Models/EmployeeUnit";
@@ -255,13 +256,17 @@ export default class EmployeesController {
       page = 1,
       limit = 10,
       keyword = "",
-      unitId,
       divisionId
     } = request.qs();
 
     try {
       const employeeDivision = await EmployeeDivision.query()
         .where('division_id', divisionId)
+
+      const checkUnit = await Division.query()
+        .select('id', 'unit_id')
+        .where('id', divisionId)
+        .first()
 
       const employeeIds: any = []
 
@@ -272,7 +277,7 @@ export default class EmployeesController {
       const data = await EmployeeUnit.query()
         .select('employee_id')
         .preload('employee', e => e.select('name'))
-        .where('unit_id', unitId)
+        .where('unit_id', checkUnit!.unitId)
         .andWhereNotIn('employee_id', employeeIds)
         .andWhereHas('employee', e => e
           .whereILike('name', `%${keyword}%`))

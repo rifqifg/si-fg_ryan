@@ -1,5 +1,6 @@
 import type { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import { checkRoleSuperAdmin } from "App/Helpers/checkRoleSuperAdmin";
+import Activity from "App/Models/Activity";
 import Division from "App/Models/Division";
 import Employee from "App/Models/Employee";
 import EmployeeDivision from "App/Models/EmployeeDivision";
@@ -79,9 +80,18 @@ export default class EmployeesController {
       divisionId = "",
       orderBy = "name",
       orderDirection = "ASC",
+      activityId
     } = request.qs();
-    // TODO: filter by division
-    console.log('yes');
+
+    let unitId
+    if (activityId) {
+      const activity = await Activity.query()
+        .select('id', 'unit_id')
+        .where('id', activityId)
+        .first()
+
+      unitId = activity?.unitId
+    }
 
     const data = await Employee.query()
       .select("*")
@@ -105,6 +115,9 @@ export default class EmployeesController {
         query.orWhereILike("nip", `%${keyword}%`);
         // query.orWhereILike("division", `%${keyword}%`);
       })
+      .if(unitId, query => query
+        .whereHas('employeeUnits', u => u
+          .where('unit_id', unitId)))
       .orderBy(orderBy, orderDirection)
 
     CreateRouteHist(statusRoutes.FINISH, dateStart)

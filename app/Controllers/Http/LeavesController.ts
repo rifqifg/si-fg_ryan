@@ -38,7 +38,7 @@ export default class LeavesController {
   public async index({ request, response, auth }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
-    const { page = 1, limit = 10, keyword = "", fromDate = "", toDate = "", status = "", leaveStatus } = request.qs()
+    const { page = 1, limit = 10, keyword = "", fromDate = "", toDate = "", status = "", leaveStatus = "" } = request.qs()
     const unitIds = await unitHelper()
     const superAdmin = await checkRoleSuperAdmin()
 

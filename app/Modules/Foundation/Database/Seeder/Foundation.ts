@@ -7,7 +7,7 @@ export default class extends BaseSeeder {
     console.log(">>> START seeding table: foundations")
     await Foundation.create({
       id: "c1d3e93b-1774-4682-9a81-c1915742c8e2",
-      name: "Yayasan Islam Prambanan",
+      name: "FG Putra",
       description: "SMA FG"
     })
     console.log(">>> END seeding table: foundations")

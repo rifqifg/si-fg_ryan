@@ -26,7 +26,8 @@ export enum StatusEmployees {
 
 export enum LeaveStatuses {
   CUTI = 'cuti',
-  SAKIT = 'sakit'
+  SAKIT = 'sakit',
+  IZIN = 'izin'
 }
 
 export enum AssessmentCategory {

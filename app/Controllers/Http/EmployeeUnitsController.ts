@@ -40,7 +40,7 @@ export default class EmployeeUnitsController {
     const isSuperAdmin = roles.includes('super_admin')
     const isAdminFoundation = roles.includes('admin_foundation')
 
-    if (!isSuperAdmin) {
+    if (!isSuperAdmin || !isAdminFoundation) {
       //cek unit, apakah user yg login adalah lead atau bukan
       const checkUnit = await Unit.query()
         .whereHas('employeeUnits', eu => eu
@@ -55,7 +55,7 @@ export default class EmployeeUnitsController {
       // } else {
       //   return response.badRequest({ message: "Gagal menambahkan karyawan ke unit dikarenakan anda bukan ketua" })
       // }
-      if (!checkUnit || payload.employeeUnits.every(unit => unit.unitId !== checkUnit.id && !isAdminFoundation)) {
+      if (!checkUnit || payload.employeeUnits.every(unit => unit.unitId !== checkUnit.id)) {
         return response.badRequest({ message: "Gagal menambahkan karyawan ke unit dikarenakan anda bukan ketua" });
       }
     }

@@ -26,7 +26,13 @@ export default class CreateLeaveSessionValidator {
    */
   public schema = schema.create({
     status: schema.enum(Object.values(StatusLeaves)),
-    sessions: schema.array().members(schema.string()),
+    // sessions: schema.array().members(schema.string()),
+    fromTime: schema.date({ format: 'HH:mm:ss' }, [
+      rules.beforeField('toTime')
+    ]),
+    toTime: schema.date({ format: 'HH:mm:ss' }, [
+      rules.afterField('fromTime')
+    ]),
     date: schema.date({
       format: 'yyyy-MM-dd'
     }),

@@ -99,13 +99,8 @@ export default class LeaveSessionsController {
               query.whereBetween('date', [fromDate, toDate])
             }
           })
-          .andWhere(query => {
-            query.where('employee_id', userObject.employee_id)
-          })
           .andWhereILike('status', `%${status}%`)
-          .if(!superAdmin, query => {
-            query.whereIn('unit_id', unitIds)
-          })
+          .andWhereIn('unit_id', unitIds)
           .orderBy('date', 'desc')
           .paginate(page, limit)
       }
@@ -167,16 +162,27 @@ export default class LeaveSessionsController {
           { name: image, overwrite: true },
           'hrd'
         )
-        data = await LeaveSession.create({ ...payload, image });
+        data = await LeaveSession.create({
+          employeeId: payload.employeeId,
+          status: payload.status,
+          fromTime: payload.fromTime.toFormat('HH:mm:ss'),
+          toTime: payload.toTime.toFormat('HH:mm:ss'),
+          date: payload.date,
+          note: payload.note,
+          unitId: payload.unitId,
+          image
+        });
         data.image = await getSignedUrl(data.image)
       }
       else {
         data = await LeaveSession.create({
           employeeId: payload.employeeId,
           status: payload.status,
+          fromTime: payload.fromTime.toFormat('HH:mm:ss'),
+          toTime: payload.toTime.toFormat('HH:mm:ss'),
           date: payload.date,
           note: payload.note,
-          sessions: payload.sessions,
+          // sessions: payload.sessions,
           unitId: payload.unitId,
         })
       }
@@ -271,6 +277,10 @@ export default class LeaveSessionsController {
 
     const payload = await request.validate(UpdateLeaveSessionValidator);
     const objectPayload = JSON.parse(JSON.stringify(payload))
+
+    if (payload.fromTime !== undefined) objectPayload.fromTime = payload.fromTime.toFormat('HH:mm:ss')
+    if (payload.toTime !== undefined) objectPayload.toTime = payload.toTime.toFormat('HH:mm:ss')
+
     if (JSON.stringify(payload) === "{}") {
       console.log("data update kosong");
       return response.badRequest({ message: "Data tidak boleh kosong" });
@@ -283,6 +293,15 @@ export default class LeaveSessionsController {
             .select('id')))
         .firstOrFail()
 
+      const user = await User.query().preload('roles', r => r.preload('role')).where('id', auth.use('api').user!.id).firstOrFail()
+      const userObject = JSON.parse(JSON.stringify(user))
+      const userRoles = RolesHelper(userObject)
+
+      const fromTime = (payload.fromTime !== undefined) ? payload.fromTime.toFormat('HH:mm:ss') : leave.fromTime
+      const toTime = (payload.toTime !== undefined) ? payload.toTime.toFormat('HH:mm:ss') : leave.toTime
+
+      if (fromTime > toTime) return response.badRequest({message: "Waktu awal tidak bisa lebih besar dari waktu akhir"})
+
       // cek lead unit
       const superAdmin = await checkRoleSuperAdmin()
       if (!superAdmin && payload.status) {
@@ -292,6 +311,14 @@ export default class LeaveSessionsController {
           .first()
         if (unitLead?.unitId !== leave.unitId) {
           return response.badRequest({ message: "Gagal update status izin dikarenakan anda bukan ketua unit tersebut" });
+        }
+      }
+
+      if (userRoles.includes('user_hrd') && !(userRoles.includes('admin_hrd'))) {
+        console.log(leave.employee.id);
+        console.log(auth.user!.$attributes.employeeId);
+        if (leave.employee.id !== auth.user!.$attributes.employeeId) {
+          return response.badRequest({ message: "Tidak dapat ubah data anggota lain, anda bukan ketua unit tersebut..." });
         }
       }
 

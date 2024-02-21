@@ -29,7 +29,8 @@ export default class UpdateUnitValidator {
     signature: schema.file.optional({
       size: '2mb',
       extnames: ['png'],
-    })
+    }),
+    foundationId: schema.string.optional([rules.exists({table: 'foundation.foundations', column: 'id'})]),
   })
 
   /**

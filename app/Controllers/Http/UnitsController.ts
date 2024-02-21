@@ -8,6 +8,8 @@ import CreateUnitValidator from "App/Validators/CreateUnitValidator";
 import UpdateUnitValidator from "App/Validators/UpdateUnitValidator";
 import { DateTime } from "luxon";
 import { validate as uuidValidation } from "uuid"
+import User from "App/Models/User";
+import { RolesHelper } from "App/Helpers/rolesHelper";
 
 export default class UnitsController {
 
@@ -18,12 +20,21 @@ export default class UnitsController {
     return signedUrl
   }
 
-  public async index({ request, response }: HttpContextContract) {
+  public async index({ request, response, auth }: HttpContextContract) {
     // const dateStart = DateTime.now().toMillis();
     // CreateRouteHist(statusRoutes.START, dateStart);
-    const { page = 1, limit = 10, keyword = "" } = request.qs();
+    const { page = 1, limit = 10, keyword = "", foundationId } = request.qs();
     const unitIds = await unitHelper()
-    const superAdmin = await checkRoleSuperAdmin()
+    const user = await User.query()
+      .preload('employee', e => e
+        .select('id', 'name', 'foundation_id'))
+      .preload('roles', r => r
+        .preload('role'))
+      .where('employee_id', auth.user!.$attributes.employeeId)
+      .first()
+
+    const userObject = JSON.parse(JSON.stringify(user))
+    const roles = await RolesHelper(userObject)
 
     try {
       const data = await Unit.query()
@@ -32,10 +43,17 @@ export default class UnitsController {
           e.preload("employee", (m) => m.select("name"));
           e.where("title", "=", "lead");
         })
+        .preload('foundation', f => f.select('name'))
         .whereILike("name", `%${keyword}%`)
-        .if(!superAdmin, query => {
-          query.whereIn('id', unitIds)
-        })
+        .if(!roles.includes('super_admin') && !roles.includes('admin_foundation'), query => query
+          .whereIn('id', unitIds)
+          .where('foundation_id', user!.employee.foundationId)
+        )
+        .if(roles.includes('admin_foundation'), query => query
+          .where('foundation_id', user!.employee.foundationId)
+        )
+        .if(roles.includes('super_admin') && foundationId, query => query
+          .where('foundation_id', foundationId))
         .orderBy('name', 'asc')
         .paginate(page, limit);
 
@@ -60,10 +78,22 @@ export default class UnitsController {
     }
   }
 
-  public async store({ request, response }: HttpContextContract) {
+  public async store({ request, response, auth }: HttpContextContract) {
     const payload = await request.validate(CreateUnitValidator);
 
     try {
+      const superAdmin = await checkRoleSuperAdmin()
+      //kalo bukan superadmin maka foundationId nya di hardcode
+      if (!superAdmin) {
+        const user = await User.query()
+          .preload('employee', e => e
+            .select('id', 'name', 'foundation_id'))
+          .where('employee_id', auth.user!.$attributes.employeeId)
+          .first()
+
+        payload.foundationId = user!.employee.foundationId
+      }
+
       let data
       if (payload.signature) {
         const signature = Math.floor(Math.random() * 1000) + DateTime.now().toUnixInteger().toString() + "." + payload.signature.extname
@@ -78,7 +108,8 @@ export default class UnitsController {
       } else {
         data = await Unit.create({
           name: payload.name,
-          description: payload.description
+          description: payload.description,
+          foundationId: payload.foundationId
         })
       }
 
@@ -117,8 +148,9 @@ export default class UnitsController {
               else 3
             end
           `)
-          .forPage(page, limit)
+            .forPage(page, limit)
         })
+        .preload('foundation', f => f.select('name'))
         .withCount('employeeUnits')
         .firstOrFail();
 
@@ -279,7 +311,7 @@ export default class UnitsController {
         await Drive.use('hrd').delete('units/' + data.signature)
       }
 
-      await data.merge({signature: null}).save()
+      await data.merge({ signature: null }).save()
       response.ok({ message: "Delete unit image success" });
     } catch (error) {
       const message = "HRDU08: " + error.message || error;

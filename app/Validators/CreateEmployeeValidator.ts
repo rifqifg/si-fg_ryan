@@ -69,6 +69,7 @@ export default class CreateEmployeeValidator {
     employeeTypeId: schema.string([rules.exists({table: 'employee_types', column: 'id'})]),
     defaultPresence: schema.number(),
     status: schema.enum(Object.values(StatusEmployees)),
+    foundationId: schema.string.optional([rules.exists({table: 'foundation.foundations', column: 'id'})]),
   })
 
   /**

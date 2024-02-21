@@ -10,9 +10,18 @@ import { DateTime } from 'luxon'
 export default class DashboardController {
   public async index({ auth, response }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
-   CreateRouteHist(statusRoutes.START, dateStart)
+    CreateRouteHist(statusRoutes.START, dateStart)
     if (auth.use('api').isLoggedIn) {
-      const data = await User.query().preload('roles', r => r.select('role_name').preload('role', r => r.select('name', 'permissions'))).where('id', auth.user!.id)
+      const data = await User.query()
+        .preload('roles', r => r
+          .select('role_name')
+          .preload('role', r => r
+            .select('name', 'permissions')))
+        .preload('employee', e => e
+          .select('foundation_id')
+          .preload('foundation', f => f
+            .select('name')))
+        .where('id', auth.user!.id)
       const dataObject = JSON.parse(JSON.stringify(data))
       const roles = dataObject[0].roles
       const name: any = []

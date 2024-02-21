@@ -69,6 +69,7 @@ export default class UpdateEmployeeValidator {
     employeeTypeId: schema.string.optional([rules.exists({table: 'employee_types', column: 'id'})]),
     defaultPresence: schema.number.nullableAndOptional(),
     status: schema.enum.optional(Object.values(StatusEmployees)),
+    foundationId: schema.string.optional([rules.exists({table: 'foundation.foundations', column: 'id'})]),
   });
 
   /**

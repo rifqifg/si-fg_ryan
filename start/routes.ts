@@ -23,6 +23,7 @@ import 'Inventory/Routes/inventory'
 import 'Academic/Routes/academic'
 import 'PPDB/Routes/ppdb'
 import 'Finance/Routes/finance'
+import 'Foundation/Routes/foundation'
 
 Route.get('/', 'DashboardController.index').middleware("auth:api,ppdb_api,parent_api")
 
@@ -103,6 +104,7 @@ Route.get('unit-lists-lead-only', 'UnitsController.getUnitLeadOnly').as('unit.li
 Route.shallowResource('employee-units', 'EmployeeUnitsController').apiOnly().middleware({ '*': ['auth', 'checkRole:admin'] })
 Route.get('list-employee-units', 'EmployeeUnitsController.getListEmployeeUnits').middleware(['auth'])
 Route.get('/employees-not-in-unit/', 'EmployeesController.getEmployeesNotInUnit').middleware(['auth'])
+Route.get('/employees-not-in-division/', 'EmployeesController.getEmployeesNotInDivision').middleware(['auth'])
 
 Route.group(() => {
   Route.get('activities', 'UserBehaviorHrdsController.activity').middleware(['auth'])

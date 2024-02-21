@@ -1,6 +1,12 @@
 import type { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
+import { checkRoleSuperAdmin } from "App/Helpers/checkRoleSuperAdmin";
+import Activity from "App/Models/Activity";
+import Division from "App/Models/Division";
 import Employee from "App/Models/Employee";
+import EmployeeDivision from "App/Models/EmployeeDivision";
 import EmployeeUnit from "App/Models/EmployeeUnit";
+import Unit from "App/Models/Unit";
+import User from "App/Models/User";
 import { CreateRouteHist } from "App/Modules/Log/Helpers/createRouteHist";
 import { statusRoutes } from "App/Modules/Log/lib/enum";
 import CreateEmployeeValidator from "App/Validators/CreateEmployeeValidator";
@@ -8,7 +14,7 @@ import UpdateEmployeeValidator from "App/Validators/UpdateEmployeeValidator";
 import { DateTime } from "luxon";
 
 export default class EmployeesController {
-  public async index({ request, response }: HttpContextContract) {
+  public async index({ request, response, auth }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
     const {
@@ -20,9 +26,16 @@ export default class EmployeesController {
       isActive = "",
       orderBy = "name",
       orderDirection = "ASC",
+      foundationId
     } = request.qs();
 
-    // TODO: filter by division
+    const superAdmin = await checkRoleSuperAdmin()
+    const user = await User.query()
+      .preload('employee', e => e
+        .select('id', 'name', 'foundation_id'))
+      .where('employee_id', auth.user!.$attributes.employeeId)
+      .first()
+
     const data = await Employee.query()
       .select("*")
       .if(employeeTypeId, (e) => e.where("employeeTypeId", employeeTypeId))
@@ -39,6 +52,7 @@ export default class EmployeesController {
       .preload("kecamatan")
       .preload("kelurahan")
       .preload("employeeUnits", eu => eu.select('title', 'id', 'unit_id').preload('unit', u => u.select('name')))
+      .preload("foundation", f => f.select('name'))
       .andWhere((query) => {
         query.whereILike("name", `%${keyword}%`);
         query.orWhereILike("nik", `%${keyword}%`);
@@ -47,6 +61,9 @@ export default class EmployeesController {
       })
       .if(isActive === "not_active", q => q.andWhereNotNull('date_out'))
       .if(isActive === "active", q => q.andWhereNull('date_out'))
+      .if(!superAdmin, q => q.andWhere('foundation_id', user!.employee.foundationId))
+      //filter superadmin by foundation id
+      .if(superAdmin && foundationId, q => q.andWhere('foundation_id', foundationId))
       .orderBy(orderBy, orderDirection)
       .paginate(page, limit);
 
@@ -63,9 +80,18 @@ export default class EmployeesController {
       divisionId = "",
       orderBy = "name",
       orderDirection = "ASC",
+      activityId
     } = request.qs();
-    // TODO: filter by division
-    console.log('yes');
+
+    let unitId
+    if (activityId) {
+      const activity = await Activity.query()
+        .select('id', 'unit_id')
+        .where('id', activityId)
+        .first()
+
+      unitId = activity?.unitId
+    }
 
     const data = await Employee.query()
       .select("*")
@@ -89,16 +115,30 @@ export default class EmployeesController {
         query.orWhereILike("nip", `%${keyword}%`);
         // query.orWhereILike("division", `%${keyword}%`);
       })
+      .if(unitId, query => query
+        .whereHas('employeeUnits', u => u
+          .where('unit_id', unitId)))
       .orderBy(orderBy, orderDirection)
 
     CreateRouteHist(statusRoutes.FINISH, dateStart)
     response.ok({ message: "Data Berhasil Didapatkan", data });
   }
 
-  public async store({ request, response }: HttpContextContract) {
+  public async store({ request, response, auth }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
     const payload = await request.validate(CreateEmployeeValidator);
+    const superAdmin = await checkRoleSuperAdmin()
+    //kalo bukan superadmin maka foundationId nya di hardcode
+    if (!superAdmin) {
+      const user = await User.query()
+        .preload('employee', e => e
+          .select('id', 'name', 'foundation_id'))
+        .where('employee_id', auth.user!.$attributes.employeeId)
+        .first()
+
+      payload.foundationId = user!.employee.foundationId
+    }
 
     try {
       const data = await Employee.create(payload);
@@ -134,6 +174,7 @@ export default class EmployeesController {
           )
         )
         .preload("employeeUnits", eu => eu.select('title', 'id', 'unit_id').preload('unit', u => u.select('name')))
+        .preload("foundation", f => f.select('name'))
         .where("id", id);
       CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Get data success", data });
@@ -192,6 +233,11 @@ export default class EmployeesController {
         .preload('employee', e => e.select('name'))
         .where('unit_id', unitId)
 
+      const unit = await Unit.query()
+        .select('foundation_id')
+        .where('id', unitId)
+        .first()
+
       const employeeIds: any = []
 
       employeeUnit.map(value => {
@@ -203,12 +249,56 @@ export default class EmployeesController {
         .whereNull('date_out')
         .andWhereILike('name', `%${keyword}%`)
         .andWhereNotIn('id', employeeIds)
+        .andWhere('foundation_id', unit!.foundationId)
         .orderBy('name', 'asc')
         .paginate(page, limit)
 
       response.ok({ message: "Data Berhasil Didapatkan", data });
     } catch (error) {
-      const message = "HRDE06: " + error.message || error;
+      const message = "HRDE07: " + error.message || error;
+      console.log(error);
+      response.badRequest({
+        message: "Gagal mengambil data",
+        error: message,
+        error_data: error,
+      });
+    }
+  }
+  public async getEmployeesNotInDivision({ request, response }: HttpContextContract) {
+    const {
+      page = 1,
+      limit = 10,
+      keyword = "",
+      divisionId
+    } = request.qs();
+
+    try {
+      const employeeDivision = await EmployeeDivision.query()
+        .where('division_id', divisionId)
+
+      const checkUnit = await Division.query()
+        .select('id', 'unit_id')
+        .where('id', divisionId)
+        .first()
+
+      const employeeIds: any = []
+
+      employeeDivision.map(value => {
+        employeeIds.push(value.$attributes.employeeId)
+      })
+
+      const data = await EmployeeUnit.query()
+        .select('employee_id')
+        .preload('employee', e => e.select('name'))
+        .where('unit_id', checkUnit!.unitId)
+        .andWhereNotIn('employee_id', employeeIds)
+        .andWhereHas('employee', e => e
+          .whereILike('name', `%${keyword}%`))
+        .paginate(page, limit)
+
+      response.ok({ message: "Data Berhasil Didapatkan", data });
+    } catch (error) {
+      const message = "HRDE08: " + error.message || error;
       console.log(error);
       response.badRequest({
         message: "Gagal mengambil data",

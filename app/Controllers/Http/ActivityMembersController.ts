@@ -1,6 +1,8 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import Activity from 'App/Models/Activity';
 import ActivityMember from 'App/Models/ActivityMember';
 import Employee from 'App/Models/Employee';
+import EmployeeUnit from 'App/Models/EmployeeUnit';
 import Presence from 'App/Models/Presence';
 import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist';
 import { statusRoutes } from 'App/Modules/Log/lib/enum';
@@ -26,7 +28,7 @@ function filteredDataMembersAndEmployees(dataMembersOrEmployees, dataPresences) 
 export default class ActivityMembersController {
   public async index({ request, response }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
-   CreateRouteHist(statusRoutes.START, dateStart)
+    CreateRouteHist(statusRoutes.START, dateStart)
     const { activityId = "", keyword = "" } = request.qs()
 
     try {
@@ -56,7 +58,7 @@ export default class ActivityMembersController {
 
   public async store({ request, response }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
-   CreateRouteHist(statusRoutes.START, dateStart)
+    CreateRouteHist(statusRoutes.START, dateStart)
     const payload = await request.validate(CreateActivityMemberValidator);
 
     const promises = payload.activityMembers.map(async value => {
@@ -93,7 +95,7 @@ export default class ActivityMembersController {
 
   public async update({ request, response, params }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
-   CreateRouteHist(statusRoutes.START, dateStart)
+    CreateRouteHist(statusRoutes.START, dateStart)
     const { id } = params
     if (!uuidValidation(id)) {
       return response.badRequest({ message: "Subject ID tidak valid" });
@@ -125,7 +127,7 @@ export default class ActivityMembersController {
 
   public async destroy({ request, response }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
-   CreateRouteHist(statusRoutes.START, dateStart)
+    CreateRouteHist(statusRoutes.START, dateStart)
     const rawBody = request.raw();
     const datas = JSON.parse(rawBody!);
 
@@ -148,7 +150,7 @@ export default class ActivityMembersController {
 
   public async getEmployee({ response, params, request }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
-   CreateRouteHist(statusRoutes.START, dateStart)
+    CreateRouteHist(statusRoutes.START, dateStart)
     const { activityId } = params
     const { keyword = "" } = request.qs()
 
@@ -162,19 +164,34 @@ export default class ActivityMembersController {
       employeeIds.push(value.$attributes.employeeId)
     })
 
-    const data = await Employee.query()
-      .select('id', 'name')
-      .whereNull('date_out')
-      .whereNotIn('id', employeeIds)
-      .whereILike('name', `%${keyword}%`)
+    //checkUnit
+    const checkUnit = await Activity.query()
+      .select('id', 'unit_id')
+      .where('id', activityId)
+      .first()
+
+    const data = await EmployeeUnit.query()
+      .andWhereNotIn('employee_id', employeeIds)
+      .andWhere('unit_id', checkUnit!.unitId)
+      .preload('employee', e => e
+        .select('id', 'name'))
+      .whereHas('employee', e => e
+        .whereNull('date_out')
+        .andWhereILike('name', `%${keyword}%`))
+
+    let employee: any = []
+
+    data.map(value => {
+      employee.push(value.employee)
+    })
 
     CreateRouteHist(statusRoutes.FINISH, dateStart)
-    response.ok({ message: "Data Berhasil Didapatkan", data })
+    response.ok({ message: "Data Berhasil Didapatkan", data: employee })
   }
 
   public async getActivityMemberAndEmployee({ request, response }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
-   CreateRouteHist(statusRoutes.START, dateStart)
+    CreateRouteHist(statusRoutes.START, dateStart)
     try {
       const { keyword = "", activityId, subActivityId = "" } = request.qs()
 

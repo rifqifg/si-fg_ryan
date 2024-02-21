@@ -1,5 +1,4 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import { checkRoleSuperAdmin } from 'App/Helpers/checkRoleSuperAdmin'
 import { RolesHelper } from 'App/Helpers/rolesHelper'
 import EmployeeUnit from 'App/Models/EmployeeUnit'
 import Unit from 'App/Models/Unit'
@@ -37,10 +36,8 @@ export default class EmployeeUnitsController {
     const user = await User.query().preload('roles', r => r.preload('role')).where('id', auth.use('api').user!.id).firstOrFail()
     const userObject = JSON.parse(JSON.stringify(user))
     const roles = await RolesHelper(userObject)
-    const isSuperAdmin = roles.includes('super_admin')
-    const isAdminFoundation = roles.includes('admin_foundation')
 
-    if (!isSuperAdmin || !isAdminFoundation) {
+    if (!roles.includes('super_admin') && !roles.includes('admin_foundation')) {
       //cek unit, apakah user yg login adalah lead atau bukan
       const checkUnit = await Unit.query()
         .whereHas('employeeUnits', eu => eu
@@ -98,7 +95,9 @@ export default class EmployeeUnitsController {
   }
 
   public async update({ request, response, auth }: HttpContextContract) {
-    const superAdmin = await checkRoleSuperAdmin()
+    const user = await User.query().preload('roles', r => r.preload('role')).where('id', auth.use('api').user!.id).firstOrFail()
+    const userObject = JSON.parse(JSON.stringify(user))
+    const roles = await RolesHelper(userObject)
 
     const payload = await request.validate(UpdateEmployeeUnitValidator)
 
@@ -106,7 +105,7 @@ export default class EmployeeUnitsController {
 
       const employeeUnits = await EmployeeUnit.findMany(payload.employeeUnits.map(employeeUnit => employeeUnit.id))
 
-      if (!superAdmin) {
+      if (!roles.includes('super_admin') && !roles.includes('admin_foundation')) {
         //cek unit, apakah user yg login adalah lead atau bukan
         const checkUnit = await Unit.query()
           .whereHas('employeeUnits', eu => eu
@@ -152,9 +151,11 @@ export default class EmployeeUnitsController {
 
     try {
       const employeeUnits = await EmployeeUnit.findMany(payload.employeeUnits)
-      const superAdmin = await checkRoleSuperAdmin()
+      const user = await User.query().preload('roles', r => r.preload('role')).where('id', auth.use('api').user!.id).firstOrFail()
+      const userObject = JSON.parse(JSON.stringify(user))
+      const roles = await RolesHelper(userObject)
 
-      if (!superAdmin) {
+      if (!roles.includes('super_admin') && !roles.includes('admin_foundation')) {
         //cek unit, apakah user yg login adalah lead atau bukan
         const checkUnit = await Unit.query()
           .whereHas('employeeUnits', eu => eu

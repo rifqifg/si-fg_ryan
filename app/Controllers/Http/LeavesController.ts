@@ -38,7 +38,7 @@ export default class LeavesController {
   public async index({ request, response, auth }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
-    const { page = 1, limit = 10, keyword = "", fromDate = "", toDate = "", status = "" } = request.qs()
+    const { page = 1, limit = 10, keyword = "", fromDate = "", toDate = "", status = "", leaveStatus = "" } = request.qs()
     const unitIds = await unitHelper()
     const superAdmin = await checkRoleSuperAdmin()
 
@@ -46,8 +46,6 @@ export default class LeavesController {
     if (DateTime.fromISO(fromDate) > DateTime.fromISO(toDate)) {
       return response.badRequest({ message: "INVALID_DATE_RANGE" })
     }
-
-
 
     try {
       let data
@@ -77,6 +75,7 @@ export default class LeavesController {
           .if(superAdmin, query => {
             query.whereHas('employee', e => e.whereILike('name', `%${keyword}%`))
             query.andWhereILike('status', `%${status}%`)
+            query.andWhereILike('leave_status', `%${leaveStatus}%`)
           })
           .if(!superAdmin && unitLeadObject && keyword === "" && status === "", query => {
             query.where('unit_id', unitLeadObject.unit_id)
@@ -89,6 +88,7 @@ export default class LeavesController {
             query.orWhere('employee_id', auth.user!.$attributes.employeeId)
               .andWhereHas('employee', e => e.whereILike('name', `%${keyword}%`))
               .andWhereILike('status', `%${status}%`)
+              .andWhereILike('leave_status', `%${leaveStatus}%`)
           })
           .orderBy('from_date', 'desc')
           .paginate(page, limit)
@@ -105,6 +105,7 @@ export default class LeavesController {
             }
           })
           .andWhereILike('status', `%${status}%`)
+          .andWhereILike('leave_status', `%${leaveStatus}%`)
           .andWhereIn('unit_id', unitIds)
           .orderBy('from_date', 'desc')
           .paginate(page, limit)
@@ -277,6 +278,7 @@ export default class LeavesController {
       return response.badRequest({ message: "Leave ID tidak valid" });
     }
 
+
     const payload = await request.validate(UpdateLeaveValidator);
     const objectPayload = JSON.parse(JSON.stringify(payload))
     if (JSON.stringify(payload) === "{}") {
@@ -295,6 +297,10 @@ export default class LeavesController {
             .select('id')))
         .firstOrFail()
 
+      const user = await User.query().preload('roles', r => r.preload('role')).where('id', auth.use('api').user!.id).firstOrFail()
+      const userObject = JSON.parse(JSON.stringify(user))
+      const userRoles = RolesHelper(userObject)
+
       // cek lead unit
       const superAdmin = await checkRoleSuperAdmin()
       if (!superAdmin && payload.status) {
@@ -304,6 +310,14 @@ export default class LeavesController {
           .first()
         if (unitLead?.unitId !== leave.unitId) {
           return response.badRequest({ message: "Gagal update status izin dikarenakan anda bukan ketua unit tersebut" });
+        }
+      }
+
+      if (userRoles.includes('user_hrd') && !(userRoles.includes('admin_hrd'))) {
+        console.log(leave.employee.id);
+        console.log(auth.user!.$attributes.employeeId);
+        if (leave.employee.id !== auth.user!.$attributes.employeeId) {
+          return response.badRequest({ message: "Tidak dapat ubah data anggota lain, anda bukan ketua unit tersebut..." });
         }
       }
 

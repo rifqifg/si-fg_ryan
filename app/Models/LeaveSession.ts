@@ -9,7 +9,7 @@ let newId = ""
 export default class LeaveSession extends BaseModel {
   public serializeExtras() {
     return {
-      count_sessions: this.$extras.count_sessions,
+      elapsed_time: this.$extras.elapsed_time,
       notes: this.$extras.notes,
     }
   }
@@ -20,11 +20,17 @@ export default class LeaveSession extends BaseModel {
   @column()
   public status: StatusLeaves
 
-  @column()
-  public sessions: string[]
+  // @column()
+  // public sessions: string[]
 
   @column.date()
   public date: DateTime
+
+  @column()
+  public fromTime: string
+
+  @column()
+  public toTime: string
 
   @column()
   public note: string

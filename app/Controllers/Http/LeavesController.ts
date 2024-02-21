@@ -77,14 +77,18 @@ export default class LeavesController {
             query.andWhereILike('status', `%${status}%`)
             query.andWhereILike('leave_status', `%${leaveStatus}%`)
           })
-          .if(!superAdmin && unitLeadObject && keyword === "" && status === "", query => {
+          // .if(!superAdmin && unitLeadObject && keyword === "" && status === "", query => {
+          //   query.where('unit_id', unitLeadObject.unit_id)
+          //   query.orWhere('employee_id', auth.user!.$attributes.employeeId)
+          // })
+          // .if(!superAdmin && unitLeadObject && (keyword !== "" || status !== ""), query => {
+          .if(!superAdmin && unitLeadObject, query => {
             query.where('unit_id', unitLeadObject.unit_id)
-            query.orWhere('employee_id', auth.user!.$attributes.employeeId)
-          })
-          .if(!superAdmin && unitLeadObject && (keyword !== "" || status !== ""), query => {
-            query.where('unit_id', unitLeadObject.unit_id)
-            query.andWhereHas('employee', e => e.whereILike('name', `%${keyword}%`))
-            query.andWhereILike('status', `%${status}%`)
+            query.andWhere((query) => {
+                query.andWhereHas('employee', e => e.whereILike('name', `%${keyword}%`))
+                query.andWhereILike('status', `%${status}%`)
+                query.andWhereILike('leave_status', `%${leaveStatus}%`)
+              })
             query.orWhere('employee_id', auth.user!.$attributes.employeeId)
               .andWhereHas('employee', e => e.whereILike('name', `%${keyword}%`))
               .andWhereILike('status', `%${status}%`)

@@ -1,7 +1,9 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import { checkRoleSuperAdmin } from 'App/Helpers/checkRoleSuperAdmin'
+import { RolesHelper } from 'App/Helpers/rolesHelper'
 import EmployeeUnit from 'App/Models/EmployeeUnit'
 import Unit from 'App/Models/Unit'
+import User from 'App/Models/User'
 import CreateEmployeeUnitValidator from 'App/Validators/CreateEmployeeUnitValidator'
 import DeleteManyEmployeeUnitValidator from 'App/Validators/DeleteManyEmployeeUnitValidator'
 import UpdateEmployeeUnitValidator from 'App/Validators/UpdateEmployeeUnitValidator'
@@ -32,9 +34,13 @@ export default class EmployeeUnitsController {
   public async store({ request, response, auth }: HttpContextContract) {
     const payload = await request.validate(CreateEmployeeUnitValidator)
 
-    const superAdmin = await checkRoleSuperAdmin()
+    const user = await User.query().preload('roles', r => r.preload('role')).where('id', auth.use('api').user!.id).firstOrFail()
+    const userObject = JSON.parse(JSON.stringify(user))
+    const roles = await RolesHelper(userObject)
+    const isSuperAdmin = roles.includes('super_admin')
+    const isAdminFoundation = roles.includes('admin_foundation')
 
-    if (!superAdmin) {
+    if (!isSuperAdmin) {
       //cek unit, apakah user yg login adalah lead atau bukan
       const checkUnit = await Unit.query()
         .whereHas('employeeUnits', eu => eu
@@ -49,7 +55,7 @@ export default class EmployeeUnitsController {
       // } else {
       //   return response.badRequest({ message: "Gagal menambahkan karyawan ke unit dikarenakan anda bukan ketua" })
       // }
-      if (!checkUnit || payload.employeeUnits.every(unit => unit.unitId !== checkUnit.id)) {
+      if (!checkUnit || payload.employeeUnits.every(unit => unit.unitId !== checkUnit.id && !isAdminFoundation)) {
         return response.badRequest({ message: "Gagal menambahkan karyawan ke unit dikarenakan anda bukan ketua" });
       }
     }

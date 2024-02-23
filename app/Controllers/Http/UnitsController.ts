@@ -265,7 +265,7 @@ export default class UnitsController {
       const data = await Unit.query()
         .whereILike('name', `%${keyword}%`)
         .preload('employeeUnits', eu => eu.where('title', 'lead').andWhere('employee_id', auth.user!.$attributes.employeeId))
-        .if(roles.includes('admin_hrd'), query => {
+        .if(!roles.includes('super_admin') && !roles.includes('admin_foundation'), query => {
           query.whereIn('id', unitIds)
         })
         .if(roles.includes('admin_foundation'), query => {

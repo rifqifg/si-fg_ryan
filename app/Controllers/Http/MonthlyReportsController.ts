@@ -54,7 +54,7 @@ export default class MonthlyReportsController {
       }
       const data = await MonthlyReport.query()
         .whereILike('name', `%${keyword}%`)
-        .if(roles.includes('admin_hrd'), query => {
+        .if(!roles.includes('super_admin') && !roles.includes('admin_foundation'), query => {
           query.whereIn('unit_id', unitIds)
         })
         .andWhere(query => {

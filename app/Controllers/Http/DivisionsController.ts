@@ -35,7 +35,7 @@ export default class DivisionsController {
       })
       .preload('unit', u => u.select('name'))
       .whereILike('name', `%${keyword}%`)
-      .if(roles.includes('admin_hrd'), query => {
+      .if(!roles.includes('super_admin') && !roles.includes('admin_foundation'), query => {
         query.whereIn('unit_id', unitIds)
       })
       .if(roles.includes('admin_foundation'), query => {

@@ -45,25 +45,30 @@ export default class LeaveSessionsController {
     }
 
     const unitIds = await unitHelper()
-    const superAdmin = await checkRoleSuperAdmin()
 
     try {
       let data
 
       // cek role
-      const user = await User.query().preload('roles', r => r.preload('role')).where('id', auth.use('api').user!.id).firstOrFail()
+      const user = await User.query()
+        .preload('employee', e => e
+          .select('id', 'name', 'foundation_id'))
+        .preload('roles', r => r
+          .preload('role'))
+        .where('employee_id', auth.user!.$attributes.employeeId)
+        .first()
       const userObject = JSON.parse(JSON.stringify(user))
 
       const roles = RolesHelper(userObject)
 
-      if (roles.includes('super_admin') || roles.includes('admin_hrd')) {
+      if (roles.includes('super_admin') || roles.includes('admin_hrd') || roles.includes('admin_foundation')) {
         const unitLead = await EmployeeUnit.query()
           .where('employee_id', auth.user!.$attributes.employeeId)
           .andWhere('title', 'lead')
           .first()
         const unitLeadObject = JSON.parse(JSON.stringify(unitLead))
 
-        if (!superAdmin && !unitLeadObject) {
+        if (roles.includes('admin_hrd') && !unitLeadObject) {
           return response.ok({
             message: "Data Berhasil Didapatkan", data: {
               "meta": {
@@ -90,15 +95,18 @@ export default class LeaveSessionsController {
               query.whereBetween('date', [fromDate, toDate])
             }
           })
-          .if(superAdmin, query => {
+          .if(roles.includes('super_admin') || roles.includes('admin_foundation'), query => {
             query.whereHas('employee', e => e.whereILike('name', `%${keyword}%`))
             query.andWhereILike('status', `%${status}%`)
+            if (roles.includes('admin_foundation')) {
+              query.andWhereHas('unit', u => u.where('foundation_id', user!.employee.foundationId))
+            }
           })
-          .if(!superAdmin && unitLeadObject && keyword === "" && status === "", query => {
+          .if(!roles.includes('super_admin') && !roles.includes('admin_foundation') && unitLeadObject && keyword === "" && status === "", query => {
             query.where('unit_id', unitLeadObject.unit_id)
             query.orWhere('employee_id', auth.user!.$attributes.employeeId)
           })
-          .if(!superAdmin && unitLeadObject && (keyword !== "" || status !== ""), query => {
+          .if(!roles.includes('super_admin') && !roles.includes('admin_foundation') && unitLeadObject && (keyword !== "" || status !== ""), query => {
             query.where('unit_id', unitLeadObject.unit_id)
             query.andWhereHas('employee', e => e.whereILike('name', `%${keyword}%`))
             query.andWhereILike('status', `%${status}%`)

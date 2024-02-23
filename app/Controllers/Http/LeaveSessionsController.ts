@@ -63,6 +63,10 @@ export default class LeaveSessionsController {
           .first()
         const unitLeadObject = JSON.parse(JSON.stringify(unitLead))
 
+        if (!superAdmin && !unitLeadObject) {
+          return response.ok({ message: "Data Berhasil Didapatkan", data: {} })
+        }
+
         data = await LeaveSession.query()
           .preload('employee', em => em.select('name'))
           .preload('unit', u => u.select('name'))
@@ -300,7 +304,7 @@ export default class LeaveSessionsController {
       const fromTime = (payload.fromTime !== undefined) ? payload.fromTime.toFormat('HH:mm:ss') : leave.fromTime
       const toTime = (payload.toTime !== undefined) ? payload.toTime.toFormat('HH:mm:ss') : leave.toTime
 
-      if (fromTime > toTime) return response.badRequest({message: "Waktu awal tidak bisa lebih besar dari waktu akhir"})
+      if (fromTime > toTime) return response.badRequest({ message: "Waktu awal tidak bisa lebih besar dari waktu akhir" })
 
       // cek lead unit
       const superAdmin = await checkRoleSuperAdmin()

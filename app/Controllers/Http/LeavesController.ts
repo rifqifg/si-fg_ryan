@@ -63,6 +63,10 @@ export default class LeavesController {
           .first()
         const unitLeadObject = JSON.parse(JSON.stringify(unitLead))
 
+        if(!superAdmin && !unitLeadObject) {
+          return response.ok({ message: "Data Berhasil Didapatkan", data: {} })
+        }
+
         data = await Leave.query()
           .preload('employee', em => em.select('name'))
           .preload('unit', u => u.select('name'))

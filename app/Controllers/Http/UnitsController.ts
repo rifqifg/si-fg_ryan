@@ -253,13 +253,23 @@ export default class UnitsController {
 
     try {
       const unitIds = await unitHelper()
-      const superAdmin = await checkRoleSuperAdmin()
-
+      const user = await User.query()
+        .preload('employee', e => e
+          .select('id', 'name', 'foundation_id'))
+        .preload('roles', r => r
+          .preload('role'))
+        .where('employee_id', auth.user!.$attributes.employeeId)
+        .first()
+      const userObject = JSON.parse(JSON.stringify(user))
+      const roles = await RolesHelper(userObject)
       const data = await Unit.query()
         .whereILike('name', `%${keyword}%`)
         .preload('employeeUnits', eu => eu.where('title', 'lead').andWhere('employee_id', auth.user!.$attributes.employeeId))
-        .if(!superAdmin, query => {
+        .if(roles.includes('admin_hrd'), query => {
           query.whereIn('id', unitIds)
+        })
+        .if(roles.includes('admin_foundation'), query => {
+          query.where('foundation_id', user!.employee.foundationId)
         })
 
       response.ok({ message: "get data successfully", data })

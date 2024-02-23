@@ -1,8 +1,9 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import { checkRoleSuperAdmin } from 'App/Helpers/checkRoleSuperAdmin'
+import { RolesHelper } from 'App/Helpers/rolesHelper'
 import Division from 'App/Models/Division'
 import EmployeeDivision from 'App/Models/EmployeeDivision'
 import Unit from 'App/Models/Unit'
+import User from 'App/Models/User'
 import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist'
 import { statusRoutes } from 'App/Modules/Log/lib/enum'
 import AddEmployeeToDivisionValidator from 'App/Validators/AddEmployeeToDivisionValidator'
@@ -16,11 +17,19 @@ export default class EmployeeDivisionsController {
     CreateRouteHist(statusRoutes.START, dateStart)
 
     const payload = await request.validate(AddEmployeeToDivisionValidator)
-    const superAdmin = await checkRoleSuperAdmin()
+    const user = await User.query()
+      .preload('employee', e => e
+        .select('id', 'name', 'foundation_id'))
+      .preload('roles', r => r
+        .preload('role'))
+      .where('employee_id', auth.user!.$attributes.employeeId)
+      .first()
+    const userObject = JSON.parse(JSON.stringify(user))
+    const roles = await RolesHelper(userObject)
 
     try {
       // TODO: cek hanya boleh ketua divisi / unit yg input
-      if (!superAdmin) {
+      if (!roles.includes('super_admin') && !roles.includes('admin_foundation')) {
         const checkUnit = await Unit.query()
           .whereHas('employeeUnits', eu => eu
             .where('employee_id', auth.user!.$attributes.employeeId)
@@ -100,10 +109,18 @@ export default class EmployeeDivisionsController {
 
   public async destroy({ request, response, auth }: HttpContextContract) {
     const payload = await request.validate(DeleteManyEmployeeDivisionValidator)
-    const superAdmin = await checkRoleSuperAdmin()
+    const user = await User.query()
+      .preload('employee', e => e
+        .select('id', 'name', 'foundation_id'))
+      .preload('roles', r => r
+        .preload('role'))
+      .where('employee_id', auth.user!.$attributes.employeeId)
+      .first()
+    const userObject = JSON.parse(JSON.stringify(user))
+    const roles = await RolesHelper(userObject)
 
     // TODO: cek hanya boleh ketua divisi / unit yg input
-    if (!superAdmin) {
+    if (!roles.includes('super_admin') && !roles.includes('admin_foundation')) {
       const checkUnit = await Unit.query()
         .whereHas('employeeUnits', eu => eu
           .where('employee_id', auth.user!.$attributes.employeeId)
@@ -121,7 +138,7 @@ export default class EmployeeDivisionsController {
         .andWhereIn("division_id", payload.employeeDivisions.map(ed => ed.divisionId))
         .delete()
 
-      response.ok({message: "Berhasil menghapus karyawan dari unit"})
+      response.ok({ message: "Berhasil menghapus karyawan dari unit" })
     } catch (error) {
       const message = "HRDEDV03: " + error.message || error;
       console.log(error);

@@ -151,14 +151,22 @@ export default class DivisionsController {
       const data = await Division.findOrFail(id)
 
       // cek lead unit
-      const superAdmin = await checkRoleSuperAdmin()
-      if (!superAdmin) {
+      const user = await User.query()
+        .preload('employee', e => e
+          .select('id', 'name', 'foundation_id'))
+        .preload('roles', r => r
+          .preload('role'))
+        .where('employee_id', auth.user!.$attributes.employeeId)
+        .first()
+      const userObject = JSON.parse(JSON.stringify(user))
+      const roles = await RolesHelper(userObject)
+      if (!roles.includes('super_admin') && !roles.includes('admin_foundation')) {
         const unitLead = await EmployeeUnit.query()
           .where('employee_id', auth.user!.$attributes.employeeId)
           .andWhere('title', 'lead')
           .first()
         if (unitLead?.unitId !== data.unitId) {
-          return response.badRequest({ message: "Gagal update status izin dikarenakan anda bukan ketua unit tersebut" });
+          return response.badRequest({ message: "Gagal update data divisi dikarenakan anda bukan ketua unit tersebut" });
         }
       }
 

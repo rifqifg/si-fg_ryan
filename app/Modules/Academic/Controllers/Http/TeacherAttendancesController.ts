@@ -257,7 +257,11 @@ export default class TeacherAttendancesController {
         message: "TeacherAttendance ID tidak valid",
       });
     }
-    const user = await User.findBy("id", auth?.user?.id);
+    const user = await User.query()
+      .where('id', auth.user!.id)
+      .preload('employee')
+      .preload('roles')
+      .firstOrFail()
     const data = await TeacherAttendance.findOrFail(id);
     const teacher = await Teacher.findOrFail(data.teacherId);
     const userObject = JSON.parse(JSON.stringify(user));

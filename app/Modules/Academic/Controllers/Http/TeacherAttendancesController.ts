@@ -85,39 +85,35 @@ export default class TeacherAttendancesController {
           )
           .groupBy("teacher_id")
           .paginate(page, limit);
-
-        CreateRouteHist(statusRoutes.FINISH, dateStart);
-
-        return response.ok({ message: "Berhasil mengambil data", data });
-      }
-
-      data = await TeacherAttendance.query()
-        .select("*")
-        .whereBetween("date_in", [formattedStartDate, formattedEndDate])
-        .if(keyword, (k) =>
-          k.whereHas("teacher", (s) =>
-            s.whereHas("employee", (e) => e.whereILike("name", `%${keyword}%`))
+      } else {
+        data = await TeacherAttendance.query()
+          .select("*")
+          .whereBetween("date_in", [formattedStartDate, formattedEndDate])
+          .if(keyword, (k) =>
+            k.whereHas("teacher", (s) =>
+              s.whereHas("employee", (e) => e.whereILike("name", `%${keyword}%`))
+            )
           )
-        )
-        .if(className, (c) =>
-          c.whereHas("class", (s) => s.whereILike("name", `%${className}%`))
-        )
-        .if(subject, (s) =>
-          s.whereHas("subject", (s) => s.whereILike("name", `%${subject}%`))
-        )
-        .if(session, (se) =>
-          se.whereHas("session", (s) => s.whereILike("session", `%${session}%`))
-        )
-        .preload("teacher", (s) =>
-          s.preload("employee", (e) => e.select("name"))
-        )
-        .preload("class", (c) => c.select("name"))
-        .preload("session", (s) => s.select("session"))
-        .preload("subject", (s) => s.select("name"))
-        .preload("prosemDetail", (pd) => pd.select("materi", "kompetensiDasar"))
-        .if(teacher, (q) => q.where("teacherId", user.employee.teacher.id))
-        .orderBy("date_in", "desc")
-        .paginate(page, limit);
+          .if(className, (c) =>
+            c.whereHas("class", (s) => s.whereILike("name", `%${className}%`))
+          )
+          .if(subject, (s) =>
+            s.whereHas("subject", (s) => s.whereILike("name", `%${subject}%`))
+          )
+          .if(session, (se) =>
+            se.whereHas("session", (s) => s.whereILike("session", `%${session}%`))
+          )
+          .preload("teacher", (s) =>
+            s.preload("employee", (e) => e.select("name"))
+          )
+          .preload("class", (c) => c.select("name"))
+          .preload("session", (s) => s.select("session"))
+          .preload("subject", (s) => s.select("name"))
+          .preload("prosemDetail", (pd) => pd.select("materi", "kompetensiDasar"))
+          .if(teacher, (q) => q.where("teacherId", user.employee.teacher.id))
+          .orderBy("date_in", "desc")
+          .paginate(page, limit);
+      }
 
       CreateRouteHist(statusRoutes.FINISH, dateStart);
       response.ok({ message: "Berhasil mengambil data", data });
@@ -241,8 +237,6 @@ export default class TeacherAttendancesController {
       return response.badRequest({ message: "Data tidak boleh kosong" });
     }
 
-
-
     const user = await User.query()
       .where("id", auth.user!.id)
       .preload("roles", (r) => r.select("*"))
@@ -281,9 +275,7 @@ export default class TeacherAttendancesController {
             // klo di 'daily' jga ngga ada, cari yg null
             qElse => qElse.andWhereNull('class_id')
           )
-        // qElse => qElse.andWhere('class_id', daily.classId),
       )
-      // .if((payload.classId === null), q => q.andWhereNull('class_id'))
       .first()
 
     if (duplicateTA) {

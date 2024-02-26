@@ -79,44 +79,41 @@ export default class TeacherAttendancesController {
             )
           )
           .whereBetween("date_in", [formattedStartDate, formattedEndDate])
+          .andWhereHas('teacher', t => t.whereHas('employee', e => e.whereILike("name", `%${keyword}%`)))
           .preload("teacher", (t) =>
             t.preload("employee", (e) => e.select("name"))
           )
           .groupBy("teacher_id")
           .paginate(page, limit);
-
-        CreateRouteHist(statusRoutes.FINISH, dateStart);
-
-        return response.ok({ message: "Berhasil mengambil data", data });
-      }
-
-      data = await TeacherAttendance.query()
-        .select("*")
-        .whereBetween("date_in", [formattedStartDate, formattedEndDate])
-        .if(keyword, (k) =>
-          k.whereHas("teacher", (s) =>
-            s.whereHas("employee", (e) => e.whereILike("name", `%${keyword}%`))
+      } else {
+        data = await TeacherAttendance.query()
+          .select("*")
+          .whereBetween("date_in", [formattedStartDate, formattedEndDate])
+          .if(keyword, (k) =>
+            k.whereHas("teacher", (s) =>
+              s.whereHas("employee", (e) => e.whereILike("name", `%${keyword}%`))
+            )
           )
-        )
-        .if(className, (c) =>
-          c.whereHas("class", (s) => s.whereILike("name", `%${className}%`))
-        )
-        .if(subject, (s) =>
-          s.whereHas("subject", (s) => s.whereILike("name", `%${subject}%`))
-        )
-        .if(session, (se) =>
-          se.whereHas("session", (s) => s.whereILike("session", `%${session}%`))
-        )
-        .preload("teacher", (s) =>
-          s.preload("employee", (e) => e.select("name"))
-        )
-        .preload("class", (c) => c.select("name"))
-        .preload("session", (s) => s.select("session"))
-        .preload("subject", (s) => s.select("name"))
-        .preload("prosemDetail", (pd) => pd.select("materi", "kompetensiDasar"))
-        .if(teacher, (q) => q.where("teacherId", user.employee.teacher.id))
-        .orderBy("date_in", "desc")
-        .paginate(page, limit);
+          .if(className, (c) =>
+            c.whereHas("class", (s) => s.whereILike("name", `%${className}%`))
+          )
+          .if(subject, (s) =>
+            s.whereHas("subject", (s) => s.whereILike("name", `%${subject}%`))
+          )
+          .if(session, (se) =>
+            se.whereHas("session", (s) => s.whereILike("session", `%${session}%`))
+          )
+          .preload("teacher", (s) =>
+            s.preload("employee", (e) => e.select("name"))
+          )
+          .preload("class", (c) => c.select("name"))
+          .preload("session", (s) => s.select("session"))
+          .preload("subject", (s) => s.select("name"))
+          .preload("prosemDetail", (pd) => pd.select("materi", "kompetensiDasar"))
+          .if(teacher, (q) => q.where("teacherId", user.employee.teacher.id))
+          .orderBy("date_in", "desc")
+          .paginate(page, limit);
+      }
 
       CreateRouteHist(statusRoutes.FINISH, dateStart);
       response.ok({ message: "Berhasil mengambil data", data });
@@ -143,6 +140,21 @@ export default class TeacherAttendancesController {
       //     message: "You dont have permission to store another user data",
       //   });
       // }
+
+      // Cek duplikat data dengan kombinasi teacherId, subjectId, classId, sessionId dan date_out yg sama
+      const duplicateTA = await TeacherAttendance.query()
+        .where('teacher_id', payload.teacherId)
+        .andWhere('subject_id', payload.subjectId)
+        .andWhere('session_id', payload.sessionId)
+        .andWhereRaw("date_in::date = ?", [payload.date_in.toFormat('yyyy-LL-dd')])
+        .andWhereRaw("date_out::date = ?", [payload.date_out.toFormat('yyyy-LL-dd')])
+        .if(payload.classId, q => q.andWhere('class_id', payload.classId!))
+        .if((payload.classId === null), q => q.andWhereNull('class_id'))
+        .first()
+
+      if (duplicateTA) {
+        return response.badRequest({ message: "Jurnal mengajar untuk guru, kelas, sesi dan tanggal ini sudah ada." })
+      }
 
       const data = await TeacherAttendance.create(payload);
 
@@ -224,6 +236,7 @@ export default class TeacherAttendancesController {
       console.log("data update kosong");
       return response.badRequest({ message: "Data tidak boleh kosong" });
     }
+
     const user = await User.query()
       .where("id", auth.user!.id)
       .preload("roles", (r) => r.select("*"))
@@ -231,6 +244,43 @@ export default class TeacherAttendancesController {
       .firstOrFail();
 
     const daily = await TeacherAttendance.findOrFail(id);
+
+    // Cek duplikat data dengan kombinasi teacherId, subjectId, classId, sessionId dan date_out yg sama
+    const duplicateTA = await TeacherAttendance.query()
+      // klo di payload ngga ada, ambil value dri 'daily'
+      .if(payload.teacherId,
+        q => q.where('teacher_id', payload.teacherId!),
+        qElse => qElse.where('teacher_id', daily.teacherId)
+      )
+      .if(payload.subjectId,
+        q => q.andWhere('subject_id', payload.subjectId!),
+        qElse => qElse.andWhere('subject_id', daily.subjectId)
+      )
+      .if(payload.sessionId,
+        q => q.andWhere('session_id', payload.sessionId!),
+        qElse => qElse.andWhere('session_id', daily.sessionId)
+      )
+      .if(payload.date_in,
+        q => q.andWhereRaw("date_in::date = ?", [payload.date_in!.toFormat('yyyy-LL-dd')]),
+        qElse => qElse.andWhereRaw("date_in::date = ?", [daily.date_in.toFormat('yyyy-LL-dd')])
+      )
+      .if(payload.date_out,
+        q => q.andWhereRaw("date_out::date = ?", [payload.date_out!.toFormat('yyyy-LL-dd')]),
+        qElse => qElse.andWhereRaw("date_out::date = ?", [daily.date_out.toFormat('yyyy-LL-dd')])
+      )
+      .if(payload.classId,
+        q => q.andWhere('class_id', payload.classId!),
+        qElse => qElse.if(daily.classId,
+            q => q.andWhere('class_id', daily.classId!),
+            // klo di 'daily' jga ngga ada, cari yg null
+            qElse => qElse.andWhereNull('class_id')
+          )
+      )
+      .first()
+
+    if (duplicateTA) {
+      return response.badRequest({ message: "Jurnal mengajar untuk guru, kelas, sesi dan tanggal ini sudah ada." })
+    }
 
     const teacher = await Teacher.findOrFail(daily.teacherId);
 
@@ -257,7 +307,11 @@ export default class TeacherAttendancesController {
         message: "TeacherAttendance ID tidak valid",
       });
     }
-    const user = await User.findBy("id", auth?.user?.id);
+    const user = await User.query()
+      .where('id', auth.user!.id)
+      .preload('employee')
+      .preload('roles')
+      .firstOrFail()
     const data = await TeacherAttendance.findOrFail(id);
     const teacher = await Teacher.findOrFail(data.teacherId);
     const userObject = JSON.parse(JSON.stringify(user));

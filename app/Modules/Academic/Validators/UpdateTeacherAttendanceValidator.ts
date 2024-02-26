@@ -32,8 +32,8 @@ export default class UpdateTeacherAttendanceValidator {
       format: 'yyyy-MM-dd HH:mm:ss'
     }),
     status: schema.enum.optional(Object.values(TeacherAttendanceStatus)),
-    material: schema.string.optional({}, [rules.alphaNum({ allow: ['space'] })]),
-    reason_not_teach: schema.string.optional({}, [rules.alphaNum({ allow: ['space'] })]),
+    material: schema.string.optional(),
+    reason_not_teach: schema.string.optional(),
     post_test: schema.boolean.optional(),
     classId: schema.string.optional({}, [
       rules.exists({ table: 'academic.classes', column: 'id' })

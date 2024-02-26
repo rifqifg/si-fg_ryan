@@ -144,6 +144,20 @@ export default class TeacherAttendancesController {
       //   });
       // }
 
+      // Cek duplikat data dengan kombinasi teacherId, subjectId, classId, sessionId dan date_out yg sama
+      const duplicateTA = await TeacherAttendance.query()
+        .where('teacher_id', payload.teacherId)
+        .andWhere('subject_id', payload.subjectId)
+        .andWhere('session_id', payload.sessionId)
+        .andWhereRaw("date_out::date = ?", [payload.date_out.toFormat('yyyy-LL-dd')])
+        .if(payload.classId, q => q.andWhere('class_id', payload.classId!))
+        .if((payload.classId === null), q => q.andWhereNull('class_id'))
+        .first()
+
+      if (duplicateTA) {
+        return response.badRequest({ message: "Jurnal mengajar untuk guru, kelas, sesi dan tanggal ini sudah ada." })
+      }
+
       const data = await TeacherAttendance.create(payload);
 
       CreateRouteHist(statusRoutes.FINISH, dateStart);
@@ -224,6 +238,21 @@ export default class TeacherAttendancesController {
       console.log("data update kosong");
       return response.badRequest({ message: "Data tidak boleh kosong" });
     }
+
+    // Cek duplikat data dengan kombinasi teacherId, subjectId, classId, sessionId dan date_out yg sama
+    const duplicateTA = await TeacherAttendance.query()
+      .if(payload.teacherId, q => q.where('teacher_id', payload.teacherId!))
+      .if(payload.subjectId, q => q.andWhere('subject_id', payload.subjectId!))
+      .if(payload.sessionId, q => q.andWhere('session_id', payload.sessionId!))
+      .if(payload.date_out, q => q.andWhereRaw("date_out::date = ?", [payload.date_out!.toFormat('yyyy-LL-dd')]))
+      .if(payload.classId, q => q.andWhere('class_id', payload.classId!))
+      .if((payload.classId === null), q => q.andWhereNull('class_id'))
+      .first()
+
+      if (duplicateTA) {
+        return response.badRequest({ message: "Jurnal mengajar untuk guru, kelas, sesi dan tanggal ini sudah ada." })
+      }
+
     const user = await User.query()
       .where("id", auth.user!.id)
       .preload("roles", (r) => r.select("*"))

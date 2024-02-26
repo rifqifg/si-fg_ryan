@@ -150,6 +150,7 @@ export default class TeacherAttendancesController {
         .where('teacher_id', payload.teacherId)
         .andWhere('subject_id', payload.subjectId)
         .andWhere('session_id', payload.sessionId)
+        .andWhereRaw("date_in::date = ?", [payload.date_in.toFormat('yyyy-LL-dd')])
         .andWhereRaw("date_out::date = ?", [payload.date_out.toFormat('yyyy-LL-dd')])
         .if(payload.classId, q => q.andWhere('class_id', payload.classId!))
         .if((payload.classId === null), q => q.andWhereNull('class_id'))
@@ -250,8 +251,6 @@ export default class TeacherAttendancesController {
 
     const daily = await TeacherAttendance.findOrFail(id);
 
-    console.log(daily.date_out.toFormat('yyyy-LL-dd'));
-
     // Cek duplikat data dengan kombinasi teacherId, subjectId, classId, sessionId dan date_out yg sama
     const duplicateTA = await TeacherAttendance.query()
       // klo di payload ngga ada, ambil value dri 'daily'
@@ -266,6 +265,10 @@ export default class TeacherAttendancesController {
       .if(payload.sessionId,
         q => q.andWhere('session_id', payload.sessionId!),
         qElse => qElse.andWhere('session_id', daily.sessionId)
+      )
+      .if(payload.date_in,
+        q => q.andWhereRaw("date_in::date = ?", [payload.date_in!.toFormat('yyyy-LL-dd')]),
+        qElse => qElse.andWhereRaw("date_in::date = ?", [daily.date_in.toFormat('yyyy-LL-dd')])
       )
       .if(payload.date_out,
         q => q.andWhereRaw("date_out::date = ?", [payload.date_out!.toFormat('yyyy-LL-dd')]),

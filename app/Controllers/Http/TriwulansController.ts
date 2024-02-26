@@ -210,7 +210,7 @@ export default class TriwulansController {
           const triwulanEmployeeDetail = result.triwulanEmployeeDetail
           const penilai = result.penilai
           const dataUnit = await Unit.query()
-            .select('id', 'signature')
+            .select('id', 'signature', 'name')
             .where('id', triwulan.unitId)
             .preload('employeeUnits', eu =>
               eu
@@ -223,8 +223,8 @@ export default class TriwulansController {
             id: dataUnit?.id,
             name: dataUnit?.name,
             signature: dataUnit?.signature ? await this.getSignedUrl(dataUnit.signature) : null,
-            unit_lead_employee_id: dataUnit?.employeeUnits[0].employee.id,
-            unit_lead_employee_name: dataUnit?.employeeUnits[0].employee.name
+            unit_lead_employee_id: dataUnit!.employeeUnits.length > 0 ? dataUnit?.employeeUnits[0].employee.id : null,
+            unit_lead_employee_name: dataUnit!.employeeUnits.length > 0 ? dataUnit?.employeeUnits[0].employee.name : null
           }
 
           datas.push({ dataEmployee, triwulanEmployee, triwulanEmployeeDetail, penilai, dataUnit: dataUnitObject })

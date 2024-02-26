@@ -194,8 +194,8 @@ export default class MonthlyReportsController {
         id: dataUnit?.id,
         name: dataUnit?.name,
         signature: dataUnit?.signature ? await this.getSignedUrl(dataUnit.signature) : null,
-        unit_lead_employee_id: dataUnit?.employeeUnits[0].employee.id,
-        unit_lead_employee_name: dataUnit?.employeeUnits[0].employee.name
+        unit_lead_employee_id: dataUnit!.employeeUnits.length > 0 ? dataUnit?.employeeUnits[0].employee.id : null,
+        unit_lead_employee_name: dataUnit!.employeeUnits.length > 0 ? dataUnit?.employeeUnits[0].employee.name : null
       }
       let data
       if (!employeeId) {

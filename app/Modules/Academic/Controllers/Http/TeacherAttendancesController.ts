@@ -79,6 +79,7 @@ export default class TeacherAttendancesController {
             )
           )
           .whereBetween("date_in", [formattedStartDate, formattedEndDate])
+          .andWhereHas('teacher', t => t.whereHas('employee', e => e.whereILike("name", `%${keyword}%`)))
           .preload("teacher", (t) =>
             t.preload("employee", (e) => e.select("name"))
           )
@@ -240,18 +241,18 @@ export default class TeacherAttendancesController {
     }
 
     // Cek duplikat data dengan kombinasi teacherId, subjectId, classId, sessionId dan date_out yg sama
-    const duplicateTA = await TeacherAttendance.query()
-      .if(payload.teacherId, q => q.where('teacher_id', payload.teacherId!))
-      .if(payload.subjectId, q => q.andWhere('subject_id', payload.subjectId!))
-      .if(payload.sessionId, q => q.andWhere('session_id', payload.sessionId!))
-      .if(payload.date_out, q => q.andWhereRaw("date_out::date = ?", [payload.date_out!.toFormat('yyyy-LL-dd')]))
-      .if(payload.classId, q => q.andWhere('class_id', payload.classId!))
-      .if((payload.classId === null), q => q.andWhereNull('class_id'))
-      .first()
+    // const duplicateTA = await TeacherAttendance.query()
+    //   .if(payload.teacherId, q => q.where('teacher_id', payload.teacherId!))
+    //   .if(payload.subjectId, q => q.andWhere('subject_id', payload.subjectId!))
+    //   .if(payload.sessionId, q => q.andWhere('session_id', payload.sessionId!))
+    //   .if(payload.date_out, q => q.andWhereRaw("date_out::date = ?", [payload.date_out!.toFormat('yyyy-LL-dd')]))
+    //   .if(payload.classId, q => q.andWhere('class_id', payload.classId!))
+    //   .if((payload.classId === null), q => q.andWhereNull('class_id'))
+    //   .first()
 
-      if (duplicateTA) {
-        return response.badRequest({ message: "Jurnal mengajar untuk guru, kelas, sesi dan tanggal ini sudah ada." })
-      }
+    //   if (duplicateTA) {
+    //     return response.badRequest({ message: "Jurnal mengajar untuk guru, kelas, sesi dan tanggal ini sudah ada." })
+    //   }
 
     const user = await User.query()
       .where("id", auth.user!.id)

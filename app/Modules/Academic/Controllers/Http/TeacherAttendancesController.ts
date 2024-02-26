@@ -240,19 +240,7 @@ export default class TeacherAttendancesController {
       return response.badRequest({ message: "Data tidak boleh kosong" });
     }
 
-    // Cek duplikat data dengan kombinasi teacherId, subjectId, classId, sessionId dan date_out yg sama
-    // const duplicateTA = await TeacherAttendance.query()
-    //   .if(payload.teacherId, q => q.where('teacher_id', payload.teacherId!))
-    //   .if(payload.subjectId, q => q.andWhere('subject_id', payload.subjectId!))
-    //   .if(payload.sessionId, q => q.andWhere('session_id', payload.sessionId!))
-    //   .if(payload.date_out, q => q.andWhereRaw("date_out::date = ?", [payload.date_out!.toFormat('yyyy-LL-dd')]))
-    //   .if(payload.classId, q => q.andWhere('class_id', payload.classId!))
-    //   .if((payload.classId === null), q => q.andWhereNull('class_id'))
-    //   .first()
 
-    //   if (duplicateTA) {
-    //     return response.badRequest({ message: "Jurnal mengajar untuk guru, kelas, sesi dan tanggal ini sudah ada." })
-    //   }
 
     const user = await User.query()
       .where("id", auth.user!.id)
@@ -261,6 +249,43 @@ export default class TeacherAttendancesController {
       .firstOrFail();
 
     const daily = await TeacherAttendance.findOrFail(id);
+
+    console.log(daily.date_out.toFormat('yyyy-LL-dd'));
+
+    // Cek duplikat data dengan kombinasi teacherId, subjectId, classId, sessionId dan date_out yg sama
+    const duplicateTA = await TeacherAttendance.query()
+      // klo di payload ngga ada, ambil value dri 'daily'
+      .if(payload.teacherId,
+        q => q.where('teacher_id', payload.teacherId!),
+        qElse => qElse.where('teacher_id', daily.teacherId)
+      )
+      .if(payload.subjectId,
+        q => q.andWhere('subject_id', payload.subjectId!),
+        qElse => qElse.andWhere('subject_id', daily.subjectId)
+      )
+      .if(payload.sessionId,
+        q => q.andWhere('session_id', payload.sessionId!),
+        qElse => qElse.andWhere('session_id', daily.sessionId)
+      )
+      .if(payload.date_out,
+        q => q.andWhereRaw("date_out::date = ?", [payload.date_out!.toFormat('yyyy-LL-dd')]),
+        qElse => qElse.andWhereRaw("date_out::date = ?", [daily.date_out.toFormat('yyyy-LL-dd')])
+      )
+      .if(payload.classId,
+        q => q.andWhere('class_id', payload.classId!),
+        qElse => qElse.if(daily.classId,
+            q => q.andWhere('class_id', daily.classId!),
+            // klo di 'daily' jga ngga ada, cari yg null
+            qElse => qElse.andWhereNull('class_id')
+          )
+        // qElse => qElse.andWhere('class_id', daily.classId),
+      )
+      // .if((payload.classId === null), q => q.andWhereNull('class_id'))
+      .first()
+
+    if (duplicateTA) {
+      return response.badRequest({ message: "Jurnal mengajar untuk guru, kelas, sesi dan tanggal ini sudah ada." })
+    }
 
     const teacher = await Teacher.findOrFail(daily.teacherId);
 

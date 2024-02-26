@@ -68,25 +68,6 @@ export default class LeaveSessionsController {
           .first()
         const unitLeadObject = JSON.parse(JSON.stringify(unitLead))
 
-        if (roles.includes('admin_hrd') && !unitLeadObject) {
-          return response.ok({
-            message: "Data Berhasil Didapatkan", data: {
-              "meta": {
-                "total": 0,
-                "per_page": 10,
-                "current_page": 1,
-                "last_page": 1,
-                "first_page": 1,
-                "first_page_url": "/?page=1",
-                "last_page_url": "/?page=1",
-                "next_page_url": null,
-                "previous_page_url": null
-              },
-              "data": []
-            }
-          })
-        }
-
         data = await LeaveSession.query()
           .preload('employee', em => em.select('name'))
           .preload('unit', u => u.select('name'))
@@ -113,6 +94,9 @@ export default class LeaveSessionsController {
             query.orWhere('employee_id', auth.user!.$attributes.employeeId)
               .andWhereHas('employee', e => e.whereILike('name', `%${keyword}%`))
               .andWhereILike('status', `%${status}%`)
+          })
+          .if(roles.includes('admin_hrd') && !unitLeadObject, query => {
+            query.andWhereIn('unit_id', unitIds)
           })
           .orderBy('date', 'desc')
           .paginate(page, limit)

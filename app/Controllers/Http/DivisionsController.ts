@@ -7,15 +7,25 @@ import { DateTime } from 'luxon'
 import { unitHelper } from 'App/Helpers/unitHelper'
 import { checkRoleSuperAdmin } from 'App/Helpers/checkRoleSuperAdmin'
 import EmployeeUnit from 'App/Models/EmployeeUnit'
+import User from 'App/Models/User'
+import { RolesHelper } from 'App/Helpers/rolesHelper'
 
 
 export default class DivisionsController {
-  public async index({ request, response }: HttpContextContract) {
+  public async index({ request, response, auth }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
     const { page = 1, limit = 10, keyword = "", orderBy = "name", orderDirection = 'ASC' } = request.qs()
     const unitIds = await unitHelper()
-    const superAdmin = await checkRoleSuperAdmin()
+    const user = await User.query()
+      .preload('employee', e => e
+        .select('id', 'name', 'foundation_id'))
+      .preload('roles', r => r
+        .preload('role'))
+      .where('employee_id', auth.user!.$attributes.employeeId)
+      .first()
+    const userObject = JSON.parse(JSON.stringify(user))
+    const roles = await RolesHelper(userObject)
 
     const data = await Division.query()
       .preload('employees', e => {
@@ -25,8 +35,11 @@ export default class DivisionsController {
       })
       .preload('unit', u => u.select('name'))
       .whereILike('name', `%${keyword}%`)
-      .if(!superAdmin, query => {
+      .if(!roles.includes('super_admin') && !roles.includes('admin_foundation'), query => {
         query.whereIn('unit_id', unitIds)
+      })
+      .if(roles.includes('admin_foundation'), query => {
+        query.whereHas('unit', u => u.where('foundation_id', user!.employee.foundationId))
       })
       .orderBy(orderBy, orderDirection)
       .paginate(page, limit)
@@ -67,7 +80,7 @@ export default class DivisionsController {
       ]),
       description: schema.string.optional({}, [rules.minLength(6)]),
       unitId: schema.string({}, [
-        rules.exists({table: 'units', column: 'id'})
+        rules.exists({ table: 'units', column: 'id' })
       ]),
     })
 
@@ -127,7 +140,7 @@ export default class DivisionsController {
       ]),
       description: schema.string.optional({}, [rules.minLength(6)]),
       unitId: schema.string.optional({}, [
-        rules.exists({table: 'units', column: 'id'})
+        rules.exists({ table: 'units', column: 'id' })
       ]),
     })
 
@@ -138,14 +151,22 @@ export default class DivisionsController {
       const data = await Division.findOrFail(id)
 
       // cek lead unit
-      const superAdmin = await checkRoleSuperAdmin()
-      if (!superAdmin) {
+      const user = await User.query()
+        .preload('employee', e => e
+          .select('id', 'name', 'foundation_id'))
+        .preload('roles', r => r
+          .preload('role'))
+        .where('employee_id', auth.user!.$attributes.employeeId)
+        .first()
+      const userObject = JSON.parse(JSON.stringify(user))
+      const roles = await RolesHelper(userObject)
+      if (!roles.includes('super_admin') && !roles.includes('admin_foundation')) {
         const unitLead = await EmployeeUnit.query()
           .where('employee_id', auth.user!.$attributes.employeeId)
           .andWhere('title', 'lead')
           .first()
         if (unitLead?.unitId !== data.unitId) {
-          return response.badRequest({ message: "Gagal update status izin dikarenakan anda bukan ketua unit tersebut" });
+          return response.badRequest({ message: "Gagal update data divisi dikarenakan anda bukan ketua unit tersebut" });
         }
       }
 

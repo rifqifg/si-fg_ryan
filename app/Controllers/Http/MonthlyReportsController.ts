@@ -12,7 +12,6 @@ import Drive from '@ioc:Adonis/Core/Drive'
 import { MonthlyReportHelper } from 'App/Helpers/MonthlyReportHelper'
 import MonthlyReportEmployee from 'App/Models/MonthlyReportEmployee'
 import { unitHelper } from 'App/Helpers/unitHelper'
-import { checkRoleSuperAdmin } from 'App/Helpers/checkRoleSuperAdmin';
 import Activity from 'App/Models/Activity'
 import { validator, schema, rules } from '@ioc:Adonis/Core/Validator'
 import EmployeeUnit from 'App/Models/EmployeeUnit'
@@ -34,9 +33,14 @@ export default class MonthlyReportsController {
     const { page = 1, limit = 10, keyword = "", fromDate = "", toDate = "" } = request.qs()
 
     const unitIds = await unitHelper()
-    const superAdmin = await checkRoleSuperAdmin()
 
-    const user = await User.query().preload('roles', r => r.preload('role')).where('id', auth.use('api').user!.id).firstOrFail()
+    const user = await User.query()
+      .preload('employee', e => e
+        .select('id', 'name', 'foundation_id'))
+      .preload('roles', r => r
+        .preload('role'))
+      .where('employee_id', auth.user!.$attributes.employeeId)
+      .first()
     const userObject = JSON.parse(JSON.stringify(user))
 
     const roles = await RolesHelper(userObject)
@@ -45,31 +49,30 @@ export default class MonthlyReportsController {
     const isJustMemberHRD = roles.includes('user_hrd') && !(roles.includes('admin_hrd'))
 
     try {
-      let data
-      if (fromDate && toDate) {
-        if (DateTime.fromISO(fromDate) > DateTime.fromISO(toDate)) {
-          return response.badRequest({ message: "INVALID_DATE_RANGE" })
-        }
-        data = await MonthlyReport.query()
-          .whereILike('name', `%${keyword}%`)
-          .if(!(superAdmin), q => q.andWhereIn('unit_id', unitIds))
-          .andWhere(query => {
+      if (DateTime.fromISO(fromDate) > DateTime.fromISO(toDate)) {
+        return response.badRequest({ message: "INVALID_DATE_RANGE" })
+      }
+      const data = await MonthlyReport.query()
+        .whereILike('name', `%${keyword}%`)
+        .if(!roles.includes('super_admin') && !roles.includes('admin_foundation'), query => {
+          query.whereIn('unit_id', unitIds)
+        })
+        .andWhere(query => {
+          if (fromDate && toDate) {
             query.whereBetween('from_date', [fromDate, toDate])
             query.orWhereBetween('to_date', [fromDate, toDate])
+          }
+        })
+        .if(isJustMemberHRD, query => {
+          query.andWhereHas('monthlyReportEmployees', mre => {
+            mre.where('employee_id', user!.employeeId)
           })
-          .if(isJustMemberHRD, query => {
-            query.andWhereHas('monthlyReportEmployees', mre => {
-              mre.where('employee_id', user.employeeId)
-            })
-          })
-          .preload('unit')
-          .paginate(page, limit)
-      } else {
-        data = await MonthlyReport.query()
-          .whereILike('name', `%${keyword}%`)
-          .preload('unit')
-          .paginate(page, limit)
-      }
+        })
+        .if(roles.includes('admin_foundation'), query => {
+          query.whereHas('unit', u => u.where('foundation_id', user!.employee.foundationId))
+        })
+        .preload('unit')
+        .paginate(page, limit)
 
       CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Data Berhasil Didapatkan", data })
@@ -191,8 +194,8 @@ export default class MonthlyReportsController {
         id: dataUnit?.id,
         name: dataUnit?.name,
         signature: dataUnit?.signature ? await this.getSignedUrl(dataUnit.signature) : null,
-        unit_lead_employee_id: dataUnit?.employeeUnits[0].employee.id,
-        unit_lead_employee_name: dataUnit?.employeeUnits[0].employee.name
+        unit_lead_employee_id: dataUnit!.employeeUnits.length > 0 ? dataUnit?.employeeUnits[0].employee.id : null,
+        unit_lead_employee_name: dataUnit!.employeeUnits.length > 0 ? dataUnit?.employeeUnits[0].employee.name : null
       }
       let data
       if (!employeeId) {

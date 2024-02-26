@@ -22,18 +22,24 @@ export default class ActivitiesController {
     CreateRouteHist(statusRoutes.START, dateStart)
     const { page = 1, limit = 10, keyword = "", orderBy = "name", orderDirection = 'ASC' } = request.qs()
 
-    const user = await User.query().preload('roles', r => r.preload('role')).where('id', auth.use('api').user!.id).firstOrFail()
+    const user = await User.query()
+      .preload('employee', e => e
+        .select('id', 'name', 'foundation_id'))
+      .preload('roles', r => r
+        .preload('role'))
+      .where('employee_id', auth.user!.$attributes.employeeId)
+      .first()
     const userObject = JSON.parse(JSON.stringify(user))
 
     const unitLeadIds = await unitHelper("lead")
-    const superAdmin = await checkRoleSuperAdmin()
+    // const superAdmin = await checkRoleSuperAdmin()
 
     const roles = await RolesHelper(userObject)
     const isAdminHrd = roles.includes('admin_hrd')
 
     try {
       let data: object
-      if (superAdmin) {
+      if (roles.includes('super_admin')) {
         data = await Activity.query()
           .preload('unit', unit => unit.select('id', 'name'))
           .preload('categoryActivity', categoryActivity => categoryActivity.select('id', 'name'))
@@ -57,11 +63,16 @@ export default class ActivitiesController {
           //   })
           // })
           // .andWhereIn('unit_id', unitLeadIds)
-          .whereHas('activityMembers', am => {
-            am.where('employee_id', user.employeeId)
-              .andWhere('role', 'manager')
+          .if(!roles.includes('admin_foundation'), query => {
+            query.whereHas('activityMembers', am => {
+              am.where('employee_id', user!.employeeId)
+                .andWhere('role', 'manager')
+            })
           })
           .if((isAdminHrd), q => q.orWhereIn('unit_id', unitLeadIds))
+          .if(roles.includes('admin_foundation'), query => {
+            query.whereHas('unit', u => u.where('foundation_id', user!.employee.foundationId))
+          })
           .orderBy(orderBy, orderDirection)
           .paginate(page, limit)
       }
@@ -115,15 +126,20 @@ export default class ActivitiesController {
     CreateRouteHist(statusRoutes.START, dateStart)
     const { keyword = "", orderBy = "name", orderDirection = 'ASC', activity_type = '' } = request.qs()
 
-    const user = await User.query().preload('roles', r => r.preload('role')).where('id', auth.use('api').user!.id).firstOrFail()
+    const user = await User.query()
+      .preload('employee', e => e
+        .select('id', 'name', 'foundation_id'))
+      .preload('roles', r => r
+        .preload('role'))
+      .where('employee_id', auth.user!.$attributes.employeeId)
+      .first()
     const userObject = JSON.parse(JSON.stringify(user))
+    const roles = await RolesHelper(userObject)
     let data: object
     const unitIds = await unitHelper()
-    const superAdmin = await checkRoleSuperAdmin()
 
     try {
       if (userObject.roles[0].role_name == 'super_admin') {
-        console.log('masuk sinikah?');
 
         data = await Activity.query()
           .preload('unit', unit => unit.select('id', 'name'))
@@ -150,8 +166,11 @@ export default class ActivitiesController {
             }
             query.andWhereILike('name', `%${keyword}%`);
           })
-          .if(!superAdmin, query => {
+          .if(!roles.includes('super_admin') && !roles.includes('admin_foundation'), query => {
             query.whereIn('unit_id', unitIds)
+          })
+          .if(roles.includes('admin_foundation'), query => {
+            query.whereHas('unit', u => u.where('foundation_id', user!.employee.foundationId))
           })
           // .andWhere('owner', auth.user!.id) // Jika perlu, aktifkan kembali ini
           .orderBy(orderBy, orderDirection)

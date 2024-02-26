@@ -1,7 +1,6 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Database from '@ioc:Adonis/Lucid/Database'
 import { TriwulanHelper } from 'App/Helpers/TriwulanHelper'
-import { checkRoleSuperAdmin } from 'App/Helpers/checkRoleSuperAdmin'
 import { unitHelper } from 'App/Helpers/unitHelper'
 import EmployeeUnit from 'App/Models/EmployeeUnit'
 import Notification from 'App/Models/Notification'
@@ -18,6 +17,8 @@ import { validator, schema, rules } from '@ioc:Adonis/Core/Validator'
 import Unit from 'App/Models/Unit'
 import Env from "@ioc:Adonis/Core/Env"
 import Drive from '@ioc:Adonis/Core/Drive'
+import User from 'App/Models/User'
+import { RolesHelper } from 'App/Helpers/rolesHelper'
 
 export default class TriwulansController {
   private async getSignedUrl(filename: string) {
@@ -27,39 +28,44 @@ export default class TriwulansController {
     return signedUrl
   }
 
-  public async index({ request, response }: HttpContextContract) {
+  public async index({ request, response, auth }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
     const { page = 1, limit = 10, keyword = "", fromDate = "", toDate = "" } = request.qs()
     const unitIds = await unitHelper()
-    const superAdmin = await checkRoleSuperAdmin()
+    // const superAdmin = await checkRoleSuperAdmin()
+    const user = await User.query()
+      .preload('employee', e => e
+        .select('id', 'name', 'foundation_id'))
+      .preload('roles', r => r
+        .preload('role'))
+      .where('employee_id', auth.user!.$attributes.employeeId)
+      .first()
+    const userObject = JSON.parse(JSON.stringify(user))
+
+    const roles = await RolesHelper(userObject)
 
     try {
-      let data
-      if (fromDate && toDate) {
-        if (DateTime.fromISO(fromDate) > DateTime.fromISO(toDate)) {
-          return response.badRequest({ message: "INVALID_DATE_RANGE" })
-        }
-        data = await Triwulan.query()
-          .whereILike('name', `%${keyword}%`)
-          .andWhere(query => {
+      if (DateTime.fromISO(fromDate) > DateTime.fromISO(toDate)) {
+        return response.badRequest({ message: "INVALID_DATE_RANGE" })
+      }
+      const data = await Triwulan.query()
+        .whereILike('name', `%${keyword}%`)
+        .andWhere(query => {
+          if (fromDate && toDate) {
             query.whereBetween('from_date', [fromDate, toDate])
             query.orWhereBetween('to_date', [fromDate, toDate])
-          })
-          .preload('unit', u => u.select('name'))
-          .if(!superAdmin, query => {
-            query.whereIn('unit_id', unitIds)
-          })
-          .paginate(page, limit)
-      } else {
-        data = await Triwulan.query()
-          .whereILike('name', `%${keyword}%`)
-          .preload('unit', u => u.select('name'))
-          .if(!superAdmin, query => {
-            query.whereIn('unit_id', unitIds)
-          })
-          .paginate(page, limit)
-      }
+          }
+        })
+        .preload('unit', u => u.select('name'))
+        .if(!roles.includes('super_admin') && !roles.includes('admin_foundation'), query => {
+          query.whereIn('unit_id', unitIds)
+        })
+        .if(roles.includes('admin_foundation'), query => {
+          query.whereHas('unit', u => u.where('foundation_id', user!.employee.foundationId))
+        })
+        .paginate(page, limit)
+
 
       CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Data Berhasil Didapatkan", data })
@@ -203,21 +209,21 @@ export default class TriwulansController {
           const triwulanEmployeeDetail = result.triwulanEmployeeDetail
           const penilai = result.penilai
           const dataUnit = await Unit.query()
-          .select('id', 'signature')
-          .where('id', triwulan.unitId)
-          .preload('employeeUnits', eu =>
-            eu
-              .select('id', 'employee_id')
-              .where('title', 'lead')
-              .preload('employee', e => e.select('name')))
-          .first()
+            .select('id', 'signature', 'name')
+            .where('id', triwulan.unitId)
+            .preload('employeeUnits', eu =>
+              eu
+                .select('id', 'employee_id')
+                .where('title', 'lead')
+                .preload('employee', e => e.select('name')))
+            .first()
 
           const dataUnitObject = {
             id: dataUnit?.id,
             name: dataUnit?.name,
             signature: dataUnit?.signature ? await this.getSignedUrl(dataUnit.signature) : null,
-            unit_lead_employee_id: dataUnit?.employeeUnits[0].employee.id,
-            unit_lead_employee_name: dataUnit?.employeeUnits[0].employee.name
+            unit_lead_employee_id: dataUnit!.employeeUnits.length > 0 ? dataUnit?.employeeUnits[0].employee.id : null,
+            unit_lead_employee_name: dataUnit!.employeeUnits.length > 0 ? dataUnit?.employeeUnits[0].employee.name : null
           }
 
           datas.push({ dataEmployee, triwulanEmployee, triwulanEmployeeDetail, penilai, dataUnit: dataUnitObject })
@@ -273,13 +279,13 @@ export default class TriwulansController {
                 .preload('employee', e => e.select('name')))
             .first()
 
-            const dataUnitObject = {
-              id: dataUnit?.id,
-              name: dataUnit?.name,
-              signature: dataUnit?.signature ? await this.getSignedUrl(dataUnit.signature) : null,
-              unit_lead_employee_id: dataUnit?.employeeUnits[0].employee.id,
-              unit_lead_employee_name: dataUnit?.employeeUnits[0].employee.name
-            }
+          const dataUnitObject = {
+            id: dataUnit?.id,
+            name: dataUnit?.name,
+            signature: dataUnit?.signature ? await this.getSignedUrl(dataUnit.signature) : null,
+            unit_lead_employee_id: dataUnit?.employeeUnits[0].employee.id,
+            unit_lead_employee_name: dataUnit?.employeeUnits[0].employee.name
+          }
 
           datas.push({ dataEmployee, triwulanEmployee, triwulanEmployeeDetail, penilai, dataUnit: dataUnitObject })
         }
@@ -321,8 +327,17 @@ export default class TriwulansController {
       const triwulan = await Triwulan.findOrFail(id);
 
       // cek lead unit
-      const superAdmin = await checkRoleSuperAdmin()
-      if (!superAdmin) {
+      const user = await User.query()
+        .preload('employee', e => e
+          .select('id', 'name', 'foundation_id'))
+        .preload('roles', r => r
+          .preload('role'))
+        .where('employee_id', auth.user!.$attributes.employeeId)
+        .first()
+      const userObject = JSON.parse(JSON.stringify(user))
+
+      const roles = await RolesHelper(userObject)
+      if (!roles.includes('super_admin') && !roles.includes('admin_foundation')) {
         const unitLead = await EmployeeUnit.query()
           .where('employee_id', auth.user!.$attributes.employeeId)
           .andWhere('title', 'lead')
@@ -359,8 +374,17 @@ export default class TriwulansController {
       const data = await Triwulan.findOrFail(id);
 
       // cek lead unit
-      const superAdmin = await checkRoleSuperAdmin()
-      if (!superAdmin) {
+      const user = await User.query()
+        .preload('employee', e => e
+          .select('id', 'name', 'foundation_id'))
+        .preload('roles', r => r
+          .preload('role'))
+        .where('employee_id', auth.user!.$attributes.employeeId)
+        .first()
+      const userObject = JSON.parse(JSON.stringify(user))
+
+      const roles = await RolesHelper(userObject)
+      if (!roles.includes('super_admin') && !roles.includes('admin_foundation')) {
         const unitLead = await EmployeeUnit.query()
           .where('employee_id', auth.user!.$attributes.employeeId)
           .andWhere('title', 'lead')

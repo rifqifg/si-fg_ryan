@@ -300,7 +300,7 @@ export default class SubActivitiesController {
         });
       }
 
-      if (roles.includes('super_admin') || roles.includes('admin_hrd')|| memberManager.length > 0) { // buat ngecek yang berwenang absen membernya
+      if (roles.includes('super_admin') || roles.includes('admin_hrd')|| memberManager.length > 0 || roles.includes('admin_foundation')) { // buat ngecek yang berwenang absen membernya
         if (payload.presences.length > 0 && hasDuplicateEmployeeId(payload.presences)) { return response.badRequest({ message: "Employee_ID Duplicated" }); }
         const data = await Presence.createMany(payload.presences)
         CreateRouteHist(statusRoutes.FINISH, dateStart)

@@ -23,6 +23,7 @@ import { StatusEmployees } from "App/lib/enum";
 import EmployeeUnit from "./EmployeeUnit";
 import User from "./User";
 import Foundation from "App/Modules/Foundation/Models/Foundation";
+import Unit from "./Unit";
 let newId = "";
 
 export default class Employee extends BaseModel {
@@ -147,8 +148,8 @@ export default class Employee extends BaseModel {
   @column()
   public status: StatusEmployees
 
-  @hasMany(() => EmployeeUnit)
-  public unit: HasMany<typeof EmployeeUnit>
+  @hasMany(() => Unit)
+  public unit: HasMany<typeof Unit>
 
   @column()
   public foundationId: string;

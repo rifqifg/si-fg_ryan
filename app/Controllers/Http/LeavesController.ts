@@ -69,7 +69,9 @@ export default class LeavesController {
 
         data = await Leave.query()
           .preload('employee', em => em.select('name'))
-          .preload('unit', u => u.select('name'))
+          .preload('unit', u => u.select('id', 'name')
+            .preload('employeeUnits', eu => eu
+              .where('title', 'lead')))
           .andWhere(query => {
             if (fromDate && toDate) {
               query.whereBetween('from_date', [fromDate, toDate])
@@ -110,7 +112,9 @@ export default class LeavesController {
         data = await Leave.query()
           .select('id', 'employee_id', 'status', 'reason', 'from_date', 'to_date', 'type', 'leaveStatus', 'unit_id', 'image')
           .preload('employee', em => em.select('name'))
-          .preload('unit', u => u.select('name'))
+          .preload('unit', u => u.select('id', 'name')
+            .preload('employeeUnits', eu => eu
+              .where('title', 'lead')))
           .whereHas('employee', e => e.whereILike('name', `%${keyword}%`))
           .andWhere(query => {
             if (fromDate && toDate) {

@@ -93,9 +93,14 @@ export default class MonthlyReport extends BaseModel {
   public static async generateMonthlyReportEmployee(monthlyReport: MonthlyReport) {
     const { request } = HttpContext.get()!
     const { fromDate, toDate }: any = JSON.parse(request.raw()!)
+    const { unitId }: any = JSON.parse(request.raw()!)
     try {
       if (fromDate && toDate) {
-        const employeeIds = await Employee.query().select('id').whereNull('date_out')
+        const employeeIds = await Employee
+          .query()
+          .select('id')
+          .whereNull('date_out')
+          .andWhereHas('employeeUnits', employeeUnit => employeeUnit.where('unit_id', unitId))
         const dataObject = JSON.parse(JSON.stringify(employeeIds))
 
         dataObject.map(async (value) => (

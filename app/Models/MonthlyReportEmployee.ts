@@ -10,7 +10,7 @@ import Leave from './Leave'
 import Database from '@ioc:Adonis/Lucid/Database'
 import LeaveSession from './LeaveSession'
 import TeacherAttendance from 'App/Modules/Academic/Models/TeacherAttendance'
-import Activity from './Activity'
+// import Activity from './Activity'
 let newId = ""
 
 export default class MonthlyReportEmployee extends BaseModel {
@@ -128,22 +128,22 @@ export default class MonthlyReportEmployee extends BaseModel {
           })
         })
 
-          // let activityNotFixedTime = await Activity.query()
-          //   .select('id')
-          //   .where('activity_type', 'not_fixed_time')
-          //   .andWhere('unit_id', unitId)
-          //   .andWhere('assessment', true)
-          //   .andWhereNotIn('id', activityId)
+        // let activityNotFixedTime = await Activity.query()
+        //   .select('id')
+        //   .where('activity_type', 'not_fixed_time')
+        //   .andWhere('unit_id', unitId)
+        //   .andWhere('assessment', true)
+        //   .andWhereNotIn('id', activityId)
 
-          // // TODO: benerin penamaan variable, terus testing akt tidak tetap
-          // const dataActivityFixedTimeObject = JSON.parse(JSON.stringify(activityNotFixedTime))
-          // dataActivityFixedTimeObject.map(async aft => {
-          //   await MonthlyReportEmployeeDetail.create({
-          //     skor: 0,
-          //     activityId: aft.id,
-          //     monthlyReportEmployeeId: monthlyReportEmployee.id
-          //   })
-          // })
+        // // TODO: benerin penamaan variable, terus testing akt tidak tetap
+        // const dataActivityFixedTimeObject = JSON.parse(JSON.stringify(activityNotFixedTime))
+        // dataActivityFixedTimeObject.map(async aft => {
+        //   await MonthlyReportEmployeeDetail.create({
+        //     skor: 0,
+        //     activityId: aft.id,
+        //     monthlyReportEmployeeId: monthlyReportEmployee.id
+        //   })
+        // })
       }
       // else {
       //   let activityNotFixedTime = await Activity.query()
@@ -258,11 +258,20 @@ const countLeaveEmloyees = async (monthlyReportEmployee, fromDate, unitId) => {
   const leaveEmployees = await Leave.query()
     .select('employee_id')
     .select(Database.raw(`(case when (select status from employees where id = '${monthlyReportEmployee.employeeId}') = 'FULL_TIME' then 6 else 3 end) - (sum(to_date - from_date + 1)) as sisa_jatah_cuti`))
+    // .select(Database.raw(`
+    //   STRING_AGG(
+    //     CASE
+    //         WHEN from_date = to_date THEN TO_CHAR(to_date, 'DD Month') || ': ' || reason
+    //         ELSE TO_CHAR(from_date, 'DD') || '-' || TO_CHAR(to_date, 'DD Month') || ': ' || reason
+    //     END,
+    //     ', '
+    //   ) AS reasons
+    //   `))
     .select(Database.raw(`
       STRING_AGG(
         CASE
-            WHEN from_date = to_date THEN TO_CHAR(to_date, 'DD Month') || ': ' || reason
-            ELSE TO_CHAR(from_date, 'DD') || '-' || TO_CHAR(to_date, 'DD Month') || ': ' || reason
+            WHEN from_date = to_date THEN TO_CHAR(to_date, 'DD Month')
+            ELSE TO_CHAR(from_date, 'DD') || '-' || TO_CHAR(to_date, 'DD Month')
         END,
         ', '
       ) AS reasons
@@ -291,7 +300,8 @@ const countLeaveSessionEmployee = async (monthlyReportEmployee, fromDate, toDate
   const leaveSessionEmployee = await LeaveSession.query()
     .select('employee_id')
     .select(Database.raw(`to_char(INTERVAL '1 second' * SUM(EXTRACT(EPOCH FROM (to_time - from_time))), 'HH24:MI:SS') AS elapsed_time`))
-    .select(Database.raw(`(string_agg(TO_CHAR(date, 'DD Month') || ' izin jam ' || to_char(from_time, 'HH24:MI') || '-' || to_char(to_time, 'HH24:MI') || ', Note: ' || note, ' | ' )) AS notes`))
+    // .select(Database.raw(`(string_agg(TO_CHAR(date, 'DD Month') || ' izin jam ' || to_char(from_time, 'HH24:MI') || '-' || to_char(to_time, 'HH24:MI') || ', Note: ' || note, ' | ' )) AS notes`))
+    .select(Database.raw(`(string_agg(TO_CHAR(date, 'DD Month') || ' izin jam ' || to_char(from_time, 'HH24:MI') || '-' || to_char(to_time, 'HH24:MI'), ' | ' )) AS notes`))
     .where('employee_id', monthlyReportEmployee.employeeId)
     .andWhere('status', 'aprove')
     .andWhere('unit_id', unitId)

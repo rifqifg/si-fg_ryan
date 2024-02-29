@@ -321,7 +321,7 @@ export default class LeaveSessionsController {
 
       // cek lead unit
       const superAdmin = await checkRoleSuperAdmin()
-      if (!superAdmin && payload.status) {
+      if (!userRoles.includes('super_admin') && !userRoles.includes('admin_foundation') && payload.status) {
         const unitLead = await EmployeeUnit.query()
           .where('employee_id', auth.user!.$attributes.employeeId)
           .andWhere('title', 'lead')

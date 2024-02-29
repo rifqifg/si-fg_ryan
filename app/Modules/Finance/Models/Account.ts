@@ -47,7 +47,7 @@ export default class Account extends BaseModel {
   public type: BillingType | null
 
   @column()
-  public refAmount: number
+  public refAmount: number | null
 
   @belongsTo(() => Coa)
   public coa: BelongsTo<typeof Coa>
@@ -65,7 +65,7 @@ export default class Account extends BaseModel {
     foreignKey: 'fromAccount'
   })
   public revenues: HasMany<typeof Revenue>
-  
+
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
 

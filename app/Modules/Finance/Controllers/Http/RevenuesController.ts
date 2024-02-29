@@ -1,9 +1,7 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import fs from "fs";
 import XLSX from "xlsx";
-import { HttpContext } from '@adonisjs/core/build/standalone';
-import CreateManyRevenueValidator from '../../Validators/CreateManyRevenueValidator';
-import { validator, schema } from '@ioc:Adonis/Core/Validator'
+import { schema } from '@ioc:Adonis/Core/Validator'
 import Account from '../../Models/Account';
 import { RevenueStatus } from '../../lib/enums';
 import Revenue from '../../Models/Revenue';
@@ -241,11 +239,57 @@ export default class RevenuesController {
 
       if (jsonData == 0) return response.badRequest({ message: "Data tidak boleh kosong" })
 
-      const wrappedJson = { "revenues": jsonData }
-      const manyRevenueValidator = new CreateManyRevenueValidator(HttpContext.get()!, wrappedJson)
-      const payloadRevenue = await validator.validate(manyRevenueValidator)
+      // cek duplikat revenue, by no. referensi
+      const duplicateRevenue = await Revenue.query()
+        .whereIn('ref_no', jsonData.map(revenue => revenue.ref_no))
 
-      const data = await Revenue.createMany(payloadRevenue.revenues)
+      if (duplicateRevenue.length > 0) {
+        const refs = duplicateRevenue.map(revenue => revenue.refNo)
+        return response.badRequest({message: `Data dengan No. Referensi ${refs} sudah ada di database`})
+      }
+
+      // filter duplikat no. rek.
+      const uniqueJsonData = this.filterUniqueAccountNumber(jsonData)
+
+      // cek apakah no. rekening sudah ada utk revenue yg akan diimport...
+      const existingAccounts = await Account.query()
+        .whereIn('number', uniqueJsonData.map(revenue => revenue.account_number))
+
+      const existingAccountNo = existingAccounts.map(ea => ea.number)
+
+      const newAccounts = uniqueJsonData.filter(revenue => {
+        return !existingAccountNo.includes(revenue.account_number)
+      })
+
+      // TODO: set jenis rekening by format no. rek.
+
+      // ...jika no rek. belum exist, dibikin dlu
+      if (newAccounts.length > 0) {
+        await Account.createMany(newAccounts.map(newAcc => ({
+          accountName: newAcc.name,
+          number: newAcc.account_number,
+          balance: 0,
+        })))
+      }
+
+      // masukkan id account ke array jsonData..
+      // .. sebelum itu, karena ada account baru, maka select account lagi
+      const accounts = await Account.query()
+        .whereIn('number', uniqueJsonData.map(revenue => revenue.account_number))
+
+      const jsonDataWithAccountId = jsonData.map(revenue => {
+        const match = accounts.find(a => a.number === revenue.account_number)
+        return {...revenue, accountId: match!.id}
+      })
+
+      const data = await Revenue.createMany(jsonDataWithAccountId.map(revenue => ({
+        refNo: revenue.ref_no,
+        fromAccount: revenue.accountId,
+        amount: revenue.amount,
+        currentBalance: revenue.current_balance,
+        timeReceived: revenue.time_received,
+        status: RevenueStatus.NEW
+      })))
 
       CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.created({ message: "Berhasil import data", data })
@@ -258,6 +302,18 @@ export default class RevenuesController {
         error_data: error
       })
     }
+  }
+
+  // hanya ambil objek dgn no. rek unik
+  private filterUniqueAccountNumber(arr) {
+    let unique = new Set()
+    return arr.filter(obj => {
+      if (!unique.has(obj.account_number)) {
+        unique.add(obj.account_number)
+        return true
+      }
+      return false
+    })
   }
 
   private static async spreadsheetToJSON(excelBuffer) {
@@ -277,16 +333,16 @@ export default class RevenuesController {
       const jsDate = new Date((data["Tanggal"] - 25569) * 86400 * 1000)
 
       // pembulatan biaya admin BSI
-      const fixedNominal = data["Nominal"] + 3000
+      const fixedNominal = data["Nominal dibayar"] + 3000
 
-      // jika data rekening dgn "No Pembayaran" ngga ada di db, isi accountId dgn impossible value
-      const noPembayaran = data["No Pembayaran"] ? data["No Pembayaran"].toString() : "-1"
-      const account = await Account.query().where('number', noPembayaran).first()
-      const accountId = account ? account.id : '00000000-0000-0000-0000-000000000000'
-
+      // TODO: hapus kolom yg bukan dari excel
+      // TODO: get NISN
       return {
-        from_account: accountId,
-        time_received: jsDate,
+        name: data["Nama"],
+        account_number: data["No Pembayaran"].toString(),
+        invoice_number: data["No Invoice"],
+        invoice_amount: data["Nominal Invoice"],
+        time_received: DateTime.fromJSDate(jsDate),
         current_balance: fixedNominal,
         amount: fixedNominal,
         status: RevenueStatus.NEW,

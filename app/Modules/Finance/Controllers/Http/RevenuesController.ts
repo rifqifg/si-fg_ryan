@@ -33,9 +33,7 @@ export default class RevenuesController {
     }
 
     try {
-      let data: Revenue[]
-      if (mode === 'page') {
-        data = await Revenue.query()
+      const data = await Revenue.query()
           .preload('account', qAccount => {
             qAccount.preload('student', qStudent => {
               qStudent.select('name')
@@ -44,20 +42,9 @@ export default class RevenuesController {
           .if(academic_year_id, q => {
             q.andWhereBetween('time_received', [`${academicYearBegin}-07-01`, `${academicYearEnd}-06-30`])
           })
+          .whereHas('account', q => q.whereILike('account_name', `%${keyword}%`))
           .preload('transactions', qTransaction => qTransaction.preload('billings', qBilling => qBilling.pivotColumns(['amount'])))
           .paginate(page, limit);
-      } else {
-        data = await Revenue.query().whereILike('account_name', `%${keyword}%`)
-      }
-
-      data.map(revenue => {
-        if (revenue.account) {
-          if (revenue.account.student) { revenue.account.owner = revenue.account.student.name }
-          if (revenue.account.employee) { revenue.account.owner = revenue.account.employee.name }
-        }
-
-        return revenue
-      })
 
       CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil mengambil data", data });
@@ -242,7 +229,6 @@ export default class RevenuesController {
       // cek duplikat revenue, by no. referensi
       const duplicateRevenue = await Revenue.query()
         .whereIn('ref_no', jsonData.map(revenue => revenue.ref_no))
-
       if (duplicateRevenue.length > 0) {
         const refs = duplicateRevenue.map(revenue => revenue.refNo)
         return response.badRequest({message: `Data dengan No. Referensi ${refs} sudah ada di database`})
@@ -254,9 +240,7 @@ export default class RevenuesController {
       // cek apakah no. rekening sudah ada utk revenue yg akan diimport...
       const existingAccounts = await Account.query()
         .whereIn('number', uniqueJsonData.map(revenue => revenue.account_number))
-
       const existingAccountNo = existingAccounts.map(ea => ea.number)
-
       const newAccounts = uniqueJsonData.filter(revenue => {
         return !existingAccountNo.includes(revenue.account_number)
       })

@@ -434,7 +434,7 @@ export default class LeavesController {
           .andWhere('title', 'lead')
           .first()
 
-        if (unitLead?.unitId !== data.unitId && unitLead?.employeeId === data.employeeId) {
+        if (unitLead?.unitId !== data.unitId) {
           return response.badRequest({ message: "Gagal menghapus data dikarenakan anda bukan ketua unit tersebut" });
         }
       }

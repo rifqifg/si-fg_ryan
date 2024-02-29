@@ -70,9 +70,15 @@ export default class MonthlyReportEmployee extends BaseModel {
     const { request } = HttpContext.get()!
     const { fromDate, toDate, unitId }: any = JSON.parse(request.raw()!)
 
+    let data
+    if (!unitId) {
+      const { id } = request.params()
+      data = await MonthlyReport.query().where('id', id).first()
+    }
+
     try {
       // Menghitung Presensi employee Aktifitas yang tetap
-      const presenceEmployeeFixedTime = await countPresenceEMployeeFixedTime(monthlyReportEmployee, fromDate, toDate, unitId)
+      const presenceEmployeeFixedTime = await countPresenceEMployeeFixedTime(monthlyReportEmployee, fromDate, toDate, unitId ? unitId : data?.unitId)
       if (presenceEmployeeFixedTime.length > 0) {
         // TODO: work on this
         let activityId: any = []
@@ -116,7 +122,7 @@ export default class MonthlyReportEmployee extends BaseModel {
       // }
 
       // Menghitung Presensi employee Aktifitas yang tidak tetap
-      const presenceEmployeeNotFixedTime = await countPresenceEMployeeNotFixedTime(monthlyReportEmployee, fromDate, toDate, unitId)
+      const presenceEmployeeNotFixedTime = await countPresenceEMployeeNotFixedTime(monthlyReportEmployee, fromDate, toDate, unitId ? unitId : data?.unitId)
       let activityId: any = []
       if (presenceEmployeeNotFixedTime.length > 0) {
         presenceEmployeeNotFixedTime.map(async value => {
@@ -162,7 +168,7 @@ export default class MonthlyReportEmployee extends BaseModel {
       // }
 
       //menghitung sisa jumlah cuti
-      const leaveEmployee = await countLeaveEmloyees(monthlyReportEmployee, fromDate, unitId)
+      const leaveEmployee = await countLeaveEmloyees(monthlyReportEmployee, fromDate, unitId ? unitId : data?.unitId)
       if (leaveEmployee) {
         await MonthlyReportEmployeeDetail.create({
           skor: leaveEmployee.sisa_jatah_cuti,
@@ -173,7 +179,7 @@ export default class MonthlyReportEmployee extends BaseModel {
       }
 
       //menghitung izin persesi
-      const leaveSessionEmployee = await countLeaveSessionEmployee(monthlyReportEmployee, fromDate, toDate, unitId)
+      const leaveSessionEmployee = await countLeaveSessionEmployee(monthlyReportEmployee, fromDate, toDate, unitId ? unitId : data?.unitId)
       if (leaveSessionEmployee) {
         await MonthlyReportEmployeeDetail.create({
           totalLeaveSession: leaveSessionEmployee.elapsed_time,

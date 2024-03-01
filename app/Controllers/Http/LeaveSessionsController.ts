@@ -86,13 +86,13 @@ export default class LeaveSessionsController {
             }
           })
           .if(!roles.includes('super_admin') && !roles.includes('admin_foundation') && unitLeadObject && keyword === "" && status === "", query => {
-            // query.where('unit_id', unitLeadObject.unit_id)
-            query.whereIn('unit_id', unitIds)
+            query.where('unit_id', unitLeadObject.unit_id)
+            // query.whereIn('unit_id', unitIds)
             query.orWhere('employee_id', auth.user!.$attributes.employeeId)
           })
           .if(!roles.includes('super_admin') && !roles.includes('admin_foundation') && unitLeadObject && (keyword !== "" || status !== ""), query => {
-            // query.where('unit_id', unitLeadObject.unit_id)
-            query.whereIn('unit_id', unitIds)
+            query.where('unit_id', unitLeadObject.unit_id)
+            // query.whereIn('unit_id', unitIds)
             query.andWhereHas('employee', e => e.whereILike('name', `%${keyword}%`))
             query.andWhereILike('status', `%${status}%`)
             query.orWhere('employee_id', auth.user!.$attributes.employeeId)

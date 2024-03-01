@@ -92,17 +92,17 @@ export default class LeavesController {
           // })
           // .if(!superAdmin && unitLeadObject && (keyword !== "" || status !== ""), query => {
           .if(!roles.includes('super_admin') && !roles.includes('admin_foundation') && unitLeadObject, query => {
-            // query.where('unit_id', unitLeadObject.unit_id)
-            query.andWhereIn('unit_id', unitIds)
+            query.where('unit_id', unitLeadObject.unit_id)
+            // query.andWhereIn('unit_id', unitIds)
             query.andWhere((query) => {
               query.andWhereHas('employee', e => e.whereILike('name', `%${keyword}%`))
               query.andWhereILike('status', `%${status}%`)
               query.andWhereILike('leave_status', `%${leaveStatus}%`)
             })
-            // query.orWhere('employee_id', auth.user!.$attributes.employeeId)
-            //   .andWhereHas('employee', e => e.whereILike('name', `%${keyword}%`))
-            //   .andWhereILike('status', `%${status}%`)
-            //   .andWhereILike('leave_status', `%${leaveStatus}%`)
+            query.orWhere('employee_id', auth.user!.$attributes.employeeId)
+              .andWhereHas('employee', e => e.whereILike('name', `%${keyword}%`))
+              .andWhereILike('status', `%${status}%`)
+              .andWhereILike('leave_status', `%${leaveStatus}%`)
           })
           .if(roles.includes('admin_hrd') && !unitLeadObject, query => {
             query.andWhereIn('unit_id', unitIds)

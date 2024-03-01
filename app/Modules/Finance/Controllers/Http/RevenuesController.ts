@@ -3,7 +3,7 @@ import fs from "fs";
 import XLSX from "xlsx";
 import { schema } from '@ioc:Adonis/Core/Validator'
 import Account from '../../Models/Account';
-import { RevenueStatus } from '../../lib/enums';
+import { BillingType, RevenueStatus } from '../../lib/enums';
 import Revenue from '../../Models/Revenue';
 import { validate as uuidValidation } from "uuid"
 import UpdateRevenueValidator from '../../Validators/UpdateRevenueValidator';
@@ -247,13 +247,29 @@ export default class RevenuesController {
         return !existingAccountNo.includes(revenue.account_number)
       })
 
-      // TODO: set jenis rekening by format no. rek.
+      // set tipe rekening by format no. rek.
+      newAccounts.map(newAccount => {
+        const accountNo = newAccount.account_number.toString()
+
+        if (accountNo.startsWith('55')) newAccount.type = BillingType.FG_EXTRA
+        else if (accountNo.startsWith('1')) newAccount.type = BillingType.BP
+        else {
+          const firstTwo = accountNo.substring(0, 2) // dua digit pertama
+          const secondTwo = accountNo.substring(2, 4) // digit ke 3 dan 4
+
+          const incremented = (parseInt(firstTwo) + 1).toString()
+          if (incremented === secondTwo) {
+            newAccount.type = BillingType.SPP
+          }
+        }
+      })
 
       // ...jika no rek. belum exist, dibikin dlu
       if (newAccounts.length > 0) {
         await Account.createMany(newAccounts.map(newAcc => ({
           accountName: newAcc.name,
           number: newAcc.account_number,
+          type: newAcc.type,
           balance: 0,
         })))
       }

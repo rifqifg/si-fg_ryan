@@ -230,8 +230,10 @@ export default class RevenuesController {
       const duplicateRevenue = await Revenue.query()
         .whereIn('ref_no', jsonData.map(revenue => revenue.ref_no))
       if (duplicateRevenue.length > 0) {
-        const refs = duplicateRevenue.map(revenue => revenue.refNo)
-        return response.badRequest({message: `Data dengan No. Referensi ${refs} sudah ada di database`})
+        const errors = duplicateRevenue.map(revenue => ({
+          item: `Data dengan No. Referensi ${revenue.refNo} sudah ada di database`
+        }))
+        return response.badRequest({ message: errors })
       }
 
       // filter duplikat no. rek.

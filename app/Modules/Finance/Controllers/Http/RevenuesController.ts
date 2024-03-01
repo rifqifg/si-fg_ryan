@@ -271,6 +271,8 @@ export default class RevenuesController {
         fromAccount: revenue.accountId,
         amount: revenue.amount,
         currentBalance: revenue.current_balance,
+        invoiceAmount: revenue.invoice_amount,
+        invoiceNumber: revenue.invoice_number,
         timeReceived: revenue.time_received,
         status: RevenueStatus.NEW
       })))

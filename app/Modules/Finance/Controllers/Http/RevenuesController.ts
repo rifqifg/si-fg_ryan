@@ -17,7 +17,7 @@ export default class RevenuesController {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
 
-    const { page = 1, limit = 10, keyword = "", mode = "page" } = request.qs();
+    const { page = 1, limit = 10, keyword = "" } = request.qs();
 
     const { academic_year_id } = request.qs();
 
@@ -34,17 +34,17 @@ export default class RevenuesController {
 
     try {
       const data = await Revenue.query()
-          .preload('account', qAccount => {
-            qAccount.preload('student', qStudent => {
-              qStudent.select('name')
-            })
+        .preload('account', qAccount => {
+          qAccount.preload('student', qStudent => {
+            qStudent.select('name')
           })
-          .if(academic_year_id, q => {
-            q.andWhereBetween('time_received', [`${academicYearBegin}-07-01`, `${academicYearEnd}-06-30`])
-          })
-          .whereHas('account', q => q.whereILike('account_name', `%${keyword}%`))
-          .preload('transactions', qTransaction => qTransaction.preload('billings', qBilling => qBilling.pivotColumns(['amount'])))
-          .paginate(page, limit);
+        })
+        .if(academic_year_id, q => {
+          q.andWhereBetween('time_received', [`${academicYearBegin}-07-01`, `${academicYearEnd}-06-30`])
+        })
+        .whereHas('account', q => q.whereILike('account_name', `%${keyword}%`))
+        .preload('transactions', qTransaction => qTransaction.preload('billings', qBilling => qBilling.pivotColumns(['amount'])))
+        .paginate(page, limit);
 
       CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil mengambil data", data });
@@ -316,8 +316,8 @@ export default class RevenuesController {
       // konversi tanggal excel ke js
       const jsDate = new Date((data["Tanggal"] - 25569) * 86400 * 1000)
 
-      // pembulatan biaya admin BSI
-      const fixedNominal = data["Nominal dibayar"] + 3000
+      // pembulatan biaya admin BSI, jika nominal transfer tidak 0
+      const fixedNominal = (data["Nominal dibayar"] === 0) ? data["Nominal dibayar"] : data["Nominal dibayar"] + 3000
 
       // TODO: hapus kolom yg bukan dari excel
       // TODO: get NISN

@@ -324,7 +324,7 @@ const countTeachingEmployee = async (monthlyReportEmployee, fromDate, toDate) =>
   const teachingEmployee = await TeacherAttendance.query()
     .whereBetween('date_in', [fromDate, toDate])
     .andWhereHas('teacher', t => t.whereHas('employee', e => e.where('id', monthlyReportEmployee.employeeId)))
-    .andWhere('status', 'teach')
+    .andWhereIn('status', ['teach', 'exam', 'homework']) //
     .count('*', 'teach')
 
   const teachingEmployeeObject = JSON.parse(JSON.stringify(teachingEmployee))

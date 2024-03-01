@@ -328,16 +328,16 @@ export default class RevenuesController {
 
     // membaca isi dari sheet pertama
     const firstSheet = workbook.Sheets[sheetNames[0]]
-    const jsonData: Array<object> = XLSX.utils.sheet_to_json(firstSheet)
+    const jsonData: Array<object> = XLSX.utils.sheet_to_json(firstSheet, {raw: false, dateNF: 'dd/mm/yyyy'})
 
     if (jsonData.length < 1) return 0
 
     const formattedJson = await Promise.all(jsonData.map(async data => {
-      // konversi tanggal excel ke js
-      const jsDate = new Date((data["Tanggal"] - 25569) * 86400 * 1000)
+      const luxonDate = DateTime.fromFormat(data["Tanggal"], 'dd/MM/yyyy')
 
       // pembulatan biaya admin BSI, jika nominal transfer tidak 0
-      const fixedNominal = (data["Nominal dibayar"] === 0) ? data["Nominal dibayar"] : data["Nominal dibayar"] + 3000
+      const parsedNominal = parseInt(data["Nominal dibayar"])
+      const fixedNominal = (parsedNominal === 0) ? parsedNominal : parsedNominal + 3000
 
       // TODO: hapus kolom yg bukan dari excel
       // TODO: get NISN
@@ -345,8 +345,8 @@ export default class RevenuesController {
         name: data["Nama"],
         account_number: data["No Pembayaran"].toString(),
         invoice_number: data["No Invoice"],
-        invoice_amount: data["Nominal Invoice"],
-        time_received: DateTime.fromJSDate(jsDate),
+        invoice_amount: parseInt(data["Nominal Invoice"]),
+        time_received: luxonDate,
         current_balance: fixedNominal,
         amount: fixedNominal,
         status: RevenueStatus.NEW,

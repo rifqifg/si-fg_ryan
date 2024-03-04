@@ -72,7 +72,7 @@ export default class EmployeesController {
     response.ok({ message: "Data Berhasil Didapatkan", data });
   }
 
-  public async getEmployee({ request, response }: HttpContextContract) {
+  public async getEmployee({ request, response, auth }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
     const {
@@ -81,7 +81,8 @@ export default class EmployeesController {
       divisionId = "",
       orderBy = "name",
       orderDirection = "ASC",
-      activityId
+      activityId,
+      foundationId
     } = request.qs();
 
     let unitId
@@ -93,6 +94,17 @@ export default class EmployeesController {
 
       unitId = activity?.unitId
     }
+
+    const user = await User.query()
+      .preload('employee', e => e
+        .select('id', 'name', 'foundation_id'))
+      .preload('roles', r => r
+        .preload('role'))
+      .where('employee_id', auth.user!.$attributes.employeeId)
+      .first()
+
+    const userObject = JSON.parse(JSON.stringify(user))
+    const roles = await RolesHelper(userObject)
 
     const data = await Employee.query()
       .select("*")
@@ -119,6 +131,11 @@ export default class EmployeesController {
       .if(unitId, query => query
         .whereHas('employeeUnits', u => u
           .where('unit_id', unitId)))
+      .if(!roles.includes('super_admin'), query => query
+        .where('foundation_id', user!.employee.foundationId)
+      )
+      .if(roles.includes('super_admin') && foundationId, query => query
+        .where('foundation_id', foundationId))
       .orderBy(orderBy, orderDirection)
 
     CreateRouteHist(statusRoutes.FINISH, dateStart)

@@ -57,7 +57,9 @@ export default class TriwulansController {
             query.orWhereBetween('to_date', [fromDate, toDate])
           }
         })
-        .preload('unit', u => u.select('name'))
+        .preload('unit', u => u.select('id', 'name')
+          .preload('employeeUnits', eu => eu
+            .where('title', 'lead')))
         .if(!roles.includes('super_admin') && !roles.includes('admin_foundation'), query => {
           query.whereIn('unit_id', unitIds)
         })

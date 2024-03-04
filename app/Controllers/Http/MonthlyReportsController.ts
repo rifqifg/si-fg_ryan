@@ -71,7 +71,9 @@ export default class MonthlyReportsController {
         .if(roles.includes('admin_foundation'), query => {
           query.whereHas('unit', u => u.where('foundation_id', user!.employee.foundationId))
         })
-        .preload('unit')
+        .preload('unit', u => u.select('id', 'name')
+          .preload('employeeUnits', eu => eu
+            .where('title', 'lead')))
         .paginate(page, limit)
 
       CreateRouteHist(statusRoutes.FINISH, dateStart)

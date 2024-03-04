@@ -70,7 +70,9 @@ export default class LeaveSessionsController {
 
         data = await LeaveSession.query()
           .preload('employee', em => em.select('name'))
-          .preload('unit', u => u.select('name'))
+          .preload('unit', u => u.select('id', 'name')
+            .preload('employeeUnits', eu => eu
+              .where('title', 'lead')))
           .andWhere(query => {
             if (fromDate && toDate) {
               query.whereBetween('date', [fromDate, toDate])
@@ -85,10 +87,12 @@ export default class LeaveSessionsController {
           })
           .if(!roles.includes('super_admin') && !roles.includes('admin_foundation') && unitLeadObject && keyword === "" && status === "", query => {
             query.where('unit_id', unitLeadObject.unit_id)
+            // query.whereIn('unit_id', unitIds)
             query.orWhere('employee_id', auth.user!.$attributes.employeeId)
           })
           .if(!roles.includes('super_admin') && !roles.includes('admin_foundation') && unitLeadObject && (keyword !== "" || status !== ""), query => {
             query.where('unit_id', unitLeadObject.unit_id)
+            // query.whereIn('unit_id', unitIds)
             query.andWhereHas('employee', e => e.whereILike('name', `%${keyword}%`))
             query.andWhereILike('status', `%${status}%`)
             query.orWhere('employee_id', auth.user!.$attributes.employeeId)
@@ -103,7 +107,9 @@ export default class LeaveSessionsController {
       } else {
         data = await LeaveSession.query()
           .preload('employee', em => em.select('name'))
-          .preload('unit', u => u.select('name'))
+          .preload('unit', u => u.select('id', 'name')
+            .preload('employeeUnits', eu => eu
+              .where('title', 'lead')))
           .whereHas('employee', e => e.whereILike('name', `%${keyword}%`))
           .andWhere(query => {
             if (fromDate && toDate) {
@@ -315,7 +321,7 @@ export default class LeaveSessionsController {
 
       // cek lead unit
       const superAdmin = await checkRoleSuperAdmin()
-      if (!superAdmin && payload.status) {
+      if (!userRoles.includes('super_admin') && !userRoles.includes('admin_foundation') && payload.status) {
         const unitLead = await EmployeeUnit.query()
           .where('employee_id', auth.user!.$attributes.employeeId)
           .andWhere('title', 'lead')
@@ -401,7 +407,7 @@ export default class LeaveSessionsController {
     }
   }
 
-  public async destroy({ params, response }: HttpContextContract) {
+  public async destroy({ params, response, auth }: HttpContextContract) {
     const { id } = params;
     if (!uuidValidation(id)) {
       return response.badRequest({ message: "LeaveSession ID tidak valid" });
@@ -409,6 +415,25 @@ export default class LeaveSessionsController {
 
     try {
       const data = await LeaveSession.findOrFail(id);
+
+      // cek role
+      const user = await User.query().preload('roles', r => r.preload('role')).where('id', auth.use('api').user!.id).firstOrFail()
+      const userObject = JSON.parse(JSON.stringify(user))
+
+      const roles = RolesHelper(userObject)
+
+      //cek lead
+      if (roles.includes('admin_hrd')) {
+        const unitLead = await EmployeeUnit.query()
+          .where('employee_id', auth.user!.$attributes.employeeId)
+          .andWhere('title', 'lead')
+          .first()
+
+        if (unitLead?.unitId !== data.unitId) {
+          return response.badRequest({ message: "Gagal menghapus data dikarenakan anda bukan ketua unit tersebut" });
+        }
+      }
+
       await data.delete();
       if (data.image) {
         await Drive.use('hrd').delete('leave_sessions/' + data.image)

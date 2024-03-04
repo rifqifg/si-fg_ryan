@@ -55,7 +55,7 @@ export default class ClassesController {
           .if(!roles.includes('super_admin'), query => query
             .where('foundation_id', user!.employee.foundationId)
           )
-          .if(roles.includes('super_admin'), query => query
+          .if(roles.includes('super_admin') && foundationId, query => query
             .where('foundation_id', foundationId))
           .withCount('students')
           .whereILike('name', `%${keyword}%`)

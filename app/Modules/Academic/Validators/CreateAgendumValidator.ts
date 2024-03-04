@@ -29,6 +29,7 @@ export default class CreateAgendumValidator {
     description: schema.string.optional([rules.trim()]),
     type: schema.enum(["NATIONAL_DAY", "HOLIDAY", "EVENT", "SCHOOL_AGENDA"]),
     date: schema.date({ format: "yyyy-MM-dd" }),
+    foundationId: schema.string.optional([rules.exists({table: 'foundation.foundations', column: 'id'})]),
   });
 
   /**

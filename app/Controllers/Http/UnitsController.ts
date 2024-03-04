@@ -177,9 +177,11 @@ export default class UnitsController {
 
     const payload = await request.validate(UpdateUnitValidator);
     const objectPayload = JSON.parse(JSON.stringify(payload))
-    const superAdmin = await checkRoleSuperAdmin()
+    const user = await User.query().preload('roles', r => r.preload('role')).where('id', auth.use('api').user!.id).firstOrFail()
+    const userObject = JSON.parse(JSON.stringify(user))
+    const roles = await RolesHelper(userObject)
 
-    if (!superAdmin) {
+    if (!roles.includes('super_admin') && !roles.includes('admin_foundation')) {
       //cek unit, apakah user yg login adalah lead atau bukan
       const checkUnit = await Unit.query()
         .whereHas('employeeUnits', eu => eu

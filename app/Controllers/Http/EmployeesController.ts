@@ -1,5 +1,6 @@
 import type { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import { checkRoleSuperAdmin } from "App/Helpers/checkRoleSuperAdmin";
+import { RolesHelper } from "App/Helpers/rolesHelper";
 import Activity from "App/Models/Activity";
 import Division from "App/Models/Division";
 import Employee from "App/Models/Employee";
@@ -185,7 +186,7 @@ export default class EmployeesController {
     }
   }
 
-  public async update({ params, request, response }: HttpContextContract) {
+  public async update({ params, request, response, auth }: HttpContextContract) {
     const { id } = params;
 
     const payload = await request.validate(UpdateEmployeeValidator);
@@ -196,7 +197,39 @@ export default class EmployeesController {
     }
 
     try {
-      const data = await Employee.findOrFail(id);
+      const data = await Employee.query()
+        .where('id', id)
+        .preload("employeeUnits", eu => eu.select('title', 'id', 'unit_id').preload('unit', u => u.select('name')))
+        .firstOrFail();
+
+      //cek lead unit
+      const user = await User.query()
+        .preload('employee', e => e
+          .select('id', 'name')
+          .preload('employeeUnits', eu => eu
+            .where('title', 'lead')
+            .preload('unit')))
+        .preload('roles', r => r
+          .preload('role'))
+        .where('id', auth.use('api').user!.id)
+        .firstOrFail()
+
+      const userObject = JSON.parse(JSON.stringify(user))
+      const roles = RolesHelper(userObject)
+      if (roles.includes('admin_hrd')) {
+        let aprove = false
+        // userObject.employee.employeeUnits[0].unit.id
+        data.employeeUnits.map(value => {
+          if (value.unit.id == userObject.employee.employeeUnits[0].unit.id) {
+            aprove = true
+          }
+        })
+
+        if (!aprove) {
+          return response.badRequest({ message: "Gagal update data employee dikarenakan anda bukan ketua unit tersebut" });
+        }
+      }
+
       await data.merge(payload).save();
 
       response.ok({ message: "Update data success", data });
@@ -206,10 +239,41 @@ export default class EmployeesController {
     }
   }
 
-  public async destroy({ params, response }: HttpContextContract) {
+  public async destroy({ params, response, auth }: HttpContextContract) {
     const { id } = params;
     try {
-      const data = await Employee.findOrFail(id);
+      const data = await Employee.query()
+        .where('id', id)
+        .preload("employeeUnits", eu => eu.select('title', 'id', 'unit_id').preload('unit', u => u.select('name')))
+        .firstOrFail();
+
+      //cek lead unit
+      const user = await User.query()
+        .preload('employee', e => e
+          .select('id', 'name')
+          .preload('employeeUnits', eu => eu
+            .where('title', 'lead')
+            .preload('unit')))
+        .preload('roles', r => r
+          .preload('role'))
+        .where('id', auth.use('api').user!.id)
+        .firstOrFail()
+
+      const userObject = JSON.parse(JSON.stringify(user))
+      const roles = RolesHelper(userObject)
+      if (roles.includes('admin_hrd')) {
+        let aprove = false
+        // userObject.employee.employeeUnits[0].unit.id
+        data.employeeUnits.map(value => {
+          if (value.unit.id == userObject.employee.employeeUnits[0].unit.id) {
+            aprove = true
+          }
+        })
+
+        if (!aprove) {
+          return response.badRequest({ message: "Gagal update data employee dikarenakan anda bukan ketua unit tersebut" });
+        }
+      }
       await data.delete();
 
       response.ok({ message: "Delete data success" });

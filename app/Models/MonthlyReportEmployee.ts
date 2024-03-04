@@ -10,7 +10,7 @@ import Leave from './Leave'
 import Database from '@ioc:Adonis/Lucid/Database'
 import LeaveSession from './LeaveSession'
 import TeacherAttendance from 'App/Modules/Academic/Models/TeacherAttendance'
-import Activity from './Activity'
+// import Activity from './Activity'
 let newId = ""
 
 export default class MonthlyReportEmployee extends BaseModel {
@@ -70,9 +70,15 @@ export default class MonthlyReportEmployee extends BaseModel {
     const { request } = HttpContext.get()!
     const { fromDate, toDate, unitId }: any = JSON.parse(request.raw()!)
 
+    let data
+    if (!unitId) {
+      const { id } = request.params()
+      data = await MonthlyReport.query().where('id', id).first()
+    }
+
     try {
       // Menghitung Presensi employee Aktifitas yang tetap
-      const presenceEmployeeFixedTime = await countPresenceEMployeeFixedTime(monthlyReportEmployee, fromDate, toDate, unitId)
+      const presenceEmployeeFixedTime = await countPresenceEMployeeFixedTime(monthlyReportEmployee, fromDate, toDate, unitId ? unitId : data?.unitId)
       if (presenceEmployeeFixedTime.length > 0) {
         // TODO: work on this
         let activityId: any = []
@@ -116,7 +122,7 @@ export default class MonthlyReportEmployee extends BaseModel {
       // }
 
       // Menghitung Presensi employee Aktifitas yang tidak tetap
-      const presenceEmployeeNotFixedTime = await countPresenceEMployeeNotFixedTime(monthlyReportEmployee, fromDate, toDate, unitId)
+      const presenceEmployeeNotFixedTime = await countPresenceEMployeeNotFixedTime(monthlyReportEmployee, fromDate, toDate, unitId ? unitId : data?.unitId)
       let activityId: any = []
       if (presenceEmployeeNotFixedTime.length > 0) {
         presenceEmployeeNotFixedTime.map(async value => {
@@ -128,22 +134,22 @@ export default class MonthlyReportEmployee extends BaseModel {
           })
         })
 
-          // let activityNotFixedTime = await Activity.query()
-          //   .select('id')
-          //   .where('activity_type', 'not_fixed_time')
-          //   .andWhere('unit_id', unitId)
-          //   .andWhere('assessment', true)
-          //   .andWhereNotIn('id', activityId)
+        // let activityNotFixedTime = await Activity.query()
+        //   .select('id')
+        //   .where('activity_type', 'not_fixed_time')
+        //   .andWhere('unit_id', unitId)
+        //   .andWhere('assessment', true)
+        //   .andWhereNotIn('id', activityId)
 
-          // // TODO: benerin penamaan variable, terus testing akt tidak tetap
-          // const dataActivityFixedTimeObject = JSON.parse(JSON.stringify(activityNotFixedTime))
-          // dataActivityFixedTimeObject.map(async aft => {
-          //   await MonthlyReportEmployeeDetail.create({
-          //     skor: 0,
-          //     activityId: aft.id,
-          //     monthlyReportEmployeeId: monthlyReportEmployee.id
-          //   })
-          // })
+        // // TODO: benerin penamaan variable, terus testing akt tidak tetap
+        // const dataActivityFixedTimeObject = JSON.parse(JSON.stringify(activityNotFixedTime))
+        // dataActivityFixedTimeObject.map(async aft => {
+        //   await MonthlyReportEmployeeDetail.create({
+        //     skor: 0,
+        //     activityId: aft.id,
+        //     monthlyReportEmployeeId: monthlyReportEmployee.id
+        //   })
+        // })
       }
       // else {
       //   let activityNotFixedTime = await Activity.query()
@@ -162,7 +168,7 @@ export default class MonthlyReportEmployee extends BaseModel {
       // }
 
       //menghitung sisa jumlah cuti
-      const leaveEmployee = await countLeaveEmloyees(monthlyReportEmployee, fromDate, unitId)
+      const leaveEmployee = await countLeaveEmloyees(monthlyReportEmployee, fromDate, unitId ? unitId : data?.unitId)
       if (leaveEmployee) {
         await MonthlyReportEmployeeDetail.create({
           skor: leaveEmployee.sisa_jatah_cuti,
@@ -173,7 +179,7 @@ export default class MonthlyReportEmployee extends BaseModel {
       }
 
       //menghitung izin persesi
-      const leaveSessionEmployee = await countLeaveSessionEmployee(monthlyReportEmployee, fromDate, toDate, unitId)
+      const leaveSessionEmployee = await countLeaveSessionEmployee(monthlyReportEmployee, fromDate, toDate, unitId ? unitId : data?.unitId)
       if (leaveSessionEmployee) {
         await MonthlyReportEmployeeDetail.create({
           totalLeaveSession: leaveSessionEmployee.elapsed_time,
@@ -258,11 +264,20 @@ const countLeaveEmloyees = async (monthlyReportEmployee, fromDate, unitId) => {
   const leaveEmployees = await Leave.query()
     .select('employee_id')
     .select(Database.raw(`(case when (select status from employees where id = '${monthlyReportEmployee.employeeId}') = 'FULL_TIME' then 6 else 3 end) - (sum(to_date - from_date + 1)) as sisa_jatah_cuti`))
+    // .select(Database.raw(`
+    //   STRING_AGG(
+    //     CASE
+    //         WHEN from_date = to_date THEN TO_CHAR(to_date, 'DD Month') || ': ' || reason
+    //         ELSE TO_CHAR(from_date, 'DD') || '-' || TO_CHAR(to_date, 'DD Month') || ': ' || reason
+    //     END,
+    //     ', '
+    //   ) AS reasons
+    //   `))
     .select(Database.raw(`
       STRING_AGG(
         CASE
-            WHEN from_date = to_date THEN TO_CHAR(to_date, 'DD Month') || ': ' || reason
-            ELSE TO_CHAR(from_date, 'DD') || '-' || TO_CHAR(to_date, 'DD Month') || ': ' || reason
+            WHEN from_date = to_date THEN TO_CHAR(to_date, 'DD Month')
+            ELSE TO_CHAR(from_date, 'DD') || '-' || TO_CHAR(to_date, 'DD Month')
         END,
         ', '
       ) AS reasons
@@ -291,7 +306,8 @@ const countLeaveSessionEmployee = async (monthlyReportEmployee, fromDate, toDate
   const leaveSessionEmployee = await LeaveSession.query()
     .select('employee_id')
     .select(Database.raw(`to_char(INTERVAL '1 second' * SUM(EXTRACT(EPOCH FROM (to_time - from_time))), 'HH24:MI:SS') AS elapsed_time`))
-    .select(Database.raw(`(string_agg(TO_CHAR(date, 'DD Month') || ' izin jam ' || to_char(from_time, 'HH24:MI') || '-' || to_char(to_time, 'HH24:MI') || ', Note: ' || note, ' | ' )) AS notes`))
+    // .select(Database.raw(`(string_agg(TO_CHAR(date, 'DD Month') || ' izin jam ' || to_char(from_time, 'HH24:MI') || '-' || to_char(to_time, 'HH24:MI') || ', Note: ' || note, ' | ' )) AS notes`))
+    .select(Database.raw(`(string_agg(TO_CHAR(date, 'DD Month') || ' izin jam ' || to_char(from_time, 'HH24:MI') || '-' || to_char(to_time, 'HH24:MI'), ' | ' )) AS notes`))
     .where('employee_id', monthlyReportEmployee.employeeId)
     .andWhere('status', 'aprove')
     .andWhere('unit_id', unitId)
@@ -308,7 +324,7 @@ const countTeachingEmployee = async (monthlyReportEmployee, fromDate, toDate) =>
   const teachingEmployee = await TeacherAttendance.query()
     .whereBetween('date_in', [fromDate, toDate])
     .andWhereHas('teacher', t => t.whereHas('employee', e => e.where('id', monthlyReportEmployee.employeeId)))
-    .andWhere('status', 'teach')
+    .andWhereIn('status', ['teach', 'exam', 'homework']) //
     .count('*', 'teach')
 
   const teachingEmployeeObject = JSON.parse(JSON.stringify(teachingEmployee))

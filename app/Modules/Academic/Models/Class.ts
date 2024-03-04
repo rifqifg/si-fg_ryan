@@ -16,6 +16,7 @@ import { v4 as uuidv4 } from "uuid";
 import Student from "./Student";
 import ProgramSemester from "./ProgramSemester";
 import Jurusan from "./Jurusan";
+import Foundation from "App/Modules/Foundation/Models/Foundation";
 let newId = "";
 export default class Class extends BaseModel {
   public static table = "academic.classes";
@@ -38,7 +39,6 @@ export default class Class extends BaseModel {
   @column()
   public employeeId: string | null;
 
-
   @column()
   public kelasJurusan: string
 
@@ -58,6 +58,12 @@ export default class Class extends BaseModel {
 
   @hasMany(() => Student)
   public students: HasMany<typeof Student>;
+
+  @column()
+  public foundationId: string
+
+  @belongsTo(() => Foundation)
+  public foundation: BelongsTo<typeof Foundation>;
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime;

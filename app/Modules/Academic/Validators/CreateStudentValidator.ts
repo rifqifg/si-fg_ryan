@@ -115,6 +115,7 @@ export default class CreateStudentValidator {
       rules.maxLength(30),
     ]),
     nat_exam_no: schema.string.optional({ trim: true }, [rules.maxLength(30)]),
+    foundationId: schema.string.optional([rules.exists({table: 'foundation.foundations', column: 'id'})]),
   });
 
   public messages: CustomMessages = {

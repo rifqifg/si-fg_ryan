@@ -6,9 +6,12 @@ import UpdateStudentValidator from "Academic/Validators/UpdateStudentValidator";
 import { statusRoutes } from "App/Modules/Log/lib/enum";
 import { CreateRouteHist } from "App/Modules/Log/Helpers/createRouteHist";
 import { DateTime } from "luxon";
+import User from "App/Models/User";
+import { RolesHelper } from "App/Helpers/rolesHelper";
+import { checkRoleSuperAdmin } from "App/Helpers/checkRoleSuperAdmin";
 
 export default class StudentsController {
-  public async index({ request, response }: HttpContextContract) {
+  public async index({ request, response, auth }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis();
     CreateRouteHist(statusRoutes.START, dateStart);
     const {
@@ -20,7 +23,8 @@ export default class StudentsController {
       isGraduated = false,
       notInSubject = "",
       subjectMember = "",
-      isNew
+      isNew,
+      foundationId
     } = request.qs();
 
     if (classId && !uuidValidation(classId)) {
@@ -36,6 +40,17 @@ export default class StudentsController {
     }
 
     const graduated = isGraduated == "false" ? false : true;
+
+    const user = await User.query()
+      .preload('employee', e => e
+        .select('id', 'name', 'foundation_id'))
+      .preload('roles', r => r
+        .preload('role'))
+      .where('employee_id', auth.user!.$attributes.employeeId)
+      .first()
+
+    const userObject = JSON.parse(JSON.stringify(user))
+    const roles = await RolesHelper(userObject)
 
     try {
       let data: object = {};
@@ -64,6 +79,11 @@ export default class StudentsController {
             q.orWhereILike("nis", `%${keyword}%`);
           })
           .if(classId, (c) => c.where("classId", classId))
+          .if(!roles.includes('super_admin'), query => query
+            .where('foundation_id', user!.employee.foundationId)
+          )
+          .if(roles.includes('super_admin') && foundationId, query => query
+            .where('foundation_id', foundationId))
           .orderBy("name")
           .paginate(page, limit);
       } else if (mode === "list") {
@@ -90,6 +110,11 @@ export default class StudentsController {
             q.orWhereILike("nis", `%${keyword}%`);
           })
           .if(classId, (c) => c.where("classId", classId))
+          .if(!roles.includes('super_admin'), query => query
+            .where('foundation_id', user!.employee.foundationId)
+          )
+          .if(roles.includes('super_admin') && foundationId, query => query
+            .where('foundation_id', foundationId))
           .orderBy("name");
       } else {
         return response.badRequest({
@@ -106,11 +131,22 @@ export default class StudentsController {
     }
   }
 
-  public async store({ request, response }: HttpContextContract) {
+  public async store({ request, response, auth }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis();
     CreateRouteHist(statusRoutes.START, dateStart);
     const payload = await request.validate(CreateStudentValidator);
     try {
+      const superAdmin = await checkRoleSuperAdmin()
+      //kalo bukan superadmin maka foundationId nya di hardcode
+      if (!superAdmin) {
+        const user = await User.query()
+          .preload('employee', e => e
+            .select('id', 'name', 'foundation_id'))
+          .where('employee_id', auth.user!.$attributes.employeeId)
+          .first()
+
+        payload.foundationId = user!.employee.foundationId
+      }
       const data = await Student.create(payload);
 
       CreateRouteHist(statusRoutes.FINISH, dateStart);

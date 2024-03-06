@@ -50,7 +50,7 @@ export default class ClassesController {
       } else if (mode === "list") {
         data = await Class
           .query()
-          .select('id', 'name', 'description', 'employeeId')
+          .select('id', 'name', 'description', 'employeeId', 'foundation_id')
           .preload('homeroomTeacher', query => query.select('name', 'nip'))
           .preload('foundation', f => f.select('name'))
           .if(typeof is_graduated === 'boolean', query => query.where('is_graduated', '=', is_graduated))

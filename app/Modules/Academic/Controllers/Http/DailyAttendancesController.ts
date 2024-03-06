@@ -37,23 +37,21 @@ export default class DailyAttendancesController {
     const splittedFromDate = fromDate.split(" ")[0];
     const splittedToDate = toDate.split(" ")[0];
 
-    const formattedStartDate = `${
-      splittedFromDate ? splittedFromDate : hariIni
-    } 00:00:00.000 +0700`;
-    const formattedEndDate = `${
-      splittedToDate ? splittedToDate : hariIni
-    } 23:59:59.000 +0700`;
+    const formattedStartDate = `${splittedFromDate ? splittedFromDate : hariIni
+      } 00:00:00.000 +0700`;
+    const formattedEndDate = `${splittedToDate ? splittedToDate : hariIni
+      } 23:59:59.000 +0700`;
     try {
       const user = await User.query()
-      .preload('employee', e => e
-        .select('id', 'name', 'foundation_id'))
-      .preload('roles', r => r
-        .preload('role'))
-      .where('employee_id', auth.user!.$attributes.employeeId)
-      .first()
+        .preload('employee', e => e
+          .select('id', 'name', 'foundation_id'))
+        .preload('roles', r => r
+          .preload('role'))
+        .where('employee_id', auth.user!.$attributes.employeeId)
+        .first()
 
-    const userObject = JSON.parse(JSON.stringify(user))
-    const roles = await RolesHelper(userObject)
+      const userObject = JSON.parse(JSON.stringify(user))
+      const roles = await RolesHelper(userObject)
 
       let data = {};
       if (recap) {
@@ -301,11 +299,9 @@ export default class DailyAttendancesController {
               order by c.name) ts,
               (
                   WITH date_range AS (
-                      SELECT generate_series('${
-                        date[date.length - 1].tanggal
-                      }'::date, '${
-            date[0].tanggal
-          }'::date, '1 day'::interval) AS date
+                      SELECT generate_series('${date[date.length - 1].tanggal
+            }'::date, '${date[0].tanggal
+            }'::date, '1 day'::interval) AS date
                   )
                   SELECT COUNT(*) AS days_count
                   FROM date_range
@@ -346,11 +342,9 @@ export default class DailyAttendancesController {
             (
                 WITH date_range AS (
                 -- tanggal dinamis dari input
-                    SELECT generate_series('${
-                      date[date.length - 1].tanggal
-                    }'::date, '${
-            date[0].tanggal
-          }'::date, '1 day'::interval) AS date
+                    SELECT generate_series('${date[date.length - 1].tanggal
+            }'::date, '${date[0].tanggal
+            }'::date, '1 day'::interval) AS date
                 )
                 SELECT extract(month from date) bulan ,COUNT(*) AS days_count
                 FROM date_range
@@ -430,6 +424,9 @@ export default class DailyAttendancesController {
           .if(classId, (c) =>
             c.whereHas("student", (st) => st.where("class_id", classId))
           )
+          .if(!roles.includes('super_admin'), query => query
+            .whereHas('student', s => s.where('foundation_id', user!.employee.foundationId))
+          )
           .paginate(page, limit);
       } else if (mode === "list") {
         data = await DailyAttendance.query()
@@ -461,6 +458,9 @@ export default class DailyAttendancesController {
           .orderBy("s.name")
           .if(classId, (c) =>
             c.whereHas("student", (st) => st.where("class_id", classId))
+          )
+          .if(!roles.includes('super_admin'), query => query
+            .whereHas('student', s => s.where('foundation_id', user!.employee.foundationId))
           );
       } else {
         return response.badRequest({
@@ -642,8 +642,7 @@ export default class DailyAttendancesController {
 
           if (existingRecord) {
             throw new Error(
-              `Abensi siswa dengan nama ${
-                existingRecord.student.name
+              `Abensi siswa dengan nama ${existingRecord.student.name
               }, kelas , untuk tanggal ${waktuAwal.toSQLDate()} sudah ada`
             );
           }

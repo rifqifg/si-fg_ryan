@@ -272,6 +272,7 @@ export default class DailyAttendancesController {
           	c.id = s.class_id
           where
             da.date_in::date between '${startDate}' and '${endDate}'
+            ${whereFoundationId}
           	and da.date_in::date not in (
           	select
           		date
@@ -295,6 +296,7 @@ export default class DailyAttendancesController {
               left join academic.classes c
               on c.id = s.class_id
               where c.is_graduated = false
+              ${whereFoundationId}
               group by c.name, c.id
               order by c.name) ts,
               (
@@ -324,6 +326,7 @@ export default class DailyAttendancesController {
           left join presence_calc pc
               on pc.id = c.id
           where da.status in ('present','sick')
+          ${whereFoundationId}
           and substring(cast(da.date_in::date as varchar),0,8) between '${startMonth}' and '${endMonth}'
           group by c.name, c.id , days_count
           order by c.name
@@ -337,6 +340,7 @@ export default class DailyAttendancesController {
             left join academic.classes c
             on c.id = s.class_id
             where c.is_graduated = false
+            ${whereFoundationId}
             group by c.name, c.id
             order by c.name) ts,
             (
@@ -370,6 +374,7 @@ export default class DailyAttendancesController {
             on pc.id = c.id
             and pc.bulan = extract(month from date_in)
         where da.status in ('present','sick')
+        ${whereFoundationId}
         and substring(cast(da.date_in::date as varchar),0,8) between '${startMonth}' and '${endMonth}'
         group by c.name, extract(month from date_in), pc.total_days, c.id , days_count
         order by extract(month from date_in) desc, c.name

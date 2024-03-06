@@ -62,6 +62,7 @@ export default class StudentsController {
           .preload("kecamatan")
           .preload("kota")
           .preload("provinsi")
+          .preload('foundation', f => f.select('name'))
           .if(subjectMember, (sm) =>
             sm.whereHas("extracurricular", (ex) =>
               ex.where("subjectId", subjectMember)
@@ -94,6 +95,7 @@ export default class StudentsController {
           .preload("kecamatan")
           .preload("kota")
           .preload("provinsi")
+          .preload('foundation', f => f.select('name'))
           .if(subjectMember, (sm) =>
             sm.whereHas("extracurricular", (ex) =>
               ex.where("subjectId", subjectMember)

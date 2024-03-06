@@ -38,6 +38,7 @@ export default class ClassesController {
           .preload('homeroomTeacher', query => query.select('name', 'nip')).preload('jurusan')
           .withCount('students')
           .whereILike('name', `%${keyword}%`)
+          .preload('foundation', f => f.select('name'))
           .if(typeof is_graduated === 'boolean', query => query.where('is_graduated', '=', is_graduated))
           .if(!roles.includes('super_admin'), query => query
             .where('foundation_id', user!.employee.foundationId)
@@ -51,6 +52,7 @@ export default class ClassesController {
           .query()
           .select('id', 'name', 'description', 'employeeId')
           .preload('homeroomTeacher', query => query.select('name', 'nip'))
+          .preload('foundation', f => f.select('name'))
           .if(typeof is_graduated === 'boolean', query => query.where('is_graduated', '=', is_graduated))
           .if(!roles.includes('super_admin'), query => query
             .where('foundation_id', user!.employee.foundationId)

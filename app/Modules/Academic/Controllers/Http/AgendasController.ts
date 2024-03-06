@@ -39,6 +39,7 @@ export default class AgendasController {
         .if(fromDate && toDate, query => query
           .whereBetween('date', [fromDate, toDate]))
         .preload("user", (s) => s.select("id", "name"))
+        .preload('foundation', f => f.select('name'))
         .paginate(page, limit)
 
       CreateRouteHist(statusRoutes.FINISH, dateStart)

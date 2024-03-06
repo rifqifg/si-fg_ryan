@@ -62,7 +62,12 @@ export default class ImportStudentsController {
                 .andWhereIn('nis', jsonData.map(data => data["NIS"]))
 
             students.forEach(async student => {
-                const studentToUpdate = jsonData.find(data => data["Nama Siswa"].toLowerCase() === student.name?.toLowerCase())
+                const studentToUpdate = jsonData.find(data =>
+                    (
+                        data["Nama Siswa"].toLowerCase() === student.name?.toLowerCase() &&
+                        data["NIS"] === student.nis
+                    )
+                )
                 if (studentToUpdate) {
                     student.merge({nisn: studentToUpdate["NISN"]})
                     await student.save()

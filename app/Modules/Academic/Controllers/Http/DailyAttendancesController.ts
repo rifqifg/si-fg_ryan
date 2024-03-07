@@ -27,6 +27,7 @@ export default class DailyAttendancesController {
       sortingByAbsent = false,
       lastDays = 7,
       lastMonths = 3,
+      foundationId
     } = request.qs();
 
     if (classId && !uuidValidation(classId)) {
@@ -72,6 +73,8 @@ export default class DailyAttendancesController {
         let whereFoundationId = ""
         if (!roles.includes('super_admin')) {
           whereFoundationId = `and c.foundation_id = '${user!.employee.foundationId}'`
+        } else if (roles.includes('super_admin') && foundationId) {
+          whereFoundationId = `and c.foundation_id = '${foundationId}'`
         }
 
         const agenda = await Database.rawQuery(
@@ -432,6 +435,9 @@ export default class DailyAttendancesController {
           .if(!roles.includes('super_admin'), query => query
             .whereHas('student', s => s.where('foundation_id', user!.employee.foundationId))
           )
+          .if(roles.includes('super_admin') && foundationId, query => query
+            .whereHas('student', s => s.where('foundation_id', foundationId))
+          )
           .paginate(page, limit);
       } else if (mode === "list") {
         data = await DailyAttendance.query()
@@ -466,6 +472,9 @@ export default class DailyAttendancesController {
           )
           .if(!roles.includes('super_admin'), query => query
             .whereHas('student', s => s.where('foundation_id', user!.employee.foundationId))
+          )
+          .if(roles.includes('super_admin') && foundationId, query => query
+            .whereHas('student', s => s.where('foundation_id', foundationId))
           );
       } else {
         return response.badRequest({

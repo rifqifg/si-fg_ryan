@@ -1,15 +1,18 @@
 import { DateTime } from "luxon";
 import {
   BaseModel,
+  BelongsTo,
   HasMany,
   afterCreate,
   beforeCreate,
+  belongsTo,
   column,
   hasMany,
 } from "@ioc:Adonis/Lucid/Orm";
 import { v4 as uuidv4 } from "uuid";
 import Teaching from "./Teaching";
 import BukuNilai from "./BukuNilai";
+import Foundation from "App/Modules/Foundation/Models/Foundation";
 let newId = "";
 
 export default class Subject extends BaseModel {
@@ -35,6 +38,12 @@ export default class Subject extends BaseModel {
 
   @hasMany(() => BukuNilai)
   public bukuNilai: HasMany<typeof BukuNilai>
+
+  @column()
+  public foundationId: string
+
+  @belongsTo(() => Foundation)
+  public foundation: BelongsTo<typeof Foundation>;
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime;

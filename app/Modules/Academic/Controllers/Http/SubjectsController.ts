@@ -40,7 +40,6 @@ export default class SubjectsController {
       let data = {};
       if (mode === "page") {
         data = await Subject.query()
-
           .if(isExtracurricular, (q) =>
             q.where("is_extracurricular", isExtracurricular)
           )
@@ -50,6 +49,7 @@ export default class SubjectsController {
           )
           .if(roles.includes('super_admin') && foundationId, query => query
             .where('foundation_id', foundationId))
+          .preload('foundation', f => f.select('name'))
           .orderBy("name")
           .paginate(page, limit);
       } else if (mode === "list") {
@@ -68,6 +68,7 @@ export default class SubjectsController {
           .if(roles.includes('super_admin') && foundationId, query => query
             .where('foundation_id', foundationId))
           .whereILike("name", `%${keyword}%`)
+          .preload('foundation', f => f.select('name'))
           .orderBy("name");
         // if (classId !== "" && teacherId !== "") {
         //   data = await Subject.query()

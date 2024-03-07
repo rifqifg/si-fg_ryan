@@ -47,9 +47,7 @@ export default class ImportStudentsController {
             const firstSheet = workbook.Sheets[sheetNames[0]]
             const jsonData: Array<object> = XLSX.utils.sheet_to_json(firstSheet, {raw: false})
 
-            if (jsonData.length < 1) {
-                throw new Error("Data tidak boleh kosong")
-            }
+            if (jsonData.length < 1) { throw new Error("Data tidak boleh kosong") }
 
             const formattedJsonData = jsonData.map(data => ({
                 nis: data["NIS"],
@@ -58,6 +56,7 @@ export default class ImportStudentsController {
 
             const students = await Student.query().whereIn('nis', formattedJsonData.map(data => data.nis))
 
+            // jika nis not exists, return error
             if (students.length !== jsonData.length) {
                 const existingNIS = students.map(student => student.nis)
                 const missingNIS = formattedJsonData.filter(data => !existingNIS.includes(data.nis))
@@ -66,16 +65,10 @@ export default class ImportStudentsController {
                 return response.badRequest({message: errors})
             }
 
-            students.forEach(async student => {
-                const studentToUpdate = formattedJsonData.find(data => data.nis === student.nis)
-                if (studentToUpdate) {
-                    student.merge({nisn: studentToUpdate.nisn})
-                    await student.save()
-                }
-            })
+            await Student.updateOrCreateMany('nis', formattedJsonData)
 
             // CreateRouteHist(statusRoutes.FINISH, dateStart)
-            response.created({ message: "Berhasil update data NISN", students })
+            response.created({ message: "Berhasil update data NISN" })
         } catch (error) {
             const message = "ACD-IMPSTD-U: " + error.message || error;
             // CreateRouteHist(statusRoutes.ERROR, dateStart, message)

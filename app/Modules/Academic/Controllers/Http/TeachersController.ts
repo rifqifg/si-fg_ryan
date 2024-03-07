@@ -6,13 +6,26 @@ import UpdateTeacherValidator from "../../Validators/UpdateTeacherValidator";
 import { statusRoutes } from "App/Modules/Log/lib/enum";
 import { CreateRouteHist } from "App/Modules/Log/Helpers/createRouteHist";
 import { DateTime } from "luxon";
+import User from "App/Models/User";
+import { RolesHelper } from "App/Helpers/rolesHelper";
 
 //TODO: CRUD Teacher
 export default class TeachersController {
-  public async index({ request, response }: HttpContextContract) {
+  public async index({ request, response, auth }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis();
     CreateRouteHist(statusRoutes.START, dateStart);
-    const { page = 1, limit = 10, keyword = "", mode = "page" } = request.qs();
+    const { page = 1, limit = 10, keyword = "", mode = "page", foundationId } = request.qs();
+
+    const user = await User.query()
+      .preload('employee', e => e
+        .select('id', 'name', 'foundation_id'))
+      .preload('roles', r => r
+        .preload('role'))
+      .where('employee_id', auth.user!.$attributes.employeeId)
+      .first()
+
+    const userObject = JSON.parse(JSON.stringify(user))
+    const roles = await RolesHelper(userObject)
 
     try {
       let data: any[] = [];
@@ -37,17 +50,27 @@ export default class TeachersController {
                 s.select("id", "name", "is_extracurricular")
               )
           )
+          .whereHas('employee', e => {
+            e.if(!roles.includes('super_admin'), query => query
+              .where('foundation_id', user!.employee.foundationId)
+            )
+              .if(roles.includes('super_admin') && foundationId, query => query
+                .where('foundation_id', foundationId))
+          })
           .paginate(page, limit);
 
       } else if (mode === "list") {
         data = await Teacher.query()
-          .whereHas("employee", (e) => e.whereILike("name", `%${keyword}%`))
-          .orWhereHas("teaching", (t) =>
-            t.whereHas("class", (c) => c.whereILike("name", `%${keyword}%`))
-          )
-          .orWhereHas("teaching", (t) =>
-            t.whereHas("subject", (s) => s.whereILike("name", `%${keyword}%`))
-          )
+          .if(keyword, qKeyword => {
+            qKeyword.andWhere(qWhere => {
+              qWhere.andWhereHas("employee", (e) => e.whereILike("name", `%${keyword}%`))
+              qWhere.orWhereHas('teaching', (t) => {
+                t
+                  .whereHas("class", (c) => (c.whereILike("name", `%${keyword}%`)))
+                  .orWhereHas("subject", (s) => s.whereILike("name", `%${keyword}%`))
+              })
+            })
+          })
           .preload("employee", (e) => e.select("id", "name", "nip"))
           .preload("teaching", (t) =>
             t
@@ -56,7 +79,14 @@ export default class TeachersController {
               .preload("subject", (s) =>
                 s.select("id", "name", "is_extracurricular")
               )
-          );
+          )
+          .whereHas('employee', e => {
+            e.if(!roles.includes('super_admin'), query => query
+              .where('foundation_id', user!.employee.foundationId)
+            )
+              .if(roles.includes('super_admin') && foundationId, query => query
+                .where('foundation_id', foundationId))
+          });
       } else {
         return response.badRequest({
           message: "Mode tidak dikenali, (pilih: page / list)",
@@ -65,18 +95,20 @@ export default class TeachersController {
 
 
       CreateRouteHist(statusRoutes.FINISH, dateStart);
-      response.ok({ message: "Berhasil mengambil data", data: data.sort((a, b) => {
-        const nameA = a.employee.name!.toUpperCase(); // Convert to uppercase for case-insensitive comparison
-        const nameB = b.employee.name!.toUpperCase();
+      response.ok({
+        message: "Berhasil mengambil data", data: data.sort((a, b) => {
+          const nameA = a.employee.name!.toUpperCase(); // Convert to uppercase for case-insensitive comparison
+          const nameB = b.employee.name!.toUpperCase();
 
-        if (nameA < nameB) {
-          return -1; // Name A comes before name B
-        }
-        if (nameA > nameB) {
-          return 1; // Name B comes before name A
-        }
-        return 0; // Names are equal
-      }) });
+          if (nameA < nameB) {
+            return -1; // Name A comes before name B
+          }
+          if (nameA > nameB) {
+            return 1; // Name B comes before name A
+          }
+          return 0; // Names are equal
+        })
+      });
     } catch (error) {
       const message = "ACSU46: " + error.message || error;
       console.log(error);

@@ -7,7 +7,7 @@ Route.group(() => {
   Route.shallowResource('jurusan', 'JurusansController').only(['index']).middleware({'index': ['auth']})
   Route.resource("students", "StudentsController").apiOnly().middleware({ '*': ["auth"] });
   Route.resource("subjects", "SubjectsController").apiOnly().middleware({ "*": ["auth"] });
-  Route.resource("teachers", "TeachersController").apiOnly().middleware({store: ["auth"],destroy: ["auth"],update: ["auth"],show: ["auth"],});
+  Route.resource("teachers", "TeachersController").apiOnly().middleware({ "*": ["auth"] });
   Route.resource("teachers.teachings", "TeachingsController").apiOnly().middleware({store: ["auth"],destroy: ["auth"],update: ["auth"],show: ["auth"]})
   Route.shallowResource("students.parents", "StudentParentsController").apiOnly().middleware({ "*": ["auth"] });
   Route.resource("sessions", "SessionsController").only(["index", "show"]).middleware({store: ["auth"],destroy: ["auth"],update: ["auth"],show: ["auth"]});

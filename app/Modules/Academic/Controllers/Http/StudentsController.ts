@@ -18,6 +18,7 @@ export default class StudentsController {
       mode = "page",
       classId = "",
       isGraduated = false,
+      hasNisn = "",
       notInSubject = "",
       subjectMember = "",
       isNew
@@ -64,6 +65,8 @@ export default class StudentsController {
             q.orWhereILike("nis", `%${keyword}%`);
           })
           .if(classId, (c) => c.where("classId", classId))
+          .if(hasNisn === "true", q => q.andWhereNotNull('nisn'))
+          .if(hasNisn === "false", q => q.andWhereNull('nisn'))
           .orderBy("name")
           .paginate(page, limit);
       } else if (mode === "list") {

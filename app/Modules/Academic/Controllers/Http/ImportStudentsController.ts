@@ -51,25 +51,25 @@ export default class ImportStudentsController {
                 throw new Error("Data tidak boleh kosong")
             }
 
-            const lowercaseNames = jsonData.map(data => data["Nama Siswa"].toLowerCase())
+            const formattedJsonData = jsonData.map(data => ({
+                nis: data["NIS"],
+                nisn: data["NISN"]
+            }))
 
-            const students = await Student.query()
-                .where((query) => {
-                    for (const data of lowercaseNames) {
-                        query.orWhereRaw('LOWER(name) = ?', [data.toLowerCase()])
-                    }
-                })
-                .andWhereIn('nis', jsonData.map(data => data["NIS"]))
+            const students = await Student.query().whereIn('nis', formattedJsonData.map(data => data.nis))
+
+            if (students.length !== jsonData.length) {
+                const existingNIS = students.map(student => student.nis)
+                const missingNIS = formattedJsonData.filter(data => !existingNIS.includes(data.nis))
+                const errors = missingNIS.map(data => `Siswa dengan NIS ${data.nis} tidak ada di database`)
+
+                return response.badRequest({message: errors})
+            }
 
             students.forEach(async student => {
-                const studentToUpdate = jsonData.find(data =>
-                    (
-                        data["Nama Siswa"].toLowerCase() === student.name?.toLowerCase() &&
-                        data["NIS"] === student.nis
-                    )
-                )
+                const studentToUpdate = formattedJsonData.find(data => data.nis === student.nis)
                 if (studentToUpdate) {
-                    student.merge({nisn: studentToUpdate["NISN"]})
+                    student.merge({nisn: studentToUpdate.nisn})
                     await student.save()
                 }
             })

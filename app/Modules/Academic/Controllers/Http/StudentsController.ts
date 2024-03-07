@@ -41,16 +41,20 @@ export default class StudentsController {
 
     const graduated = isGraduated == "false" ? false : true;
 
-    const user = await User.query()
-      .preload('employee', e => e
-        .select('id', 'name', 'foundation_id'))
-      .preload('roles', r => r
-        .preload('role'))
-      .where('employee_id', auth.user!.$attributes.employeeId)
-      .first()
+    let user
+    let roles: string[] = []
+    if (auth.isLoggedIn) {
+      user = await User.query()
+        .preload('employee', e => e
+          .select('id', 'name', 'foundation_id'))
+        .preload('roles', r => r
+          .preload('role'))
+        .where('employee_id', auth.user!.$attributes.employeeId)
+        .first()
 
-    const userObject = JSON.parse(JSON.stringify(user))
-    const roles = await RolesHelper(userObject)
+      const userObject = JSON.parse(JSON.stringify(user))
+      roles = await RolesHelper(userObject)
+    }
 
     try {
       let data: object = {};
@@ -80,10 +84,12 @@ export default class StudentsController {
             q.orWhereILike("nis", `%${keyword}%`);
           })
           .if(classId, (c) => c.where("classId", classId))
-          .if(!roles.includes('super_admin'), query => query
+          .if(!roles.includes('super_admin') && user, query => query
             .where('foundation_id', user!.employee.foundationId)
           )
-          .if(roles.includes('super_admin') && foundationId, query => query
+          .if(roles.includes('super_admin') && foundationId && user, query => query
+            .where('foundation_id', foundationId))
+          .if(!auth.isLoggedIn && foundationId, query => query
             .where('foundation_id', foundationId))
           .orderBy("name")
           .paginate(page, limit);
@@ -112,10 +118,12 @@ export default class StudentsController {
             q.orWhereILike("nis", `%${keyword}%`);
           })
           .if(classId, (c) => c.where("classId", classId))
-          .if(!roles.includes('super_admin'), query => query
+          .if(!roles.includes('super_admin') && user, query => query
             .where('foundation_id', user!.employee.foundationId)
           )
-          .if(roles.includes('super_admin') && foundationId, query => query
+          .if(roles.includes('super_admin') && foundationId && user, query => query
+            .where('foundation_id', foundationId))
+          .if(!auth.isLoggedIn && foundationId, query => query
             .where('foundation_id', foundationId))
           .orderBy("name");
       } else {

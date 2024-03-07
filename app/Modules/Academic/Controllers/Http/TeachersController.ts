@@ -16,16 +16,20 @@ export default class TeachersController {
     CreateRouteHist(statusRoutes.START, dateStart);
     const { page = 1, limit = 10, keyword = "", mode = "page", foundationId } = request.qs();
 
-    const user = await User.query()
-      .preload('employee', e => e
-        .select('id', 'name', 'foundation_id'))
-      .preload('roles', r => r
-        .preload('role'))
-      .where('employee_id', auth.user!.$attributes.employeeId)
-      .first()
+    let user
+    let roles: string[] = []
+    if (auth.isLoggedIn) {
+      user = await User.query()
+        .preload('employee', e => e
+          .select('id', 'name', 'foundation_id'))
+        .preload('roles', r => r
+          .preload('role'))
+        .where('employee_id', auth.user!.$attributes.employeeId)
+        .first()
 
-    const userObject = JSON.parse(JSON.stringify(user))
-    const roles = await RolesHelper(userObject)
+      const userObject = JSON.parse(JSON.stringify(user))
+      roles = await RolesHelper(userObject)
+    }
 
     try {
       let data: any[] = [];
@@ -51,10 +55,12 @@ export default class TeachersController {
               )
           )
           .whereHas('employee', e => {
-            e.if(!roles.includes('super_admin'), query => query
+            e.if(!roles.includes('super_admin') && user, query => query
               .where('foundation_id', user!.employee.foundationId)
             )
-              .if(roles.includes('super_admin') && foundationId, query => query
+              .if(roles.includes('super_admin') && foundationId && user, query => query
+                .where('foundation_id', foundationId))
+              .if(!auth.isLoggedIn && foundationId, query => query
                 .where('foundation_id', foundationId))
           })
           .paginate(page, limit);
@@ -81,10 +87,12 @@ export default class TeachersController {
               )
           )
           .whereHas('employee', e => {
-            e.if(!roles.includes('super_admin'), query => query
+            e.if(!roles.includes('super_admin') && user, query => query
               .where('foundation_id', user!.employee.foundationId)
             )
-              .if(roles.includes('super_admin') && foundationId, query => query
+              .if(roles.includes('super_admin') && foundationId && user, query => query
+                .where('foundation_id', foundationId))
+              .if(!auth.isLoggedIn && foundationId, query => query
                 .where('foundation_id', foundationId))
           });
       } else {

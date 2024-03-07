@@ -27,6 +27,7 @@ export default class CreateSubjectValidator {
     name: schema.string({}, [rules.alphaNum({ allow: ["space"] })]),
     description: schema.string.optional(),
     isExtracurricular: schema.boolean(),
+    foundationId: schema.string.optional([rules.exists({table: 'foundation.foundations', column: 'id'})]),
   });
 
   /**

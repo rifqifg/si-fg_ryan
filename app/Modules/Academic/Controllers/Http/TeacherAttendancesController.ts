@@ -12,6 +12,7 @@ import LessonAttendance from "../../Models/LessonAttendance";
 import { statusRoutes } from "App/Modules/Log/lib/enum";
 import { CreateRouteHist } from "App/Modules/Log/Helpers/createRouteHist";
 import { DateTime } from "luxon";
+import { RolesHelper } from "App/Helpers/rolesHelper";
 
 export default class TeacherAttendancesController {
   public async index({ request, response, auth }: HttpContextContract) {
@@ -27,25 +28,32 @@ export default class TeacherAttendancesController {
       className = "",
       subject = "",
       session = "",
+      foundationId
     } = request.qs();
     try {
-      const formattedStartDate = `${
-        fromDate ? fromDate : hariIni
-      } 00:00:00.000 +0700`;
-      const formattedEndDate = `${
-        toDate ? toDate : hariIni
-      } 23:59:59.000 +0700`;
+      const formattedStartDate = `${fromDate ? fromDate : hariIni
+        } 00:00:00.000 +0700`;
+      const formattedEndDate = `${toDate ? toDate : hariIni
+        } 23:59:59.000 +0700`;
 
       const user = await User.query()
         .where("id", auth.user!.id)
-        .preload("roles", (r) => r.select("*"))
-        .preload("employee", (e) => e.preload("teacher", (t) => t.select("id")))
-        .firstOrFail();
+        .preload("roles", (r) => r
+          .preload('role'))
+        .preload("employee", (e) => e
+          .select('id', 'name', 'foundation_id')
+          .preload("teacher", (t) => t
+            .select("id")))
+        .where('employee_id', auth.user!.$attributes.employeeId)
+        .first();
+
       const userObject = JSON.parse(JSON.stringify(user));
+      const roles = await RolesHelper(userObject)
 
       const teacher = userObject.roles.find(
-        (role) => role.role_name === "teacher"
+        (role) => role.role_name === "teacher" || role.role_name === "user_academic"
       );
+
       let data = {};
 
       if (recap) {
@@ -79,9 +87,19 @@ export default class TeacherAttendancesController {
             )
           )
           .whereBetween("date_in", [formattedStartDate, formattedEndDate])
-          .andWhereHas('teacher', t => t.whereHas('employee', e => e.whereILike("name", `%${keyword}%`)))
+          // .andWhereHas('teacher', t => t.whereHas('employee', e => e.whereILike("name", `%${keyword}%`)))
           .preload("teacher", (t) =>
             t.preload("employee", (e) => e.select("name"))
+          )
+          .if(!roles.includes('super_admin'), query => query
+            .andWhereHas('teacher', t => t.whereHas('employee', e => e
+              .whereILike("name", `%${keyword}%`)
+              .where('foundation_id', user!.employee.foundationId)))
+          )
+          .if(roles.includes('super_admin') && foundationId, query => query
+            .andWhereHas('teacher', t => t.whereHas('employee', e => e
+              .whereILike("name", `%${keyword}%`)
+              .where('foundation_id', foundationId)))
           )
           .groupBy("teacher_id")
           .paginate(page, limit);
@@ -110,7 +128,15 @@ export default class TeacherAttendancesController {
           .preload("session", (s) => s.select("session"))
           .preload("subject", (s) => s.select("name"))
           .preload("prosemDetail", (pd) => pd.select("materi", "kompetensiDasar"))
-          .if(teacher, (q) => q.where("teacherId", user.employee.teacher.id))
+          .if(teacher, (q) => q.where("teacherId", user!.employee.teacher.id))
+          .if(!roles.includes('super_admin'), query => query
+            .whereHas('teacher', t => t.whereHas('employee', e => e
+              .where('foundation_id', user!.employee.foundationId)))
+          )
+          .if(roles.includes('super_admin') && foundationId, query => query
+            .whereHas('teacher', t => t.whereHas('employee', e => e
+              .where('foundation_id', foundationId)))
+          )
           .orderBy("date_in", "desc")
           .paginate(page, limit);
       }
@@ -169,7 +195,7 @@ export default class TeacherAttendancesController {
     }
   }
 
-  public async show({  params, response }: HttpContextContract) {
+  public async show({ params, response }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart);
     const { id } = params;
@@ -287,7 +313,7 @@ export default class TeacherAttendancesController {
     const userObject = JSON.parse(JSON.stringify(user));
 
     if (
-      userObject.roles.find((role) => role.role_name === "teacher") &&
+      userObject.roles.find((role) => role.role_name === "teacher" || role.role_name === "user_academic") &&
       user?.employeeId !== teacher.employeeId
     ) {
       return response.badRequest({
@@ -317,7 +343,7 @@ export default class TeacherAttendancesController {
     const userObject = JSON.parse(JSON.stringify(user));
 
     if (
-      userObject.roles.find((role) => role.role_name === "teacher") &&
+      userObject.roles.find((role) => role.role_name === "teacher" || role.role_name === "user_academic") &&
       user?.employeeId !== teacher.employeeId
     ) {
       return response.badRequest({

@@ -134,13 +134,18 @@ export default class AcademicDashboardController {
       .where('is_graduated', false)
       .withCount('students')
 
+    const formattedClasses = classes.map(kelas => ({
+      kelas: kelas.name,
+      value: kelas.$extras.students_count
+    }))
+
     const totalStudents = classes.reduce((sum, next) => {
       const count = parseInt(next.$extras.students_count, 10);
       return sum + count;
     }, 0);
 
     return {
-      chart: classes,
+      chart: formattedClasses,
       totalStudent: totalStudents.toString()
     }
   }

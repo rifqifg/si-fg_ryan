@@ -8,6 +8,7 @@ import ProgramSemesterDetail from "../../Models/ProgramSemesterDetail";
 import { statusRoutes } from "App/Modules/Log/lib/enum";
 import { CreateRouteHist } from "App/Modules/Log/Helpers/createRouteHist";
 import { DateTime } from "luxon";
+import { RolesHelper } from "App/Helpers/rolesHelper";
 
 export default class ProgramSemestersController {
   public async index({ request, response, auth }: HttpContextContract) {
@@ -19,6 +20,7 @@ export default class ProgramSemestersController {
       mode = "page",
       subjectId = "",
       classId = "",
+      foundationId
     } = request.qs();
 
     if (
@@ -33,13 +35,18 @@ export default class ProgramSemestersController {
     try {
       let data = {};
       const user = await User.query()
-        .where("id", auth?.user!.id)
-        .preload("roles", (r) => r.preload("role"))
-        .firstOrFail();
+        .preload('employee', e => e
+          .select('id', 'name', 'foundation_id'))
+        .preload('roles', r => r
+          .preload('role'))
+        .where('employee_id', auth.user!.$attributes.employeeId)
+        .first()
+
       const userObject = JSON.parse(JSON.stringify(user));
+      const roles = await RolesHelper(userObject)
 
       const teacher = userObject.roles?.find(
-        (role) => role.role.name == "teacher"
+        (role) => role.role.name == "teacher" || role.role_name === "user_academic"
       );
 
       const teacherId = await User.query()
@@ -51,7 +58,7 @@ export default class ProgramSemestersController {
         data = await ProgramSemester.query()
           .select("*")
           .withCount("programSemesterDetail", (q) => q.as("total_pertemuan"))
-          .preload("teachers", (t) =>(
+          .preload("teachers", (t) => (
             t.preload("employee", (e) => e.select("name")), t.preload('teaching', teach => teach.select('*')))
           )
           .preload("class", (c) => c.select("name", "id"))
@@ -61,13 +68,18 @@ export default class ProgramSemestersController {
           .if(teacher, (q) =>
             q.where("teacherId", teacherId.employee.teacher.id)
           )
-
+          .if(!roles.includes('super_admin'), query => query
+            .whereHas('class', c => c.where('foundation_id', user!.employee.foundationId))
+          )
+          .if(roles.includes('super_admin') && foundationId, query => query
+            .whereHas('class', c => c.where('foundation_id', foundationId))
+          )
           .paginate(page, limit);
       } else if (mode === "list") {
         data = await ProgramSemester.query()
           .select("*")
           .withCount("programSemesterDetail", (q) => q.as("total_pertemuan"))
-          .preload("teachers", (t) =>(
+          .preload("teachers", (t) => (
             t.preload("employee", (e) => e.select("name")), t.preload('teaching', teach => teach.select('id')))
           )
           .preload("class", (c) => c.select("name", "id"))
@@ -76,6 +88,12 @@ export default class ProgramSemestersController {
             q.where("teacherId", teacherId.employee.teacher.id)
           )
           .if(classId, (q) => q.where("classId", classId))
+          .if(!roles.includes('super_admin'), query => query
+            .whereHas('class', c => c.where('foundation_id', user!.employee.foundationId))
+          )
+          .if(roles.includes('super_admin') && foundationId, query => query
+            .whereHas('class', c => c.where('foundation_id', foundationId))
+          )
           .preload("mapel", (m) => m.select("name"));
       } else {
         return response.badRequest({
@@ -103,7 +121,7 @@ export default class ProgramSemestersController {
     const userObject = JSON.parse(JSON.stringify(user));
 
     const teacher = userObject.roles?.find(
-      (role) => role.role.name == "teacher"
+      (role) => role.role.name == "teacher" || role.role_name === "user_academic"
     );
 
     const teacherId = await User.query()
@@ -222,7 +240,7 @@ export default class ProgramSemestersController {
     }
   }
 
-  public async show({  response, params }: HttpContextContract) {
+  public async show({ response, params }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
     const { id } = params;
@@ -273,7 +291,7 @@ export default class ProgramSemestersController {
       .firstOrFail();
     const userObject = JSON.parse(JSON.stringify(user));
 
-    const teacher = userObject.roles?.find((role) => role.role.name == "teacher");
+    const teacher = userObject.roles?.find((role) => role.role.name == "teacher" || role.role_name === "user_academic");
 
     let payload;
 
@@ -401,7 +419,7 @@ export default class ProgramSemestersController {
     }
   }
 
-  public async noLogin({request, response}: HttpContextContract) {
+  public async noLogin({ request, response }: HttpContextContract) {
     const {
       subjectId = "",
       classId = "", teacherId = ""
@@ -417,27 +435,27 @@ export default class ProgramSemestersController {
     }
 
     try {
-      
+
       const data = await ProgramSemester.query()
-            .select("*")
-            .withCount("programSemesterDetail", (q) => q.as("total_pertemuan"))
-            .preload("teachers", (t) =>
-              t.preload("employee", (e) => e.select("name"))
-            )
-            .preload("class", (c) => c.select("name", "id"))
-            .if(subjectId, (q) => q.where("subjectId", subjectId))
-            .if(teacherId, (q) =>
-              q.where("teacherId", teacherId)
-            )
-            .if(classId, (q) => q.where("classId", classId))
-            .preload("mapel", (m) => m.select("name"));
+        .select("*")
+        .withCount("programSemesterDetail", (q) => q.as("total_pertemuan"))
+        .preload("teachers", (t) =>
+          t.preload("employee", (e) => e.select("name"))
+        )
+        .preload("class", (c) => c.select("name", "id"))
+        .if(subjectId, (q) => q.where("subjectId", subjectId))
+        .if(teacherId, (q) =>
+          q.where("teacherId", teacherId)
+        )
+        .if(classId, (q) => q.where("classId", classId))
+        .preload("mapel", (m) => m.select("name"));
 
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
       response.badRequest({
         message: "Gagal mengambil data",
         error: error.message,
-      });      
+      });
     }
 
   }

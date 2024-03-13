@@ -37,6 +37,7 @@ Route.group(() => {
   Route.shallowResource('raports.student-raports', 'StudentRaportsController').apiOnly().middleware({ "*": ["auth"] })
   Route.shallowResource('student-raports.student-raport-details', 'StudentRaportDetailsController').apiOnly().middleware({ "*": ["auth"] })
   Route.resource('dashboard', 'AcademicDashboardController').only(['index']).middleware({'index': ['auth']})
+  Route.get('dashboard/teacher-attendance', 'AcademicDashboardController.getTeacherAttendances').middleware(['auth', 'checkRole:admin'])
 })
   .prefix("academics")
   .namespace("AcademicControllers");

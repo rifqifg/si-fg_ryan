@@ -36,6 +36,7 @@ Route.group(() => {
   Route.post('raports/:id/hitung-ulang', 'RaportsController.hitungUlang' ).middleware("auth")
   Route.shallowResource('raports.student-raports', 'StudentRaportsController').apiOnly().middleware({ "*": ["auth"] })
   Route.shallowResource('student-raports.student-raport-details', 'StudentRaportDetailsController').apiOnly().middleware({ "*": ["auth"] })
+  Route.resource('dashboard', 'AcademicDashboardController').only(['index']).middleware({'index': ['auth']})
 })
   .prefix("academics")
   .namespace("AcademicControllers");

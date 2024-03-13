@@ -24,10 +24,7 @@ export default class AcademicDashboardController {
 
       const userObject = JSON.parse(JSON.stringify(user))
       const infoGuru = await this.getTeacherInfoByUser(userObject)
-      const infoSiswa = await this.getStudentsSummary()
-      // TODO: utk yg kehadiran siswa n guru kyknya enak dipisah
-      // krna ada request spesifik (filter by date)
-      // const teacherAttendances = await this.getTeacherAttendances(userObject)
+      const infoSiswa = await this.getStudentsSummary(userObject)
 
       const data = { infoGuru, infoSiswa }
 
@@ -120,7 +117,18 @@ export default class AcademicDashboardController {
     }
   }
 
-  private async getStudentsSummary() {
+  private async getStudentsSummary(userObj) {
+    const roles = RolesHelper(userObj)
+
+    const isUserAcademicOnly = (
+      roles.includes('user_academic')
+      && !(roles.includes('admin_academic'))
+      && !(roles.includes('admin_foundation'))
+      && !(roles.includes('super_admin'))
+    ) ? true : false
+
+    if (isUserAcademicOnly) return {}
+
     const classes = await Class.query()
       .select('name')
       .where('is_graduated', false)
@@ -130,7 +138,6 @@ export default class AcademicDashboardController {
       const count = parseInt(next.$extras.students_count, 10);
       return sum + count;
     }, 0);
-
 
     return {
       chart: classes,

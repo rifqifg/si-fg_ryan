@@ -43,7 +43,7 @@ export default class CreateManyStudentValidator {
           rules.regex(/^[0-9]+$/),
           rules.unique({ table: 'academic.students', column: 'nis' })
         ]),
-        nisn: schema.string.optional([
+        nisn: schema.string([
           rules.regex(/^[0-9]+$/),
           rules.unique({ table: 'academic.students', column: 'nisn' })
         ]),

@@ -167,7 +167,9 @@ export default class AcademicDashboardController {
       .preload('employee', e => e.select('id').preload('homeroomTeacher', ht => {
         ht.select('name')
       }))
-      .firstOrFail()
+      .first()
+
+    if (teacher === null) return {}
 
     // data kelas & subject no duplikat
     const teachingClasses: string[] = []

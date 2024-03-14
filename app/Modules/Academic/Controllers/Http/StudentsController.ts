@@ -10,6 +10,7 @@ import User from "App/Models/User";
 import { RolesHelper } from "App/Helpers/rolesHelper";
 import { checkRoleSuperAdmin } from "App/Helpers/checkRoleSuperAdmin";
 import UpdateBatchStudentValidator from "../../Validators/UpdateBatchStudentValidator";
+import Class from "../../Models/Class";
 
 export default class StudentsController {
   public async index({ request, response, auth }: HttpContextContract) {
@@ -255,6 +256,46 @@ export default class StudentsController {
       response.ok({ message: "Berhasil mengubah banyak data", data });
     } catch (error) {
       const message = "ACST06: " + error.message || error;
+      console.log(error);
+      response.badRequest({
+        message: "Gagal mengambil data",
+        error: message,
+        error_data: error,
+      });
+    }
+  }
+
+  public async studentNotInClass({ request, response }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis();
+    CreateRouteHist(statusRoutes.START, dateStart);
+    const { page = 1, limit = 10, keyword = "", classId } = request.qs();
+
+    if (classId && !uuidValidation(classId) || !classId) {
+      return response.badRequest({ message: "Class ID tidak valid" });
+    }
+
+    try {
+      const classs = await Class.query()
+        .where('id', classId)
+        .first()
+
+      const data = await Student.query()
+        .select('id', 'name', 'class_id')
+        .where("isGraduated", false)
+        .andWhereILike('name', `%${keyword}%`)
+        .andWhere(query => query
+          .where(builder => builder
+            .whereNot('class_id', classs!.id)
+            .orWhereNull('class_id')
+          )
+          .andWhere('foundation_id', classs!.foundationId)
+        )
+        .paginate(page, limit)
+
+      CreateRouteHist(statusRoutes.FINISH, dateStart);
+      response.ok({ message: "Berhasil mengambil data", data });
+    } catch (error) {
+      const message = "ACST07: " + error.message || error;
       console.log(error);
       response.badRequest({
         message: "Gagal mengambil data",

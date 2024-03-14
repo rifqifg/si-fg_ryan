@@ -72,10 +72,10 @@ export default class AcademicDashboardController {
       .select(Database.raw(`DATE_TRUNC('month', date_in) as date_in`))
       .select(
         Database.raw(
-          `round(cast(sum(case when status = 'teach' or status = 'exam' or status = 'homework' then 1 else 0 end) * 100.0 / (count(status))as decimal(10,2)),0) as teach_precentage`
+          `round(cast(sum(case when status = 'teach' or status = 'exam' or status = 'homework' then 1 else 0 end) * 100.0 / (count(status))as decimal(10,2)),1) as teach_precentage`
         ),
         Database.raw(
-          `round(cast(sum(case when status = 'not_teach' then 1 else 0 end) * 100.0 / (count(status))as decimal(10,2)),0) as not_teach_precentage`
+          `round(cast(sum(case when status = 'not_teach' then 1 else 0 end) * 100.0 / (count(status))as decimal(10,2)),1) as not_teach_precentage`
         )
       )
       .if(isUserAcademicOnly, uaQuery => {
@@ -92,13 +92,13 @@ export default class AcademicDashboardController {
         const teach = {
           date: dateIn,
           name: "Mengajar",
-          value: ta.$extras.teach_precentage
+          value: parseFloat(ta.$extras.teach_precentage)
         }
 
         const notTeach = {
           date: dateIn,
           name: "Tidak Mengajar",
-          value: ta.$extras.not_teach_precentage
+          value: parseFloat(ta.$extras.not_teach_precentage)
         }
 
         data.push(teach, notTeach)
@@ -136,7 +136,7 @@ export default class AcademicDashboardController {
 
     const formattedClasses = classes.map(kelas => ({
       kelas: kelas.name,
-      value: kelas.$extras.students_count
+      value: parseInt(kelas.$extras.students_count)
     }))
 
     const totalStudents = classes.reduce((sum, next) => {
@@ -146,7 +146,7 @@ export default class AcademicDashboardController {
 
     return {
       chart: formattedClasses,
-      totalStudent: totalStudents.toString()
+      totalStudent: totalStudents
     }
   }
 

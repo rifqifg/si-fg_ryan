@@ -9,6 +9,7 @@ import { DateTime } from "luxon";
 import User from "App/Models/User";
 import { RolesHelper } from "App/Helpers/rolesHelper";
 import { checkRoleSuperAdmin } from "App/Helpers/checkRoleSuperAdmin";
+import UpdateBatchStudentValidator from "../../Validators/UpdateBatchStudentValidator";
 
 export default class StudentsController {
   public async index({ request, response, auth }: HttpContextContract) {
@@ -241,6 +242,24 @@ export default class StudentsController {
       response.badRequest({
         message: "Gagal menghapus data",
         error: error.message,
+      });
+    }
+  }
+
+  public async updateStudents({ request, response }: HttpContextContract) {
+    const payload = await request.validate(UpdateBatchStudentValidator);
+
+    try {
+      const data = await Student.updateOrCreateMany("id", payload.students)
+
+      response.ok({ message: "Berhasil mengubah banyak data", data });
+    } catch (error) {
+      const message = "ACST06: " + error.message || error;
+      console.log(error);
+      response.badRequest({
+        message: "Gagal mengambil data",
+        error: message,
+        error_data: error,
       });
     }
   }

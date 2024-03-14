@@ -8,6 +8,7 @@ import { DateTime } from 'luxon'
 import Class from '../../Models/Class'
 import Database from '@ioc:Adonis/Lucid/Database'
 import TeacherAttendance from '../../Models/TeacherAttendance'
+import DailyAttendance from '../../Models/DailyAttendance'
 
 export default class AcademicDashboardController {
   public async index({ response, auth }: HttpContextContract) {
@@ -51,21 +52,21 @@ export default class AcademicDashboardController {
     const formattedToDate = toDate ? DateTime.fromISO(toDate).endOf('month').toISODate()! : DateTime.local({zone:'utc+7'}).toISODate()!
 
     try {
-    const user = await User.query()
-      .preload('roles', r => r.preload('role'))
-      .preload('employee', e => e.select('id', 'name', 'foundation_id'))
-      .where('employee_id', auth.user!.$attributes.employeeId)
-      .firstOrFail()
+      const user = await User.query()
+        .preload('roles', r => r.preload('role'))
+        .preload('employee', e => e.select('id', 'name', 'foundation_id'))
+        .where('employee_id', auth.user!.$attributes.employeeId)
+        .firstOrFail()
 
-    const userObject = JSON.parse(JSON.stringify(user))
-    const roles = RolesHelper(userObject)
+      const userObject = JSON.parse(JSON.stringify(user))
+      const roles = RolesHelper(userObject)
 
-    const isUserAcademicOnly = (
-      roles.includes('user_academic')
-      && !(roles.includes('admin_academic'))
-      && !(roles.includes('admin_foundation'))
-      && !(roles.includes('super_admin'))
-    ) ? true : false
+      const isUserAcademicOnly = (
+        roles.includes('user_academic')
+        && !(roles.includes('admin_academic'))
+        && !(roles.includes('admin_foundation'))
+        && !(roles.includes('super_admin'))
+      ) ? true : false
 
     const teacherAttendances = await TeacherAttendance.query()
       // NOTE: query select ini overwrite valuenya date_in. utk sekarang krna date_in sendiri ngga dipake jd gpp
@@ -84,10 +85,9 @@ export default class AcademicDashboardController {
       .whereBetween("date_in", [formattedFromDate, formattedToDate])
       .groupByRaw(`DATE_TRUNC('month', date_in)`)
 
-      // TODO: sesuain format ian
       const data: any = []
       teacherAttendances.forEach(ta => {
-        const dateIn = ta.date_in.toFormat('MMMM yyyy', {locale: 'id'})
+        const dateIn = ta.date_in.toFormat('MMMM yyyy', { locale: 'id' })
 
         const teach = {
           date: dateIn,
@@ -106,7 +106,100 @@ export default class AcademicDashboardController {
 
       return response.ok({ message: "Berhasil mengambil data", data })
     } catch (error) {
-      const message = "ACDASH01: " + error.message || error;
+      const message = "ACDASH02: " + error.message || error;
+      CreateRouteHist(statusRoutes.ERROR, dateStart, message)
+      console.log(error);
+      response.badRequest({
+        message: "Gagal mengambil data",
+        error: message,
+        error_data: error,
+      });
+    }
+  }
+
+  public async getStudentAttendances({ request, response, auth }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis()
+    CreateRouteHist(statusRoutes.START, dateStart)
+
+    const { fromDate, toDate } = request.qs()
+
+    const formattedFromDate = fromDate ? DateTime.fromISO(fromDate).startOf('month').toISODate()! : DateTime.local({zone:'utc+7'}).toISODate()!
+    const formattedToDate = toDate ? DateTime.fromISO(toDate).endOf('month').toISODate()! : DateTime.local({zone:'utc+7'}).toISODate()!
+
+    try {
+      const user = await User.query()
+        .preload('roles', r => r.preload('role'))
+        .preload('employee', e => e.select('id', 'name', 'foundation_id'))
+        .where('employee_id', auth.user!.$attributes.employeeId)
+        .firstOrFail()
+
+      const userObject = JSON.parse(JSON.stringify(user))
+      const roles = RolesHelper(userObject)
+
+      const isUserAcademicOnly = (
+        roles.includes('user_academic')
+        && !(roles.includes('admin_academic'))
+        && !(roles.includes('admin_foundation'))
+        && !(roles.includes('super_admin'))
+      ) ? true : false
+
+      if (isUserAcademicOnly) {
+        return response.badRequest({ message: "user_academic tidak bisa akses data ini" })
+      }
+
+      const dailyAttendances = await DailyAttendance.query()
+        .select(Database.raw(`DATE_TRUNC('month', date_in) as date_in`))
+        .select(
+          Database.raw(
+            `round(cast(sum(case when status = 'present' then 1 else 0 end) * 100.0 / (count(status))as decimal(10,2)),1) as present_precentage`
+          ),
+          Database.raw(
+            `round(cast(sum(case when status = 'permission' then 1 else 0 end) * 100.0 / (count(status))as decimal(10,2)),1) as permission_precentage`
+          ),
+          Database.raw(
+            `round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(status))as decimal(10,2)),1) as sick_precentage`
+          ),
+          Database.raw(
+            `round(cast(sum(case when status = 'absent' then 1 else 0 end) * 100.0 / (count(status))as decimal(10,2)),1) as absent_precentage`
+          )
+        )
+        .whereBetween("date_in", [formattedFromDate, formattedToDate])
+        .groupByRaw(`DATE_TRUNC('month', date_in)`)
+
+      const data: any[] = []
+      dailyAttendances.forEach(da => {
+        const dateIn = da.date_in.toFormat('MMMM yyyy', { locale: 'id' })
+
+        const present = {
+          date: dateIn,
+          name: "Hadir",
+          value: parseFloat(da.$extras.present_precentage)
+        }
+
+        const permission = {
+          date: dateIn,
+          name: "Izin",
+          value: parseFloat(da.$extras.permission_precentage)
+        }
+
+        const sick = {
+          date: dateIn,
+          name: "Sakit",
+          value: parseFloat(da.$extras.sick_precentage)
+        }
+
+        const absent = {
+          date: dateIn,
+          name: "Alpha",
+          value: parseFloat(da.$extras.absent_precentage)
+        }
+
+        data.push(present, permission, sick, absent)
+      })
+
+      return response.ok({ message: "Berhasil mengambil data", data })
+    } catch (error) {
+      const message = "ACDASH03: " + error.message || error;
       CreateRouteHist(statusRoutes.ERROR, dateStart, message)
       console.log(error);
       response.badRequest({

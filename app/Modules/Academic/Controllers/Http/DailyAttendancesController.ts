@@ -7,9 +7,11 @@ import UpdateDailyAttendanceValidator from "../../Validators/UpdateDailyAttendan
 import Database from "@ioc:Adonis/Lucid/Database";
 import { statusRoutes } from "App/Modules/Log/lib/enum";
 import { CreateRouteHist } from "App/Modules/Log/Helpers/createRouteHist";
+import User from "App/Models/User";
+import { RolesHelper } from "App/Helpers/rolesHelper";
 
 export default class DailyAttendancesController {
-  public async index({ request, response }: HttpContextContract) {
+  public async index({ request, response, auth }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis();
     CreateRouteHist(statusRoutes.START, dateStart);
     const hariIni = DateTime.now().toSQLDate()!.toString();
@@ -25,6 +27,7 @@ export default class DailyAttendancesController {
       sortingByAbsent = false,
       lastDays = 7,
       lastMonths = 3,
+      foundationId
     } = request.qs();
 
     if (classId && !uuidValidation(classId)) {
@@ -35,13 +38,22 @@ export default class DailyAttendancesController {
     const splittedFromDate = fromDate.split(" ")[0];
     const splittedToDate = toDate.split(" ")[0];
 
-    const formattedStartDate = `${
-      splittedFromDate ? splittedFromDate : hariIni
-    } 00:00:00.000 +0700`;
-    const formattedEndDate = `${
-      splittedToDate ? splittedToDate : hariIni
-    } 23:59:59.000 +0700`;
+    const formattedStartDate = `${splittedFromDate ? splittedFromDate : hariIni
+      } 00:00:00.000 +0700`;
+    const formattedEndDate = `${splittedToDate ? splittedToDate : hariIni
+      } 23:59:59.000 +0700`;
     try {
+      const user = await User.query()
+        .preload('employee', e => e
+          .select('id', 'name', 'foundation_id'))
+        .preload('roles', r => r
+          .preload('role'))
+        .where('employee_id', auth.user!.$attributes.employeeId)
+        .first()
+
+      const userObject = JSON.parse(JSON.stringify(user))
+      const roles = await RolesHelper(userObject)
+
       let data = {};
       if (recap) {
         //TODO: buat rekap data absen harian
@@ -57,6 +69,13 @@ export default class DailyAttendancesController {
         }
 
         const whereClassId = classId ? `and c.id = '${classId}'` : "";
+        //buat filter by foundationId
+        let whereFoundationId = ""
+        if (!roles.includes('super_admin')) {
+          whereFoundationId = `and c.foundation_id = '${user!.employee.foundationId}'`
+        } else if (roles.includes('super_admin') && foundationId) {
+          whereFoundationId = `and c.foundation_id = '${foundationId}'`
+        }
 
         const agenda = await Database.rawQuery(
           `(select count(*) from academic.agendas a where a.count_presence = false and date between '${formattedStartDate}'::date AND '${formattedEndDate}'::date)`
@@ -92,7 +111,7 @@ export default class DailyAttendancesController {
 	            0) + round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id) * ${totalDays})as decimal(10,
 	            2)),
 	            0) as present_accumulation,
-              (select count(distinct  c.id) 
+              (select count(distinct  c.id)
               from academic.daily_attendances da
               left join academic.students s
                   on s.id = da.student_id
@@ -102,20 +121,22 @@ export default class DailyAttendancesController {
                   date_in between '${formattedStartDate}' AND '${formattedEndDate}'
                   and c.is_graduated = false
                   ${whereClassId}
+                  ${whereFoundationId}
                   and date_in not in  (select date from academic.agendas where count_presence = false)
               ) as total_data
               from
 	              academic.daily_attendances da
-              left join academic.students s 
+              left join academic.students s
                       on
 	                  da.student_id = s.id
-              left join academic.classes c 
+              left join academic.classes c
                       on
 	                  c.id = s.class_id
               where
 	                  date_in between '${formattedStartDate}' AND '${formattedEndDate}'
 	                  and c.is_graduated = false
                     ${whereClassId}
+                    ${whereFoundationId}
                     and date_in::date not in  (select date from academic.agendas where count_presence = false)
               group by
               	c.name,
@@ -163,14 +184,15 @@ export default class DailyAttendancesController {
                   date_in between '${formattedStartDate}' AND '${formattedEndDate}'
                   and c.is_graduated = false
                   ${whereClassId}
+                  ${whereFoundationId}
                   and date_in not in  (select date from academic.agendas where count_presence = false)
           ) as total_data
        from
          academic.daily_attendances da
-       left join academic.students s 
+       left join academic.students s
                  on
          da.student_id = s.id
-       left join academic.classes c 
+       left join academic.classes c
                  on
          c.id = s.class_id
        where
@@ -178,6 +200,7 @@ export default class DailyAttendancesController {
          and c.is_graduated = false
          and s.name ilike '%${keyword}%'
          ${whereClassId}
+         ${whereFoundationId}
          and date_in::date not in  (select date from academic.agendas where count_presence = false)
        group by
          s.name,
@@ -187,7 +210,7 @@ export default class DailyAttendancesController {
         order by c.name
        limit ${limit}
                  offset ${limit * (page - 1)}
-        
+
           `);
 
           data = {
@@ -252,6 +275,7 @@ export default class DailyAttendancesController {
           	c.id = s.class_id
           where
             da.date_in::date between '${startDate}' and '${endDate}'
+            ${whereFoundationId}
           	and da.date_in::date not in (
           	select
           		date
@@ -265,30 +289,29 @@ export default class DailyAttendancesController {
           	c.id
           order by
           	cast(date_in::date as varchar) desc
-        
+
           `);
           const { rows: akumulasiBulanan } = await Database.rawQuery(`
             with presence_calc as (
-              select * from     
+              select * from
               (select c.id, c.name, count(s.id) total
               from academic.students s
               left join academic.classes c
-              on c.id = s.class_id 
+              on c.id = s.class_id
               where c.is_graduated = false
+              ${whereFoundationId}
               group by c.name, c.id
               order by c.name) ts,
               (
                   WITH date_range AS (
-                      SELECT generate_series('${
-                        date[date.length - 1].tanggal
-                      }'::date, '${
-            date[0].tanggal
-          }'::date, '1 day'::interval) AS date
+                      SELECT generate_series('${date[date.length - 1].tanggal
+            }'::date, '${date[0].tanggal
+            }'::date, '1 day'::interval) AS date
                   )
                   SELECT COUNT(*) AS days_count
                   FROM date_range
-                  WHERE EXTRACT(ISODOW FROM date) < 6 
-                      AND date not in (select date from academic.agendas where count_presence <> true) 
+                  WHERE EXTRACT(ISODOW FROM date) < 6
+                      AND date not in (select date from academic.agendas where count_presence <> true)
               ) dc
           )
           select pc.days_count, c.id as class_id, c."name" as class_name , count(da.status) as total_presence,  count(distinct s.id) as total_student,
@@ -297,15 +320,16 @@ export default class DailyAttendancesController {
               0) + round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id) * pc.days_count )as decimal(10,
               2)),
               0) as present_accumulation
-            
-          from academic.daily_attendances da 
-          left join academic.students s 
-              on s.id = da.student_id 
-          left join academic.classes c 
-              on c.id = s.class_id 
+
+          from academic.daily_attendances da
+          left join academic.students s
+              on s.id = da.student_id
+          left join academic.classes c
+              on c.id = s.class_id
           left join presence_calc pc
               on pc.id = c.id
           where da.status in ('present','sick')
+          ${whereFoundationId}
           and substring(cast(da.date_in::date as varchar),0,8) between '${startMonth}' and '${endMonth}'
           group by c.name, c.id , days_count
           order by c.name
@@ -313,52 +337,52 @@ export default class DailyAttendancesController {
 
           const { rows: dataBulanan } = await Database.rawQuery(`
           with presence_calc as (
-            select *, (total * days_count) total_days from     
+            select *, (total * days_count) total_days from
             (select c.id, c.name, count(s.id) total
             from academic.students s
             left join academic.classes c
-            on c.id = s.class_id 
+            on c.id = s.class_id
             where c.is_graduated = false
+            ${whereFoundationId}
             group by c.name, c.id
             order by c.name) ts,
             (
                 WITH date_range AS (
                 -- tanggal dinamis dari input
-                    SELECT generate_series('${
-                      date[date.length - 1].tanggal
-                    }'::date, '${
-            date[0].tanggal
-          }'::date, '1 day'::interval) AS date
+                    SELECT generate_series('${date[date.length - 1].tanggal
+            }'::date, '${date[0].tanggal
+            }'::date, '1 day'::interval) AS date
                 )
                 SELECT extract(month from date) bulan ,COUNT(*) AS days_count
                 FROM date_range
-                WHERE EXTRACT(ISODOW FROM date) < 6 
+                WHERE EXTRACT(ISODOW FROM date) < 6
                     AND date not in (select date from academic.agendas where count_presence <> true)
-                group by extract(month from date) 
+                group by extract(month from date)
             ) dc
         )
-        
+
         select c.id as class_id, c."name" as class_name , count(da.status) as total_presence, extract(month from date_in) bulan, count(distinct s.id) as total_student,
             round(cast(sum(case when da.status = 'present' then 1 else 0 end) * 100.0 / (count(distinct student_id) * pc.days_count)as decimal(10,
           2)),
           0) + round(cast(sum(case when status = 'sick' then 1 else 0 end) * 100.0 / (count(distinct student_id) * pc.days_count )as decimal(10,
           2)),
           0) as present_accumulation
-           
-        from academic.daily_attendances da 
-        left join academic.students s 
-            on s.id = da.student_id 
-        left join academic.classes c 
-            on c.id = s.class_id 
+
+        from academic.daily_attendances da
+        left join academic.students s
+            on s.id = da.student_id
+        left join academic.classes c
+            on c.id = s.class_id
         left join presence_calc pc
             on pc.id = c.id
             and pc.bulan = extract(month from date_in)
         where da.status in ('present','sick')
+        ${whereFoundationId}
         and substring(cast(da.date_in::date as varchar),0,8) between '${startMonth}' and '${endMonth}'
         group by c.name, extract(month from date_in), pc.total_days, c.id , days_count
         order by extract(month from date_in) desc, c.name
-        
-        
+
+
           `);
           // .toQuery()
 
@@ -408,6 +432,12 @@ export default class DailyAttendancesController {
           .if(classId, (c) =>
             c.whereHas("student", (st) => st.where("class_id", classId))
           )
+          .if(!roles.includes('super_admin'), query => query
+            .whereHas('student', s => s.where('foundation_id', user!.employee.foundationId))
+          )
+          .if(roles.includes('super_admin') && foundationId, query => query
+            .whereHas('student', s => s.where('foundation_id', foundationId))
+          )
           .paginate(page, limit);
       } else if (mode === "list") {
         data = await DailyAttendance.query()
@@ -439,6 +469,12 @@ export default class DailyAttendancesController {
           .orderBy("s.name")
           .if(classId, (c) =>
             c.whereHas("student", (st) => st.where("class_id", classId))
+          )
+          .if(!roles.includes('super_admin'), query => query
+            .whereHas('student', s => s.where('foundation_id', user!.employee.foundationId))
+          )
+          .if(roles.includes('super_admin') && foundationId, query => query
+            .whereHas('student', s => s.where('foundation_id', foundationId))
           );
       } else {
         return response.badRequest({
@@ -620,8 +656,7 @@ export default class DailyAttendancesController {
 
           if (existingRecord) {
             throw new Error(
-              `Abensi siswa dengan nama ${
-                existingRecord.student.name
+              `Abensi siswa dengan nama ${existingRecord.student.name
               }, kelas , untuk tanggal ${waktuAwal.toSQLDate()} sudah ada`
             );
           }

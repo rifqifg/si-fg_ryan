@@ -8,6 +8,7 @@ import {
 } from "@ioc:Adonis/Lucid/Orm";
 import { v4 as uuidv4 } from "uuid";
 import User from "App/Models/User";
+import Foundation from "App/Modules/Foundation/Models/Foundation";
 
 export default class Agenda extends BaseModel {
   public static table = "academic.agendas";
@@ -35,6 +36,12 @@ export default class Agenda extends BaseModel {
 
   @belongsTo(() => User)
   public user: BelongsTo<typeof User>;
+
+  @column()
+  public foundationId: string
+
+  @belongsTo(() => Foundation)
+  public foundation: BelongsTo<typeof Foundation>;
 
   @beforeCreate()
   public static assignUuid(a: Agenda) {

@@ -7,14 +7,28 @@ import Student from '../../Models/Student';
 import { statusRoutes } from 'App/Modules/Log/lib/enum';
 import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist';
 import { DateTime } from 'luxon';
+import User from 'App/Models/User';
+import { RolesHelper } from 'App/Helpers/rolesHelper';
+import { checkRoleSuperAdmin } from 'App/Helpers/checkRoleSuperAdmin';
 
 export default class ClassesController {
-  public async index({ request, response }: HttpContextContract) {
+  public async index({ request, response, auth }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart);
-    let { page = 1, limit = 10, keyword = "", mode = "page", is_graduated = false } = request.qs()
+    let { page = 1, limit = 10, keyword = "", mode = "page", is_graduated = false, foundationId } = request.qs()
 
     is_graduated = is_graduated == "true" ? true : false
+
+    const user = await User.query()
+      .preload('employee', e => e
+        .select('id', 'name', 'foundation_id'))
+      .preload('roles', r => r
+        .preload('role'))
+      .where('employee_id', auth.user!.$attributes.employeeId)
+      .first()
+
+    const userObject = JSON.parse(JSON.stringify(user))
+    const roles = await RolesHelper(userObject)
 
     try {
       let data = {}
@@ -24,15 +38,27 @@ export default class ClassesController {
           .preload('homeroomTeacher', query => query.select('name', 'nip')).preload('jurusan')
           .withCount('students')
           .whereILike('name', `%${keyword}%`)
+          .preload('foundation', f => f.select('name'))
           .if(typeof is_graduated === 'boolean', query => query.where('is_graduated', '=', is_graduated))
+          .if(!roles.includes('super_admin'), query => query
+            .where('foundation_id', user!.employee.foundationId)
+          )
+          .if(roles.includes('super_admin') && foundationId, query => query
+            .where('foundation_id', foundationId))
           .orderBy('name')
           .paginate(page, limit)
       } else if (mode === "list") {
         data = await Class
           .query()
-          .select('id', 'name', 'description', 'employeeId')
+          .select('id', 'name', 'description', 'employeeId', 'foundation_id')
           .preload('homeroomTeacher', query => query.select('name', 'nip'))
+          .preload('foundation', f => f.select('name'))
           .if(typeof is_graduated === 'boolean', query => query.where('is_graduated', '=', is_graduated))
+          .if(!roles.includes('super_admin'), query => query
+            .where('foundation_id', user!.employee.foundationId)
+          )
+          .if(roles.includes('super_admin') && foundationId, query => query
+            .where('foundation_id', foundationId))
           .withCount('students')
           .whereILike('name', `%${keyword}%`)
           .orderBy('name')
@@ -49,13 +75,24 @@ export default class ClassesController {
   }
 
 
-  public async store({ request, response }: HttpContextContract) {
+  public async store({ request, response, auth }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart);
     const payload = await request.validate(CreateClassValidator)
     try {
+      const superAdmin = await checkRoleSuperAdmin()
+      //kalo bukan superadmin maka foundationId nya di hardcode
+      if (!superAdmin) {
+        const user = await User.query()
+          .preload('employee', e => e
+            .select('id', 'name', 'foundation_id'))
+          .where('employee_id', auth.user!.$attributes.employeeId)
+          .first()
+
+        payload.foundationId = user!.employee.foundationId
+      }
       const data = await Class.create(payload)
-      CreateRouteHist( statusRoutes.FINISH, dateStart);
+      CreateRouteHist(statusRoutes.FINISH, dateStart);
       response.created({ message: "Berhasil menyimpan data", data })
     } catch (error) {
       CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error);

@@ -5,9 +5,9 @@ Route.group(() => {
   });
   Route.resource("classes", "ClassesController").apiOnly().middleware({ "*": ["auth"] });
   Route.shallowResource('jurusan', 'JurusansController').only(['index']).middleware({'index': ['auth']})
-  Route.resource("students", "StudentsController").apiOnly().middleware({store: ["auth"],destroy: ["auth"],update: ["auth"],show: ["auth"],});
+  Route.resource("students", "StudentsController").apiOnly().middleware({index: ["silentAuth"],destroy: ["auth"],update: ["auth"],show: ["auth"],store: ["auth"]});
   Route.resource("subjects", "SubjectsController").apiOnly().middleware({ "*": ["auth"] });
-  Route.resource("teachers", "TeachersController").apiOnly().middleware({store: ["auth"],destroy: ["auth"],update: ["auth"],show: ["auth"],});
+  Route.resource("teachers", "TeachersController").apiOnly().middleware({index: ["silentAuth"],destroy: ["auth"],update: ["auth"],show: ["auth"],});
   Route.resource("teachers.teachings", "TeachingsController").apiOnly().middleware({store: ["auth"],destroy: ["auth"],update: ["auth"],show: ["auth"]})
   Route.shallowResource("students.parents", "StudentParentsController").apiOnly().middleware({ "*": ["auth"] });
   Route.resource("sessions", "SessionsController").only(["index", "show"]).middleware({store: ["auth"],destroy: ["auth"],update: ["auth"],show: ["auth"]});
@@ -35,6 +35,8 @@ Route.group(() => {
   Route.post('raports/:id/hitung-ulang', 'RaportsController.hitungUlang' ).middleware("auth")
   Route.shallowResource('raports.student-raports', 'StudentRaportsController').apiOnly().middleware({ "*": ["auth"] })
   Route.shallowResource('student-raports.student-raport-details', 'StudentRaportDetailsController').apiOnly().middleware({ "*": ["auth"] })
+  Route.put('update-students', 'StudentsController.updateStudents' ).middleware("auth")
+  Route.get('student-not-in-class', 'StudentsController.studentNotInClass' ).middleware("auth")
 })
   .prefix("academics")
   .namespace("AcademicControllers");

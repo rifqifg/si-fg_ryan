@@ -6,21 +6,43 @@ import UpdateAgendumValidator from "../../Validators/UpdateAgendumValidator";
 import { CreateRouteHist } from "App/Modules/Log/Helpers/createRouteHist";
 import { statusRoutes } from "App/Modules/Log/lib/enum";
 import { DateTime } from "luxon";
+import User from "App/Models/User";
+import { RolesHelper } from "App/Helpers/rolesHelper";
+import { checkRoleSuperAdmin } from "App/Helpers/checkRoleSuperAdmin";
 
 export default class AgendasController {
-  public async index({ request, response }: HttpContextContract) {
+  public async index({ request, response, auth }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart);
-    const { keyword = "", date = "" } = request.qs();
+    const { keyword = "", fromDate, toDate, page = 1, limit = 10, foundationId } = request.qs();
+
+    const user = await User.query()
+      .preload('employee', e => e
+        .select('id', 'name', 'foundation_id'))
+      .preload('roles', r => r
+        .preload('role'))
+      .where('employee_id', auth.user!.$attributes.employeeId)
+      .first()
+
+    const userObject = JSON.parse(JSON.stringify(user))
+    const roles = await RolesHelper(userObject)
 
     try {
       const data = await Agenda.query()
         .select("*")
         .whereILike("name", `%${keyword}%`)
-        .if(date, (q) => q.where("date", date))
-        .preload("user", (s) => s.select("id", "name"));
+        .if(!roles.includes('super_admin'), query => query
+          .where('foundation_id', user!.employee.foundationId)
+        )
+        .if(roles.includes('super_admin') && foundationId, query => query
+          .where('foundation_id', foundationId))
+        .if(fromDate && toDate, query => query
+          .whereBetween('date', [fromDate, toDate]))
+        .preload("user", (s) => s.select("id", "name"))
+        .preload('foundation', f => f.select('name'))
+        .paginate(page, limit)
 
-        CreateRouteHist(statusRoutes.FINISH, dateStart)
+      CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {
       CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error)
@@ -34,6 +56,18 @@ export default class AgendasController {
     const payload = await request.validate(CreateAgendumValidator);
 
     try {
+      const superAdmin = await checkRoleSuperAdmin()
+      //kalo bukan superadmin maka foundationId nya di hardcode
+      if (!superAdmin) {
+        const user = await User.query()
+          .preload('employee', e => e
+            .select('id', 'name', 'foundation_id'))
+          .where('employee_id', auth.user!.$attributes.employeeId)
+          .first()
+
+        payload.foundationId = user!.employee.foundationId
+      }
+
       const data = await Agenda.create({ userId: auth?.user?.id, ...payload });
 
       CreateRouteHist(statusRoutes.FINISH, dateStart);
@@ -81,7 +115,7 @@ export default class AgendasController {
       const data = await agenda.merge(payload).save();
 
       response.ok({ message: "Berhasil memperbarui data", data });
-    } catch (error) {}
+    } catch (error) { }
   }
 
   public async destroy({ response, params }: HttpContextContract) {

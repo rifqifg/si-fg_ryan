@@ -24,6 +24,7 @@ import SubjectMember from "Academic/Models/SubjectMember";
 import Account from "App/Modules/Finance/Models/Account";
 import BukuNilai from "./BukuNilai";
 import DailyAttendance from "./DailyAttendance";
+import Foundation from "App/Modules/Foundation/Models/Foundation";
 let newId = "";
 
 export default class Student extends BaseModel {
@@ -214,7 +215,7 @@ export default class Student extends BaseModel {
 
   @hasMany(() => SubjectMember)
   public subjectMembers: HasMany<typeof SubjectMember>
-  
+
   @hasMany(() => BukuNilai)
   public bukuNilai: HasMany<typeof BukuNilai>
 
@@ -223,6 +224,12 @@ export default class Student extends BaseModel {
 
   @hasMany(() => DailyAttendance)
   public dailyAttendance: HasMany<typeof DailyAttendance>
+
+  @column()
+  public foundationId: string
+
+  @belongsTo(() => Foundation)
+  public foundation: BelongsTo<typeof Foundation>;
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime | null;

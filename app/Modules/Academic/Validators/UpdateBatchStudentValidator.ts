@@ -1,8 +1,8 @@
-import { schema, CustomMessages, rules } from "@ioc:Adonis/Core/Validator";
-import type { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
+import { schema, CustomMessages, rules } from '@ioc:Adonis/Core/Validator'
+import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 
-export default class CreateAgendumValidator {
-  constructor(protected ctx: HttpContextContract) {}
+export default class UpdateBatchStudentValidator {
+  constructor(protected ctx: HttpContextContract) { }
 
   /*
    * Define schema to validate the "shape", "type", "formatting" and "integrity" of data.
@@ -24,13 +24,17 @@ export default class CreateAgendumValidator {
    *    ```
    */
   public schema = schema.create({
-    name: schema.string([rules.trim()]),
-    countPresence: schema.boolean(),
-    description: schema.string.optional([rules.trim()]),
-    type: schema.enum(["NATIONAL_DAY", "HOLIDAY", "EVENT", "SCHOOL_AGENDA"]),
-    date: schema.date({ format: "yyyy-MM-dd" }),
-    foundationId: schema.string.optional([rules.exists({table: 'foundation.foundations', column: 'id'})]),
-  });
+    students: schema.array().members(
+      schema.object().members({
+        id: schema.string([
+          rules.exists({ table: 'academic.students', column: 'id' })
+        ]),
+        classId: schema.string({}, [
+          rules.exists({ table: "academic.classes", column: "id" }),
+        ]),
+      })
+    )
+  })
 
   /**
    * Custom messages for validation failures. You can make use of dot notation `(.)`
@@ -43,5 +47,5 @@ export default class CreateAgendumValidator {
    * }
    *
    */
-  public messages: CustomMessages = {};
+  public messages: CustomMessages = {}
 }

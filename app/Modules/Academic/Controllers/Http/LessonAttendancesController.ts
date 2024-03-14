@@ -9,9 +9,11 @@ import Database from "@ioc:Adonis/Lucid/Database";
 import { statusRoutes } from "App/Modules/Log/lib/enum";
 import { CreateRouteHist } from "App/Modules/Log/Helpers/createRouteHist";
 import { DateTime } from "luxon";
+import { RolesHelper } from "App/Helpers/rolesHelper";
+import User from "App/Models/User";
 
 export default class LessonAttendancesController {
-  public async index({ request, response }: HttpContextContract) {
+  public async index({ request, response, auth }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
     const {
@@ -24,6 +26,7 @@ export default class LessonAttendancesController {
       className = "",
       subject = "",
       session = "",
+      foundationId
     } = request.qs();
     const formattedStartDate = `${
       fromDate ? fromDate : hariIni
@@ -31,6 +34,17 @@ export default class LessonAttendancesController {
     const formattedEndDate = `${toDate ? toDate : hariIni} 23:59:59.000 +0700`;
 
     let data = {};
+
+    const user = await User.query()
+      .preload('employee', e => e
+        .select('id', 'name', 'foundation_id'))
+      .preload('roles', r => r
+        .preload('role'))
+      .where('employee_id', auth.user!.$attributes.employeeId)
+      .first()
+
+    const userObject = JSON.parse(JSON.stringify(user))
+    const roles = await RolesHelper(userObject)
 
   try {
     if (recap && recap !== "false") {
@@ -82,6 +96,12 @@ export default class LessonAttendancesController {
         .if(session, (se) =>
           se.whereHas("session", (s) => s.whereILike("session", `%${session}%`))
         )
+        .if(!roles.includes('super_admin'), query =>
+          query.whereHas('student', s => s.where('foundation_id', user!.employee.foundationId))
+        )
+        .if(roles.includes('super_admin') && foundationId, query =>
+          query.whereHas('student', s => s.where('foundation_id', foundationId))
+        )
         .preload(
           "student",
           (st) => (
@@ -123,6 +143,12 @@ export default class LessonAttendancesController {
       .if(session, (se) =>
         se.whereHas("session", (s) => s.whereILike("session", `%${session}%`))
       )
+      .if(!roles.includes('super_admin'), query =>
+        query.whereHas('student', s => s.where('foundation_id', user!.employee.foundationId))
+      )
+      .if(roles.includes('super_admin') && foundationId, query =>
+        query.whereHas('student', s => s.where('foundation_id', foundationId))
+      )
       .preload(
         "student",
         (s) => (
@@ -148,7 +174,6 @@ export default class LessonAttendancesController {
     CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error)
 
     response.badRequest({message: "Gagal mengambil data", error: error.message || error})
-    
   }
   }
 
@@ -157,9 +182,9 @@ export default class LessonAttendancesController {
     CreateRouteHist(statusRoutes.START, dateStart)
 
     try {
-      
+
       const payload = await request.validate(CreateLessonAttendanceValidator);
-  
+
       // return payload.lessonAttendance
       const data = await LessonAttendance.createMany(payload.lessonAttendance);
       CreateRouteHist(statusRoutes.FINISH, dateStart)
@@ -175,13 +200,13 @@ export default class LessonAttendancesController {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
     const { id } = params;
-    
+
     try {
-      
+
       if (!uuidValidation(id)) {
         return response.badRequest({ message: "DailyAttendance ID tidak valid" });
       }
-  
+
       const data = await LessonAttendance.query()
         .preload(
           "student",
@@ -200,7 +225,7 @@ export default class LessonAttendancesController {
       CreateRouteHist(statusRoutes.ERROR, dateStart, error.message || error)
       response.badRequest({message: "Gagal mengambil data", error: error.message || error})
     }
-    
+
   }
 
   public async update({ params, request, response }: HttpContextContract) {

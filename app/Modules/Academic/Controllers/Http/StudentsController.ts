@@ -6,9 +6,14 @@ import UpdateStudentValidator from "Academic/Validators/UpdateStudentValidator";
 import { statusRoutes } from "App/Modules/Log/lib/enum";
 import { CreateRouteHist } from "App/Modules/Log/Helpers/createRouteHist";
 import { DateTime } from "luxon";
+import User from "App/Models/User";
+import { RolesHelper } from "App/Helpers/rolesHelper";
+import { checkRoleSuperAdmin } from "App/Helpers/checkRoleSuperAdmin";
+import UpdateBatchStudentValidator from "../../Validators/UpdateBatchStudentValidator";
+import Class from "../../Models/Class";
 
 export default class StudentsController {
-  public async index({ request, response }: HttpContextContract) {
+  public async index({ request, response, auth }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis();
     CreateRouteHist(statusRoutes.START, dateStart);
     const {
@@ -20,7 +25,8 @@ export default class StudentsController {
       isGraduated = false,
       notInSubject = "",
       subjectMember = "",
-      isNew
+      isNew,
+      foundationId
     } = request.qs();
 
     if (classId && !uuidValidation(classId)) {
@@ -37,6 +43,21 @@ export default class StudentsController {
 
     const graduated = isGraduated == "false" ? false : true;
 
+    let user
+    let roles: string[] = []
+    if (auth.isLoggedIn) {
+      user = await User.query()
+        .preload('employee', e => e
+          .select('id', 'name', 'foundation_id'))
+        .preload('roles', r => r
+          .preload('role'))
+        .where('employee_id', auth.user!.$attributes.employeeId)
+        .first()
+
+      const userObject = JSON.parse(JSON.stringify(user))
+      roles = await RolesHelper(userObject)
+    }
+
     try {
       let data: object = {};
       if (mode === "page") {
@@ -47,6 +68,7 @@ export default class StudentsController {
           .preload("kecamatan")
           .preload("kota")
           .preload("provinsi")
+          .preload('foundation', f => f.select('name'))
           .if(subjectMember, (sm) =>
             sm.whereHas("extracurricular", (ex) =>
               ex.where("subjectId", subjectMember)
@@ -64,6 +86,13 @@ export default class StudentsController {
             q.orWhereILike("nis", `%${keyword}%`);
           })
           .if(classId, (c) => c.where("classId", classId))
+          .if(!roles.includes('super_admin') && user, query => query
+            .where('foundation_id', user!.employee.foundationId)
+          )
+          .if(roles.includes('super_admin') && foundationId && user, query => query
+            .where('foundation_id', foundationId))
+          .if(!auth.isLoggedIn && foundationId, query => query
+            .where('foundation_id', foundationId))
           .orderBy("name")
           .paginate(page, limit);
       } else if (mode === "list") {
@@ -74,6 +103,7 @@ export default class StudentsController {
           .preload("kecamatan")
           .preload("kota")
           .preload("provinsi")
+          .preload('foundation', f => f.select('name'))
           .if(subjectMember, (sm) =>
             sm.whereHas("extracurricular", (ex) =>
               ex.where("subjectId", subjectMember)
@@ -90,6 +120,13 @@ export default class StudentsController {
             q.orWhereILike("nis", `%${keyword}%`);
           })
           .if(classId, (c) => c.where("classId", classId))
+          .if(!roles.includes('super_admin') && user, query => query
+            .where('foundation_id', user!.employee.foundationId)
+          )
+          .if(roles.includes('super_admin') && foundationId && user, query => query
+            .where('foundation_id', foundationId))
+          .if(!auth.isLoggedIn && foundationId, query => query
+            .where('foundation_id', foundationId))
           .orderBy("name");
       } else {
         return response.badRequest({
@@ -106,11 +143,22 @@ export default class StudentsController {
     }
   }
 
-  public async store({ request, response }: HttpContextContract) {
+  public async store({ request, response, auth }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis();
     CreateRouteHist(statusRoutes.START, dateStart);
     const payload = await request.validate(CreateStudentValidator);
     try {
+      const superAdmin = await checkRoleSuperAdmin()
+      //kalo bukan superadmin maka foundationId nya di hardcode
+      if (!superAdmin) {
+        const user = await User.query()
+          .preload('employee', e => e
+            .select('id', 'name', 'foundation_id'))
+          .where('employee_id', auth.user!.$attributes.employeeId)
+          .first()
+
+        payload.foundationId = user!.employee.foundationId
+      }
       const data = await Student.create(payload);
 
       CreateRouteHist(statusRoutes.FINISH, dateStart);
@@ -195,6 +243,64 @@ export default class StudentsController {
       response.badRequest({
         message: "Gagal menghapus data",
         error: error.message,
+      });
+    }
+  }
+
+  public async updateStudents({ request, response }: HttpContextContract) {
+    const payload = await request.validate(UpdateBatchStudentValidator);
+
+    try {
+      const data = await Student.updateOrCreateMany("id", payload.students)
+
+      response.ok({ message: "Berhasil mengubah banyak data", data });
+    } catch (error) {
+      const message = "ACST06: " + error.message || error;
+      console.log(error);
+      response.badRequest({
+        message: "Gagal mengambil data",
+        error: message,
+        error_data: error,
+      });
+    }
+  }
+
+  public async studentNotInClass({ request, response }: HttpContextContract) {
+    const dateStart = DateTime.now().toMillis();
+    CreateRouteHist(statusRoutes.START, dateStart);
+    const { page = 1, limit = 10, keyword = "", classId } = request.qs();
+
+    if (classId && !uuidValidation(classId) || !classId) {
+      return response.badRequest({ message: "Class ID tidak valid" });
+    }
+
+    try {
+      const classs = await Class.query()
+        .where('id', classId)
+        .first()
+
+      const data = await Student.query()
+        .select('id', 'name', 'class_id')
+        .where("isGraduated", false)
+        .andWhereILike('name', `%${keyword}%`)
+        .andWhere(query => query
+          .where(builder => builder
+            .whereNot('class_id', classs!.id)
+            .orWhereNull('class_id')
+          )
+          .andWhere('foundation_id', classs!.foundationId)
+        )
+        .paginate(page, limit)
+
+      CreateRouteHist(statusRoutes.FINISH, dateStart);
+      response.ok({ message: "Berhasil mengambil data", data });
+    } catch (error) {
+      const message = "ACST07: " + error.message || error;
+      console.log(error);
+      response.badRequest({
+        message: "Gagal mengambil data",
+        error: message,
+        error_data: error,
       });
     }
   }

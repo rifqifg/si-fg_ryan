@@ -105,6 +105,7 @@ Route.shallowResource('employee-units', 'EmployeeUnitsController').apiOnly().mid
 Route.get('list-employee-units', 'EmployeeUnitsController.getListEmployeeUnits').middleware(['auth'])
 Route.get('/employees-not-in-unit/', 'EmployeesController.getEmployeesNotInUnit').middleware(['auth'])
 Route.get('/employees-not-in-division/', 'EmployeesController.getEmployeesNotInDivision').middleware(['auth'])
+Route.get('/dashboard/kepegawaian', 'DashboardHrdsController.kepegawaian').middleware(['auth'])
 
 Route.group(() => {
   Route.get('activities', 'UserBehaviorHrdsController.activity').middleware(['auth'])

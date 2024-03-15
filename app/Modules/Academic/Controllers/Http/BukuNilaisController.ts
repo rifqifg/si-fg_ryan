@@ -227,7 +227,7 @@ export default class BukuNilaisController {
     );
 
     const teacher = userObject.roles.find(
-      (role) => role.role_name === "teacher"
+      (role) => role.role_name === "teacher" || role.role_name === "user_academic"
     );
     let payload;
 
@@ -445,7 +445,7 @@ export default class BukuNilaisController {
     );
 
     const teacher = userObject.roles.find(
-      (role) => role.role_name === "teacher"
+      (role) => role.role_name === "teacher" || role.role_name === "user_academic"
     );
     let payload;
     if (

@@ -12,18 +12,43 @@ import { PayloadImportStudent, PayloadImportStudentParent } from "../../lib/type
 import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist'
 import { statusRoutes } from 'App/Modules/Log/lib/enum'
 import { DateTime } from 'luxon'
+import { checkRoleSuperAdmin } from 'App/Helpers/checkRoleSuperAdmin'
+import User from 'App/Models/User'
 
 
 export default class ImportStudentsController {
-    public async store({ request, response }: HttpContextContract) {
+    public async store({ request, response, auth }: HttpContextContract) {
         const dateStart = DateTime.now().toMillis()
         CreateRouteHist(statusRoutes.START, dateStart);
         let payload = await request.validate(CreateImportStudentValidator)
 
+        const superAdmin = await checkRoleSuperAdmin()
+        //kalo bukan superadmin maka foundationId nya di hardcode
+        if (!superAdmin) {
+          const user = await User.query()
+            .preload('employee', e => e
+              .select('id', 'name', 'foundation_id'))
+            .where('employee_id', auth.user!.$attributes.employeeId)
+            .first()
+
+          payload.foundationId = user!.employee.foundationId
+        }else if(superAdmin && !payload.foundationId){
+          return response.badRequest({
+            "message": "Data tidak valid",
+            "data": [
+                {
+                    "rule": "required",
+                    "field": "foundationId",
+                    "message": "required validation failed"
+                }
+            ]
+          })
+        }
+
         //@ts-ignore
         const excelBuffer = fs.readFileSync(payload.upload.tmpPath);
 
-        const importExcel = await ImportService.ImportClassification(excelBuffer)
+        const importExcel = await ImportService.ImportClassification(excelBuffer, payload.foundationId)
 
         if (importExcel == 0) {
             response.badRequest({ message: "Data tidak boleh kosong"})
@@ -83,7 +108,7 @@ export default class ImportStudentsController {
 }
 
 class ImportService {
-    static async ImportClassification(excelBuffer) {
+    static async ImportClassification(excelBuffer, foundationId) {
         let workbook = await XLSX.read(excelBuffer)
 
         // Mendapatkan daftar nama sheet dalam workbook
@@ -115,7 +140,6 @@ class ImportService {
         } = {
             manyStudentParents: [],
         };
-
 
         function checkResidence(value) {
             if (value) {
@@ -232,6 +256,7 @@ class ImportService {
                     distance_to_school_in_km: value['Jarak Rumah ke Sekolah (KM)'],
                     unit: value['Unit'] == 'PUTRA' ? 'putra' : value['Unit'] == 'PUTRI' ? 'putri' : null,
                     program: checkProgram(value['Program']),
+                    foundationId: foundationId
                 })
 
                 studentFathers.manyStudentParents.push({

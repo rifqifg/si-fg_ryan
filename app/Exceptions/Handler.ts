@@ -50,13 +50,15 @@ export default class ExceptionHandler extends HttpExceptionHandler {
       let messages: any = [];
 
       // Iterasi setiap elemen dalam array errors
-      data.errors.forEach((error) => {
-        if (error.field === 'email' && error.rule === 'exists') {
-          messages.push('Email Not Registered');
-        }
-        //TODO: custom error message
-        // Tambahan kondisi lain jika diperlukan
-      });
+      if (data.errors) {
+        data.errors.forEach((error) => {
+          if (error.field === 'email' && error.rule === 'exists') {
+            messages.push('Email Not Registered');
+          }
+          //TODO: custom error message
+          // Tambahan kondisi lain jika diperlukan
+        });
+      }
       //buat reponse login sementara
       if (messages.length > 0) {
         return request.ctx?.response.badRequest({

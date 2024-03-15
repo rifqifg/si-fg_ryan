@@ -6,9 +6,12 @@ import UpdateSubjectValidator from "../../Validators/UpdateSubjectValidator";
 import { statusRoutes } from "App/Modules/Log/lib/enum";
 import { CreateRouteHist } from "App/Modules/Log/Helpers/createRouteHist";
 import { DateTime } from "luxon";
+import User from "App/Models/User";
+import { RolesHelper } from "App/Helpers/rolesHelper";
+import { checkRoleSuperAdmin } from "App/Helpers/checkRoleSuperAdmin";
 
 export default class SubjectsController {
-  public async index({ request, response }: HttpContextContract) {
+  public async index({ request, response, auth }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis();
     CreateRouteHist(statusRoutes.START, dateStart);
     const {
@@ -19,17 +22,34 @@ export default class SubjectsController {
       classId = "",
       teacherId = "",
       isExtracurricular = false,
+      foundationId
     } = request.qs();
 
     try {
+      const user = await User.query()
+        .preload('employee', e => e
+          .select('id', 'name', 'foundation_id'))
+        .preload('roles', r => r
+          .preload('role'))
+        .where('employee_id', auth.user!.$attributes.employeeId)
+        .first()
+
+      const userObject = JSON.parse(JSON.stringify(user))
+      const roles = await RolesHelper(userObject)
+
       let data = {};
       if (mode === "page") {
         data = await Subject.query()
-
           .if(isExtracurricular, (q) =>
             q.where("is_extracurricular", isExtracurricular)
           )
           .whereILike("name", `%${keyword}%`)
+          .if(!roles.includes('super_admin'), query => query
+            .where('foundation_id', user!.employee.foundationId)
+          )
+          .if(roles.includes('super_admin') && foundationId, query => query
+            .where('foundation_id', foundationId))
+          .preload('foundation', f => f.select('name'))
           .orderBy("name")
           .paginate(page, limit);
       } else if (mode === "list") {
@@ -42,7 +62,13 @@ export default class SubjectsController {
               )
             )
           )
+          .if(!roles.includes('super_admin'), query => query
+            .where('foundation_id', user!.employee.foundationId)
+          )
+          .if(roles.includes('super_admin') && foundationId, query => query
+            .where('foundation_id', foundationId))
           .whereILike("name", `%${keyword}%`)
+          .preload('foundation', f => f.select('name'))
           .orderBy("name");
         // if (classId !== "" && teacherId !== "") {
         //   data = await Subject.query()
@@ -83,11 +109,22 @@ export default class SubjectsController {
     }
   }
 
-  public async store({ request, response }: HttpContextContract) {
+  public async store({ request, response, auth }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis();
     CreateRouteHist(statusRoutes.START, dateStart);
     const payload = await request.validate(CreateSubjectValidator);
     try {
+      const superAdmin = await checkRoleSuperAdmin()
+      //kalo bukan superadmin maka foundationId nya di hardcode
+      if (!superAdmin) {
+        const user = await User.query()
+          .preload('employee', e => e
+            .select('id', 'name', 'foundation_id'))
+          .where('employee_id', auth.user!.$attributes.employeeId)
+          .first()
+
+        payload.foundationId = user!.employee.foundationId
+      }
       const data = await Subject.create(payload);
 
       CreateRouteHist(statusRoutes.FINISH, dateStart);

@@ -43,7 +43,7 @@ export default class CreateManyStudentValidator {
           rules.regex(/^[0-9]+$/),
           rules.unique({ table: 'academic.students', column: 'nis' })
         ]),
-        nisn: schema.string.optional([
+        nisn: schema.string([
           rules.regex(/^[0-9]+$/),
           rules.unique({ table: 'academic.students', column: 'nisn' })
         ]),
@@ -117,6 +117,7 @@ export default class CreateManyStudentValidator {
         nat_exam_no: schema.string.optional({ trim: true }, [
           rules.maxLength(30)
         ]),
+        foundationId: schema.string.optional([rules.exists({table: 'foundation.foundations', column: 'id'})]),
       })
     )
   })

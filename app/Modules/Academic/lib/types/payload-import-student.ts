@@ -43,6 +43,7 @@ export interface PayloadImportStudent {
   distance_to_school_in_km: string;
   unit: string | null;
   program: string | null;
+  foundationId: string;
 }
 
 export interface PayloadImportStudentParent {

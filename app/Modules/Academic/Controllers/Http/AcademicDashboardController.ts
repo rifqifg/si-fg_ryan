@@ -11,9 +11,11 @@ import TeacherAttendance from '../../Models/TeacherAttendance'
 import DailyAttendance from '../../Models/DailyAttendance'
 
 export default class AcademicDashboardController {
-  public async index({ response, auth }: HttpContextContract) {
+  public async index({ request, response, auth }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
+
+    const { foundationId } = request.qs()
 
     try {
       // TODO: filter by foundation
@@ -25,7 +27,7 @@ export default class AcademicDashboardController {
 
       const userObject = JSON.parse(JSON.stringify(user))
       const infoGuru = await this.getTeacherInfoByUser(userObject)
-      const infoSiswa = await this.getStudentsSummary(userObject)
+      const infoSiswa = await this.getStudentsSummary(userObject, foundationId)
 
       const data = { infoGuru, infoSiswa }
 
@@ -46,7 +48,7 @@ export default class AcademicDashboardController {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
 
-    const { fromDate, toDate } = request.qs()
+    const { fromDate, toDate, foundationId } = request.qs()
 
     const formattedFromDate = fromDate ? DateTime.fromISO(fromDate).startOf('month').toISODate()! : DateTime.local({zone:'utc+7'}).toISODate()!
     const formattedToDate = toDate ? DateTime.fromISO(toDate).endOf('month').toISODate()! : DateTime.local({zone:'utc+7'}).toISODate()!
@@ -79,9 +81,18 @@ export default class AcademicDashboardController {
           `round(cast(sum(case when status = 'not_teach' then 1 else 0 end) * 100.0 / (count(status))as decimal(10,2)),1) as not_teach_precentage`
         )
       )
-      .if(isUserAcademicOnly, uaQuery => {
-        uaQuery.andWhereHas('teacher', t => t.whereHas('employee', e => e.where('id', auth.user!.$attributes.employeeId)))
-      })
+      .if(!roles.includes('super_admin'), query => query
+        .andWhereHas('teacher', t => t.whereHas('employee', e => e
+          .where('foundation_id', user!.employee.foundationId)
+          .if(isUserAcademicOnly, uaQuery => {
+            uaQuery.andWhere('id', auth.user!.$attributes.employeeId)
+          })
+        ))
+      )
+      .if(roles.includes('super_admin') && foundationId, query => query
+        .andWhereHas('teacher', t => t.whereHas('employee', e => e
+          .where('foundation_id', foundationId)))
+      )
       .whereBetween("date_in", [formattedFromDate, formattedToDate])
       .groupByRaw(`DATE_TRUNC('month', date_in)`)
 
@@ -121,7 +132,7 @@ export default class AcademicDashboardController {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
 
-    const { fromDate, toDate } = request.qs()
+    const { fromDate, toDate, foundationId } = request.qs()
 
     const formattedFromDate = fromDate ? DateTime.fromISO(fromDate).startOf('month').toISODate()! : DateTime.local({zone:'utc+7'}).toISODate()!
     const formattedToDate = toDate ? DateTime.fromISO(toDate).endOf('month').toISODate()! : DateTime.local({zone:'utc+7'}).toISODate()!
@@ -164,6 +175,12 @@ export default class AcademicDashboardController {
           )
         )
         .whereBetween("date_in", [formattedFromDate, formattedToDate])
+        .if(!roles.includes('super_admin') && foundationId, query => {
+          query.andWhereHas('student', s => s.where('foundation_id', user!.employee.foundationId))
+        })
+        .if(roles.includes('super_admin') && foundationId, query => {
+          query.andWhereHas('student', s => s.where('foundation_id', foundationId))
+        })
         .groupByRaw(`DATE_TRUNC('month', date_in)`)
 
       const data: any[] = []
@@ -210,7 +227,7 @@ export default class AcademicDashboardController {
     }
   }
 
-  private async getStudentsSummary(userObj) {
+  private async getStudentsSummary(userObj, foundationId) {
     const roles = RolesHelper(userObj)
 
     const isUserAcademicOnly = (
@@ -225,6 +242,12 @@ export default class AcademicDashboardController {
     const classes = await Class.query()
       .select('name')
       .where('is_graduated', false)
+      .if(!roles.includes('super_admin') && foundationId, query => {
+        query.andWhere('foundation_id', userObj!.employee.foundation_id)
+      })
+      .if(roles.includes('super_admin') && foundationId, query => {
+        query.andWhere('foundation_id', foundationId)
+      })
       .withCount('students')
 
     const formattedClasses = classes.map(kelas => ({

@@ -34,6 +34,12 @@ export default class Revenue extends BaseModel {
   @column()
   currentBalance: number
 
+  @column()
+  invoiceNumber: string
+
+  @column()
+  invoiceAmount: number
+
   @column.dateTime()
   timeReceived: DateTime
 

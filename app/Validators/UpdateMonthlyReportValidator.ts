@@ -36,7 +36,8 @@ export default class UpdateMonthlyReportValidator {
     redDates: schema.number.nullableAndOptional([
       rules.range(0, 30)
     ]),
-    workingDays: schema.number.optional()
+    workingDays: schema.number.optional(),
+    workingDates: schema.array.optional().members(schema.string())
   })
 
   /**

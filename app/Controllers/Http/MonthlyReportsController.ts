@@ -202,7 +202,7 @@ export default class MonthlyReportsController {
       let data
       if (!employeeId) {
         const monthlyReport = await MonthlyReport.query()
-          .select('name', 'from_date', 'to_date', 'red_dates', 'unit_id')
+          .select('name', 'from_date', 'to_date', 'working_days', 'unit_id', 'working_dates')
           .preload('unit')
           .where("id", id)
           .firstOrFail();
@@ -211,7 +211,7 @@ export default class MonthlyReportsController {
           .select('*')
           .select(Database.raw(`(select name from employees e where id = employee_id) as employee_name`))
           .whereHas('monthlyReport', mr => mr.where('id', id))
-          .preload('monthlyReport', mr => mr.select('name', 'from_date', 'to_date', 'red_dates'))
+          .preload('monthlyReport', mr => mr.select('name', 'from_date', 'to_date', 'working_days'))
           .whereHas('employee', e => e.whereILike('name', `%${keyword}%`))
           .preload('employee', e => e
             .select('name', 'nik', 'status')

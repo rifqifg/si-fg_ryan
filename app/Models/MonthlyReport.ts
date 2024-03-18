@@ -32,6 +32,9 @@ export default class MonthlyReport extends BaseModel {
   @column()
   public workingDays: number
 
+  @column()
+  public workingDates: string[]
+
   @hasMany(() => MonthlyReportEmployee)
   public monthlyReportEmployees: HasMany<typeof MonthlyReportEmployee>
 

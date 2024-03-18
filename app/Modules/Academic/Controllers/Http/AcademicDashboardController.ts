@@ -50,8 +50,8 @@ export default class AcademicDashboardController {
 
     const { fromDate, toDate, foundationId } = request.qs()
 
-    const formattedFromDate = fromDate ? DateTime.fromISO(fromDate).startOf('month').toISODate()! : DateTime.local({zone:'utc+7'}).toISODate()!
-    const formattedToDate = toDate ? DateTime.fromISO(toDate).endOf('month').toISODate()! : DateTime.local({zone:'utc+7'}).toISODate()!
+    const formattedFromDate = fromDate ? DateTime.fromISO(fromDate).startOf('day').toISODate()! : DateTime.local({zone:'utc+7'}).minus({days: 7}).toISODate()!
+    const formattedToDate = toDate ? DateTime.fromISO(toDate).endOf('day').toISODate()! : DateTime.local({zone:'utc+7'}).toISODate()!
 
     try {
       const user = await User.query()
@@ -72,7 +72,7 @@ export default class AcademicDashboardController {
 
     const teacherAttendances = await TeacherAttendance.query()
       // NOTE: query select ini overwrite valuenya date_in. utk sekarang krna date_in sendiri ngga dipake jd gpp
-      .select(Database.raw(`DATE_TRUNC('month', date_in) as date_in`))
+      .select(Database.raw(`DATE_TRUNC('day', date_in) as date_in`))
       .select(
         Database.raw(
           `round(cast(sum(case when status = 'teach' or status = 'exam' or status = 'homework' then 1 else 0 end) * 100.0 / (count(status))as decimal(10,2)),1) as teach_precentage`
@@ -94,11 +94,11 @@ export default class AcademicDashboardController {
           .where('foundation_id', foundationId)))
       )
       .whereBetween("date_in", [formattedFromDate, formattedToDate])
-      .groupByRaw(`DATE_TRUNC('month', date_in)`)
+      .groupByRaw(`DATE_TRUNC('day', date_in)`)
 
       const data: any = []
       teacherAttendances.forEach(ta => {
-        const dateIn = ta.date_in.toFormat('MMMM yyyy', { locale: 'id' })
+        const dateIn = ta.date_in.toFormat('dd-LL-yyyy', { locale: 'id' })
 
         const teach = {
           date: dateIn,
@@ -134,8 +134,8 @@ export default class AcademicDashboardController {
 
     const { fromDate, toDate, foundationId } = request.qs()
 
-    const formattedFromDate = fromDate ? DateTime.fromISO(fromDate).startOf('month').toISODate()! : DateTime.local({zone:'utc+7'}).toISODate()!
-    const formattedToDate = toDate ? DateTime.fromISO(toDate).endOf('month').toISODate()! : DateTime.local({zone:'utc+7'}).toISODate()!
+    const formattedFromDate = fromDate ? DateTime.fromISO(fromDate).startOf('day').toISODate()! : DateTime.local({zone:'utc+7'}).minus({days: 7}).toISODate()!
+    const formattedToDate = toDate ? DateTime.fromISO(toDate).endOf('day').toISODate()! : DateTime.local({zone:'utc+7'}).toISODate()!
 
     try {
       const user = await User.query()
@@ -159,7 +159,7 @@ export default class AcademicDashboardController {
       }
 
       const dailyAttendances = await DailyAttendance.query()
-        .select(Database.raw(`DATE_TRUNC('month', date_in) as date_in`))
+        .select(Database.raw(`DATE_TRUNC('day', date_in) as date_in`))
         .select(
           Database.raw(
             `round(cast(sum(case when status = 'present' then 1 else 0 end) * 100.0 / (count(status))as decimal(10,2)),1) as present_precentage`
@@ -181,11 +181,11 @@ export default class AcademicDashboardController {
         .if(roles.includes('super_admin') && foundationId, query => {
           query.andWhereHas('student', s => s.where('foundation_id', foundationId))
         })
-        .groupByRaw(`DATE_TRUNC('month', date_in)`)
+        .groupByRaw(`DATE_TRUNC('day', date_in)`)
 
       const data: any[] = []
       dailyAttendances.forEach(da => {
-        const dateIn = da.date_in.toFormat('MMMM yyyy', { locale: 'id' })
+        const dateIn = da.date_in.toFormat('dd-LL-yyyy', { locale: 'id' })
 
         const present = {
           date: dateIn,

@@ -31,6 +31,8 @@ export default class Employee extends BaseModel {
     return {
       period_of_work: this.$extras.period_of_work,
       sisa_jatah_cuti: this.$extras.sisa_jatah_cuti,
+      full_time: this.$extras.full_time,
+      part_time: this.$extras.part_time,
     }
   }
 

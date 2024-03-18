@@ -50,8 +50,8 @@ export default class AcademicDashboardController {
 
     const { fromDate, toDate, foundationId } = request.qs()
 
-    const formattedFromDate = fromDate ? DateTime.fromISO(fromDate).startOf('day').toISODate()! : DateTime.local({zone:'utc+7'}).minus({days: 7}).toISODate()!
-    const formattedToDate = toDate ? DateTime.fromISO(toDate).endOf('day').toISODate()! : DateTime.local({zone:'utc+7'}).toISODate()!
+    const formattedFromDate = fromDate ? DateTime.fromISO(fromDate).startOf('day').toISO()! : DateTime.local({zone:'utc+7'}).minus({days: 7}).startOf('day').toISO()!
+    const formattedToDate = toDate ? DateTime.fromISO(toDate).endOf('day').toISO()! : DateTime.local({zone:'utc+7'}).endOf('day').toISO()!
 
     try {
       const user = await User.query()
@@ -134,8 +134,8 @@ export default class AcademicDashboardController {
 
     const { fromDate, toDate, foundationId } = request.qs()
 
-    const formattedFromDate = fromDate ? DateTime.fromISO(fromDate).startOf('day').toISODate()! : DateTime.local({zone:'utc+7'}).minus({days: 7}).toISODate()!
-    const formattedToDate = toDate ? DateTime.fromISO(toDate).endOf('day').toISODate()! : DateTime.local({zone:'utc+7'}).toISODate()!
+    const formattedFromDate = fromDate ? DateTime.fromISO(fromDate).startOf('day').toISO()! : DateTime.local({zone:'utc+7'}).minus({days: 7}).startOf('day').toISO()!
+    const formattedToDate = toDate ? DateTime.fromISO(toDate).endOf('day').toISO()! : DateTime.local({zone:'utc+7'}).endOf('day').toISO()!
 
     try {
       const user = await User.query()

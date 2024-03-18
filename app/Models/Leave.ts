@@ -11,6 +11,9 @@ export default class Leave extends BaseModel {
     return {
       sisa_jatah_cuti: this.$extras.sisa_jatah_cuti,
       reasons: this.$extras.reasons,
+      izin: this.$extras.izin,
+      sakit: this.$extras.sakit,
+      cuti: this.$extras.cuti,
     }
   }
 

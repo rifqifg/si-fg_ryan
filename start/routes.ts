@@ -107,6 +107,7 @@ Route.get('/employees-not-in-unit/', 'EmployeesController.getEmployeesNotInUnit'
 Route.get('/employees-not-in-division/', 'EmployeesController.getEmployeesNotInDivision').middleware(['auth'])
 Route.get('/dashboard/status-employee', 'DashboardHrdsController.statusEmployee').middleware(['auth'])
 Route.get('/dashboard/total-employees', 'DashboardHrdsController.totalEmployee').middleware(['auth'])
+Route.get('/dashboard/chart-presence-employees', 'DashboardHrdsController.attendancePercentage').middleware(['auth'])
 
 Route.group(() => {
   Route.get('activities', 'UserBehaviorHrdsController.activity').middleware(['auth'])

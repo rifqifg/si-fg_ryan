@@ -37,8 +37,7 @@ export default class AccountsController {
       }
 
       data.map(account => {
-        if(account.student) { account.owner = account.student.name }
-        if(account.employee) { account.owner = account.employee.name }
+        account.$extras.account_name = account.student.name
 
         return account
       })

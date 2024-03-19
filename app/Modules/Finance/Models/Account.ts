@@ -16,6 +16,7 @@ export default class Account extends BaseModel {
   public serializeExtras() {
     return {
       roles: this.$extras.roles,
+      account_name: this.$extras.account_name,
     }
   }
 
@@ -34,8 +35,8 @@ export default class Account extends BaseModel {
   @column()
   public owner: string | null
 
-  @column()
-  public accountName: string
+  // @column()
+  // public accountName: string | null
 
   @column()
   public balance: number

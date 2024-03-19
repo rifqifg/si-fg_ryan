@@ -7,7 +7,8 @@ export enum BillingPeriod {
 export enum BillingType {
     SPP = 'spp',
     BWT = 'bwt',
-    BP = 'bp'
+    BP = 'bp',
+    FG_EXTRA = 'fg_extra'
 }
 
 export enum BillingStatus {

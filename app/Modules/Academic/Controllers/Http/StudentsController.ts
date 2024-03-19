@@ -23,6 +23,7 @@ export default class StudentsController {
       mode = "page",
       classId = "",
       isGraduated = false,
+      hasNisn = "",
       notInSubject = "",
       subjectMember = "",
       isNew,
@@ -93,6 +94,8 @@ export default class StudentsController {
             .where('foundation_id', foundationId))
           .if(!auth.isLoggedIn && foundationId, query => query
             .where('foundation_id', foundationId))
+          .if(hasNisn === "true", q => q.andWhereNotNull('nisn'))
+          .if(hasNisn === "false", q => q.andWhereNull('nisn'))
           .orderBy("name")
           .paginate(page, limit);
       } else if (mode === "list") {

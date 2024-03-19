@@ -1,12 +1,9 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import { schema } from "@ioc:Adonis/Core/Validator";
 import fs from "fs";
 import XLSX from "xlsx";
-import { HttpContext } from '@adonisjs/core/build/standalone';
-import CreateManyRevenueValidator from '../../Validators/CreateManyRevenueValidator';
-import { validator } from '@ioc:Adonis/Core/Validator'
+import { schema } from '@ioc:Adonis/Core/Validator'
 import Account from '../../Models/Account';
-import { RevenueStatus } from '../../lib/enums';
+import { BillingType, RevenueStatus } from '../../lib/enums';
 import Revenue from '../../Models/Revenue';
 import { validate as uuidValidation } from "uuid"
 import UpdateRevenueValidator from '../../Validators/UpdateRevenueValidator';
@@ -20,7 +17,7 @@ export default class RevenuesController {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
 
-    const { page = 1, limit = 10, keyword = "", mode = "page" } = request.qs();
+    const { page = 1, limit = 10, keyword = "" } = request.qs();
 
     const { academic_year_id } = request.qs();
 
@@ -36,31 +33,18 @@ export default class RevenuesController {
     }
 
     try {
-      let data: Revenue[]
-      if (mode === 'page') {
-        data = await Revenue.query()
-          .preload('account', qAccount => {
-            qAccount.preload('student', qStudent => {
-              qStudent.select('name')
-            })
+      const data = await Revenue.query()
+        .preload('account', qAccount => {
+          qAccount.preload('student', qStudent => {
+            qStudent.select('name')
           })
-          .if(academic_year_id, q => {
-            q.andWhereBetween('time_received', [`${academicYearBegin}-07-01`, `${academicYearEnd}-06-30`])
-          })
-          .preload('transactions', qTransaction => qTransaction.preload('billings', qBilling => qBilling.pivotColumns(['amount'])))
-          .paginate(page, limit);
-      } else {
-        data = await Revenue.query().whereILike('account_name', `%${keyword}%`)
-      }
-
-      data.map(revenue => {
-        if (revenue.account) {
-          if (revenue.account.student) { revenue.account.owner = revenue.account.student.name }
-          if (revenue.account.employee) { revenue.account.owner = revenue.account.employee.name }
-        }
-
-        return revenue
-      })
+        })
+        .if(academic_year_id, q => {
+          q.andWhereBetween('time_received', [`${academicYearBegin}-07-01`, `${academicYearEnd}-06-30`])
+        })
+        .whereHas('account', q => q.whereILike('account_name', `%${keyword}%`))
+        .preload('transactions', qTransaction => qTransaction.preload('billings', qBilling => qBilling.pivotColumns(['amount'])))
+        .paginate(page, limit);
 
       CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil mengambil data", data });
@@ -192,7 +176,7 @@ export default class RevenuesController {
         const month = revenue.timeReceived.toFormat("MMMM", { locale: 'id' })
         const year = revenue.timeReceived.year
         const group = `${month} ${year}`
-        
+
         if (!data[group]) {
           data[group] = {}
           data[group].items = []
@@ -236,17 +220,80 @@ export default class RevenuesController {
 
     let payload = await request.validate({ schema: excelSchema })
 
-    const excelBuffer = fs.readFileSync(payload.upload.tmpPath?.toString()!);
-    const jsonData = await RevenuesController.spreadsheetToJSON(excelBuffer)
-
-    if (jsonData == 0) return response.badRequest({ message: "Data tidak boleh kosong" })
-
-    const wrappedJson = { "revenues": jsonData }
-    const manyRevenueValidator = new CreateManyRevenueValidator(HttpContext.get()!, wrappedJson)
-    const payloadRevenue = await validator.validate(manyRevenueValidator)
-
     try {
-      const data = await Revenue.createMany(payloadRevenue.revenues)
+      const excelBuffer = fs.readFileSync(payload.upload.tmpPath?.toString()!);
+      const jsonData = await RevenuesController.spreadsheetToJSON(excelBuffer)
+
+      if (jsonData == 0) return response.badRequest({ message: "Data tidak boleh kosong" })
+
+      // cek duplikat revenue, by no. referensi
+      const duplicateRevenue = await Revenue.query()
+        .whereIn('ref_no', jsonData.map(revenue => revenue.ref_no))
+      if (duplicateRevenue.length > 0) {
+        const errors = duplicateRevenue.map(revenue => ({
+          item: `Data dengan No. Referensi ${revenue.refNo} sudah ada di database`
+        }))
+        return response.badRequest({ message: errors })
+      }
+
+      // filter duplikat no. rek.
+      const uniqueJsonData = this.filterUniqueAccountNumber(jsonData)
+
+      // cek apakah no. rekening sudah ada utk revenue yg akan diimport...
+      const existingAccounts = await Account.query()
+        .whereIn('number', uniqueJsonData.map(revenue => revenue.account_number))
+      const existingAccountNo = existingAccounts.map(ea => ea.number)
+      const newAccounts = uniqueJsonData.filter(revenue => {
+        return !existingAccountNo.includes(revenue.account_number)
+      })
+
+      // set tipe rekening by format no. rek.
+      newAccounts.map(newAccount => {
+        const accountNo = newAccount.account_number.toString()
+
+        if (accountNo.startsWith('55')) newAccount.type = BillingType.FG_EXTRA
+        else if (accountNo.startsWith('1')) newAccount.type = BillingType.BP
+        else {
+          const firstTwo = accountNo.substring(0, 2) // dua digit pertama
+          const secondTwo = accountNo.substring(2, 4) // digit ke 3 dan 4
+
+          const incremented = (parseInt(firstTwo) + 1).toString()
+          if (incremented === secondTwo) {
+            newAccount.type = BillingType.SPP
+          }
+        }
+      })
+
+      // ...jika no rek. belum exist, dibikin dlu
+      if (newAccounts.length > 0) {
+        await Account.createMany(newAccounts.map(newAcc => ({
+          accountName: newAcc.name,
+          number: newAcc.account_number,
+          type: newAcc.type,
+          balance: 0,
+        })))
+      }
+
+      // masukkan id account ke array jsonData..
+      // .. sebelum itu, karena ada account baru, maka select account lagi
+      const accounts = await Account.query()
+        .whereIn('number', uniqueJsonData.map(revenue => revenue.account_number))
+
+      const jsonDataWithAccountId = jsonData.map(revenue => {
+        const match = accounts.find(a => a.number === revenue.account_number)
+        return {...revenue, accountId: match!.id}
+      })
+
+      const data = await Revenue.createMany(jsonDataWithAccountId.map(revenue => ({
+        refNo: revenue.ref_no,
+        fromAccount: revenue.accountId,
+        amount: revenue.amount,
+        currentBalance: revenue.current_balance,
+        invoiceAmount: revenue.invoice_amount,
+        invoiceNumber: revenue.invoice_number,
+        timeReceived: revenue.time_received,
+        status: RevenueStatus.NEW
+      })))
 
       CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.created({ message: "Berhasil import data", data })
@@ -256,8 +303,21 @@ export default class RevenuesController {
       response.badRequest({
         message: "Gagal import data",
         error: message,
+        error_data: error
       })
     }
+  }
+
+  // hanya ambil objek dgn no. rek unik
+  private filterUniqueAccountNumber(arr) {
+    let unique = new Set()
+    return arr.filter(obj => {
+      if (!unique.has(obj.account_number)) {
+        unique.add(obj.account_number)
+        return true
+      }
+      return false
+    })
   }
 
   private static async spreadsheetToJSON(excelBuffer) {
@@ -268,31 +328,25 @@ export default class RevenuesController {
 
     // membaca isi dari sheet pertama
     const firstSheet = workbook.Sheets[sheetNames[0]]
-    const jsonData: Array<object> = XLSX.utils.sheet_to_json(firstSheet)
+    const jsonData: Array<object> = XLSX.utils.sheet_to_json(firstSheet, {raw: false, dateNF: 'dd/mm/yyyy'})
 
     if (jsonData.length < 1) return 0
 
     const formattedJson = await Promise.all(jsonData.map(async data => {
-      // from chatgpt:
-      // Subtracting 25569 from the serial number adjusts for the difference in the way Excel and JavaScript represent dates. In Excel, the date serial number is based on the number of days since January 1, 1900, while JavaScript uses January 1, 1970, as its reference point.
-      // Multiplying by 86400 converts the serial number from days to seconds, as there are 86,400 seconds in a day.
-      // Finally, multiplying by 1000 converts the seconds to milliseconds, which is the unit of time used by JavaScript's Date object.
-      const jsDate = new Date((data["Tanggal"] - 25569) * 86400 * 1000)
+      const luxonDate = DateTime.fromFormat(data["Tanggal"], 'dd/MM/yyyy')
 
-      // from pak bani:
-      // "Setiap transaksi dikenakan biaya Rp 3000.
-      // Jadi data transaksi yg tersimpan di bsi (aka. dari excel) berkurang 3000.
-      // Seharusnya yg tampil tetap, tidak dikurangi 3000."
-      const fixedNominal = data["Nominal"] + 3000
+      // pembulatan biaya admin BSI, jika nominal transfer tidak 0
+      const parsedNominal = parseInt(data["Nominal dibayar"])
+      const fixedNominal = (parsedNominal === 0) ? parsedNominal : parsedNominal + 3000
 
-      // klo nggak ada kolom "No Pembayaran" isi dgn impossible value
-      const noPembayaran = data["No Pembayaran"] ? data["No Pembayaran"].toString() : "-1"
-      const account = await Account.query().where('number', noPembayaran).first()
-      const accountId = account ? account.id : "-1" // there is no account id with negative value, right.. right?
-
+      // TODO: hapus kolom yg bukan dari excel
+      // TODO: get NISN
       return {
-        from_account: accountId,
-        time_received: jsDate,
+        name: data["Nama"],
+        account_number: data["No Pembayaran"].toString(),
+        invoice_number: data["No Invoice"],
+        invoice_amount: parseInt(data["Nominal Invoice"]),
+        time_received: luxonDate,
         current_balance: fixedNominal,
         amount: fixedNominal,
         status: RevenueStatus.NEW,

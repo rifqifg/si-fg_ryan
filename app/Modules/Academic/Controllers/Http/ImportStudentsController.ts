@@ -4,13 +4,11 @@ import Student from '../../Models/Student'
 import StudentParent from '../../Models/StudentParent'
 import CreateManyStudentValidator from '../../Validators/CreateManyStudentValidator'
 import XLSX from "xlsx";
+import { schema } from "@ioc:Adonis/Core/Validator";
 import { validator } from '@ioc:Adonis/Core/Validator'
 import CreateManyStudentParentValidator from '../../Validators/CreateManyStudentParentValidator'
 import fs from "fs";
-import {
-    PayloadImportStudent,
-    PayloadImportStudentParent,
-} from "../../lib/types/payload-import-student";
+import { PayloadImportStudent, PayloadImportStudentParent } from "../../lib/types/payload-import-student";
 import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist'
 import { statusRoutes } from 'App/Modules/Log/lib/enum'
 import { DateTime } from 'luxon'
@@ -60,6 +58,53 @@ export default class ImportStudentsController {
         }
 
     }
+
+    public async updateNisn({ request, response }: HttpContextContract) {
+        try {
+            const excelSchema = schema.create({ upload: schema.file({ extnames: ['xlsx', 'csv'] }) })
+            let payload = await request.validate({ schema: excelSchema })
+
+            const excelBuffer = fs.readFileSync(payload.upload.tmpPath?.toString()!);
+
+            let workbook = await XLSX.read(excelBuffer)
+            const sheetNames = workbook.SheetNames
+
+            const firstSheet = workbook.Sheets[sheetNames[0]]
+            const jsonData: Array<object> = XLSX.utils.sheet_to_json(firstSheet, {raw: false})
+
+            if (jsonData.length < 1) { throw new Error("Data tidak boleh kosong") }
+
+            const formattedJsonData = jsonData.map(data => ({
+                nis: data["NIS"],
+                nisn: data["NISN"]
+            }))
+
+            const students = await Student.query().whereIn('nis', formattedJsonData.map(data => data.nis))
+
+            // jika nis not exists, return error
+            if (students.length !== jsonData.length) {
+                const existingNIS = students.map(student => student.nis)
+                const missingNIS = formattedJsonData.filter(data => !existingNIS.includes(data.nis))
+                const errors = missingNIS.map(data => `Siswa dengan NIS ${data.nis} tidak ada di database`)
+
+                return response.badRequest({message: errors})
+            }
+
+            await Student.updateOrCreateMany('nis', formattedJsonData)
+
+            // CreateRouteHist(statusRoutes.FINISH, dateStart)
+            response.created({ message: "Berhasil update data NISN" })
+        } catch (error) {
+            const message = "ACD-IMPSTD-U: " + error.message || error;
+            // CreateRouteHist(statusRoutes.ERROR, dateStart, message)
+            response.badRequest({
+                message: "Gagal import data",
+                error: message,
+                error_data: error
+            })
+        }
+    }
+
 }
 
 class ImportService {

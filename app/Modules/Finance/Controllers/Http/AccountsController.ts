@@ -7,9 +7,6 @@ import UploadSpreadsheetAccountValidator from '../../Validators/UploadSpreadshee
 import fs from "fs";
 import XLSX from "xlsx";
 import Student from 'App/Modules/Academic/Models/Student';
-import CreateManyAccountValidator from '../../Validators/CreateManyAccountValidator';
-import { HttpContext } from '@adonisjs/core/build/standalone';
-import { validator } from '@ioc:Adonis/Core/Validator'
 import GetLastAccountNoValidator from '../../Validators/GetLastAccountNoValidator';
 import { BillingType } from '../../lib/enums';
 import AcademicYear from 'App/Modules/Academic/Models/AcademicYear';
@@ -29,6 +26,7 @@ export default class AccountsController {
         data = await Account.query()
           .preload('student', qStudent => qStudent.select('name'))
           .whereILike("account_name", `%${keyword}%`)
+          // TODO: filter by nisn, no. va. dan nama
           .if(account_no, (q) => q.where('number', account_no))
           .paginate(page, limit);
       } else {
@@ -237,17 +235,85 @@ export default class AccountsController {
 
     let payload = await request.validate(UploadSpreadsheetAccountValidator)
 
-    const excelBuffer = fs.readFileSync(payload.upload.tmpPath?.toString()!);
-    const jsonData = await AccountsController.spreadsheetToJSON(excelBuffer)
-
-    if (jsonData == 0) return response.badRequest({ message: "Data tidak boleh kosong" })
-
-    const wrappedJson = { "accounts": jsonData }
-    const manyAccountValidator = new CreateManyAccountValidator(HttpContext.get()!, wrappedJson)
-    const payloadAccount = await validator.validate(manyAccountValidator)
-
     try {
-      const data = await Account.createMany(payloadAccount.accounts)
+      const excelBuffer = fs.readFileSync(payload.upload.tmpPath?.toString()!);
+      const jsonData = await AccountsController.spreadsheetToJSON(excelBuffer)
+
+      if (jsonData.length < 1) return response.badRequest({ message: "Data tidak boleh kosong" })
+
+      // Validasi nisn
+      const nisns = jsonData.map(row => row.nisn)
+
+      const existingStudents = await Student.query().whereIn('nisn', nisns)
+
+      if (existingStudents.length !== jsonData.length) {
+        const existingNisn = existingStudents.map(student => student.nisn)
+        const notExistingStudents = jsonData.filter(row => !existingNisn.includes(row.nisn))
+
+        const messages = notExistingStudents.map(notExist => ({
+          item: `Siswa dengan nisn ${notExist.nisn} tidak ada di data akademik.`
+        }))
+
+        return response.badRequest({message: messages})
+      }
+
+      // masukkan id student ke data yg mau diimport, di variabel baru
+      const jsonDataWithStudentId = jsonData.map(row => {
+        const findStudent = existingStudents.find(s => s.nisn === row.nisn)
+        let student_id = ''
+        if (findStudent) {
+          student_id = findStudent.id
+        }
+
+        return { student_id, ...row }
+      })
+
+      // Pisahkan tiap baris data berdasarkan no. rek.
+      // misal nisn 23240001 punya rek. spp dan bp,
+      // maka jadi dua row, 23240001 utk spp, dan 23240001 utk bp.
+      // Kalo no. rek. nya null/undefined, skip
+      // NOTE: consider refactor later
+      const splittedJson: any[] = []
+      jsonDataWithStudentId.forEach(row => {
+        if (row.reference_spp !== undefined) {
+          splittedJson.push({
+            studentId: row.student_id,
+            type: BillingType.SPP,
+            number: row.va_spp,
+            refAmount: row.reference_spp,
+            balance: 0,
+          })
+        }
+
+        if (row.reference_bwt !== undefined) {
+          splittedJson.push({
+            studentId: row.student_id,
+            type: BillingType.BWT,
+            number: row.va_bwt,
+            refAmount: row.reference_bwt,
+            balance: 0,
+          })
+        }
+
+        if (row.reference_bp !== undefined) {
+           splittedJson.push({
+            studentId: row.student_id,
+            type: BillingType.BP,
+            number: row.va_bp,
+            refAmount: row.reference_bp,
+            balance: 0,
+          })
+        }
+      })
+
+      // jika ada data yg no. rek. nya udah exists, skip
+      const existingAccountNumbers = (await Account.query().select('number', 'type')).map(account => `${account.number}_${account.type}`)
+      const newAccounts = splittedJson.filter(row => {
+        const combination = `${row.number}_${row.type}`
+        return !existingAccountNumbers.includes(combination)
+      })
+
+      const data = await Account.createMany(newAccounts)
 
       CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.created({ message: "Berhasil import data", data })
@@ -268,33 +334,22 @@ export default class AccountsController {
     // Mendapatkan daftar nama sheet dalam workbook
     const sheetNames = workbook.SheetNames
 
-    // membaca isi dari sheet pertama
-    const firstSheet = workbook.Sheets[sheetNames[0]]
-    const jsonData: Array<object> = XLSX.utils.sheet_to_json(firstSheet)
+    const jsonData: Array<object> = []
+    sheetNames.forEach(sheet => {
+      const sheetData: any[] = XLSX.utils.sheet_to_json(workbook.Sheets[sheet], {raw: false})
+      jsonData.push(...sheetData)
+    });
 
-    if (jsonData.length < 1) return 0
-
-    // Warning: async call didalam loop (map)
-    // might refactor later
-    const formattedJson = await Promise.all(jsonData.map(async data => {
-      const nisn = data["NISN"]?.toString()
-
-      const student = await Student.findBy('nisn', nisn)
-      const studentId = student ? student.id : -1
-      const accountName = student ? student.name : "X Æ A-Xii"
-      const balance = data["Saldo"] ? data["Saldo"].toString() : "0"
-
-      return {
-        coa_id: data['Nomor COA']?.toString(),
-        student_id: studentId,
-        account_name: accountName,
-        ref_amount: data['Nominal Acuan'],
-        balance: balance,
-        number: data['Nomor Rekening']?.toString()
-      }
+    return jsonData.map(row => ({
+      name: row["Nama"],
+      nisn: row["NISN"],
+      va_spp: row["No VA SPP"],
+      va_bwt: row["No VA SPP"], // spp & bwt share satu no. rekening
+      va_bp: row["No VA BP"],
+      reference_spp: row["Acuan SPP"],
+      reference_bwt: row["Acuan BWT"],
+      reference_bp: row["Acuan BP"],
     }))
-
-    return formattedJson
   }
 
   // I might refactor this later....

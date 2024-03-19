@@ -63,11 +63,12 @@ export default class DashboardHrdsController {
   }
 
   public async attendancePercentage({ auth, response, request }: HttpContextContract) {
-    const {
+    let { fromDate, toDate } = request.qs()
+
+    if (!fromDate || !toDate) {
       fromDate = DateTime.now().minus({ days: 8 }).toISODate()?.toString(),
-      toDate = DateTime.now().plus({ days: 1 }).toISODate()?.toString()
-    } = request.qs()
-    console.log(fromDate, toDate);
+        toDate = DateTime.now().plus({ days: 1 }).toISODate()?.toString()
+    }
 
     try {
       // cek role
@@ -123,13 +124,13 @@ export default class DashboardHrdsController {
 
         //menghitung persen
         const totalAllPresence = parseInt(totalPresence[0].$extras.presence_count) + parseInt(countLeave?.$extras.sakit) + parseInt(countLeave?.$extras.izin) + parseInt(countLeave?.$extras.cuti)
-        const presencePercentage = parseInt(totalPresence[0].$extras.presence_count) / totalAllPresence * 100
-        const sakitPercentage = parseInt(countLeave?.$extras.sakit) / totalAllPresence * 100
-        const izinPercentage = parseInt(countLeave?.$extras.izin) / totalAllPresence * 100
-        const cutiPercentage = parseInt(countLeave?.$extras.cuti) / totalAllPresence * 100
+        const presencePercentage = (parseInt(totalPresence[0].$extras.presence_count) / totalAllPresence * 100).toFixed(1)
+        const sakitPercentage = (parseInt(countLeave?.$extras.sakit) / totalAllPresence * 100).toFixed(1)
+        const izinPercentage = (parseInt(countLeave?.$extras.izin) / totalAllPresence * 100).toFixed(1)
+        const cutiPercentage = (parseInt(countLeave?.$extras.cuti) / totalAllPresence * 100).toFixed(1)
         return response.ok({
           message: 'get data successfully',
-          data: {presencePercentage, cutiPercentage, sakitPercentage, izinPercentage},
+          data: { presencePercentage, cutiPercentage, sakitPercentage, izinPercentage },
           details: {
             hadir: parseInt(totalPresence[0].$extras.presence_count),
             cuti: parseInt(countLeave?.$extras.cuti),

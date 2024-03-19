@@ -25,8 +25,11 @@ export default class AccountsController {
       if (mode === 'page') {
         data = await Account.query()
           .preload('student', qStudent => qStudent.select('name'))
-          .whereILike("account_name", `%${keyword}%`)
-          // TODO: filter by nisn, no. va. dan nama
+          .whereILike("number", `%${keyword}%`)
+          .orWhereHas('student', s => {
+            s.whereILike('name', `%${keyword}%`)
+              .orWhereILike('nisn', `%${keyword}%`)
+          })
           .if(account_no, (q) => q.where('number', account_no))
           .paginate(page, limit);
       } else {

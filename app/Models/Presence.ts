@@ -14,6 +14,8 @@ export default class Presence extends BaseModel {
       presence_count: this.$extras.presence_count,
       total_sessions: this.$extras.total_sessions,
       percentage: this.$extras.percentage,
+      hadir: this.$extras.hadir,
+      date: this.$extras.date,
     }
   }
 

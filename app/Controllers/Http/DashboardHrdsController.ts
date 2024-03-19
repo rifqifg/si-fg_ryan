@@ -7,6 +7,45 @@ import Presence from 'App/Models/Presence'
 import User from 'App/Models/User'
 import { DateTime } from 'luxon'
 
+const mergeArraysByDate = (sample_a, sample_b) => {
+  // Objek untuk menyimpan data gabungan
+  const mergedData = {};
+
+  // Menambahkan data dari sample_a ke dalam objek mergedData
+  sample_a.forEach(item => {
+    mergedData[item.date] = {
+      ...mergedData[item.date],
+      ...item
+    };
+  });
+
+  // Menambahkan data dari sample_b ke dalam objek mergedData
+  sample_b.forEach(item => {
+    mergedData[item.date] = {
+      ...mergedData[item.date],
+      ...item
+    };
+  });
+
+  // Mengubah objek mergedData menjadi array
+  const mergedArray = Object.keys(mergedData).map(date => mergedData[date]);
+
+  // Mengurutkan array berdasarkan tanggal
+  mergedArray.sort((a, b) => {
+    const dateA = DateTime.fromISO(a.date);
+    const dateB = DateTime.fromISO(b.date);
+    return dateA.diff(dateB).milliseconds;
+  });
+
+  return mergedArray;
+}
+
+const calculatePercentage = (value, totalAllPresence) => {
+  const percentage = (value / totalAllPresence) * 100;
+
+  return Math.round(percentage * 10) / 10;
+}
+
 export default class DashboardHrdsController {
   public async statusEmployee({ auth, response }: HttpContextContract) {
     try {
@@ -64,10 +103,28 @@ export default class DashboardHrdsController {
 
   public async attendancePercentage({ auth, response, request }: HttpContextContract) {
     let { fromDate, toDate } = request.qs()
+    let formattedStartDate
+    let formattedEndDate
 
     if (!fromDate || !toDate) {
-      fromDate = DateTime.now().minus({ days: 8 }).toISODate()?.toString(),
-        toDate = DateTime.now().plus({ days: 1 }).toISODate()?.toString()
+      fromDate = DateTime.now().minus({ days: 7 }).toISODate()?.toString(),
+        toDate = DateTime.now().toISODate()?.toString()
+
+      const splittedFromDate = fromDate.split(" ")[0];
+      const splittedToDate = toDate.split(" ")[0];
+
+      formattedStartDate = `${splittedFromDate ? splittedFromDate : fromDate
+        } 00:00:00.000 +0700`;
+      formattedEndDate = `${splittedToDate ? splittedToDate : toDate
+        } 23:59:59.000 +0700`;
+    } else {
+      const splittedFromDate = fromDate.split(" ")[0];
+      const splittedToDate = toDate.split(" ")[0];
+
+      formattedStartDate = `${splittedFromDate ? splittedFromDate : fromDate
+        } 00:00:00.000 +0700`;
+      formattedEndDate = `${splittedToDate ? splittedToDate : toDate
+        } 23:59:59.000 +0700`;
     }
 
     try {
@@ -101,43 +158,75 @@ export default class DashboardHrdsController {
           .andWhereHas('employeeUnits', eu => eu.where('unit_id', userObject!.employee.employeeUnits[0].unit_id))
           .andWhereNull('date_out')
 
-
         //total presence hadir
         const totalPresence = await Presence.query()
-          .count('id', 'presence_count')
+          .select([
+            Database.raw(`count(time_in)::int as hadir`),
+            Database.raw(`TO_CHAR(DATE_TRUNC('day', time_in), 'YYYY-MM-DD') AS date`)
+          ])
           .whereIn('employee_id', employeeIds.map(item => item.id))
-          .whereBetween('time_in', [fromDate, toDate])
-          .orWhereBetween('time_out', [fromDate, toDate])
+          .whereBetween('time_in', [formattedStartDate, formattedEndDate])
+          .orWhereBetween('time_out', [formattedStartDate, formattedEndDate])
           .andWhereHas('activity', a => a.where('unit_id', userObject!.employee.employeeUnits[0].unit_id))
+          .groupByRaw(`DATE_TRUNC('day', time_in)`)
 
         //total presence izin, sakit, cuti
         const countLeave = await Leave.query()
           .select([
-            Database.raw(`count(CASE WHEN leave_status = 'izin' THEN id END) as izin`),
-            Database.raw(`count(CASE WHEN leave_status = 'sakit' THEN id END) as sakit`),
-            Database.raw(`count(CASE WHEN leave_status = 'cuti' THEN id END) as cuti`)
+            Database.raw(`count(CASE WHEN leave_status = 'izin' THEN id END)::int as izin`),
+            Database.raw(`count(CASE WHEN leave_status = 'sakit' THEN id END)::int as sakit`),
+            Database.raw(`count(CASE WHEN leave_status = 'cuti' THEN id END)::int as cuti`),
+            Database.raw(`TO_CHAR(GENERATE_SERIES(from_date::timestamp, to_date::timestamp, '1 day')::date, 'YYYY-MM-DD') as date`),
           ])
           .whereIn('employee_id', employeeIds.map(item => item.id))
-          .whereBetween('from_date', [fromDate, toDate])
-          .orWhereBetween('to_date', [fromDate, toDate])
-          .first();
+          .whereBetween('from_date', [formattedStartDate, formattedEndDate])
+          .orWhereBetween('to_date', [formattedStartDate, formattedEndDate])
+          .groupByRaw(`date`)
+          .orderByRaw(`date`);
 
-        //menghitung persen
-        const totalAllPresence = parseInt(totalPresence[0].$extras.presence_count) + parseInt(countLeave?.$extras.sakit) + parseInt(countLeave?.$extras.izin) + parseInt(countLeave?.$extras.cuti)
-        const presencePercentage = (parseInt(totalPresence[0].$extras.presence_count) / totalAllPresence * 100).toFixed(1)
-        const sakitPercentage = (parseInt(countLeave?.$extras.sakit) / totalAllPresence * 100).toFixed(1)
-        const izinPercentage = (parseInt(countLeave?.$extras.izin) / totalAllPresence * 100).toFixed(1)
-        const cutiPercentage = (parseInt(countLeave?.$extras.cuti) / totalAllPresence * 100).toFixed(1)
-        return response.ok({
-          message: 'get data successfully',
-          data: { presencePercentage, cutiPercentage, sakitPercentage, izinPercentage },
-          details: {
-            hadir: parseInt(totalPresence[0].$extras.presence_count),
-            cuti: parseInt(countLeave?.$extras.cuti),
-            sakit: parseInt(countLeave?.$extras.sakit),
-            izin: parseInt(countLeave?.$extras.izin),
-          }
+        //menggabungkan absen bedasarkan date nya
+        const mergedData = mergeArraysByDate(JSON.parse(JSON.stringify(totalPresence)), JSON.parse(JSON.stringify(countLeave)))
+
+        //menghitung
+        let result: any[] = []
+        mergedData.forEach(value => {
+          console.log(value);
+          const hadir = value.hadir ? value.hadir : 0
+          const cuti = value.cuti ? value.cuti : 0
+          const sakit = value.sakit ? value.sakit : 0
+          const izin = value.izin ? value.izin : 0
+
+          const totalAllPresence = hadir + cuti + sakit + izin
+
+          const data = [
+            {
+              date: value.date,
+              name: "hadir",
+              value: calculatePercentage(hadir, totalAllPresence),
+            },
+            {
+              date: value.date,
+              name: "cuti",
+              value: calculatePercentage(cuti, totalAllPresence),
+            },
+            {
+              date: value.date,
+              name: "sakit",
+              value: calculatePercentage(sakit, totalAllPresence),
+            },
+            {
+              date: value.date,
+              name: "izin",
+              value: calculatePercentage(izin, totalAllPresence)
+            },
+          ]
+
+          data.forEach(d => {
+            result.push(d)
+          })
         })
+
+        response.ok({ message: "get data successfully", data: result })
       }
     } catch (error) {
       const message = "HRDDASH03: " + error.message || error;

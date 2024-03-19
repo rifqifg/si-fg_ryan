@@ -17,6 +17,7 @@ export default class Account extends BaseModel {
     return {
       roles: this.$extras.roles,
       account_name: this.$extras.account_name,
+      nisn: this.$extras.nisn,
     }
   }
 

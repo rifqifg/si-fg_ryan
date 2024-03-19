@@ -24,7 +24,7 @@ export default class AccountsController {
       let data: Account[]
       if (mode === 'page') {
         data = await Account.query()
-          .preload('student', qStudent => qStudent.select('name'))
+          .preload('student', qStudent => qStudent.select('name', 'nisn'))
           .whereILike("number", `%${keyword}%`)
           .orWhereHas('student', s => {
             s.whereILike('name', `%${keyword}%`)
@@ -38,6 +38,7 @@ export default class AccountsController {
 
       data.map(account => {
         account.$extras.account_name = account.student.name
+        account.$extras.nisn = account.student.nisn
 
         return account
       })

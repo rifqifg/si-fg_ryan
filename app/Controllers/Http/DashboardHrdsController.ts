@@ -101,11 +101,11 @@ export default class DashboardHrdsController {
         .if(!roles.includes('super_admin'), query => query
           .where('foundation_id', user!.employee.foundationId)
         )
-        .if(unitId, query => query
+        .if(unitId && (roles.includes('super_admin') || roles.includes('admin_foundation')), query => query
           .andWhereHas('employeeUnits', eu => eu
             .where('unit_id', unitId))
         )
-        .if(roles.includes('admin_hrd') && !unitId, query => query
+        .if(roles.includes('admin_hrd'), query => query
           .andWhereHas('employeeUnits', eu => eu
             .where('unit_id', userObject!.employee.employeeUnits[0].unit_id))
         )

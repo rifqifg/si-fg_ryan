@@ -18,19 +18,21 @@ export default class AccountsController {
   public async index({ request, response }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
-    const { page = 1, limit = 10, keyword = "", mode = "page", account_no } = request.qs();
+    const { page = 1, limit = 10, keyword = "", tipe, mode = "page" } = request.qs();
 
     try {
       let data: Account[]
       if (mode === 'page') {
         data = await Account.query()
           .preload('student', qStudent => qStudent.select('name', 'nisn'))
-          .whereILike("number", `%${keyword}%`)
-          .orWhereHas('student', s => {
-            s.whereILike('name', `%${keyword}%`)
-              .orWhereILike('nisn', `%${keyword}%`)
+          .where(query => {
+            query.whereILike("number", `%${keyword}%`)
+            query.orWhereHas('student', s => {
+              s.whereILike('name', `%${keyword}%`)
+                .orWhereILike('nisn', `%${keyword}%`)
+            })
           })
-          .if(account_no, (q) => q.where('number', account_no))
+          .if(tipe, qTipe => qTipe.andWhere('type', tipe))
           .paginate(page, limit);
       } else {
         data = await Account.query().whereILike('account_name', `%${keyword}%`)

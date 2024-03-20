@@ -1,5 +1,5 @@
 import { DateTime } from 'luxon'
-import { BaseModel, BelongsTo, HasMany, afterCreate, afterFetch, beforeCreate, belongsTo, column, hasMany } from '@ioc:Adonis/Lucid/Orm'
+import { BaseModel, BelongsTo, HasMany, afterCreate, beforeCreate, belongsTo, column, hasMany } from '@ioc:Adonis/Lucid/Orm'
 import Coa from './Coa';
 import Student from 'App/Modules/Academic/Models/Student';
 import Employee from 'App/Models/Employee';
@@ -83,13 +83,5 @@ export default class Account extends BaseModel {
   @afterCreate()
   public static setNewId(account: Account) {
     account.id = newId
-  }
-
-  @afterFetch()
-  public static async addExtras(accounts: Account[]) {
-    accounts.forEach(account => {
-      account.$extras.account_name = account.student.name
-      account.$extras.nisn = account.student.nisn
-    })
   }
 }

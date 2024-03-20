@@ -38,6 +38,13 @@ export default class AccountsController {
         data = await Account.query().whereILike('account_name', `%${keyword}%`)
       }
 
+      data.map(account => {
+        account.$extras.account_name = account.student.name
+        account.$extras.nisn = account.student.nisn
+
+        return account
+      })
+
       CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil mengambil data", data });
     } catch (error) {

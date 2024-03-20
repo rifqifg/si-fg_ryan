@@ -190,8 +190,11 @@ export default class DashboardHrdsController {
           Database.raw(`TO_CHAR(DATE_TRUNC('day', time_in), 'YYYY-MM-DD') AS date`)
         ])
         .whereIn('employee_id', employeeIds.map(item => item.id))
-        .whereBetween('time_in', [formattedStartDate, formattedEndDate])
-        .orWhereBetween('time_out', [formattedStartDate, formattedEndDate])
+        .andWhere(query => query
+          .whereBetween('time_in', [formattedStartDate, formattedEndDate])
+          .orWhereBetween('time_out', [formattedStartDate, formattedEndDate])
+        )
+        .andWhereHas('activity', a => a.where('activity_type', 'fixed_time'))
         .groupByRaw(`DATE_TRUNC('day', time_in)`)
 
       //total presence izin, sakit, cuti
@@ -203,8 +206,10 @@ export default class DashboardHrdsController {
           Database.raw(`TO_CHAR(GENERATE_SERIES(from_date::timestamp, to_date::timestamp, '1 day')::date, 'YYYY-MM-DD') as date`),
         ])
         .whereIn('employee_id', employeeIds.map(item => item.id))
-        .whereBetween('from_date', [formattedStartDate, formattedEndDate])
-        .orWhereBetween('to_date', [formattedStartDate, formattedEndDate])
+        .andWhere(query => query
+          .whereBetween('from_date', [formattedStartDate, formattedEndDate])
+          .orWhereBetween('to_date', [formattedStartDate, formattedEndDate])
+        )
         .groupByRaw(`date`)
         .orderByRaw(`date`);
 

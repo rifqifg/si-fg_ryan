@@ -98,7 +98,9 @@ export default class DashboardHrdsController {
           Database.raw(`count(CASE WHEN status = 'PART_TIME' THEN id END) as part_time`),
           Database.raw(`count(CASE WHEN status = 'FULL_TIME' THEN id END) as full_time`)
         ])
-        .where('foundation_id', user!.employee.foundationId)
+        .if(!roles.includes('super_admin'), query => query
+          .where('foundation_id', user!.employee.foundationId)
+        )
         .if(unitId, query => query
           .andWhereHas('employeeUnits', eu => eu
             .where('unit_id', unitId))
@@ -174,11 +176,13 @@ export default class DashboardHrdsController {
 
       const employeeIds = await Employee.query()
         .select('id', 'name')
-        .where('foundation_id', user!.employee.foundationId)
+        .if(!roles.includes('super_admin'), query => query
+          .where('foundation_id', user!.employee.foundationId)
+        )
         .if(roles.includes('admin_hrd') && !unitId, query => query
           .andWhereHas('employeeUnits', eu => eu.where('unit_id', userObject!.employee.employeeUnits[0].unit_id))
         )
-        .if(unitId && roles.includes('super_admin' && roles.includes('admin_foundation')), query => query
+        .if(unitId && (roles.includes('super_admin') || roles.includes('admin_foundation')), query => query
           .andWhereHas('employeeUnits', eu => eu.where('unit_id', unitId))
         )
         .if(roles.includes('user_hrd') && !roles.includes('admin_hrd'), query => query

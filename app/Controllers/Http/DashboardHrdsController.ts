@@ -70,26 +70,47 @@ export default class DashboardHrdsController {
     }
   }
 
-  public async totalEmployee({ auth, response }: HttpContextContract) {
+  public async totalEmployee({ auth, response, request }: HttpContextContract) {
+    /*
+       - user_hrd gak ngehit api ini
+       - super_admin dan admin_foundation ada pilihan unitId
+       - admin_hrd, unitId ngambil lead_unit
+    */
+    const { unitId } = request.qs()
     try {
       const user = await User.query()
         .preload('employee', e => e
-          .select('id', 'name', 'foundation_id'))
+          .select('id', 'name', 'foundation_id')
+          .preload('employeeUnits', eu => eu
+            .select('id', 'unit_id')
+            .where('title', 'lead')
+          ))
         .preload('roles', r => r
           .preload('role'))
         .where('employee_id', auth.user!.$attributes.employeeId)
         .first()
 
-      const employmentStatusCounts = await Employee.query()
+      const userObject = JSON.parse(JSON.stringify(user))
+      const roles = await RolesHelper(userObject)
+
+      const employeeStatusCounts = await Employee.query()
         .select([
           Database.raw(`count(CASE WHEN status = 'PART_TIME' THEN id END) as part_time`),
           Database.raw(`count(CASE WHEN status = 'FULL_TIME' THEN id END) as full_time`)
         ])
         .where('foundation_id', user!.employee.foundationId)
+        .if(unitId, query => query
+          .andWhereHas('employeeUnits', eu => eu
+            .where('unit_id', unitId))
+        )
+        .if(roles.includes('admin_hrd') && !unitId, query => query
+          .andWhereHas('employeeUnits', eu => eu
+            .where('unit_id', userObject!.employee.employeeUnits[0].unit_id))
+        )
         .andWhereNull('date_out')
         .first();
 
-      response.ok({ message: 'get data successfully', data: employmentStatusCounts })
+      response.ok({ message: 'get data successfully', data: employeeStatusCounts })
     } catch (error) {
       const message = "HRDDASH02: " + error.message || error;
       console.log(error);
@@ -102,7 +123,7 @@ export default class DashboardHrdsController {
   }
 
   public async attendancePercentage({ auth, response, request }: HttpContextContract) {
-    let { fromDate, toDate } = request.qs()
+    let { fromDate, toDate, unitId } = request.qs()
     let formattedStartDate
     let formattedEndDate
 
@@ -144,90 +165,92 @@ export default class DashboardHrdsController {
       const userObject = JSON.parse(JSON.stringify(user))
       const roles = await RolesHelper(userObject)
 
-      if (roles.includes('admin_hrd')) {
-        // const total_employees = await Employee.query()
-        //   .count('id', 'total_employees')
-        //   .where('foundation_id', user!.employee.foundationId)
-        //   .andWhereHas('employeeUnits', eu => eu.where('unit_id', userObject!.employee.employeeUnits[0].unit_id))
-        //   .andWhereNull('date_out')
-        //   .first()
+      // const total_employees = await Employee.query()
+      //   .count('id', 'total_employees')
+      //   .where('foundation_id', user!.employee.foundationId)
+      //   .andWhereHas('employeeUnits', eu => eu.where('unit_id', userObject!.employee.employeeUnits[0].unit_id))
+      //   .andWhereNull('date_out')
+      //   .first()
 
-        const employeeIds = await Employee.query()
-          .select('id', 'name')
-          .where('foundation_id', user!.employee.foundationId)
+      const employeeIds = await Employee.query()
+        .select('id', 'name')
+        .where('foundation_id', user!.employee.foundationId)
+        .if(roles.includes('admin_hrd') && !unitId, query => query
           .andWhereHas('employeeUnits', eu => eu.where('unit_id', userObject!.employee.employeeUnits[0].unit_id))
-          .andWhereNull('date_out')
+        )
+        .if(unitId, query => query
+          .andWhereHas('employeeUnits', eu => eu.where('unit_id', unitId))
+        )
+        .andWhereNull('date_out')
 
-        //total presence hadir
-        const totalPresence = await Presence.query()
-          .select([
-            Database.raw(`count(time_in)::int as hadir`),
-            Database.raw(`TO_CHAR(DATE_TRUNC('day', time_in), 'YYYY-MM-DD') AS date`)
-          ])
-          .whereIn('employee_id', employeeIds.map(item => item.id))
-          .whereBetween('time_in', [formattedStartDate, formattedEndDate])
-          .orWhereBetween('time_out', [formattedStartDate, formattedEndDate])
-          .andWhereHas('activity', a => a.where('unit_id', userObject!.employee.employeeUnits[0].unit_id))
-          .groupByRaw(`DATE_TRUNC('day', time_in)`)
+      //total presence hadir
+      const totalPresence = await Presence.query()
+        .select([
+          Database.raw(`count(time_in)::int as hadir`),
+          Database.raw(`TO_CHAR(DATE_TRUNC('day', time_in), 'YYYY-MM-DD') AS date`)
+        ])
+        .whereIn('employee_id', employeeIds.map(item => item.id))
+        .whereBetween('time_in', [formattedStartDate, formattedEndDate])
+        .orWhereBetween('time_out', [formattedStartDate, formattedEndDate])
+        .groupByRaw(`DATE_TRUNC('day', time_in)`)
 
-        //total presence izin, sakit, cuti
-        const countLeave = await Leave.query()
-          .select([
-            Database.raw(`count(CASE WHEN leave_status = 'izin' THEN id END)::int as izin`),
-            Database.raw(`count(CASE WHEN leave_status = 'sakit' THEN id END)::int as sakit`),
-            Database.raw(`count(CASE WHEN leave_status = 'cuti' THEN id END)::int as cuti`),
-            Database.raw(`TO_CHAR(GENERATE_SERIES(from_date::timestamp, to_date::timestamp, '1 day')::date, 'YYYY-MM-DD') as date`),
-          ])
-          .whereIn('employee_id', employeeIds.map(item => item.id))
-          .whereBetween('from_date', [formattedStartDate, formattedEndDate])
-          .orWhereBetween('to_date', [formattedStartDate, formattedEndDate])
-          .groupByRaw(`date`)
-          .orderByRaw(`date`);
+      //total presence izin, sakit, cuti
+      const countLeave = await Leave.query()
+        .select([
+          Database.raw(`count(CASE WHEN leave_status = 'izin' THEN id END)::int as izin`),
+          Database.raw(`count(CASE WHEN leave_status = 'sakit' THEN id END)::int as sakit`),
+          Database.raw(`count(CASE WHEN leave_status = 'cuti' THEN id END)::int as cuti`),
+          Database.raw(`TO_CHAR(GENERATE_SERIES(from_date::timestamp, to_date::timestamp, '1 day')::date, 'YYYY-MM-DD') as date`),
+        ])
+        .whereIn('employee_id', employeeIds.map(item => item.id))
+        .whereBetween('from_date', [formattedStartDate, formattedEndDate])
+        .orWhereBetween('to_date', [formattedStartDate, formattedEndDate])
+        .groupByRaw(`date`)
+        .orderByRaw(`date`);
 
-        //menggabungkan absen bedasarkan date nya
-        const mergedData = mergeArraysByDate(JSON.parse(JSON.stringify(totalPresence)), JSON.parse(JSON.stringify(countLeave)))
+      //menggabungkan absen bedasarkan date nya
+      const mergedData = mergeArraysByDate(JSON.parse(JSON.stringify(totalPresence)), JSON.parse(JSON.stringify(countLeave)))
 
-        //menghitung
-        let result: any[] = []
-        mergedData.forEach(value => {
-          console.log(value);
-          const hadir = value.hadir ? value.hadir : 0
-          const cuti = value.cuti ? value.cuti : 0
-          const sakit = value.sakit ? value.sakit : 0
-          const izin = value.izin ? value.izin : 0
+      //menghitung
+      let result: any[] = []
+      mergedData.forEach(value => {
+        console.log(value);
+        const hadir = value.hadir ? value.hadir : 0
+        const cuti = value.cuti ? value.cuti : 0
+        const sakit = value.sakit ? value.sakit : 0
+        const izin = value.izin ? value.izin : 0
 
-          const totalAllPresence = hadir + cuti + sakit + izin
+        const totalAllPresence = hadir + cuti + sakit + izin
 
-          const data = [
-            {
-              date: value.date,
-              name: "hadir",
-              value: calculatePercentage(hadir, totalAllPresence),
-            },
-            {
-              date: value.date,
-              name: "cuti",
-              value: calculatePercentage(cuti, totalAllPresence),
-            },
-            {
-              date: value.date,
-              name: "sakit",
-              value: calculatePercentage(sakit, totalAllPresence),
-            },
-            {
-              date: value.date,
-              name: "izin",
-              value: calculatePercentage(izin, totalAllPresence)
-            },
-          ]
+        const data = [
+          {
+            date: value.date,
+            name: "hadir",
+            value: calculatePercentage(hadir, totalAllPresence),
+          },
+          {
+            date: value.date,
+            name: "cuti",
+            value: calculatePercentage(cuti, totalAllPresence),
+          },
+          {
+            date: value.date,
+            name: "sakit",
+            value: calculatePercentage(sakit, totalAllPresence),
+          },
+          {
+            date: value.date,
+            name: "izin",
+            value: calculatePercentage(izin, totalAllPresence)
+          },
+        ]
 
-          data.forEach(d => {
-            result.push(d)
-          })
+        data.forEach(d => {
+          result.push(d)
         })
+      })
 
-        response.ok({ message: "get data successfully", data: result })
-      }
+      response.ok({ message: "get data successfully", data: result })
     } catch (error) {
       const message = "HRDDASH03: " + error.message || error;
       console.log(error);

@@ -209,7 +209,10 @@ export default class PresencesController {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
     const { id } = params
-    const activity = await Activity.findOrFail(id)
+    const activity = await Activity.query()
+      .preload('unit', u => u.select('name'))
+      .where('id', id)
+      .first()
 
     const presence = await Presence.query()
       .preload('employee', query => {

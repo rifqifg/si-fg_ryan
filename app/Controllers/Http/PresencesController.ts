@@ -169,6 +169,7 @@ export default class PresencesController {
       const checkDuplicatePresence = await Presence.query()
         .where('employee_id', payload.employeeId)
         .andWhereBetween('time_in', [formattedStartDate, formattedEndDate])
+        .andWhere('activity_id', payload.activityId)
         .first()
 
       if (checkDuplicatePresence) {

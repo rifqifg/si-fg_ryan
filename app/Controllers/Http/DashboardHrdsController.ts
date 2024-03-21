@@ -125,7 +125,7 @@ export default class DashboardHrdsController {
   }
 
   public async attendancePercentage({ auth, response, request }: HttpContextContract) {
-    let { fromDate, toDate, unitId } = request.qs()
+    let { fromDate, toDate, unitId, activityId } = request.qs()
     let formattedStartDate
     let formattedEndDate
 
@@ -201,7 +201,12 @@ export default class DashboardHrdsController {
           .whereBetween('time_in', [formattedStartDate, formattedEndDate])
           .orWhereBetween('time_out', [formattedStartDate, formattedEndDate])
         )
-        .andWhereHas('activity', a => a.where('activity_type', 'fixed_time'))
+        .andWhereHas('activity', a => a
+          .where('activity_type', 'fixed_time')
+          .if(activityId, query => query
+            .where('id', activityId)
+          )
+        )
         .groupByRaw(`DATE_TRUNC('day', time_in)`)
 
       //total presence izin, sakit, cuti
@@ -216,6 +221,10 @@ export default class DashboardHrdsController {
         .andWhere(query => query
           .whereBetween('from_date', [formattedStartDate, formattedEndDate])
           .orWhereBetween('to_date', [formattedStartDate, formattedEndDate])
+        )
+        .andWhere(query => query
+          .where('status', 'aprove')
+          .orWhere('status', 'waiting')
         )
         .groupByRaw(`date`)
         .orderByRaw(`date`);

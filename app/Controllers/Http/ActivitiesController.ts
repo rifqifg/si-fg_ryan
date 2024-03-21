@@ -124,7 +124,7 @@ export default class ActivitiesController {
   public async getActivity({ request, response, auth }: HttpContextContract) {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
-    const { keyword = "", orderBy = "name", orderDirection = 'ASC', activity_type = '' } = request.qs()
+    const { keyword = "", orderBy = "name", orderDirection = 'ASC', activity_type = '', unitId } = request.qs()
 
     const user = await User.query()
       .preload('employee', e => e
@@ -172,6 +172,9 @@ export default class ActivitiesController {
           .if(roles.includes('admin_foundation'), query => {
             query.whereHas('unit', u => u.where('foundation_id', user!.employee.foundationId))
           })
+          .if(unitId, query => query
+            .andWhere('unit_id', unitId)
+          )
           // .andWhere('owner', auth.user!.id) // Jika perlu, aktifkan kembali ini
           .orderBy(orderBy, orderDirection)
       }

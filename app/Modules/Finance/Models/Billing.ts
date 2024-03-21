@@ -79,24 +79,6 @@ export default class Billing extends BaseModel {
     billing.id = newId
   }
 
-  @beforeCreate()
-  public static async setRemainingAmount(billing: Billing) {
-    if (billing.remainingAmount === undefined) {
-      billing.remainingAmount = billing.amount
-    }
-    // TODO: jika ada remaining amount nya,
-    // hitung amountPaid = billing.amount - billing.remainingAmount
-    // lalu kurangi saldo rekening pake amountPaid
-  }
-
-  // demi ketertiban pemanggilan fungsi ini harus setelah setRemainingAmount diatas
-  @beforeCreate()
-  public static async setStatus(billing: Billing) {
-    if (billing.remainingAmount > 0) billing.status = BillingStatus.PAID_PARTIAL
-    if (billing.remainingAmount === billing.amount) billing.status = BillingStatus.UNPAID
-    if (billing.remainingAmount <= 0) billing.status = BillingStatus.PAID_FULL
-  }
-
   @afterCreate()
   public static setNewId(billing: Billing) {
     billing.id = newId

@@ -9,7 +9,7 @@ import fs from "fs";
 import Account from '../../Models/Account';
 import { validator } from '@ioc:Adonis/Core/Validator'
 import { HttpContext } from '@adonisjs/core/build/standalone';
-import { BillingType } from '../../lib/enums';
+import { BillingStatus, BillingType } from '../../lib/enums';
 import { DateTime } from 'luxon';
 import AcademicYear from 'App/Modules/Academic/Models/AcademicYear';
 import Student from 'App/Modules/Academic/Models/Student';
@@ -100,8 +100,15 @@ export default class BillingsController {
         return !existingBillingsCombination.includes(combination)
       })
 
-      // add remaining_amount di tiap item payload
-      newBillings.map(nb => nb.remaining_amount = nb.amount)
+      if (newBillings.length <= 0) return response.ok({
+        message: "Tidak ada data baru yang disimpan (semua data inputan sudah ada di database)"
+      })
+
+      // add remaining_amount & status di tiap item payload
+      newBillings.map(nb => {
+        nb.remaining_amount = nb.amount
+        nb.status = BillingStatus.UNPAID
+      })
 
       const data = await Billing.createMany(newBillings)
 

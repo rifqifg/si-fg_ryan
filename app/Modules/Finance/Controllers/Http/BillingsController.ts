@@ -79,29 +79,31 @@ export default class BillingsController {
     const billingValidator = new CreateBillingValidator(HttpContext.get()!, request.body())
     const payload = await request.validate(billingValidator)
 
+    // konversi due_date ke luxon, jadikan endof day
+    payload.billings.map(billing => {
+      billing.due_date = billing.due_date.endOf('day')
+    })
+
     try {
-      const billings = await Billing.query().preload('account')
+      // skip data baru jika kombinasi account_id dan due_date exists di db
+      const accountIds = payload.billings.map(billing => billing.account_id)
+      const dueDates = payload.billings.map(billing => billing.due_date.toString())
 
-      // validasi data duplikat utk no. rekening, tipe, dan due date (bulan & tahun) yg sama
-      for (let iPayload = 0; iPayload < payload.billings.length; iPayload++) {
-        for (let iBilling = 0; iBilling < billings.length; iBilling++) {
-          const billingType = billings[iBilling].type
-          const billingAccountNo = billings[iBilling].account.number
-          const billingAccountId = billings[iBilling].account.id
-          const billingDate = billings[iBilling].dueDate.toFormat('MMMM yyyy')
+      const existingBillings = await Billing.query()
+        .whereIn('account_id', accountIds)
+        .andWhereIn('due_date', dueDates)
 
-          if (
-              billingType === payload.billings[iPayload].type &&
-              billingAccountId === payload.billings[iPayload].account_id &&
-              billingDate === payload.billings[iPayload].due_date?.toFormat('MMMM yyyy')
-            ) {
-              throw new Error(`Tagihan dengan no. rekening "${billingAccountNo}", tipe "${billingType}"` +
-                ` dan periode "${billingDate}" yang sama sudah ada di database.`)
-            }
-        }
-      }
+      const existingBillingsCombination = existingBillings.map(eb => `${eb.accountId}_${eb.dueDate}`)
 
-      const data = await Billing.createMany(payload.billings)
+      const newBillings: any[] = payload.billings.filter(row => {
+        const combination = `${row.account_id}_${row.due_date}`
+        return !existingBillingsCombination.includes(combination)
+      })
+
+      // add remaining_amount di tiap item payload
+      newBillings.map(nb => nb.remaining_amount = nb.amount)
+
+      const data = await Billing.createMany(newBillings)
 
       CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.created({ message: "Berhasil menyimpan data", data })
@@ -219,7 +221,7 @@ export default class BillingsController {
           q.andWhereBetween('due_date', [`${academicYearBegin}-07-01`, `${academicYearEnd}-06-30`])
         })
         .orderBy('due_date', 'asc')
-      
+
       const data : any = {}
 
       billings.forEach(bill => {

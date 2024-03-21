@@ -11,15 +11,15 @@ export default class CreateBillingValidator {
         account_id: schema.string({}, [
           rules.exists({ table: 'finance.accounts', column: 'id' })
         ]),
-        master_billing_id: schema.string.optional({}, [
-          rules.exists({ table: 'finance.master_billings', column: 'id' })
-        ]),
-        name: schema.string(),
+        // master_billing_id: schema.string.optional({}, [
+        //   rules.exists({ table: 'finance.master_billings', column: 'id' })
+        // ]),
+        // name: schema.string(),
         amount: schema.number(),
-        remaining_amount: schema.number.optional(),
-        due_date: schema.date.optional(),
-        description: schema.string.optional(),
-        type: schema.enum.optional(Object.values(BillingType)),
+        // remaining_amount: schema.number.optional(),
+        due_date: schema.date({ format: 'yyyy-MM-dd' }),
+        // description: schema.string.optional(),
+        // type: schema.enum.optional(Object.values(BillingType)),
       })
     )
   })
@@ -38,21 +38,21 @@ export default class CreateBillingValidator {
         case 'account_id':
           cekColumn = 'Nomor Rekening'
           break
-        case 'master_billing_id':
-          cekColumn = 'ID Master Billing'
-          break
-        case 'name':
-          cekColumn = 'Nama Rekening'
-          break
+        // case 'master_billing_id':
+        //   cekColumn = 'ID Master Billing'
+        //   break
+        // case 'name':
+        //   cekColumn = 'Nama Rekening'
+        //   break
         case 'amount':
           cekColumn = 'Jumlah'
           break
-        case 'description':
-          cekColumn = 'Deskripsi'
-          break
-        case 'type':
-          cekColumn = 'Tipe'
-          break
+        // case 'description':
+        //   cekColumn = 'Deskripsi'
+        //   break
+        // case 'type':
+        //   cekColumn = 'Tipe'
+        //   break
         default:
           cekColumn = column[2]
           break

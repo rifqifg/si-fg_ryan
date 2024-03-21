@@ -151,6 +151,9 @@ export default class ActivitiesController {
             }
             query.andWhereILike('name', `%${keyword}%`);
           })
+          .if(unitId, query => query
+            .andWhere('unit_id', unitId)
+          )
           // .andWhere('owner', auth.user!.id) // Jika perlu, aktifkan kembali ini
           .orderBy(orderBy, orderDirection)
       } else {

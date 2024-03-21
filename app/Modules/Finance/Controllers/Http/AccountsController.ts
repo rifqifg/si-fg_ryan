@@ -33,9 +33,20 @@ export default class AccountsController {
             })
           })
           .if(tipe, qTipe => qTipe.andWhere('type', tipe))
+          .orderBy('number', 'asc')
           .paginate(page, limit);
       } else {
-        data = await Account.query().whereILike('account_name', `%${keyword}%`)
+        data = await Account.query()
+          .preload('student', qStudent => qStudent.select('name', 'nisn'))
+          .where(query => {
+            query.whereILike("number", `%${keyword}%`)
+            query.orWhereHas('student', s => {
+              s.whereILike('name', `%${keyword}%`)
+                .orWhereILike('nisn', `%${keyword}%`)
+            })
+          })
+          .if(tipe, qTipe => qTipe.andWhere('type', tipe))
+          .orderBy('number', 'asc')
       }
 
       data.map(account => {

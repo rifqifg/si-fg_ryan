@@ -23,7 +23,14 @@ export default class BillingsController {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
 
-    const { page = 1, limit = 10, keyword = "", status, due_date, tipe, mode = "page" } = request.qs();
+    const { page = 1, limit = 10, keyword = "", status, from_date, to_date, tipe, mode = "page" } = request.qs();
+
+    const formattedFromDate = from_date
+      ? DateTime.fromISO(from_date).startOf('day').toISO()!
+      : DateTime.local({zone:'utc+7'}).startOf('month').startOf('day').toISO()!
+    const formattedToDate = to_date
+      ? DateTime.fromISO(to_date).endOf('day').toISO()!
+      : DateTime.local({zone:'utc+7'}).endOf('day').toISO()!
 
     try {
       let data: Billing[]
@@ -39,6 +46,7 @@ export default class BillingsController {
             })
             qAccount.if(tipe, qTipe => qTipe.andWhere('type', tipe))
           })
+          .whereBetween("due_date", [formattedFromDate, formattedToDate])
           // .if(status, q => q.where('status', '=', status))
           .preload('account', qAccount => {
             qAccount.select('number', 'student_id', 'type')

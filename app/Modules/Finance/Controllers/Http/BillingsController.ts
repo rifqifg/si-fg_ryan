@@ -23,35 +23,27 @@ export default class BillingsController {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
 
-    const { page = 1, limit = 10, keyword = "", status, mode = "page", student_id, academic_year_id } = request.qs();
+    const { page = 1, limit = 10, keyword = "", status, due_date, tipe, mode = "page" } = request.qs();
 
     try {
-      let academicYearBegin: string,
-        academicYearEnd: string
-
-      if (academic_year_id) {
-        const academicYear = await AcademicYear.find(academic_year_id)
-
-        if (academicYear) {
-          [academicYearBegin, academicYearEnd] = academicYear.year.split(' - ')
-        }
-      }
-
       let data: Billing[]
       if (mode === 'page') {
         data = await Billing.query()
-          .if(student_id, q => q.whereHas('account', qAccount => qAccount.where('student_id', student_id)))
-          .if(status, q => q.where('status', '=', status))
-          .if(keyword, q => {
-            q.andWhere(qWhere => {
-              qWhere.andWhereHas('account', (a) => a.whereILike("number", `%${keyword}%`))
-              qWhere.orWhereHas('account', (a) => a.whereILike("account_name", `%${keyword}%`))
+          .whereHas('account', (qAccount) => {
+            qAccount.where(qAccountWhere => {
+              qAccountWhere.whereILike("number", `%${keyword}%`)
+              qAccountWhere.orWhereHas('student', s => {
+                s.whereILike('name', `%${keyword}%`)
+                s.orWhereILike('nisn', `%${keyword}%`)
+              })
             })
+            qAccount.if(tipe, qTipe => qTipe.andWhere('type', tipe))
           })
-          .if(academic_year_id, q => {
-            q.andWhereBetween('due_date', [`${academicYearBegin}-07-01`, `${academicYearEnd}-06-30`])
+          // .if(status, q => q.where('status', '=', status))
+          .preload('account', qAccount => {
+            qAccount.select('number', 'student_id', 'type')
+            qAccount.preload('student', s => s.select('name', 'nisn'))
           })
-          .preload('account', qAccount => qAccount.select('account_name', 'number', 'student_id'))
           .orderBy('due_date', 'asc')
           .paginate(page, limit);
       } else {

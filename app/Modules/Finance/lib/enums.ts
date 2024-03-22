@@ -15,7 +15,7 @@ export enum BillingStatus {
     UNPAID = 'unpaid',
     PAID_PARTIAL = 'paid_partial',
     PAID_FULL = 'paid_full',
-    APPROVED = 'approved'
+    PAST_DUE = 'past_due'
 }
 
 export enum CoaTypes {

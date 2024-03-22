@@ -14,7 +14,8 @@ export default class Billing extends BaseModel {
   public serializeExtras() {
     return {
       pivot_amount: this.$extras.pivot_amount,
-      due_note: this.$extras.due_note
+      due_note: this.$extras.due_note,
+      status: this.$extras.status
     }
   }
 

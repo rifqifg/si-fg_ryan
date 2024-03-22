@@ -17,6 +17,7 @@ import { schema } from "@ioc:Adonis/Core/Validator";
 import Env from "@ioc:Adonis/Core/Env"
 import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist';
 import { statusRoutes } from 'App/Modules/Log/lib/enum';
+import { SetBillingStatus } from '../../Helpers/SetBillingStatus';
 
 export default class BillingsController {
   public async index({ request, response }: HttpContextContract) {
@@ -33,30 +34,32 @@ export default class BillingsController {
       : DateTime.local({zone:'utc+7'}).endOf('day').toISO()!
 
     try {
-      let data: Billing[]
-      if (mode === 'page') {
-        data = await Billing.query()
-          .whereHas('account', (qAccount) => {
-            qAccount.where(qAccountWhere => {
-              qAccountWhere.whereILike("number", `%${keyword}%`)
-              qAccountWhere.orWhereHas('student', s => {
-                s.whereILike('name', `%${keyword}%`)
-                s.orWhereILike('nisn', `%${keyword}%`)
-              })
+      // let data: Billing[]
+      // if (mode === 'page') {
+      const data = await Billing.query()
+        .whereHas('account', (qAccount) => {
+          qAccount.where(qAccountWhere => {
+            qAccountWhere.whereILike("number", `%${keyword}%`)
+            qAccountWhere.orWhereHas('student', s => {
+              s.whereILike('name', `%${keyword}%`)
+              s.orWhereILike('nisn', `%${keyword}%`)
             })
-            qAccount.if(tipe, qTipe => qTipe.andWhere('type', tipe))
           })
-          .whereBetween("due_date", [formattedFromDate, formattedToDate])
-          // .if(status, q => q.where('status', '=', status))
-          .preload('account', qAccount => {
-            qAccount.select('number', 'student_id', 'type')
-            qAccount.preload('student', s => s.select('name', 'nisn'))
-          })
-          .orderBy('due_date', 'asc')
-          .paginate(page, limit);
-      } else {
-        data = await Billing.query().whereILike('name', `%${keyword}%`)
-      }
+          qAccount.if(tipe, qTipe => qTipe.andWhere('type', tipe))
+        })
+        .whereBetween("due_date", [formattedFromDate, formattedToDate])
+        // .if(status, q => q.where('status', '=', status))
+        .preload('account', qAccount => {
+          qAccount.select('number', 'student_id', 'type')
+          qAccount.preload('student', s => s.select('name', 'nisn'))
+        })
+        .orderBy('due_date', 'asc')
+        .paginate(page, limit);
+      // } else {
+      //   data = await Billing.query().whereILike('name', `%${keyword}%`)
+      // }
+
+      SetBillingStatus(data.all())
 
       CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil mengambil data", data })

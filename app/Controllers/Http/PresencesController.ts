@@ -158,6 +158,25 @@ export default class PresencesController {
     const payload = await request.validate(CreatePresenceValidator)
 
     try {
+      //check duplikat presence
+      const splittedDate = payload.timeIn.toFormat('yyyy-MM-dd').split(" ")[0];
+
+      const formattedStartDate = `${splittedDate ? splittedDate : payload.timeIn.toFormat('yyyy-MM-dd')
+        } 00:00:00.000 +0700`;
+      const formattedEndDate = `${splittedDate ? splittedDate : payload.timeIn.toFormat('yyyy-MM-dd')
+        } 23:59:59.000 +0700`;
+
+      const checkDuplicatePresence = await Presence.query()
+        .where('employee_id', payload.employeeId)
+        .andWhereBetween('time_in', [formattedStartDate, formattedEndDate])
+        .andWhere('activity_id', payload.activityId)
+        .first()
+
+      if (checkDuplicatePresence) {
+        return response.badRequest({message: 'already exists'})
+      }
+
+      //create a new data
       const data = await Presence.create(payload)
       CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.created({ message: "Create data success", data })
@@ -209,7 +228,10 @@ export default class PresencesController {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
     const { id } = params
-    const activity = await Activity.findOrFail(id)
+    const activity = await Activity.query()
+      .preload('unit', u => u.select('name'))
+      .where('id', id)
+      .first()
 
     const presence = await Presence.query()
       .preload('employee', query => {

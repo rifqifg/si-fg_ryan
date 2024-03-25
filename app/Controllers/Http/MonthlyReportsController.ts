@@ -202,7 +202,7 @@ export default class MonthlyReportsController {
       let data
       if (!employeeId) {
         const monthlyReport = await MonthlyReport.query()
-          .select('name', 'from_date', 'to_date', 'red_dates', 'unit_id')
+          .select('name', 'from_date', 'to_date', 'working_days', 'unit_id', 'working_dates')
           .preload('unit')
           .where("id", id)
           .firstOrFail();
@@ -211,7 +211,7 @@ export default class MonthlyReportsController {
           .select('*')
           .select(Database.raw(`(select name from employees e where id = employee_id) as employee_name`))
           .whereHas('monthlyReport', mr => mr.where('id', id))
-          .preload('monthlyReport', mr => mr.select('name', 'from_date', 'to_date', 'red_dates'))
+          .preload('monthlyReport', mr => mr.select('name', 'from_date', 'to_date', 'working_days'))
           .whereHas('employee', e => e.whereILike('name', `%${keyword}%`))
           .preload('employee', e => e
             .select('name', 'nik', 'status')
@@ -219,12 +219,41 @@ export default class MonthlyReportsController {
             .preload('divisions', ds => ds.select("title", "divisionId").preload('division', d => d.select('name'))))
           .preload('monthlyReportEmployeesFixedTime', mreft => mreft
             .select('*')
-            .select(Database.raw(`(case
-                when skor * 100 / NULLIF((select default_presence from public.employees where id = (select employee_id from monthly_report_employees where id = monthly_report_employee_id)) - (select red_dates from monthly_reports where id = '${id}'), 0) > 100 then 100
-                when skor * 100 / NULLIF((select default_presence from public.employees where id = (select employee_id from monthly_report_employees where id = monthly_report_employee_id)) - (select red_dates from monthly_reports where id = '${id}'), 0) <= 0 then 0
-                else skor * 100 / NULLIF((select default_presence from public.employees where id = (select employee_id from monthly_report_employees where id = monthly_report_employee_id)) - (select red_dates from monthly_reports where id = '${id}'), 0)
-                end) as percentage`))
-            .select(Database.raw(`(select default_presence from public.employees where id= (select employee_id from monthly_report_employees where id = monthly_report_employee_id)) - (select red_dates from monthly_reports where id = '${id}') as "default"`))
+            .select(Database.raw(`
+                (
+                  case
+                    when ((select status from public.employees where id= (select employee_id from monthly_report_employees where id = monthly_report_employee_id)) = 'FULL_TIME')
+                      then
+                          (
+                            case
+                                when skor * 100 / NULLIF((select working_days from monthly_reports where id = '${id}'), 0) > 100 then 100
+                                when skor * 100 / NULLIF((select working_days from monthly_reports where id = '${id}'), 0) <= 0 then 0
+                                else skor * 100 / NULLIF((select working_days from monthly_reports where id = '${id}'), 0)
+                            end
+                          )
+
+                    when((select status from public.employees where id= (select employee_id from monthly_report_employees where id = monthly_report_employee_id)) = 'PART_TIME')
+                      then
+                          (
+                            case
+                                when skor * 100 / NULLIF((select default_presence from public.employees where id = (select employee_id from monthly_report_employees where id = monthly_report_employee_id)), 0) > 100 then 100
+                                when skor * 100 / NULLIF((select default_presence from public.employees where id = (select employee_id from monthly_report_employees where id = monthly_report_employee_id)), 0) <= 0 then 0
+                                else skor * 100 / NULLIF((select default_presence from public.employees where id = (select employee_id from monthly_report_employees where id = monthly_report_employee_id)), 0)
+                            end
+                          )
+                    else 0
+                  end
+                ) as percentage
+            `))
+            .select(Database.raw(`
+                (
+                  case
+                    when ((select status from public.employees where id= (select employee_id from monthly_report_employees where id = monthly_report_employee_id)) = 'FULL_TIME') then (select working_days from monthly_reports where id = '${id}')
+                    when ((select status from public.employees where id= (select employee_id from monthly_report_employees where id = monthly_report_employee_id)) = 'PART_TIME') then (select default_presence from public.employees where id= (select employee_id from monthly_report_employees where id = monthly_report_employee_id))
+                    else 0
+                  end
+                ) as "default"
+            `))
             .whereHas('activity', ac => ac.where('activity_type', 'fixed_time').andWhere('assessment', true))
             .preload('activity', a => a.select('id', 'name', 'category_activity_id', 'activity_type')
               .preload('categoryActivity', ca => ca.select('name'))))
@@ -294,12 +323,41 @@ export default class MonthlyReportsController {
               .preload('divisions', ds => ds.select("title", "divisionId").preload('division', d => d.select('name'))))
             .preload('monthlyReportEmployeesFixedTime', mreft => mreft
               .select('*')
-              .select(Database.raw(`(case
-                when skor * 100 / NULLIF((select default_presence from public.employees where id = '${employeeId}') - (select red_dates from monthly_reports where id = '${id}'), 0) > 100 then 100
-                when skor * 100 / NULLIF((select default_presence from public.employees where id = '${employeeId}') - (select red_dates from monthly_reports where id = '${id}'), 0) <= 0 then 0
-                else skor * 100 / NULLIF((select default_presence from public.employees where id = '${employeeId}') - (select red_dates from monthly_reports where id = '${id}'), 0)
-                end) as percentage`))
-              .select(Database.raw(`(select default_presence from public.employees where id='${employeeId}') - (select red_dates from monthly_reports where id = '${id}') as "default"`))
+              .select(Database.raw(`
+                  (
+                    case
+                      when ((select status from public.employees where id= (select employee_id from monthly_report_employees where id = monthly_report_employee_id)) = 'FULL_TIME')
+                        then
+                            (
+                              case
+                                  when skor * 100 / NULLIF((select working_days from monthly_reports where id = '${id}'), 0) > 100 then 100
+                                  when skor * 100 / NULLIF((select working_days from monthly_reports where id = '${id}'), 0) <= 0 then 0
+                                  else skor * 100 / NULLIF((select working_days from monthly_reports where id = '${id}'), 0)
+                              end
+                            )
+
+                      when((select status from public.employees where id= '${employeeId}') = 'PART_TIME')
+                        then
+                            (
+                              case
+                                  when skor * 100 / NULLIF((select default_presence from public.employees where id = '${employeeId}'), 0) > 100 then 100
+                                  when skor * 100 / NULLIF((select default_presence from public.employees where id = '${employeeId}'), 0) <= 0 then 0
+                                  else skor * 100 / NULLIF((select default_presence from public.employees where id = '${employeeId}'), 0)
+                              end
+                            )
+                      else 0
+                    end
+                  ) as percentage
+              `))
+              .select(Database.raw(`
+                  (
+                    case
+                      when ((select status from public.employees where id= '${employeeId}') = 'FULL_TIME') then (select working_days from monthly_reports where id = '${id}')
+                      when ((select status from public.employees where id= '${employeeId}') = 'PART_TIME') then (select default_presence from public.employees where id= '${employeeId}')
+                      else 0
+                    end
+                  ) as "default"
+              `))
               .whereHas('activity', ac => ac.where('activity_type', 'fixed_time').andWhere('assessment', true))
               .preload('activity', a => a.select('id', 'name', 'category_activity_id', 'activity_type')
                 .preload('categoryActivity', ca => ca.select('name'))))

@@ -23,7 +23,6 @@ import { StatusEmployees } from "App/lib/enum";
 import EmployeeUnit from "./EmployeeUnit";
 import User from "./User";
 import Foundation from "App/Modules/Foundation/Models/Foundation";
-import Unit from "./Unit";
 import Class from "App/Modules/Academic/Models/Class";
 let newId = "";
 
@@ -32,6 +31,9 @@ export default class Employee extends BaseModel {
     return {
       period_of_work: this.$extras.period_of_work,
       sisa_jatah_cuti: this.$extras.sisa_jatah_cuti,
+      full_time: this.$extras.full_time,
+      part_time: this.$extras.part_time,
+      total_employees: this.$extras.total_employees
     }
   }
 
@@ -151,9 +153,6 @@ export default class Employee extends BaseModel {
 
   @column()
   public status: StatusEmployees
-
-  @hasMany(() => Unit)
-  public unit: HasMany<typeof Unit>
 
   @column()
   public foundationId: string;

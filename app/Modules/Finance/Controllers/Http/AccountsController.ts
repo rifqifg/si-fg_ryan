@@ -13,6 +13,7 @@ import AcademicYear from 'App/Modules/Academic/Models/AcademicYear';
 import { DateTime } from 'luxon';
 import { CreateRouteHist } from 'App/Modules/Log/Helpers/createRouteHist';
 import { statusRoutes } from 'App/Modules/Log/lib/enum';
+import AccountReference from '../../Models/AccountReference';
 
 export default class AccountsController {
   public async index({ request, response }: HttpContextContract) {
@@ -284,52 +285,53 @@ export default class AccountsController {
         return { student_id, ...row }
       })
 
-      // Pisahkan tiap baris data berdasarkan no. rek.
-      // misal nisn 23240001 punya rek. spp dan bp,
-      // maka jadi dua row, 23240001 utk spp, dan 23240001 utk bp.
-      // Kalo no. rek. nya null/undefined, skip
-      // NOTE: consider refactor later
-      const splittedJson: any[] = []
-      jsonDataWithStudentId.forEach(row => {
-        if (row.reference_spp !== undefined) {
-          splittedJson.push({
-            studentId: row.student_id,
-            type: BillingType.SPP,
-            number: row.va_spp,
-            refAmount: row.reference_spp,
-            balance: 0,
-          })
-        }
+      // ambil value atribut va_* yg unique, lalu bikin payload rekening baru
+      const accountPayload: any[] = []
+      for (const obj of jsonDataWithStudentId) {
+        const uniqueVaValues = new Set(Object.keys(obj).filter(key => key.startsWith('va_') && obj[key] !== undefined).map(key => obj[key]));
 
-        if (row.reference_bwt !== undefined) {
-          splittedJson.push({
-            studentId: row.student_id,
-            type: BillingType.BWT,
-            number: row.va_bwt,
-            refAmount: row.reference_bwt,
-            balance: 0,
-          })
-        }
+        const accountsForObj = [...uniqueVaValues].map(vaValue => ({
+          student_id: obj.student_id,
+          balance: 0,
+          number: vaValue
+        }));
 
-        if (row.reference_bp !== undefined) {
-           splittedJson.push({
-            studentId: row.student_id,
-            type: BillingType.BP,
-            number: row.va_bp,
-            refAmount: row.reference_bp,
-            balance: 0,
-          })
-        }
+        accountPayload.push(...accountsForObj)
+      }
+
+      // TODO: validasi duplikat account
+      const existingAccountNumbers = (await Account.query().select('number')).map(account => account.number.toString())
+      const newAccounts = accountPayload.filter(row => {
+        return !existingAccountNumbers.includes(row.number)
       })
 
-      // jika ada data yg no. rek. nya udah exists, skip
-      const existingAccountNumbers = (await Account.query().select('number', 'type')).map(account => `${account.number}_${account.type}`)
-      const newAccounts = splittedJson.filter(row => {
-        const combination = `${row.number}_${row.type}`
-        return !existingAccountNumbers.includes(combination)
-      })
+      const accounts = await Account.createMany(newAccounts)
 
-      const data = await Account.createMany(newAccounts)
+      // bikin payload utk account references
+      // gausah validasi, accounts diatas udh pasti akun baru
+      const newReferences: any[] = []
+      for (const obj of jsonDataWithStudentId) {
+        const referenceEntriesForObj = Object.entries(obj)
+          .filter(([key, value]) => key.startsWith('reference_') && obj[key] !== undefined)
+          .map(([key, value]) => {
+            const type = key.replace('reference_', '');
+            const amount = parseFloat(value);
+            const accountNumber = `va_${type}`;
+
+            const accountId = accounts.find(account => account.number === obj[accountNumber])?.id;
+
+            return accountId ? { type, amount, account_id: accountId } : undefined;
+          })
+          .filter(entry => entry !== undefined);
+        newReferences.push(...referenceEntriesForObj);
+      }
+
+      const accountReferences = await AccountReference.createMany(newReferences)
+
+      const data = {
+        accountsData: accounts,
+        accountReferences: accountReferences
+      }
 
       CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.created({ message: "Berhasil import data", data })
@@ -356,16 +358,37 @@ export default class AccountsController {
       jsonData.push(...sheetData)
     });
 
-    return jsonData.map(row => ({
-      name: row["Nama"],
-      nisn: row["NISN"],
-      va_spp: row["No VA SPP"],
-      va_bwt: row["No VA SPP"], // spp & bwt share satu no. rekening
-      va_bp: row["No VA BP"],
-      reference_spp: row["Acuan SPP"],
-      reference_bwt: row["Acuan BWT"],
-      reference_bp: row["Acuan BP"],
-    }))
+
+    return jsonData.map(row => {
+      // const spp = row["Acuan SPP"] !== undefined ? {
+      //   va: row["No VA SPP"],
+      //   ref: row["Acuan SPP"]
+      // } : {}
+
+      // const bwt = row["Acuan BWT"] !== undefined ? {
+      //   va: row["No VA SPP"], // no va BWT === no va SPP
+      //   ref: row["Acuan BWT"]
+      // } : {}
+
+      // const bp = row["Acuan BP"] !== undefined ? {
+      //     va: row["No VA BP"],
+      //     ref: row["Acuan BP"]
+      // } : {}
+
+      return {
+        name: row["Nama"],
+        nisn: row["NISN"],
+        // spp: spp,
+        // bwt: bwt,
+        // bp: bp
+        va_spp: row["No VA SPP"],
+        va_bwt: row["No VA SPP"], // spp & bwt share satu no. rekening
+        va_bp: row["No VA BP"],
+        reference_spp: row["Acuan SPP"],
+        reference_bwt: row["Acuan BWT"],
+        reference_bp: row["Acuan BP"],
+      }
+    })
   }
 
   // I might refactor this later....

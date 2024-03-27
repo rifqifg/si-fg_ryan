@@ -33,7 +33,9 @@ export default class AccountsController {
                 .orWhereILike('nisn', `%${keyword}%`)
             })
           })
-          .if(tipe, qTipe => qTipe.andWhere('type', tipe))
+          .if(tipe, qTipe => qTipe.andWhereHas('accountReferences', qAr => {
+            qAr.where('type', tipe)
+          }))
           .orderBy('number', 'asc')
           .paginate(page, limit);
       } else {

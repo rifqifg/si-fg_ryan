@@ -45,8 +45,8 @@ export default class BillingsController {
               s.orWhereILike('nisn', `%${keyword}%`)
             })
           })
-          qAccount.if(tipe, qTipe => qTipe.andWhere('type', tipe))
         })
+        .if(tipe, qTipe => qTipe.andWhere('type', tipe))
         .whereBetween("due_date", [formattedFromDate, formattedToDate])
         // .if(status, q => q.where('status', '=', status))
         .preload('account', qAccount => {

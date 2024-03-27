@@ -99,12 +99,16 @@ export default class AccountsController {
     try {
       const data: Account = await Account.query()
         .where('id', id)
-        .preload('student', qStudent => qStudent.select('name'))
-        .preload('employee', qEmployee => qEmployee.select('name'))
+        .preload('student', qStudent => qStudent.select('name', 'nisn'))
+        .preload('accountReferences', qAR => {
+          qAR.select('id', 'account_id', 'type', 'amount')
+          qAR.orderBy('type', 'asc')
+        })
+        // .preload('employee', qEmployee => qEmployee.select('name'))
         .firstOrFail()
 
-      if(data.student) { data.owner = data.student.name }
-      if(data.employee) { data.owner = data.employee.name }
+      // if(data.student) { data.owner = data.student.name }
+      // if(data.employee) { data.owner = data.employee.name }
 
       CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil mengambil data", data });

@@ -7,6 +7,7 @@ import { v4 as uuidv4 } from 'uuid'
 import Billing from './Billing';
 import { BillingType } from '../lib/enums';
 import Revenue from './Revenue';
+import AccountReference from './AccountReference';
 
 let newId = ""
 
@@ -62,6 +63,9 @@ export default class Account extends BaseModel {
 
   @hasMany(() => Billing)
   public billings: HasMany<typeof Billing>
+
+  @hasMany(() => AccountReference)
+  public accountReferences: HasMany<typeof AccountReference>
 
   @hasMany(() => Revenue, {
     foreignKey: 'fromAccount'

@@ -19,7 +19,7 @@ export default class CreateBillingValidator {
         // remaining_amount: schema.number.optional(),
         due_date: schema.date({ format: 'yyyy-MM-dd' }),
         // description: schema.string.optional(),
-        // type: schema.enum.optional(Object.values(BillingType)),
+        type: schema.enum.optional(Object.values(BillingType)),
       })
     )
   })
@@ -50,9 +50,9 @@ export default class CreateBillingValidator {
         // case 'description':
         //   cekColumn = 'Deskripsi'
         //   break
-        // case 'type':
-        //   cekColumn = 'Tipe'
-        //   break
+        case 'type':
+          cekColumn = 'Tipe'
+          break
         default:
           cekColumn = column[2]
           break

@@ -12,11 +12,16 @@ export default class AccountReferencesController {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
 
-    const { account_id } = request.qs();
+    const { account_id, tipe } = request.qs();
 
     try {
       const data = await AccountReference.query()
         .if(account_id, q => q.where('account_id', account_id))
+        .if(tipe, q => q.where('type', tipe))
+        .preload('account', qAccount => {
+          qAccount.select('student_id', 'number')
+          qAccount.preload('student', qStudent => qStudent.select('name', 'nisn'))
+        })
 
       CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil mengambil data", data });

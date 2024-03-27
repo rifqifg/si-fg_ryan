@@ -16,6 +16,7 @@ Route.group(() => {
     Route.resource('accounts', 'AccountsController').apiOnly().middleware({ '*': ['auth'] })
     Route.post('accounts/import', 'AccountsController.import').middleware(['auth:api'])
     Route.post('accounts/last-account-no', 'AccountsController.lastAccountNo').middleware(['auth:api'])
+    Route.resource('account-references', 'AccountReferencesController').apiOnly().middleware({ '*': ['auth'] })
     Route.resource('transactions', 'TransactionsController').apiOnly().middleware({ '*': ['auth'] })
     Route.resource('transaction-documents', 'TransactionDocumentsController').apiOnly().middleware({
         'index': ['auth:api,parent_api'],

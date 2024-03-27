@@ -91,15 +91,17 @@ export default class BillingsController {
       // skip data baru jika kombinasi account_id dan due_date exists di db
       const accountIds = payload.billings.map(billing => billing.account_id)
       const dueDates = payload.billings.map(billing => billing.due_date.toString())
+      const types = payload.billings.map(billing => billing.type!)
 
       const existingBillings = await Billing.query()
         .whereIn('account_id', accountIds)
         .andWhereIn('due_date', dueDates)
+        .andWhereIn('type', types)
 
-      const existingBillingsCombination = existingBillings.map(eb => `${eb.accountId}_${eb.dueDate}`)
+      const existingBillingsCombination = existingBillings.map(eb => `${eb.accountId}_${eb.dueDate}_${eb.type}`)
 
       const newBillings: any[] = payload.billings.filter(row => {
-        const combination = `${row.account_id}_${row.due_date}`
+        const combination = `${row.account_id}_${row.due_date}_${row.type}`
         return !existingBillingsCombination.includes(combination)
       })
 

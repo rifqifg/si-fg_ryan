@@ -139,7 +139,12 @@ export default class BillingsController {
     try {
       const data = await Billing.query()
         .where('id', id)
-        .preload('account', qAccount => qAccount.select('account_name', 'number', 'student_id'))
+        .preload('account', qAccount => {
+          qAccount.select('number', 'student_id', 'type')
+          qAccount.preload('student', s => s.select('name', 'nisn'))
+        })
+
+      SetBillingStatus(data)
 
       CreateRouteHist(statusRoutes.FINISH, dateStart)
       response.ok({ message: "Berhasil mengambil data", data });

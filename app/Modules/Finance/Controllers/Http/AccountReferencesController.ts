@@ -12,10 +12,17 @@ export default class AccountReferencesController {
     const dateStart = DateTime.now().toMillis()
     CreateRouteHist(statusRoutes.START, dateStart)
 
-    const { account_id, tipe } = request.qs();
+    const { keyword = "", account_id, tipe } = request.qs();
 
     try {
       const data = await AccountReference.query()
+        .whereHas('account', qAccount => {
+          qAccount.whereILike("number", `%${keyword}%`)
+          qAccount.orWhereHas('student', s => {
+            s.whereILike('name', `%${keyword}%`)
+              .orWhereILike('nisn', `%${keyword}%`)
+          })
+        })
         .if(account_id, q => q.where('account_id', account_id))
         .if(tipe, q => q.where('type', tipe))
         .preload('account', qAccount => {
